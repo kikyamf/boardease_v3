@@ -78,7 +78,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Title"
+            android:text="Name"
             android:textSize="20sp"
             android:fontFamily="@font/poppins_medium"
             app:layout_constraintTop_toBottomOf="@id/btnAddImage"
@@ -90,7 +90,7 @@
             android:id="@+id/etTitle"
             android:layout_width="0dp"
             android:layout_height="50dp"
-            android:hint="Enter title"
+            android:hint="Enter name"
             android:padding="12dp"
             android:background="@drawable/edittext_background"
             app:layout_constraintTop_toBottomOf="@id/tvTitle"
@@ -128,50 +128,47 @@
             <TextView
                 android:text="Bathrooms:"
                 android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"/>
+                android:layout_marginBottom="4dp"
+                android:layout_columnWeight="1"/>
             <EditText
                 android:id="@+id/etBathrooms"
                 android:hint="Enter no. of bathrooms"
                 android:inputType="number"
                 android:background="@drawable/edittext_background"
                 android:padding="8dp"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:layout_columnWeight="2"/> <!-- more weight = takes more space -->
 
             <TextView
                 android:text="Area (sqft):"
                 android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"/>
+                android:layout_marginBottom="4dp"
+                android:layout_columnWeight="1"/>
             <EditText
                 android:id="@+id/etArea"
                 android:hint="Enter area size"
                 android:inputType="number"
                 android:background="@drawable/edittext_background"
                 android:padding="8dp"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:layout_columnWeight="2"/>
 
             <TextView
                 android:text="Build Year:"
                 android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"/>
+                android:layout_marginBottom="4dp"
+                android:layout_columnWeight="1"/>
             <EditText
                 android:id="@+id/etBuildYear"
                 android:hint="Enter year"
                 android:inputType="number"
                 android:background="@drawable/edittext_background"
                 android:padding="8dp"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="12dp"
+                android:layout_columnWeight="2"/>
 
-            <TextView
-                android:text="Parking:"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"/>
-            <EditText
-                android:id="@+id/etParking"
-                android:hint="Enter parking details"
-                android:background="@drawable/edittext_background"
-                android:padding="8dp"
-                android:layout_marginBottom="12dp" />
         </GridLayout>
+
 
         <!-- Address -->
         <TextView
@@ -229,6 +226,34 @@
             android:layout_marginStart="24dp"
             android:layout_marginEnd="24dp" />
 
+        <TextView
+            android:id="@+id/tvRules"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rules"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toBottomOf="@id/etDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <EditText
+            android:id="@+id/etRules"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:hint="Enter rules"
+            android:gravity="top|start"
+            android:padding="12dp"
+            android:background="@drawable/edittext_background"
+            android:inputType="textMultiLine"
+            app:layout_constraintTop_toBottomOf="@id/tvRules"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp" />
+
         <!-- Button -->
         <Button
             android:id="@+id/btnCreate"
@@ -239,7 +264,7 @@
             android:fontFamily="@font/poppins_regular"
             android:backgroundTint="#A97A50"
             android:textColor="#FFFFFF"
-            app:layout_constraintTop_toBottomOf="@id/etDescription"
+            app:layout_constraintTop_toBottomOf="@id/etRules"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="20dp"
