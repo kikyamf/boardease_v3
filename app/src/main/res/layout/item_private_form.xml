@@ -125,16 +125,17 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Availability"
+        android:text="Total Rooms"
         android:textSize="14sp"
         android:textColor="#333333"
         android:layout_marginTop="12dp"/>
+
     <EditText
-        android:id="@+id/etAvailability"
+        android:id="@+id/etTotalRooms"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:hint="Availability (e.g. 3 rooms left)"
-        android:padding="12dp"
-        android:background="@drawable/edittext_background" />
+        android:background="@drawable/edittext_background"
+        android:hint="Total Rooms (e.g. 3 rooms)"
+        android:padding="12dp" />
 
 </LinearLayout>
