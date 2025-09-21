@@ -132,7 +132,7 @@
                 android:layout_marginBottom="4dp"/>
             <EditText
                 android:id="@+id/etBathrooms"
-                android:hint="No. of bathrooms"
+                android:hint="number of bathrooms"
                 android:inputType="number"
                 android:background="@drawable/edittext_background"
                 android:padding="8dp"
