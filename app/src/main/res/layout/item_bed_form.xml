@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/card_bg">
+
+    <!-- Header with Remove Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bed Spacer Details"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:textColor="#333333" />
+
+        <ImageButton
+            android:id="@+id/btnRemoveBed"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/delete"
+            android:background="@android:color/transparent"
+            android:contentDescription="Remove Bed Spacer" />
+    </LinearLayout>
+
+    <!-- Upload Image -->
+    <ImageView
+        android:id="@+id/imgBed"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:scaleType="centerCrop"
+        android:background="#E0E0E0"
+        android:contentDescription="Upload bed spacer image"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/btnUploadBedImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="#A97A50"
+        android:text="Upload image"
+        android:fontFamily="@font/poppins_semibold"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="true" />
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginTop="12dp"/>
+    <EditText
+        android:id="@+id/etBedTitle"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Bed Title"
+        android:padding="12dp"
+        android:background="@drawable/edittext_background" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Description"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginTop="12dp"/>
+    <EditText
+        android:id="@+id/etBedDesc"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:hint="Description"
+        android:inputType="textMultiLine"
+        android:padding="12dp"
+        android:background="@drawable/edittext_background" />
+
+
+    <!-- Price -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Price"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginTop="12dp"/>
+    <EditText
+        android:id="@+id/etBedPrice"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Price (₱/month)"
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@drawable/edittext_background" />
+
+    <!-- Capacity -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Capacity"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginTop="12dp"/>
+    <EditText
+        android:id="@+id/etBedCapacity"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Capacity (e.g. 2 persons)"
+        android:padding="12dp"
+        android:background="@drawable/edittext_background" />
+
+
+    <!-- Availability -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Availability"
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginTop="12dp"/>
+    <EditText
+        android:id="@+id/etBedAvailability"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Availability (e.g. 3 rooms left)"
+        android:padding="12dp"
+        android:background="@drawable/edittext_background" />
+
+</LinearLayout>

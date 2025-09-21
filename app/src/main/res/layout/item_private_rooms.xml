@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_bg"
+    android:padding="16dp"
+    android:layout_margin="12dp"
+    android:elevation="4dp">
+
+    <!-- Swipable Room Images -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/vpRoomImages"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:clipToPadding="false"
+        android:clipChildren="false"
+        android:overScrollMode="never" />
+
+    <!-- Image indicator (dots) -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:paddingTop="6dp"
+        app:tabIndicatorHeight="0dp"
+        app:tabIndicator="@null"
+        app:tabBackground="@drawable/tab_background_selector"
+        app:tabGravity="center"
+        app:tabIndicatorGravity="center" />
+
+    <!-- Room Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Private Room"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold"
+        android:textColor="#000000"
+        android:paddingTop="8dp" />
+
+    <!-- Capacity -->
+    <TextView
+        android:id="@+id/tvCapacity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Good for 2 persons"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        android:paddingTop="4dp"
+        android:textColor="#444444" />
+
+    <!-- Price -->
+    <TextView
+        android:id="@+id/tvPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="₱3,500 / month"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        android:paddingTop="2dp"
+        android:textColor="#444444" />
+
+    <!-- Availability -->
+    <TextView
+        android:id="@+id/tvAvailability"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3 rooms left"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        android:paddingTop="2dp"
+        android:textColor="#C62828"
+        android:textStyle="bold" />
+
+    <!-- Description -->
+    <TextView
+        android:id="@+id/tvDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Includes WiFi, own CR, and free water."
+        android:textSize="13sp"
+        android:fontFamily="@font/poppins_medium"
+        android:paddingTop="6dp"
+        android:textColor="#555555" />
+
+    <!-- Book Button -->
+    <Button
+        android:id="@+id/btnBook"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="#A97A50"
+        android:text="BOOK"
+        android:textSize="16sp"
+        android:fontFamily="@font/poppins_medium"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="true" />
+</LinearLayout>

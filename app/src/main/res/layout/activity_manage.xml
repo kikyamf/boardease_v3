@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Top labels -->
+        <TextView
+            android:id="@+id/tvYour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <TextView
+            android:id="@+id/tvListings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Listings"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_semibold"
+            app:layout_constraintTop_toBottomOf="@id/tvYour"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="-10dp"
+            android:layout_marginStart="24dp" />
+
+        <!-- Symbol/Icon in upper-right -->
+        <ImageView
+            android:id="@+id/ivSymbol"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/smsedit"
+            android:contentDescription="Options"
+            android:scaleType="fitCenter"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Count -->
+        <TextView
+            android:id="@+id/tvListingCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You have (3) listings"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            android:textColor="#666666"
+            app:layout_constraintTop_toBottomOf="@id/tvListings"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="24dp" />
+
+        <!-- Container for Listings -->
+        <LinearLayout
+            android:id="@+id/listingContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvListingCount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp">
+
+            <!-- Example Item -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#F5F5F5"
+                android:padding="10dp"
+                android:layout_marginBottom="12dp"
+                android:elevation="2dp">
+
+                <!-- Image -->
+                <ImageView
+                    android:id="@+id/ivListingImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_launcher_background"
+                    android:clipToOutline="true" />
+
+                <!-- Title + Actions -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="6dp">
+
+                    <TextView
+                        android:id="@+id/tvListingTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Sample Boarding"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="#000000" />
+
+                    <!-- Edit Button -->
+                    <ImageButton
+                        android:id="@+id/btnEdit"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/edit2"
+                        android:tint="#444444" />
+
+                    <!-- Delete Button -->
+                    <ImageButton
+                        android:id="@+id/btnDelete"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/trash"
+                        android:tint="#DD3333" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

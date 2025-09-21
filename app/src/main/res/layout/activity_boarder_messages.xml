@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/arrowleft"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Messages"
+            android:fontFamily="@font/poppins_semibold"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <ImageView
+            android:id="@+id/searchButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/search"
+            android:contentDescription="Search" />
+    </LinearLayout>
+
+    <!-- Horizontal Section (Add GC + Divider + Profiles) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp">
+
+        <!-- Add / Create GC button -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/addGroupButton"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/add_gc"
+                android:background="@drawable/circle_background"
+                android:scaleType="centerInside"
+                android:contentDescription="Add Group" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="New GC"
+                android:textSize="12sp"
+                android:textColor="@android:color/black" />
+        </LinearLayout>
+
+        <!-- Divider line -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#CCCCCC"
+            android:layout_marginVertical="8dp"
+            android:layout_marginHorizontal="12dp" />
+
+        <!-- Horizontal RecyclerView (Profiles) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/profileRecyclerView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingEnd="8dp" />
+    </LinearLayout>
+
+    <!-- Section Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:text="All Messages"
+
+        android:fontFamily="@font/poppins_medium"
+        android:textSize="16sp" />
+
+    <!-- Chat List RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chatListRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp" />
+
+</LinearLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="BottomNavTextStyle" parent="@android:style/TextAppearance.Small">
+        <item name="android:textSize">12sp</item>
+        <item name="android:includeFontPadding">false</item> <!-- removes extra space ubos sa text -->
+    </style>
+
+    <style name="CustomBottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemTextAppearanceActive">@style/BottomNavTextStyle</item>
+        <item name="itemTextAppearanceInactive">@style/BottomNavTextStyle</item>
+    </style>
+
+</resources>

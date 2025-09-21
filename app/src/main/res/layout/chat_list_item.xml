@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical">
+
+    <!-- Profile Image -->
+    <ImageView
+        android:id="@+id/profileImage"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+
+        android:scaleType="centerCrop"
+        android:background="@drawable/circle_background"/>
+
+    <!-- Name + Message -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingStart="12dp">
+
+        <TextView
+            android:id="@+id/userName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Name"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"/>
+
+        <TextView
+            android:id="@+id/lastMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Last message preview..."
+            android:textSize="14sp"
+            android:textColor="#777"/>
+    </LinearLayout>
+
+    <!-- Time -->
+    <TextView
+        android:id="@+id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="8:22 PM"
+        android:textSize="12sp"
+        android:textColor="#AAA"/>
+</LinearLayout>

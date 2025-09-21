@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintVertical_chainStyle="packed">
+
+        <!-- Top labels -->
+        <TextView
+            android:id="@+id/tvAddNew"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add new"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <TextView
+            android:id="@+id/tvListing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Listing"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_semibold"
+            app:layout_constraintTop_toBottomOf="@id/tvAddNew"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="-10dp"
+            android:layout_marginStart="24dp" />
+
+        <!-- Symbol/Icon in upper-right -->
+        <ImageView
+            android:id="@+id/ivSymbol"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/boxadd"
+            android:contentDescription="Options"
+            android:scaleType="fitCenter"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Swipable Image Preview -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPagerImages"
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintTop_toBottomOf="@id/tvListing"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Add Image Button -->
+        <Button
+            android:id="@+id/btnAddImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Images"
+            android:backgroundTint="#A97A50"
+            android:textColor="@android:color/white"
+            app:layout_constraintTop_toBottomOf="@id/viewPagerImages"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toBottomOf="@id/btnAddImage"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <EditText
+            android:id="@+id/etTitle"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:hint="Enter title"
+            android:padding="12dp"
+            android:background="@drawable/edittext_background"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp" />
+
+        <!-- DETAILS SECTION -->
+        <TextView
+            android:id="@+id/tvDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BH Details"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toBottomOf="@id/etTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <GridLayout
+            android:id="@+id/glDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            app:layout_constraintTop_toBottomOf="@id/tvDetails"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:text="Bathrooms:"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etBathrooms"
+                android:hint="Enter no. of bathrooms"
+                android:inputType="number"
+                android:background="@drawable/edittext_background"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:text="Area (sqft):"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etArea"
+                android:hint="Enter area size"
+                android:inputType="number"
+                android:background="@drawable/edittext_background"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:text="Build Year:"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etBuildYear"
+                android:hint="Enter year"
+                android:inputType="number"
+                android:background="@drawable/edittext_background"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:text="Parking:"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/etParking"
+                android:hint="Enter parking details"
+                android:background="@drawable/edittext_background"
+                android:padding="8dp"
+                android:layout_marginBottom="12dp" />
+        </GridLayout>
+
+
+        <!-- Address -->
+        <TextView
+            android:id="@+id/tvAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Address"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toBottomOf="@id/glDetails"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <EditText
+            android:id="@+id/etAddress"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:hint="Enter address"
+            android:padding="12dp"
+            android:background="@drawable/edittext_background"
+            app:layout_constraintTop_toBottomOf="@id/tvAddress"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp" />
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintTop_toBottomOf="@id/etAddress"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="24dp" />
+
+        <EditText
+            android:id="@+id/etDescription"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:hint="Enter description"
+            android:gravity="top|start"
+            android:padding="12dp"
+            android:background="@drawable/edittext_background"
+            android:inputType="textMultiLine"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp" />
+
+        <!-- Button -->
+        <Button
+            android:id="@+id/btnCreate"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:text="Create"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_regular"
+            android:backgroundTint="#A97A50"
+            android:textColor="#FFFFFF"
+            app:layout_constraintTop_toBottomOf="@id/etDescription"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="80dp"
+            android:layout_marginEnd="80dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
