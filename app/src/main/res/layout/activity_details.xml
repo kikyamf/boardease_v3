@@ -179,7 +179,7 @@
                     android:textSize="15sp"
                     android:fontFamily="@font/poppins_regular"
                     android:textColor="#000000"
-                    tools:text="3 Available" />
+                    tools:text="2 Available" />
             </LinearLayout>
 
             <!-- Bed Spacer -->
