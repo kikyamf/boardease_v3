@@ -38,9 +38,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:text="Apply as"
-            android:textSize="14sp"
-            android:layout_marginTop="16dp"/>
+            android:textColor="@color/black"
+            android:textSize="14sp" />
 
         <Spinner
             android:id="@+id/spinnerRole"
@@ -53,120 +54,215 @@
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:weightSum="2"
             android:layout_marginTop="12dp">
 
-            <EditText
-                android:id="@+id/etFirstName"
+            <!-- First Name Column -->
+            <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="First Name"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp"/>
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="First Name"
+                    android:textSize="14sp"
+                    android:textColor="#000000"/>
+
+                <EditText
+                    android:id="@+id/etFirstName"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:padding="10dp"
+                    android:textColor="#000000" />
+            </LinearLayout>
 
             <Space
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
 
-            <EditText
-                android:id="@+id/etLastName"
+            <!-- Last Name Column -->
+            <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="Last Name"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp"/>
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Last Name"
+                    android:textSize="14sp"
+                    android:textColor="#000000"/>
+
+                <EditText
+                    android:id="@+id/etLastName"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:padding="10dp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
         </LinearLayout>
+
 
         <!-- Middle + Birthdate -->
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:weightSum="2"
             android:layout_marginTop="12dp">
 
-            <EditText
-                android:id="@+id/etMiddleName"
+            <!-- First Name Column -->
+            <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="Middle Name"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp"/>
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Middle Name"
+                    android:textSize="14sp"
+                    android:textColor="#000000"/>
+
+                <EditText
+                    android:id="@+id/etMiddleName"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:padding="10dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
 
             <Space
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
 
-            <EditText
-                android:id="@+id/etBirthDate"
+            <!-- Birth date Column -->
+            <!-- Birth Date Column -->
+            <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="Birth Date"
-                android:focusable="false"
-                android:clickable="true"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp"/>
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Birth Date"
+                    android:textSize="14sp"
+                    android:textColor="#000000"/>
+
+                <EditText
+                    android:id="@+id/etBirthDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="MM/DD/YYYY"
+                    android:padding="10dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
 
         </LinearLayout>
 
         <!-- Phone -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Phone Number"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#000000"/>
+
         <EditText
             android:id="@+id/etPhone"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:background="@drawable/edittext_background"
             android:hint="+63"
             android:inputType="phone"
-            android:background="@drawable/edittext_background"
-            android:layout_marginTop="12dp"
-            android:padding="10dp"/>
+            android:padding="10dp"
+            android:textColor="@color/black" />
 
         <!-- Permanent Address -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Permanent Address"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#000000"/>
+
         <EditText
             android:id="@+id/etAddress"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Permanent Address"
+            android:layout_height="70dp"
             android:background="@drawable/edittext_background"
-            android:layout_marginTop="12dp"
-            android:minLines="2"
             android:gravity="top"
-            android:padding="10dp"/>
+            android:minLines="2"
+            android:padding="10dp"
+            android:textColor="@color/black" />
 
         <!-- Email -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Email"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#000000"/>
+
         <EditText
             android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
             android:background="@drawable/edittext_background"
-            android:layout_marginTop="12dp"
-            android:padding="10dp"/>
+            android:inputType="textEmailAddress"
+            android:padding="10dp"
+            android:textColor="@color/black" />
 
         <!-- Password -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Password"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#000000"/>
+
         <EditText
             android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="Password"
-            android:inputType="textPassword"
             android:background="@drawable/edittext_background"
+            android:inputType="textPassword"
+            android:padding="10dp"
+            android:textColor="@color/black" />
+
+        <!-- Gcash No. -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gcash No."
+            android:textSize="14sp"
             android:layout_marginTop="12dp"
-            android:padding="10dp"/>
+            android:textColor="#000000"/>
 
         <EditText
             android:id="@+id/etGcashNum"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="12dp"
             android:background="@drawable/edittext_background"
-            android:hint="Gcash No."
-            android:inputType="text"
-            android:padding="10dp" />
+            android:inputType="number"
+            android:padding="10dp"
+            android:textColor="@color/black" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -176,13 +272,14 @@
             android:layout_marginTop="12dp"
             android:textColor="@android:color/black"/>
 
-            <Button
-                android:id="@+id/btnUploadQr"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:backgroundTint="#A18167"
-                android:text="Choose Image"
-                android:textColor="@android:color/white"/>
+        <ImageView
+            android:id="@+id/UploadQr"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:src="@drawable/upload"
+            android:scaleType="fitCenter"
+            android:background="@drawable/edittext_background"
+            android:contentDescription="Upload QR" />
 
         <!-- NEXT Button -->
         <Button
@@ -201,16 +298,21 @@
             android:layout_height="match_parent">
 
             <TextView
-                android:layout_width="250dp"
+                android:layout_width="232dp"
                 android:layout_height="48dp"
-                android:text="Already have an account?"/>
+                android:text="Already have an account?"
+                android:textAlignment="textEnd"
+                android:textColor="@color/black" />
             <Space
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
+
             <TextView
                 android:layout_width="60dp"
                 android:layout_height="match_parent"
-                android:text="Login."/>
+                android:text="Login."
+                android:textColor="@color/black"
+                android:textStyle="bold" />
 
         </LinearLayout>
 

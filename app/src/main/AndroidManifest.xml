@@ -2,15 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -21,6 +12,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
+
+        <!-- Splash screen is launcher -->
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity> <!-- Other activities -->
+
+        <activity
+            android:name=".Registration2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
         <activity
             android:name=".Notification"
             android:exported="false" />
@@ -35,16 +50,7 @@
             android:exported="false" />
         <activity
             android:name=".Type"
-            android:exported="false" /> <!-- Make Details the launcher activity -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".Manage"
             android:exported="false" />
@@ -53,7 +59,7 @@
             android:exported="false" />
         <activity
             android:name=".Login"
-            android:exported="false" /> <!-- MainActivity is no longer the launcher -->
+            android:exported="false" />
         <activity
             android:name=".OwnerMessages"
             android:exported="false" />

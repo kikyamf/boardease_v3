@@ -9,13 +9,13 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.mock.adapters.CarouselAdapter;
 
-import me.relex.circleindicator.CircleIndicator3;
+//import me.relex.circleindicator.CircleIndicator3;
 
 public class WelcomeActivity extends AppCompatActivity {
 
     private ViewPager2 viewPager;
     private Button nextButton;
-    private CircleIndicator3 indicator; // Instance variable
+//    private CircleIndicator3 indicator; // Instance variable
 
     private int[] images = {R.drawable.carousel3, R.drawable.carousel2, R.drawable.carousel1};
     private String[] titles = {"Welcome!", "Explore Features", "Get Started"};
@@ -27,11 +27,11 @@ public class WelcomeActivity extends AppCompatActivity {
 
         viewPager = findViewById(R.id.viewPager);
         nextButton = findViewById(R.id.nextButton);
-        indicator = findViewById(R.id.indicator); // Assign to the instance variable
-        // Make sure indicator is not null before calling setViewPager if there's any doubt
-        if (indicator != null) {
-            indicator.setViewPager(viewPager);
-        }
+//        indicator = findViewById(R.id.indicator); // Assign to the instance variable
+//        // Make sure indicator is not null before calling setViewPager if there's any doubt
+//        if (indicator != null) {
+//            indicator.setViewPager(viewPager);
+//        }
 
 
         CarouselAdapter adapter = new CarouselAdapter(images, titles);
