@@ -3,32 +3,23 @@ package com.example.mock;
 
 import android.annotation.SuppressLint;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-      
-import android.widget.Button;
 
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-       
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-public class BoarderProfileFragment extends Fragment {
+public class OwnerProfileFragment extends Fragment {
 
 
     private static final String ARG_USER_ID = "user_id";
@@ -38,13 +29,13 @@ public class BoarderProfileFragment extends Fragment {
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
     private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutSettings, layoutAboutApp;
 
-    public BoarderProfileFragment() {
+    public OwnerProfileFragment() {
         // Required empty public constructor
     }
 
 
-    public static BoarderProfileFragment newInstance(int userId) {
-        BoarderProfileFragment fragment = new BoarderProfileFragment();
+    public static OwnerProfileFragment newInstance(int userId) {
+        OwnerProfileFragment fragment = new OwnerProfileFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_USER_ID, userId);
         fragment.setArguments(args);
@@ -63,7 +54,7 @@ public class BoarderProfileFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_boarder_profile, container, false);
+        View view = inflater.inflate(R.layout.fragment_owner_profile, container, false);
 
         // Bind Views
         ivProfilePic = view.findViewById(R.id.ivProfilePic);
