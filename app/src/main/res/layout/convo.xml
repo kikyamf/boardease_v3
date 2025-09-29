@@ -29,7 +29,7 @@
             android:layout_height="40dp"
             android:layout_marginStart="12dp"
             android:src="@drawable/ic_profile"
-            android:background="@drawable/circle_background"
+            android:background="@drawable/circle_bg"
             android:scaleType="centerCrop" />
 
         <!-- Name -->

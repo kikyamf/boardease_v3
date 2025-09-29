@@ -1,20 +1,21 @@
 package com.example.mock;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.method.HideReturnsTransformationMethod;
-import android.text.method.PasswordTransformationMethod;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 
 import android.app.DatePickerDialog;
 import android.widget.DatePicker;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Calendar;
@@ -28,6 +29,7 @@ public class RegistrationActivity extends AppCompatActivity {
     Spinner spinnerRole;
 
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etEmail, etPassword, etGcashNum;
+    TextView tvLogin;
     ImageView UploadQr, ivTogglePassword;
     Button btnNext;
     boolean isPasswordVisible = false;
@@ -44,6 +46,7 @@ public class RegistrationActivity extends AppCompatActivity {
                         }
                     });
 
+    @SuppressLint({"WrongViewCast", "MissingInflatedId"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +66,8 @@ public class RegistrationActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etGcashNum = findViewById(R.id.etGcashNum);
+
+        tvLogin = findViewById(R.id.tvLogin);
 
         UploadQr = findViewById(R.id.UploadQr);
 
@@ -152,7 +157,8 @@ public class RegistrationActivity extends AppCompatActivity {
 
                     // if you want to send QR URI
                     if (selectedQrUri != null) {
-                        a.putExtra("qrUri", selectedQrUri.toString());
+                        String qrPath = getRealPathFromURI(selectedQrUri);
+                        a.putExtra("qrUri", qrPath);
                     }
 
                     startActivity(a);
@@ -160,5 +166,24 @@ public class RegistrationActivity extends AppCompatActivity {
             }
         });
 
+        tvLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent a = new Intent(RegistrationActivity.this, Login.class);
+                startActivity(a);
+            }
+        });
+    }
+    private String getRealPathFromURI(Uri uri) {
+        String[] projection = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        if (cursor != null) {
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            String path = cursor.getString(column_index);
+            cursor.close();
+            return path;
+        }
+        return uri.getPath(); // fallback
     }
 }

@@ -1,6 +1,9 @@
 package com.example.mock;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -8,35 +11,48 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class Registration2Activity extends AppCompatActivity {
 
-    private Spinner spinnerVId;
-    private ImageView ivUploadF, ivUploadB;
-    private EditText etIdNumber;
-    private CheckBox cbAgree;
-    private Button btnReg;
+    Spinner spinnerVId;
+    ImageView ivUploadF, ivUploadB;
+    EditText etIdNumber;
+    CheckBox cbAgree;
+    Button btnReg;
+    Bitmap qrBitmap;
+    Bitmap frontBitmap;
+    Bitmap backBitmap;
+    TextView tvLogin;
+
+
+    // File paths for ID images
+    private String idFrontPath = null;
+    private String idBackPath = null;
 
     // Get data from first registration screen
-    String role = getIntent().getStringExtra("role");
-    String firstName = getIntent().getStringExtra("firstName");
-    String middleName = getIntent().getStringExtra("middleName");
-    String lastName = getIntent().getStringExtra("lastName");
-    String birthDate = getIntent().getStringExtra("birthDate");
-    String phone = getIntent().getStringExtra("phone");
-    String address = getIntent().getStringExtra("address");
-    String email = getIntent().getStringExtra("email");
-    String password = getIntent().getStringExtra("password");
-    String gcashNum = getIntent().getStringExtra("gcashNum");
-    String qrUri = getIntent().getStringExtra("qrUri"); // optional
+    String role, firstName, middleName, lastName, birthDate, phone, address, email, password, gcashNum, qrPath;
 
+    // Launchers for picking images
+    private ActivityResultLauncher<String> pickFrontImageLauncher;
+    private ActivityResultLauncher<String> pickBackImageLauncher;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -53,7 +69,47 @@ public class Registration2Activity extends AppCompatActivity {
         cbAgree = findViewById(R.id.cbAgree);
         btnReg = findViewById(R.id.btnReg);
 
-        // Create a list of choices
+        tvLogin = findViewById(R.id.tvLogin);
+
+        // Retrieve data passed from RegistrationActivity
+        role = getIntent().getStringExtra("role");
+        firstName = getIntent().getStringExtra("firstName");
+        middleName = getIntent().getStringExtra("middleName");
+        lastName = getIntent().getStringExtra("lastName");
+        birthDate = getIntent().getStringExtra("birthDate");
+        phone = getIntent().getStringExtra("phone");
+        address = getIntent().getStringExtra("address");
+        email = getIntent().getStringExtra("email");
+        password = getIntent().getStringExtra("password");
+        gcashNum = getIntent().getStringExtra("gcashNum");
+        qrPath = getIntent().getStringExtra("qrUri");
+
+        // Prepare image pickers
+        pickFrontImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        ivUploadF.setImageURI(uri); // show image
+                        idFrontPath = uri.toString(); // save URI path
+                    }
+                }
+        );
+
+        pickBackImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        ivUploadB.setImageURI(uri); // show image
+                        idBackPath = uri.toString(); // save URI path
+                    }
+                }
+        );
+
+        // Open gallery when clicking the ImageViews
+        ivUploadF.setOnClickListener(v -> pickFrontImageLauncher.launch("image/*"));
+        ivUploadB.setOnClickListener(v -> pickBackImageLauncher.launch("image/*"));
+
+        // Spinner choices
         String[] roles = {
                 "Select --",
                 "Philippine Passport",
@@ -68,7 +124,6 @@ public class Registration2Activity extends AppCompatActivity {
                 "Postal ID"
         };
 
-        // Set adapter for Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
@@ -76,14 +131,12 @@ public class Registration2Activity extends AppCompatActivity {
         );
         spinnerVId.setAdapter(adapter);
 
-
+        // Register button click
         btnReg.setOnClickListener(v -> {
-            // Get values
             String selectedIdType = spinnerVId.getSelectedItem().toString();
             String idNumber = etIdNumber.getText().toString().trim();
             boolean isAgreed = cbAgree.isChecked();
 
-            // Validation example
             if (selectedIdType.equals("Select --")) {
                 Toast.makeText(this, "Please select a valid ID type", Toast.LENGTH_SHORT).show();
                 return;
@@ -99,9 +152,63 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            // Now you can send these values to your database
+            if (idFrontPath == null || idBackPath == null) {
+                Toast.makeText(this, "Please upload front and back ID images", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Toast.makeText(this, "Front: " + idFrontPath + "\nBack: " + idBackPath, Toast.LENGTH_LONG).show();
+
+            String UPLOAD_URL = "http://192.168.137.1/boardease2/insert_registration.php";
+
+            // Inside btnReg.setOnClickListener
+            VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
+                    response -> {
+                        try {
+                            JSONObject obj = new JSONObject(new String(response.data));
+                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    },
+                    error -> Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+            ) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("role", role);
+                    params.put("firstName", firstName);
+                    params.put("middleName", middleName);
+                    params.put("lastName", lastName);
+                    params.put("birthDate", birthDate);
+                    params.put("phone", phone);
+                    params.put("address", address);
+                    params.put("email", email);
+                    params.put("password", password);
+                    params.put("gcashNum", gcashNum);
+                    params.put("idType", selectedIdType);
+                    params.put("idNumber", idNumber);
+                    params.put("isAgreed", String.valueOf(isAgreed));
+                    return params;
+                }
+
+                @Override
+                protected Map<String, DataPart> getByteData() {
+                    Map<String, DataPart> params = new HashMap<>();
+                    params.put("qrFile", new DataPart("qr.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), qrBitmap)));
+                    params.put("idFrontFile", new DataPart("front.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), frontBitmap)));
+                    params.put("idBackFile", new DataPart("back.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap)));
+                    return params;
+                }
+            };
+            Volley.newRequestQueue(this).add(request);
+
         });
 
+        tvLogin.setOnClickListener(v -> {
+            Intent intent = new Intent(this, Login.class);
+            startActivity(intent);
+        });
 
         // Insets handling
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {

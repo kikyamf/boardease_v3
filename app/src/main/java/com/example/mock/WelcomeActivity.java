@@ -27,12 +27,6 @@ public class WelcomeActivity extends AppCompatActivity {
 
         viewPager = findViewById(R.id.viewPager);
         nextButton = findViewById(R.id.nextButton);
-//        indicator = findViewById(R.id.indicator); // Assign to the instance variable
-//        // Make sure indicator is not null before calling setViewPager if there's any doubt
-//        if (indicator != null) {
-//            indicator.setViewPager(viewPager);
-//        }
-
 
         CarouselAdapter adapter = new CarouselAdapter(images, titles);
         viewPager.setAdapter(adapter);
@@ -45,7 +39,7 @@ public class WelcomeActivity extends AppCompatActivity {
             if (adapter != null && current < adapter.getItemCount() - 1) {
                 viewPager.setCurrentItem(current + 1);
             } else {
-                startActivity(new Intent(WelcomeActivity.this, RegistrationActivity.class));
+                startActivity(new Intent(WelcomeActivity.this, Login.class));
                 finish();
             }
         });
