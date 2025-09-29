@@ -63,7 +63,7 @@
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:src="@drawable/add_gc"
-                android:background="@drawable/circle_background"
+                android:background="@drawable/circle_bg"
                 android:scaleType="centerInside"
                 android:contentDescription="Add Group" />
 
