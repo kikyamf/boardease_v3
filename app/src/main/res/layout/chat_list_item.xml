@@ -13,7 +13,7 @@
         android:layout_height="48dp"
 
         android:scaleType="centerCrop"
-        android:background="@drawable/circle_background"/>
+        android:background="@drawable/circle_bg"/>
 
     <!-- Name + Message -->
     <LinearLayout
