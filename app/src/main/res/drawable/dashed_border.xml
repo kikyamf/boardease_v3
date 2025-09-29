@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Transparent background -->
+    <solid android:color="@android:color/transparent" />
+
+    <!-- Dashed border -->
+    <stroke
+        android:width="2dp"
+        android:color="#A97A50"
+        android:dashWidth="10dp"
+        android:dashGap="6dp" />
+
+    <!-- Rounded corners (optional, adjust as needed) -->
+    <corners android:radius="8dp" />
+
+    <!-- Padding inside the border -->
+    <padding
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp" />
+</shape>

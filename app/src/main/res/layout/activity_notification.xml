@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-    <!-- 🔹 Header / App Bar -->
+    <!-- 🔹 Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -15,7 +16,6 @@
         android:paddingStart="12dp"
         android:paddingEnd="12dp">
 
-        <!-- Back Button -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="36dp"
@@ -25,7 +25,6 @@
             android:contentDescription="Back"
             android:layout_centerVertical="true"/>
 
-        <!-- Title -->
         <TextView
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
@@ -35,9 +34,6 @@
             android:textColor="#000000"
             android:fontFamily="@font/poppins_medium"
             android:layout_centerInParent="true"/>
-
-        <!-- Settings / Bell Icon (optional, right side) -->
-
     </RelativeLayout>
 
     <!-- 🔹 Notifications List -->
@@ -47,5 +43,42 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:padding="16dp"
-        android:scrollbars="vertical"/>
+        android:scrollbars="vertical" />
+
+    <!-- 🔹 Empty State Layout -->
+    <LinearLayout
+        android:id="@+id/emptyLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        android:padding="24dp">
+
+        <ImageView
+            android:id="@+id/ivEmpty"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:src="@drawable/empty"
+        android:contentDescription="Empty State"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No notification yet"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium"
+            android:layout_marginTop="12dp"
+            android:textColor="#000"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="All notifications will appear here, so you can view them easily anytime."
+            android:textSize="14sp"
+            android:textColor="#888888"
+            android:gravity="center"
+            android:layout_marginTop="8dp"/>
+    </LinearLayout>
 </LinearLayout>

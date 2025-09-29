@@ -43,4 +43,10 @@ dependencies {
     implementation ("com.android.volley:volley:1.2.1")
 
     implementation ("androidx.viewpager2:viewpager2:1.1.0-beta01")
+
+
+
+    implementation ("me.relex:circleindicator:2.1.6")
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
 }

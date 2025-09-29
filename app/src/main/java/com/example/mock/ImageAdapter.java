@@ -11,6 +11,10 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy;
+import com.bumptech.glide.request.RequestOptions;
+
 import java.util.ArrayList;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
@@ -39,7 +43,18 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     @Override
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         Uri imageUri = imageUris.get(position);
-        holder.ivImage.setImageURI(imageUri);
+
+        // Glide options to reduce memory usage
+
+
+        Glide.with(context)
+                .load(imageUri)
+                .override(400, 400)
+                .centerCrop()
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.error)
+                .into(holder.ivImage);
+
 
         holder.btnDelete.setOnClickListener(v -> {
             if (removeListener != null) {

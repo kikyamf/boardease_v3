@@ -19,7 +19,7 @@
         android:layout_gravity="center"
         android:layout_marginBottom="16dp"
         app:ci_drawable="@drawable/dot_active"
-        app:ci_drawable_unselected="@drawable/dot_inactive" /> <!-- Use this for the unselected dot -->
+        app:ci_drawable_unselected="@drawable/dot_inactive" />
 
     <Button
         android:id="@+id/nextButton"

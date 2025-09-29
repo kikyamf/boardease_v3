@@ -94,15 +94,21 @@
             android:padding="10dp"
             android:textSize="14sp" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/btnSend"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/send_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_send"
             android:contentDescription="Send"
             android:layout_marginStart="8dp"
-            app:tint="@color/brown" />
-  </LinearLayout>
+            android:tint="#A97A50"
+            android:scaleType="centerInside"
+            android:adjustViewBounds="true"/>
+
+
+
+
+
+    </LinearLayout>
 
 </LinearLayout>

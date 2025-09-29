@@ -1,47 +1,50 @@
 package com.example.mock;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
-
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link OwnerHomeFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class OwnerHomeFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String ARG_USER_ID = "user_id";
+    private int userId = -1; // default to -1
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    // UI elements
+    private TextView tvOwnerName, tvListingsCount, tvViewsCount, tvPopularTitle, tvPopularVisits;
+    private ImageView imgPopularListing, ivNotification, ivMessage;
+    private LinearLayout numofListings;
 
     public OwnerHomeFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment OwnerHomeFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static OwnerHomeFragment newInstance(String param1, String param2) {
+    public static OwnerHomeFragment newInstance(int userId) {
         OwnerHomeFragment fragment = new OwnerHomeFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putInt(ARG_USER_ID, userId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -50,15 +53,146 @@ public class OwnerHomeFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            userId = getArguments().getInt(ARG_USER_ID, -1);
         }
     }
 
+    @SuppressLint("MissingInflatedId")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_owner_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_owner_home, container, false);
+
+        // Bind views
+        tvOwnerName = view.findViewById(R.id.tvOwnerName);
+        tvListingsCount = view.findViewById(R.id.tvListingsCount);
+        tvViewsCount = view.findViewById(R.id.tvViewsCount);
+        tvPopularTitle = view.findViewById(R.id.tvPopularTitle);
+        tvPopularVisits = view.findViewById(R.id.tvPopularVisits);
+        imgPopularListing = view.findViewById(R.id.imgPopularListing);
+        numofListings = view.findViewById(R.id.noofListings);
+        ivNotification = view.findViewById(R.id.ivNotification);
+        ivMessage = view.findViewById(R.id.ivMessage);
+
+        ivNotification.setOnClickListener(v -> {
+            if (getContext() != null) { // or getActivity() if inside a fragment
+                Intent intent = new Intent(getContext(), Notification.class);
+                startActivity(intent);
+            }
+        });
+
+        ivMessage.setOnClickListener(v -> {
+            if (getContext() != null) { // or getActivity() if inside a fragment
+                Intent intent = new Intent(getContext(), Messages.class);
+                startActivity(intent);
+            }
+        });
+
+
+        // Click listener for LinearLayout to navigate to ManageFragment
+        numofListings.setOnClickListener(v -> {
+            // 1️⃣ Replace fragment
+            ManageFragment manageFragment = ManageFragment.newInstance(userId);
+            if (getActivity() != null) {
+                getActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, manageFragment)
+                        .addToBackStack(null)
+                        .commit();
+
+                // 2️⃣ Update BottomNavigationView selection
+                BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_navigation);
+                if (bottomNav != null) {
+                    bottomNav.setSelectedItemId(R.id.nav_manage); // highlight Manage icon
+                }
+            }
+        });
+
+
+
+        if (userId != -1) {
+            fetchOwnerDashboardData();
+        } else {
+            Toast.makeText(getContext(), "User not logged in!", Toast.LENGTH_SHORT).show();
+        }
+
+        return view;
+    }
+
+    private void fetchOwnerDashboardData() {
+        String url = "http://192.168.101.6/BoardEase2/get_owner_dashboard.php";
+
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    Log.d("OwnerHomeFragment", "Server Response: " + response);
+
+                    if (response == null || response.trim().isEmpty()) {
+                        Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    try {
+                        JSONObject obj = new JSONObject(response);
+
+                        // Validate JSON content
+                        if (!obj.has("owner_name")) {
+                            Toast.makeText(getContext(), "Invalid server response", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Owner name
+                        String ownerName = obj.optString("owner_name", "Owner");
+                        tvOwnerName.setText(ownerName);
+
+                        // Listings count
+                        int listingsCount = obj.optInt("listings_count", 0);
+                        tvListingsCount.setText(String.valueOf(listingsCount));
+
+                        // Views count
+                        int viewsCount = obj.optInt("views_count", 0);
+                        tvViewsCount.setText(String.valueOf(viewsCount));
+
+                        // Popular listing
+                        JSONObject popular = obj.optJSONObject("popular_listing");
+                        if (popular != null) {
+                            tvPopularTitle.setText(popular.optString("bh_name", "No Listing"));
+                            tvPopularVisits.setText(popular.optInt("visits", 0) + " visits");
+
+                            String imageUrl = popular.optString("image_path", "");
+                            if (!imageUrl.isEmpty()) {
+                                Glide.with(getContext())
+                                        .load(imageUrl)
+                                        .placeholder(R.drawable.sample_listing)
+                                        .error(R.drawable.sample_listing)
+                                        .into(imgPopularListing);
+                            } else {
+                                imgPopularListing.setImageResource(R.drawable.sample_listing);
+                            }
+                        } else {
+                            tvPopularTitle.setText("No Popular Listing");
+                            tvPopularVisits.setText("0 visits");
+                            imgPopularListing.setImageResource(R.drawable.sample_listing);
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "JSON Parsing error", Toast.LENGTH_SHORT).show();
+                        Log.e("OwnerHomeFragment", "JSON Parse Error: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Error fetching dashboard", Toast.LENGTH_SHORT).show();
+                    Log.e("OwnerHomeFragment", "Volley Error: " + error.getMessage(), error);
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("user_id", String.valueOf(userId));
+                Log.d("OwnerHomeFragment", "Sending user_id: " + userId);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(getContext()).add(request);
     }
 }

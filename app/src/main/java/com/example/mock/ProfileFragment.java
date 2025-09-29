@@ -1,47 +1,36 @@
 package com.example.mock;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ProfileFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 public class ProfileFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String ARG_USER_ID = "user_id";
+    private int userId;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private ImageView ivProfilePic;
+    private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
+    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutSettings, layoutAboutApp;
 
     public ProfileFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment ProfileFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static ProfileFragment newInstance(String param1, String param2) {
+    public static ProfileFragment newInstance(int userId) {
         ProfileFragment fragment = new ProfileFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putInt(ARG_USER_ID, userId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -50,15 +39,41 @@ public class ProfileFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            userId = getArguments().getInt(ARG_USER_ID);
         }
     }
 
+    @SuppressLint({"WrongViewCast", "MissingInflatedId"})
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_profile, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_profile, container, false);
+
+        // Bind Views
+        ivProfilePic = view.findViewById(R.id.ivProfilePic);
+        tvOwnerName = view.findViewById(R.id.tvOwnerName);
+        tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
+        tvSignOut = view.findViewById(R.id.tvSignOut);
+
+        layoutPayments = view.findViewById(R.id.layoutPayments);
+        layoutNotifications = view.findViewById(R.id.layoutNotifications);
+        layoutMessages = view.findViewById(R.id.layoutMessages);
+        layoutSettings = view.findViewById(R.id.layoutSettings);
+        layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
+
+        // Example: set user data
+        tvOwnerName.setText("Owner " + userId);
+        tvOwnerEmail.setText("owner" + userId + "@example.com");
+
+        // Click Events
+        layoutPayments.setOnClickListener(v -> Toast.makeText(getContext(), "Open Payments", Toast.LENGTH_SHORT).show());
+        layoutNotifications.setOnClickListener(v -> Toast.makeText(getContext(), "Open Notifications", Toast.LENGTH_SHORT).show());
+        layoutMessages.setOnClickListener(v -> Toast.makeText(getContext(), "Open Messages", Toast.LENGTH_SHORT).show());
+        layoutSettings.setOnClickListener(v -> Toast.makeText(getContext(), "Open Settings", Toast.LENGTH_SHORT).show());
+        layoutAboutApp.setOnClickListener(v -> Toast.makeText(getContext(), "Open About App", Toast.LENGTH_SHORT).show());
+
+        tvSignOut.setOnClickListener(v -> Toast.makeText(getContext(), "Signing Out...", Toast.LENGTH_SHORT).show());
+
+        return view;
     }
 }
