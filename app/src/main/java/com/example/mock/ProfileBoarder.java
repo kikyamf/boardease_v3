@@ -38,7 +38,7 @@ public class ProfileBoarder extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_profile, container, false);
+        View view = inflater.inflate(R.layout.activity_profile_boarder, container, false);
 
         // Initialize views
         ivProfilePic = view.findViewById(R.id.ivProfilePic);

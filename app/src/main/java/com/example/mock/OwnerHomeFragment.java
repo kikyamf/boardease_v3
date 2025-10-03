@@ -33,9 +33,9 @@ public class OwnerHomeFragment extends Fragment {
     private int userId = -1; // default to -1
 
     // UI elements
-    private TextView tvOwnerName, tvListingsCount, tvViewsCount, tvPopularTitle, tvPopularVisits;
+    private TextView tvOwnerName, tvListingsCount, tvBoardersCount, tvViewsCount, tvPopularTitle, tvPopularVisits;
     private ImageView imgPopularListing, ivNotification, ivMessage;
-    private LinearLayout numofListings;
+    private LinearLayout numofListings, layoutTotalBoarders;
 
     public OwnerHomeFragment() {
         // Required empty public constructor
@@ -66,11 +66,13 @@ public class OwnerHomeFragment extends Fragment {
         // Bind views
         tvOwnerName = view.findViewById(R.id.tvOwnerName);
         tvListingsCount = view.findViewById(R.id.tvListingsCount);
+        tvBoardersCount = view.findViewById(R.id.tvBoardersCount);
         tvViewsCount = view.findViewById(R.id.tvViewsCount);
         tvPopularTitle = view.findViewById(R.id.tvPopularTitle);
         tvPopularVisits = view.findViewById(R.id.tvPopularVisits);
         imgPopularListing = view.findViewById(R.id.imgPopularListing);
         numofListings = view.findViewById(R.id.noofListings);
+        layoutTotalBoarders = view.findViewById(R.id.layoutTotalBoarders);
         ivNotification = view.findViewById(R.id.ivNotification);
         ivMessage = view.findViewById(R.id.ivMessage);
 
@@ -84,6 +86,14 @@ public class OwnerHomeFragment extends Fragment {
         ivMessage.setOnClickListener(v -> {
             if (getContext() != null) { // or getActivity() if inside a fragment
                 Intent intent = new Intent(getContext(), Messages.class);
+                startActivity(intent);
+            }
+        });
+
+        // Transactions & Logs button click listener
+        view.findViewById(R.id.cardTransactionsLogs).setOnClickListener(v -> {
+            if (getContext() != null) {
+                Intent intent = new Intent(getContext(), TransactionsLogsActivity.class);
                 startActivity(intent);
             }
         });
@@ -108,6 +118,15 @@ public class OwnerHomeFragment extends Fragment {
             }
         });
 
+        // Click listener for Total Boarders to navigate to BoardersListActivity
+        layoutTotalBoarders.setOnClickListener(v -> {
+            if (getContext() != null) {
+                Intent intent = new Intent(getContext(), BoardersListActivity.class);
+                intent.putExtra("user_id", userId);
+                startActivity(intent);
+            }
+        });
+
 
 
         if (userId != -1) {
@@ -120,7 +139,7 @@ public class OwnerHomeFragment extends Fragment {
     }
 
     private void fetchOwnerDashboardData() {
-        String url = "http://192.168.101.6/BoardEase2/get_owner_dashboard.php";
+        String url = "http://192.168.254.121/BoardEase2/get_owner_dashboard.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -147,6 +166,10 @@ public class OwnerHomeFragment extends Fragment {
                         // Listings count
                         int listingsCount = obj.optInt("listings_count", 0);
                         tvListingsCount.setText(String.valueOf(listingsCount));
+
+                        // Boarders count
+                        int boardersCount = obj.optInt("boarders_count", 0);
+                        tvBoardersCount.setText(String.valueOf(boardersCount));
 
                         // Views count
                         int viewsCount = obj.optInt("views_count", 0);

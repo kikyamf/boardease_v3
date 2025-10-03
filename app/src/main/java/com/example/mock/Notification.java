@@ -2,6 +2,8 @@ package com.example.mock;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +17,7 @@ public class Notification extends AppCompatActivity {
 
     private RecyclerView recyclerNotifications;
     private NotificationsAdapter notificationsAdapter;
+    private ImageButton btnBack;
     private List<NotificationItemModel> notifList;
     private LinearLayout emptyLayout; // 🔹 Added for empty state
 
@@ -23,12 +26,17 @@ public class Notification extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notification);
 
+        btnBack = findViewById(R.id.btnBack);
+
         recyclerNotifications = findViewById(R.id.rvNotifications);
         emptyLayout = findViewById(R.id.emptyLayout); // 🔹 Reference the empty view
 
         recyclerNotifications.setLayoutManager(new LinearLayoutManager(this));
 
         notifList = new ArrayList<>();
+
+        // Back button action
+        btnBack.setOnClickListener(v -> finish());
 
 //        // ✅ Dummy Boarding House Notifications
 //        // (Comment this block if you want to test empty state)

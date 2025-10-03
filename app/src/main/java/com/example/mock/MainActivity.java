@@ -46,7 +46,9 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.nav_post) {
                 selectedFragment = AddingBhFragment.newInstance(userId);
             } else if (id == R.id.nav_profile) {
-                selectedFragment = ProfileFragment.newInstance(userId);
+                selectedFragment = OwnerProfileFragment.newInstance(userId);
+            } else if (id == R.id.nav_activity) {
+                selectedFragment = ActivityFragment.newInstance(userId);
             } else if (id == R.id.nav_manage) {
                 selectedFragment = ManageFragment.newInstance(userId);
             }

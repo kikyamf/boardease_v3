@@ -63,8 +63,8 @@
                         android:id="@+id/ivNotification"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:src="@drawable/ic_notification"
-                        android:background="@drawable/circle_border"
+                        android:src="@drawable/ic_notification1"
+                        android:background="@drawable/circle_border1"
                         android:padding="10dp"
                         android:contentDescription="Notification" />
 
@@ -90,8 +90,8 @@
                         android:id="@+id/ivMessage"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:src="@drawable/ic_message"
-                        android:background="@drawable/circle_border"
+                        android:src="@drawable/ic_message1"
+                        android:background="@drawable/circle_border1"
                         android:padding="10dp"
 
                         android:contentDescription="Message"
@@ -170,6 +170,59 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Total Boarders Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:id="@+id/layoutTotalBoarders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <!-- Left Side Text -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:fontFamily="@font/poppins_medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Boarders"
+                        android:textSize="20sp"
+                        android:textColor="#333333"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_bold" />
+                </LinearLayout>
+
+                <!-- Number on Right Side -->
+                <TextView
+                    android:id="@+id/tvBoardersCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="32sp"
+                    android:textColor="#4CAF50"
+                    android:fontFamily="@font/poppins_bold" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Engagements -->
         <TextView
@@ -278,6 +331,65 @@
                         android:fontFamily="@font/poppins_regular" />
                 </LinearLayout>
             </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Transactions & Logs Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTransactionsLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_history"
+                    android:background="@drawable/circle_border1"
+                    android:padding="8dp"
+                    android:layout_marginEnd="16dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Transactions &amp; Logs"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:fontFamily="@font/poppins_medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="View all activity logs and transactions"
+                        android:textSize="12sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    android:alpha="0.6" />
+
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>

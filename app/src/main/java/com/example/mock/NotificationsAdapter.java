@@ -58,7 +58,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
             // Change icon depending on type
             switch (item.getType()) {
                 case "payment":
-                    cardHolder.imgIcon.setImageResource(R.drawable.ic_payment);
+                    cardHolder.imgIcon.setImageResource(R.drawable.ic_payment2);
                     break;
                 case "maintenance":
                     cardHolder.imgIcon.setImageResource(R.drawable.ic_maintenance);
@@ -70,7 +70,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                     cardHolder.imgIcon.setImageResource(R.drawable.ic_reminder);
                     break;
                 default:
-                    cardHolder.imgIcon.setImageResource(R.drawable.ic_notification); // fallback
+                    cardHolder.imgIcon.setImageResource(R.drawable.ic_notification1); // fallback
                     break;
             }
         }

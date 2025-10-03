@@ -97,9 +97,10 @@
                 android:id="@+id/tvUploadText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Click here to upload"
+                android:text="There's no images being uploaded"
                 android:textColor="#888888"
                 android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
                 android:layout_gravity="bottom|center_horizontal"
                 android:layout_marginBottom="12dp"/>
 
@@ -112,6 +113,22 @@
                 android:padding="12dp"
                 android:visibility="gone" />
         </FrameLayout>
+
+        <!-- Floating Add Images Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAddImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:src="@drawable/ic_add"
+            android:contentDescription="Add images"
+            app:backgroundTint="@color/brown"
+            app:tint="#FFFFFF"
+            app:fabSize="mini"
+            app:layout_constraintBottom_toBottomOf="@id/flImageContainer"
+            app:layout_constraintEnd_toEndOf="@id/flImageContainer"
+            android:visibility="gone" />
 
         <!-- Title -->
         <TextView
@@ -323,7 +340,7 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="20dp"
             android:layout_marginStart="80dp"
-            android:layout_marginEnd="80dp" />
+            android:layout_marginEnd="100dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

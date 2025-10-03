@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -31,6 +32,7 @@ public class ManageFragment extends Fragment {
     private ListingAdapter adapter;
     private List<Listing> listingList = new ArrayList<>();
     private int userId = -1; // now will be set via arguments
+    private boolean isRefreshingAfterEdit = false; // Flag to track refresh after edit
 
     private TextView textViewListingCount;
 
@@ -86,6 +88,15 @@ public class ManageFragment extends Fragment {
             public void onDelete(Listing listing) {
                 deleteBoardingHouse(listing.getBhId());
             }
+
+            @Override
+            public void onView(Listing listing) {
+                // Open RoomViewActivity to view rooms
+                Intent intent = new Intent(getContext(), RoomViewActivity.class);
+                intent.putExtra("bh_id", listing.getBhId());
+                intent.putExtra("bh_name", listing.getBhName());
+                startActivity(intent);
+            }
         });
 
 
@@ -108,16 +119,17 @@ public class ManageFragment extends Fragment {
         if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
             // Check if the boarding house was updated
             if (data != null && data.getBooleanExtra("updated", false)) {
-                // Refresh the list to show updated data
+                // Set flag and show loading message
+                isRefreshingAfterEdit = true;
+                Toast.makeText(getContext(), "Refreshing listings...", Toast.LENGTH_SHORT).show();
                 fetchBoardingHouses();
-                Toast.makeText(getContext(), "List refreshed with updated data", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
 
     private void fetchBoardingHouses() {
-        String url = "http://192.168.101.6/BoardEase2/get_boarding_houses.php";
+        String url = "http://192.168.254.121/BoardEase2/get_boarding_houses.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -147,6 +159,12 @@ public class ManageFragment extends Fragment {
                         } else {
                             textViewListingCount.setText("You have (" + count + ") listings");
                         }
+                        
+                        // Show success message if this was a refresh after edit
+                        if (isRefreshingAfterEdit) {
+                            Toast.makeText(getContext(), "Listings updated successfully!", Toast.LENGTH_SHORT).show();
+                            isRefreshingAfterEdit = false; // Reset flag
+                        }
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -167,14 +185,59 @@ public class ManageFragment extends Fragment {
     }
 
     private void deleteBoardingHouse(int bhId) {
-        String url = "http://192.168.101.6/BoardEase2/delete_boarding_house.php";
+        // Show confirmation dialog
+        new AlertDialog.Builder(getContext())
+                .setTitle("Delete Boarding House")
+                .setMessage("Are you sure you want to delete this boarding house? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    // User confirmed deletion
+                    performDeleteBoardingHouse(bhId);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    // User cancelled, do nothing
+                    dialog.dismiss();
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+    
+    private void performDeleteBoardingHouse(int bhId) {
+        String url = "http://192.168.254.121/BoardEase2/delete_boarding_house.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
-                    Toast.makeText(getContext(), "Deleted successfully", Toast.LENGTH_SHORT).show();
-                    fetchBoardingHouses();
+                    try {
+                        System.out.println("Delete response: " + response);
+                        
+                        // Check if response is HTML (PHP error)
+                        if (response.trim().startsWith("<")) {
+                            System.out.println("ERROR: Server returned HTML instead of JSON");
+                            Toast.makeText(getContext(), "Server error. Check PHP file.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        
+                        // Check if response is empty
+                        if (response.trim().isEmpty()) {
+                            System.out.println("ERROR: Empty response from server");
+                            Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // Check if response contains success
+                        if (response.contains("success")) {
+                            Toast.makeText(getContext(), "Boarding house deleted successfully", Toast.LENGTH_SHORT).show();
+                            fetchBoardingHouses(); // Refresh the list
+                        } else {
+                            Toast.makeText(getContext(), "Failed to delete boarding house: " + response, Toast.LENGTH_LONG).show();
+                        }
+                    } catch (Exception e) {
+                        System.out.println("ERROR: Exception processing delete response: " + e.getMessage());
+                        Toast.makeText(getContext(), "Error processing delete response: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 },
-                error -> Toast.makeText(getContext(), "Delete failed", Toast.LENGTH_SHORT).show()) {
+                error -> {
+                    Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }) {
 
             @Override
             protected Map<String, String> getParams() {

@@ -1,6 +1,8 @@
 package com.example.mock;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,6 +17,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -61,14 +65,21 @@ public class AddingRoomsFragment extends Fragment {
 
     private List<RoomData> allRooms = new ArrayList<>();
     private int currentRoomIndex = 0;
+    
+    // Progress dialogs
+    private ProgressDialog saveProgressDialog;
+    private ProgressDialog imageUploadDialog;
+    
+    // Static variables to preserve room data when navigating back
+    private static ArrayList<RoomFormData> savedRoomData = new ArrayList<>();
 
     // PHP Endpoints
-    private static final String ADD_BH_URL = "http://192.168.101.6/BoardEase2/add_boarding_house.php";
-    private static final String UPDATE_BH_URL = "http://192.168.101.6/BoardEase2/update_boarding_house.php";
-    private static final String UPLOAD_BH_IMAGE_URL = "http://192.168.101.6/BoardEase2/upload_bh_image.php";
-    private static final String ADD_ROOM_URL = "http://192.168.101.6/BoardEase2/add_room.php";
-    private static final String UPDATE_ROOM_URL = "http://192.168.101.6/BoardEase2/update_room.php";
-    private static final String UPLOAD_ROOM_IMAGE_URL = "http://192.168.101.6/BoardEase2/upload_room_image.php";
+    private static final String ADD_BH_URL = "http://192.168.254.121/BoardEase2/add_boarding_house.php";
+    private static final String UPDATE_BH_URL = "http://192.168.254.121/BoardEase2/update_boarding_house.php";
+    private static final String UPLOAD_BH_IMAGE_URL = "http://192.168.254.121/BoardEase2/upload_bh_image.php";
+    private static final String ADD_ROOM_URL = "http://192.168.254.121/BoardEase2/add_room.php";
+    private static final String UPDATE_ROOM_URL = "http://192.168.254.121/BoardEase2/update_room.php";
+    private static final String UPLOAD_ROOM_IMAGE_URL = "http://192.168.254.121/BoardEase2/upload_room_image.php";
 
     public AddingRoomsFragment() {}
 
@@ -82,8 +93,20 @@ public class AddingRoomsFragment extends Fragment {
 
         containerPrivateRooms = view.findViewById(R.id.containerPrivateRooms);
         containerBedSpacers = view.findViewById(R.id.containerBedSpacers);
-        ImageButton btnBack = view.findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
+        
+        // Hide header if used in AddRoomsActivity (has its own header)
+        RelativeLayout headerLayout = view.findViewById(R.id.headerLayout);
+        if (getActivity() instanceof AddRoomsActivity) {
+            headerLayout.setVisibility(View.GONE);
+        } else {
+            // Show header and setup back button for other contexts
+            ImageButton btnBack = view.findViewById(R.id.btnBack);
+            btnBack.setOnClickListener(v -> {
+                // Save current room data before going back
+                saveCurrentRoomData();
+                requireActivity().getSupportFragmentManager().popBackStack();
+            });
+        }
 
         // Receive Boarding House data
         if (getArguments() != null) {
@@ -119,7 +142,10 @@ public class AddingRoomsFragment extends Fragment {
         btnAddBedSpacer.setOnClickListener(v -> addNewRoom(inflater, "Bed Spacer"));
 
         Button btnSaveAll = view.findViewById(R.id.btnSaveAll);
-        btnSaveAll.setOnClickListener(v -> saveBoardingHouse());
+        btnSaveAll.setOnClickListener(v -> showSaveConfirmationDialog());
+
+        // Restore saved room data if any
+        restoreSavedRoomData();
 
         return view;
     }
@@ -315,26 +341,121 @@ public class AddingRoomsFragment extends Fragment {
 
 
 
+    private void showSaveConfirmationDialog() {
+        // Count total rooms
+        int privateRooms = containerPrivateRooms.getChildCount();
+        int bedSpacers = containerBedSpacers.getChildCount();
+        int totalRooms = privateRooms + bedSpacers;
+        
+        // Count total images
+        int totalImages = 0;
+        if (boardingHouseImages != null) {
+            totalImages += boardingHouseImages.size();
+        }
+        
+        // Count room images
+        for (int i = 0; i < containerPrivateRooms.getChildCount(); i++) {
+            View form = containerPrivateRooms.getChildAt(i);
+            ViewPager2 viewPager = form.findViewById(R.id.viewPagerImages);
+            if (viewPager != null && viewPager.getAdapter() != null) {
+                totalImages += viewPager.getAdapter().getItemCount();
+            }
+        }
+        for (int i = 0; i < containerBedSpacers.getChildCount(); i++) {
+            View form = containerBedSpacers.getChildAt(i);
+            ViewPager2 viewPager = form.findViewById(R.id.viewPagerImages);
+            if (viewPager != null && viewPager.getAdapter() != null) {
+                totalImages += viewPager.getAdapter().getItemCount();
+            }
+        }
+        
+        // Create confirmation dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Review & Save");
+        
+        String message = "Are you sure you want to save this boarding house?\n\n" +
+                        "📋 Boarding House: " + bhName + "\n" +
+                        "📍 Address: " + bhAddress + "\n" +
+                        "🏠 Total Rooms: " + totalRooms + " (" + privateRooms + " Private, " + bedSpacers + " Bed Spacers)\n" +
+                        "📸 Total Images: " + totalImages + "\n\n" +
+                        "This will save all details and images to the database.";
+        
+        builder.setMessage(message);
+        
+        builder.setPositiveButton("Save All", (dialog, which) -> {
+            dialog.dismiss();
+            saveBoardingHouse();
+        });
+        
+        builder.setNegativeButton("Review", (dialog, which) -> {
+            dialog.dismiss();
+            // Stay on current screen for review
+        });
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     private void saveBoardingHouse() {
+        // Show loading dialog
+        saveProgressDialog = new ProgressDialog(getActivity());
+        saveProgressDialog.setMessage("Saving boarding house...");
+        saveProgressDialog.setCancelable(false);
+        saveProgressDialog.show();
+        
+        // If we're in edit mode and just adding rooms, skip boarding house update
+        if (mode.equals("edit") && bhId > 0) {
+            System.out.println("DEBUG: Skipping boarding house update, just adding rooms to existing BH ID: " + bhId);
+            // Update progress dialog
+            if (saveProgressDialog != null) {
+                saveProgressDialog.setMessage("Uploading images...");
+            }
+            uploadBhImagesSequential(0);
+            return;
+        }
+        
         RequestQueue queue = Volley.newRequestQueue(getActivity());
         String url = mode.equals("edit") ? UPDATE_BH_URL : ADD_BH_URL;
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
+                        System.out.println("DEBUG: Save BH response: " + response);
                         JSONObject obj = new JSONObject(response);
                         if (obj.has("success")) {
                             if (mode.equals("add")) bhId = obj.getInt("success");
+                            System.out.println("DEBUG: BH saved with ID: " + bhId);
+                            
+                            // Update progress dialog
+                            if (saveProgressDialog != null) {
+                                saveProgressDialog.setMessage("Uploading images...");
+                            }
+                            
                             uploadBhImagesSequential(0);
                         } else {
-                            Toast.makeText(getActivity(), "Error: " + obj.optString("error"), Toast.LENGTH_LONG).show();
+                            if (saveProgressDialog != null) {
+                                saveProgressDialog.dismiss();
+                            }
+                            String errorMsg = obj.optString("error", "Unknown error");
+                            System.out.println("DEBUG: BH save error: " + errorMsg);
+                            Toast.makeText(getActivity(), "Error: " + errorMsg, Toast.LENGTH_LONG).show();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(getActivity(), "Failed parsing response", Toast.LENGTH_SHORT).show();
+                        if (saveProgressDialog != null) {
+                            saveProgressDialog.dismiss();
+                        }
+                        System.out.println("DEBUG: BH save exception: " + e.getMessage());
+                        Toast.makeText(getActivity(), "Failed parsing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 },
-                error -> Toast.makeText(getActivity(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                error -> {
+                    if (saveProgressDialog != null) {
+                        saveProgressDialog.dismiss();
+                    }
+                    System.out.println("DEBUG: BH save network error: " + error.getMessage());
+                    Toast.makeText(getActivity(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
         ) {
             @Override
             protected Map<String, String> getParams() {
@@ -356,25 +477,58 @@ public class AddingRoomsFragment extends Fragment {
     }
 
     private void uploadBhImagesSequential(int index) {
-        if (boardingHouseImages == null || index >= boardingHouseImages.size()) {
+        // Check if no images to upload
+        if (boardingHouseImages == null || boardingHouseImages.isEmpty()) {
+            System.out.println("DEBUG: No boarding house images to upload, proceeding to save rooms");
+            saveAllRooms();
+            return;
+        }
+        
+        if (index >= boardingHouseImages.size()) {
+            System.out.println("DEBUG: All boarding house images uploaded, proceeding to save rooms");
             saveAllRooms();
             return;
         }
 
         Uri uri = boardingHouseImages.get(index);
+        System.out.println("DEBUG: Uploading BH image " + (index + 1) + "/" + boardingHouseImages.size() + ": " + uri.toString());
+        
         try {
             InputStream inputStream = getActivity().getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                System.out.println("ERROR: Could not open input stream for URI: " + uri.toString());
+                Toast.makeText(getActivity(), "Error: Could not read image file", Toast.LENGTH_SHORT).show();
+                uploadBhImagesSequential(index + 1); // Skip this image and continue
+                return;
+            }
+            
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192]; // Increased buffer size
             int read;
-            while ((read = inputStream.read(buffer)) != -1) baos.write(buffer, 0, read);
-            String encoded = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+            while ((read = inputStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            String encoded = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
             inputStream.close();
+
+            if (encoded.isEmpty()) {
+                System.out.println("ERROR: Encoded image is empty for URI: " + uri.toString());
+                Toast.makeText(getActivity(), "Error: Image file is empty", Toast.LENGTH_SHORT).show();
+                uploadBhImagesSequential(index + 1); // Skip this image and continue
+                return;
+            }
 
             RequestQueue queue = Volley.newRequestQueue(getActivity());
             StringRequest request = new StringRequest(Request.Method.POST, UPLOAD_BH_IMAGE_URL,
-                    response -> uploadBhImagesSequential(index + 1),
-                    error -> Toast.makeText(getActivity(), "BH Image upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                    response -> {
+                        System.out.println("DEBUG: BH Image upload response: " + response);
+                        uploadBhImagesSequential(index + 1);
+                    },
+                    error -> {
+                        System.out.println("ERROR: BH Image upload failed: " + error.getMessage());
+                        Toast.makeText(getActivity(), "BH Image upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        uploadBhImagesSequential(index + 1); // Continue with next image
+                    }
             ) {
                 @Override
                 protected Map<String, String> getParams() {
@@ -384,9 +538,16 @@ public class AddingRoomsFragment extends Fragment {
                     return params;
                 }
             };
+            
+            // Set timeout for faster feedback
+            request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(8000, 1, 1.0f));
             queue.add(request);
+            
         } catch (Exception e) {
+            System.out.println("ERROR: Exception uploading BH image: " + e.getMessage());
             e.printStackTrace();
+            Toast.makeText(getActivity(), "Error uploading image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            uploadBhImagesSequential(index + 1); // Continue with next image
         }
     }
 
@@ -401,16 +562,23 @@ public class AddingRoomsFragment extends Fragment {
             allRooms.add(extractRoomData(containerBedSpacers.getChildAt(i), "Bed Spacer"));
 
         if (allRooms.isEmpty()) {
-            Toast.makeText(getActivity(), "No rooms to save", Toast.LENGTH_SHORT).show();
+            // No rooms to save, complete the process
+            completeSaveProcess();
             return;
         }
 
+        // Update progress dialog
+        if (saveProgressDialog != null) {
+            saveProgressDialog.setMessage("Saving rooms...");
+        }
+        
         addRoomSequential();
     }
 
     private void addRoomSequential() {
         if (currentRoomIndex >= allRooms.size()) {
-            Toast.makeText(getActivity(), "All data uploaded successfully", Toast.LENGTH_LONG).show();
+            // All rooms saved, complete the process
+            completeSaveProcess();
             return;
         }
 
@@ -421,18 +589,26 @@ public class AddingRoomsFragment extends Fragment {
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
+                        System.out.println("DEBUG: Save room response: " + response);
                         JSONObject obj = new JSONObject(response);
                         int roomId = obj.optInt("bhr_id", 0);
+                        System.out.println("DEBUG: Room saved with ID: " + roomId);
+                        
                         if (room.imageUris != null && !room.imageUris.isEmpty()) {
                             uploadRoomImagesSequential(room.imageUris, 0, roomId);
+                        } else {
+                            // No images for this room, move to next room
+                            currentRoomIndex++;
+                            addRoomSequential();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                        currentRoomIndex++;
+                        addRoomSequential();
                     }
-                    currentRoomIndex++;
-                    addRoomSequential();
                 },
                 error -> {
+                    System.out.println("ERROR: Room save failed: " + error.getMessage());
                     currentRoomIndex++;
                     addRoomSequential();
                 }
@@ -444,10 +620,25 @@ public class AddingRoomsFragment extends Fragment {
                 params.put("bh_id", String.valueOf(bhId));
                 params.put("category", room.category);
                 params.put("title", room.title);
-                params.put("description", room.description);
+                params.put("room_description", room.description);
                 params.put("price", room.price);
                 params.put("capacity", room.capacity);
                 params.put("total_rooms", room.totalRooms);
+                
+                // Debug logging
+                System.out.println("DEBUG: Sending room data to server:");
+                System.out.println("DEBUG: room_description = '" + room.description + "'");
+                System.out.println("DEBUG: title = '" + room.title + "'");
+                System.out.println("DEBUG: price = '" + room.price + "'");
+                System.out.println("DEBUG: capacity = '" + room.capacity + "'");
+                System.out.println("DEBUG: total_rooms = '" + room.totalRooms + "'");
+                
+                // Debug all parameters being sent
+                System.out.println("DEBUG: All parameters being sent:");
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    System.out.println("DEBUG: " + entry.getKey() + " = '" + entry.getValue() + "'");
+                }
+                
                 return params;
             }
         };
@@ -457,22 +648,49 @@ public class AddingRoomsFragment extends Fragment {
     }
 
     private void uploadRoomImagesSequential(List<Uri> uris, int index, int bhrId) {
-        if (index >= uris.size()) return;
+        if (index >= uris.size()) {
+            // All room images uploaded, move to next room
+            currentRoomIndex++;
+            addRoomSequential();
+            return;
+        }
+        
         Uri imageUri = uris.get(index);
+        System.out.println("DEBUG: Uploading room image " + (index + 1) + "/" + uris.size() + " for room ID: " + bhrId);
 
         try {
             InputStream inputStream = getActivity().getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                System.out.println("ERROR: Could not open input stream for room image URI: " + imageUri.toString());
+                uploadRoomImagesSequential(uris, index + 1, bhrId); // Skip this image
+                return;
+            }
+            
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192]; // Increased buffer size
             int read;
-            while ((read = inputStream.read(buffer)) != -1) baos.write(buffer, 0, read);
-            String encoded = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+            while ((read = inputStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+            String encoded = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
             inputStream.close();
+
+            if (encoded.isEmpty()) {
+                System.out.println("ERROR: Encoded room image is empty for URI: " + imageUri.toString());
+                uploadRoomImagesSequential(uris, index + 1, bhrId); // Skip this image
+                return;
+            }
 
             RequestQueue queue = Volley.newRequestQueue(getActivity());
             StringRequest request = new StringRequest(Request.Method.POST, UPLOAD_ROOM_IMAGE_URL,
-                    response -> uploadRoomImagesSequential(uris, index + 1, bhrId),
-                    error -> Toast.makeText(getActivity(), "Room image upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                    response -> {
+                        System.out.println("DEBUG: Room image upload response: " + response);
+                        uploadRoomImagesSequential(uris, index + 1, bhrId);
+                    },
+                    error -> {
+                        System.out.println("ERROR: Room image upload failed: " + error.getMessage());
+                        uploadRoomImagesSequential(uris, index + 1, bhrId); // Continue with next image
+                    }
             ) {
                 @Override
                 protected Map<String, String> getParams() {
@@ -482,9 +700,14 @@ public class AddingRoomsFragment extends Fragment {
                     return params;
                 }
             };
+            
+            // Set timeout for faster feedback
+            request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(8000, 1, 1.0f));
             queue.add(request);
         } catch (Exception e) {
+            System.out.println("ERROR: Exception uploading room image: " + e.getMessage());
             e.printStackTrace();
+            uploadRoomImagesSequential(uris, index + 1, bhrId); // Continue with next image
         }
     }
 
@@ -525,6 +748,212 @@ public class AddingRoomsFragment extends Fragment {
             this.totalRooms = totalRooms;
             this.imageUris = imageUris;
             this.roomId = roomId;
+        }
+    }
+
+    private void completeSaveProcess() {
+        // Dismiss progress dialog
+        if (saveProgressDialog != null) {
+            saveProgressDialog.dismiss();
+        }
+        
+        // Show success message
+        Toast.makeText(getActivity(), "Boarding house and rooms saved successfully!", Toast.LENGTH_LONG).show();
+        
+        // Clear saved data since save was successful
+        AddingBhFragment.clearSavedData();
+        clearSavedRoomData();
+        
+        // Navigate based on context
+        if (getActivity() != null) {
+            if (getActivity() instanceof AddRoomsActivity) {
+                // If used in AddRoomsActivity, just finish the activity (goes back to RoomViewActivity)
+                getActivity().finish();
+            } else {
+                // If used in other contexts (like main Add New Listing flow), go back to AddingBhFragment
+                getActivity().getSupportFragmentManager().popBackStack();
+                
+                // Clear the form by creating a new AddingBhFragment
+                AddingBhFragment newFragment = AddingBhFragment.newInstance(userId);
+                getActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, newFragment)
+                        .commit();
+            }
+        }
+    }
+    
+    // Method to clear saved room data (call this after successful save)
+    public static void clearSavedRoomData() {
+        savedRoomData.clear();
+    }
+    
+    // Method to save current room data
+    private void saveCurrentRoomData() {
+        savedRoomData.clear();
+        
+        // Save private rooms
+        for (int i = 0; i < containerPrivateRooms.getChildCount(); i++) {
+            View form = containerPrivateRooms.getChildAt(i);
+            RoomFormData roomData = extractRoomFormData(form, "Private Room");
+            if (roomData != null) {
+                savedRoomData.add(roomData);
+            }
+        }
+        
+        // Save bed spacers
+        for (int i = 0; i < containerBedSpacers.getChildCount(); i++) {
+            View form = containerBedSpacers.getChildAt(i);
+            RoomFormData roomData = extractRoomFormData(form, "Bed Spacer");
+            if (roomData != null) {
+                savedRoomData.add(roomData);
+            }
+        }
+    }
+    
+    // Method to restore saved room data
+    private void restoreSavedRoomData() {
+        if (savedRoomData.isEmpty()) return;
+        
+        LayoutInflater inflater = getLayoutInflater();
+        
+        for (RoomFormData roomData : savedRoomData) {
+            View form = "Private Room".equals(roomData.category)
+                    ? inflater.inflate(R.layout.item_private_form, containerPrivateRooms, false)
+                    : inflater.inflate(R.layout.item_bed_form, containerBedSpacers, false);
+            
+            // Populate form with saved data
+            populateRoomForm(form, roomData);
+            
+            // Add to appropriate container
+            if ("Private Room".equals(roomData.category)) {
+                containerPrivateRooms.addView(form);
+            } else {
+                containerBedSpacers.addView(form);
+            }
+            
+            // Set up remove button
+            ImageButton btnRemove = form.findViewById(R.id.btnRemoveRoom) != null ?
+                    form.findViewById(R.id.btnRemoveRoom) : form.findViewById(R.id.btnRemoveBed);
+            if (btnRemove != null) {
+                btnRemove.setOnClickListener(v -> {
+                    if ("Private Room".equals(roomData.category)) {
+                        containerPrivateRooms.removeView(form);
+                    } else {
+                        containerBedSpacers.removeView(form);
+                    }
+                });
+            }
+        }
+    }
+    
+    private RoomFormData extractRoomFormData(View form, String category) {
+        EditText etTitle = form.findViewById(R.id.etTitle) != null ? form.findViewById(R.id.etTitle) : form.findViewById(R.id.etBedTitle);
+        EditText etDesc = form.findViewById(R.id.etDesc) != null ? form.findViewById(R.id.etDesc) : form.findViewById(R.id.etBedDesc);
+        EditText etPrice = form.findViewById(R.id.etPrice) != null ? form.findViewById(R.id.etPrice) : form.findViewById(R.id.etBedPrice);
+        EditText etCapacity = form.findViewById(R.id.etCapacity) != null ? form.findViewById(R.id.etCapacity) : form.findViewById(R.id.etBedCapacity);
+        EditText etTotalRooms = form.findViewById(R.id.etTotalRooms) != null ? form.findViewById(R.id.etTotalRooms) : form.findViewById(R.id.etBedTotalRooms);
+        
+        if (etTitle == null || etDesc == null || etPrice == null || etCapacity == null || etTotalRooms == null) {
+            return null;
+        }
+        
+        String title = etTitle.getText().toString().trim();
+        String description = etDesc.getText().toString().trim();
+        String price = etPrice.getText().toString().trim();
+        String capacity = etCapacity.getText().toString().trim();
+        String totalRooms = etTotalRooms.getText().toString().trim();
+        
+        // Debug logging
+        System.out.println("DEBUG: extractRoomFormData - Extracted form data:");
+        System.out.println("DEBUG: title = '" + title + "'");
+        System.out.println("DEBUG: description = '" + description + "'");
+        System.out.println("DEBUG: price = '" + price + "'");
+        System.out.println("DEBUG: capacity = '" + capacity + "'");
+        System.out.println("DEBUG: totalRooms = '" + totalRooms + "'");
+        
+        // Additional debugging for EditText objects
+        System.out.println("DEBUG: etDesc object: " + etDesc);
+        System.out.println("DEBUG: etDesc text: '" + etDesc.getText().toString() + "'");
+        System.out.println("DEBUG: etDesc hint: '" + etDesc.getHint() + "'");
+        
+        // Get images from ViewPager
+        ViewPager2 viewPager = form.findViewById(R.id.viewPagerImages);
+        ArrayList<Uri> imageUris = new ArrayList<>();
+        if (viewPager != null && viewPager.getAdapter() != null) {
+            ImageAdapter adapter = (ImageAdapter) viewPager.getAdapter();
+            imageUris.addAll(adapter.getImageUris());
+        }
+        
+        return new RoomFormData(category, title, description, price, capacity, totalRooms, imageUris);
+    }
+    
+    private void populateRoomForm(View form, RoomFormData roomData) {
+        EditText etTitle = form.findViewById(R.id.etTitle) != null ? form.findViewById(R.id.etTitle) : form.findViewById(R.id.etBedTitle);
+        EditText etDesc = form.findViewById(R.id.etDesc) != null ? form.findViewById(R.id.etDesc) : form.findViewById(R.id.etBedDesc);
+        EditText etPrice = form.findViewById(R.id.etPrice) != null ? form.findViewById(R.id.etPrice) : form.findViewById(R.id.etBedPrice);
+        EditText etCapacity = form.findViewById(R.id.etCapacity) != null ? form.findViewById(R.id.etCapacity) : form.findViewById(R.id.etBedCapacity);
+        EditText etTotalRooms = form.findViewById(R.id.etTotalRooms) != null ? form.findViewById(R.id.etTotalRooms) : form.findViewById(R.id.etBedTotalRooms);
+        
+        if (etTitle != null) etTitle.setText(roomData.title);
+        if (etDesc != null) etDesc.setText(roomData.description);
+        if (etPrice != null) etPrice.setText(roomData.price);
+        if (etCapacity != null) etCapacity.setText(roomData.capacity);
+        if (etTotalRooms != null) etTotalRooms.setText(roomData.totalRooms);
+        
+        // Set up images
+        if (!roomData.imageUris.isEmpty()) {
+            ViewPager2 viewPager = form.findViewById(R.id.viewPagerImages);
+            View placeholder = form.findViewById(R.id.layoutUploadPlaceholder);
+            
+            if (viewPager != null && placeholder != null) {
+                // Create a copy of the image list to avoid reference issues
+                final ArrayList<Uri> imageList = new ArrayList<>(roomData.imageUris);
+                final ViewPager2 finalViewPager = viewPager;
+                final View finalPlaceholder = placeholder;
+                
+                // Create the adapter with a final reference
+                final ImageAdapter[] adapterRef = new ImageAdapter[1];
+                adapterRef[0] = new ImageAdapter(getActivity(), imageList, new ImageAdapter.OnImageRemoveListener() {
+                    @Override
+                    public void onImageRemoved(int position) {
+                        imageList.remove(position);
+                        roomData.imageUris.remove(position);
+                        if (adapterRef[0] != null) {
+                            adapterRef[0].notifyDataSetChanged();
+                        }
+                        if (imageList.isEmpty()) {
+                            finalPlaceholder.setVisibility(View.VISIBLE);
+                            finalViewPager.setVisibility(View.GONE);
+                        }
+                    }
+                });
+                
+                finalViewPager.setAdapter(adapterRef[0]);
+                finalPlaceholder.setVisibility(View.GONE);
+                finalViewPager.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    // Data class for room form data
+    private static class RoomFormData {
+        String category;
+        String title;
+        String description;
+        String price;
+        String capacity;
+        String totalRooms;
+        ArrayList<Uri> imageUris;
+        
+        RoomFormData(String category, String title, String description, String price, String capacity, String totalRooms, ArrayList<Uri> imageUris) {
+            this.category = category;
+            this.title = title;
+            this.description = description;
+            this.price = price;
+            this.capacity = capacity;
+            this.totalRooms = totalRooms;
+            this.imageUris = imageUris;
         }
     }
 
