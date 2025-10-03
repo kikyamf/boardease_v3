@@ -32,6 +32,7 @@
             android:fontFamily="@font/poppins_semibold"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:textColor="@color/black"
             android:gravity="center" />
 
         <ImageView
@@ -63,7 +64,7 @@
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:src="@drawable/add_gc"
-                android:background="@drawable/circle_background"
+                android:background="@drawable/circle_background1"
                 android:scaleType="centerInside"
                 android:contentDescription="Add Group" />
 
@@ -103,6 +104,7 @@
         android:paddingStart="12dp"
         android:paddingTop="8dp"
         android:text="All Messages"
+        android:textColor="@color/black"
         android:fontFamily="@font/poppins_medium"
         android:textSize="16sp" />
 

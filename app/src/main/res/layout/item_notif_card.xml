@@ -23,7 +23,7 @@
             android:id="@+id/imgNotifIcon"
             android:layout_width="25dp"
             android:layout_height="25dp"
-            android:src="@drawable/ic_notification"
+            android:src="@drawable/ic_notification1"
             android:contentDescription="Notification Icon"
             android:tint="#A97A50"
             android:layout_marginEnd="12dp" />

@@ -33,7 +33,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="12dp"
-                android:background="@drawable/circle_background"
+                android:background="@drawable/circle_background1"
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_profile" />
 
@@ -58,7 +58,7 @@
                     android:id="@+id/btnCall"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/call" />
+                    android:src="@drawable/call1" />
             </LinearLayout>
         </LinearLayout>
 

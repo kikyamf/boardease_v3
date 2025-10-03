@@ -23,6 +23,16 @@ public class AddingBhFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
     private static final String KEY_SAVED_IMAGES = "saved_bh_images"; // NEW
+    
+    // Static variables to preserve data when navigating back
+    private static String savedBhName = "";
+    private static String savedBhAddress = "";
+    private static String savedBhDescription = "";
+    private static String savedBhRules = "";
+    private static String savedBhBathrooms = "";
+    private static String savedBhArea = "";
+    private static String savedBhBuildYear = "";
+    private static ArrayList<Uri> savedImageUris = new ArrayList<>();
 
     private int userId = -1;
 
@@ -54,6 +64,9 @@ public class AddingBhFragment extends Fragment {
                 imageUris.addAll(savedUris);
             }
         }
+        
+        // Restore saved data from static variables
+        restoreSavedData();
     }
 
     @Override
@@ -93,7 +106,36 @@ public class AddingBhFragment extends Fragment {
         // Next button
         view.findViewById(R.id.btnNext).setOnClickListener(v -> goToAddingRooms());
 
+        // Restore saved data to fields
+        populateFieldsWithSavedData();
+        
         return view;
+    }
+    
+    private void restoreSavedData() {
+        // Restore images from static variable
+        if (!savedImageUris.isEmpty()) {
+            imageUris.clear();
+            imageUris.addAll(savedImageUris);
+        }
+    }
+    
+    private void populateFieldsWithSavedData() {
+        if (etBhName != null) etBhName.setText(savedBhName);
+        if (etBhAddress != null) etBhAddress.setText(savedBhAddress);
+        if (etBhDescription != null) etBhDescription.setText(savedBhDescription);
+        if (etBhRules != null) etBhRules.setText(savedBhRules);
+        if (etBathrooms != null) etBathrooms.setText(savedBhBathrooms);
+        if (etArea != null) etArea.setText(savedBhArea);
+        if (etBuildYear != null) etBuildYear.setText(savedBhBuildYear);
+        
+        // Update image adapter if there are saved images
+        if (!imageUris.isEmpty() && imageAdapter != null) {
+            imageAdapter.notifyDataSetChanged();
+            if (ivPlaceholder != null) {
+                ivPlaceholder.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void pickImages() {
@@ -149,6 +191,9 @@ public class AddingBhFragment extends Fragment {
             return;
         }
 
+        // Save current data to static variables for persistence
+        saveCurrentData();
+
         AddingRoomsFragment fragment = new AddingRoomsFragment();
         Bundle bundle = new Bundle();
         bundle.putInt("user_id", userId);
@@ -167,6 +212,33 @@ public class AddingBhFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+    
+    private void saveCurrentData() {
+        // Save current form data to static variables
+        savedBhName = etBhName.getText().toString().trim();
+        savedBhAddress = etBhAddress.getText().toString().trim();
+        savedBhDescription = etBhDescription.getText().toString().trim();
+        savedBhRules = etBhRules.getText().toString().trim();
+        savedBhBathrooms = etBathrooms.getText().toString().trim();
+        savedBhArea = etArea.getText().toString().trim();
+        savedBhBuildYear = etBuildYear.getText().toString().trim();
+        
+        // Save images
+        savedImageUris.clear();
+        savedImageUris.addAll(imageUris);
+    }
+    
+    // Method to clear saved data (call this after successful save)
+    public static void clearSavedData() {
+        savedBhName = "";
+        savedBhAddress = "";
+        savedBhDescription = "";
+        savedBhRules = "";
+        savedBhBathrooms = "";
+        savedBhArea = "";
+        savedBhBuildYear = "";
+        savedImageUris.clear();
     }
 
     // NEW: Save images when fragment is about to be destroyed

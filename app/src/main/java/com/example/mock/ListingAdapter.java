@@ -20,10 +20,11 @@ public class ListingAdapter extends RecyclerView.Adapter<ListingAdapter.ListingV
     private List<Listing> listingList;
     private OnItemActionListener listener;
 
-    // Interface for edit/delete actions
+    // Interface for edit/delete/view actions
     public interface OnItemActionListener {
         void onEdit(Listing listing);
         void onDelete(Listing listing);
+        void onView(Listing listing);
     }
 
     public ListingAdapter(Context context, List<Listing> listingList, OnItemActionListener listener) {
@@ -68,6 +69,13 @@ public class ListingAdapter extends RecyclerView.Adapter<ListingAdapter.ListingV
         holder.btnDelete.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onDelete(listing);
+            }
+        });
+
+        // Card click action - view rooms
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onView(listing);
             }
         });
     }

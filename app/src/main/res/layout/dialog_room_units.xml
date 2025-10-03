@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Room Title -->
+    <TextView
+        android:id="@+id/tvRoomTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Room Title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Room Info -->
+    <TextView
+        android:id="@+id/tvRoomInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Price: ₱0 • Capacity: 0 person(s)"
+        android:textSize="14sp"
+        android:textColor="@color/dark_gray"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Units Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Room Units"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Units List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewUnits"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="300dp"
+        android:nestedScrollingEnabled="true" />
+
+    <!-- Loading indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="16dp"
+        android:visibility="gone" />
+
+    <!-- No units message -->
+    <TextView
+        android:id="@+id/tvNoUnits"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No room units found"
+        android:textSize="14sp"
+        android:textColor="@color/dark_gray"
+        android:layout_gravity="center"
+        android:layout_margin="16dp"
+        android:visibility="gone" />
+
+</LinearLayout>
+
+
+
+
+
+

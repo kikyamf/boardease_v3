@@ -48,11 +48,17 @@
         <FrameLayout
             android:layout_width="100dp"
             android:layout_height="100dp">
-            android:src="@drawable/btn_profile"
-                android:scaleType="centerCrop"
-                android:background="@drawable/circle_background" />
 
-            <!-- Overlay camera/edit icon -->
+            <!-- Profile Picture -->
+            <com.example.mock.CircularImageView
+                android:id="@+id/ivProfilePic"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/btn_profile"
+                android:scaleType="centerCrop"
+                android:background="@drawable/circle_clip" />
+
+            <!-- Overlay edit icon -->
             <ImageView
                 android:id="@+id/ivEditProfile"
                 android:layout_width="28dp"
@@ -97,20 +103,21 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Settings -->
+        <!-- Account Settings -->
         <LinearLayout
-            android:id="@+id/layoutSettings"
+            android:id="@+id/layoutAccountSettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="12dp"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground">
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_settings"
+                android:src="@drawable/ic_settings1"
                 android:tint="#795548" />
 
             <TextView
@@ -118,7 +125,40 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
-                android:text="Settings"
+                android:text="Account Settings"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#999999" />
+        </LinearLayout>
+
+        <!-- GCash Information -->
+        <LinearLayout
+            android:id="@+id/layoutGcashInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/money"
+                android:tint="#795548" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="GCash Information"
                 android:textSize="16sp"
                 android:textColor="#000000" />
 
@@ -142,7 +182,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_payment"
+                android:src="@drawable/ic_payment2"
                 android:tint="#795548" />
 
             <TextView
@@ -174,7 +214,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_notification"
+                android:src="@drawable/ic_notification1"
                 android:tint="#795548" />
 
             <TextView
@@ -206,7 +246,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_message"
+                android:src="@drawable/ic_message1"
                 android:tint="#795548" />
 
             <TextView
@@ -238,7 +278,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_info"
+                android:src="@drawable/ic_info1"
                 android:tint="#795548" />
 
             <TextView

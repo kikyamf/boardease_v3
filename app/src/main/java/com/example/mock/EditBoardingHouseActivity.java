@@ -7,8 +7,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -35,12 +37,16 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
     private ViewPager2 viewPagerImages;
     private ImageView ivPlaceholder;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton fabAddImages;
 
     private ArrayList<Uri> imageUris = new ArrayList<>();
+    private ArrayList<Uri> originalImageUris = new ArrayList<>(); // Track original images
+    private ArrayList<String> removedImagePaths = new ArrayList<>(); // Track removed image paths for database deletion
+    private HashMap<Uri, String> uriToPathMap = new HashMap<>(); // Map URI to image path for deletion tracking
     private ImageAdapter imageAdapter;
 
     private int bhId; // 📌 unique ID for this listing
-
+    
     // Loading dialogs
     private ProgressDialog loadingDialog;
     private ProgressDialog imageUploadDialog;
@@ -61,23 +67,16 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         etBuildYear = findViewById(R.id.etBuildYear);
         viewPagerImages = findViewById(R.id.viewPagerImages);
         ivPlaceholder = findViewById(R.id.ivPlaceholder);
+        fabAddImages = findViewById(R.id.fabAddImages);
 
         // Get data from intent
         Intent intent = getIntent();
         bhId = intent.getIntExtra("bh_id", -1);
-
+        
         // Set basic data from intent first
         etBhName.setText(intent.getStringExtra("bh_name"));
-        String imagePath = intent.getStringExtra("image_path");
-        if (imagePath != null && !imagePath.isEmpty()) {
-            try {
-                Uri uri = Uri.parse(imagePath);
-                imageUris.add(uri);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
+        // Don't add images here - will be loaded from API to avoid duplication
+        
         // Try to fetch complete data from server
         // Show loading while fetching data
         showLoadingDialog("Loading boarding house details...");
@@ -86,22 +85,30 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
 
         // Setup adapter
         imageAdapter = new ImageAdapter(this, imageUris, position -> {
+            System.out.println("DEBUG: Removing image at position: " + position);
+            System.out.println("DEBUG: Before removal - imageUris size: " + imageUris.size());
+            System.out.println("DEBUG: Before removal - originalImageUris size: " + originalImageUris.size());
+            
             imageUris.remove(position);
-            imageAdapter.notifyDataSetChanged();
-            if (imageUris.isEmpty()) {
-                ivPlaceholder.setVisibility(ImageView.VISIBLE);
-                viewPagerImages.setVisibility(ViewPager2.GONE);
-            }
+            
+            // Create a new adapter instance to force ViewPager2 refresh
+            imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
+            viewPagerImages.setAdapter(imageAdapter);
+            
+            // Update visibility
+            updateImageViewsVisibility();
+            
+            System.out.println("DEBUG: After removal - imageUris size: " + imageUris.size());
         });
         viewPagerImages.setAdapter(imageAdapter);
 
-        if (!imageUris.isEmpty()) {
-            ivPlaceholder.setVisibility(ImageView.GONE);
-            viewPagerImages.setVisibility(ViewPager2.VISIBLE);
-        }
+        updateImageViewsVisibility();
 
         // Placeholder click = pick new images
         ivPlaceholder.setOnClickListener(v -> pickImages());
+        
+        // FAB click = pick new images
+        fabAddImages.setOnClickListener(v -> pickImages());
 
         // Save Changes button
         findViewById(R.id.btnSaveChanges).setOnClickListener(v -> saveChanges());
@@ -134,9 +141,10 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                         Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 if (!imageUris.contains(uri)) imageUris.add(uri);
             }
-            imageAdapter.notifyDataSetChanged();
-            ivPlaceholder.setVisibility(ImageView.GONE);
-            viewPagerImages.setVisibility(ViewPager2.VISIBLE);
+            // Create new adapter to ensure proper refresh
+            imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
+            viewPagerImages.setAdapter(imageAdapter);
+            updateImageViewsVisibility();
         }
     }
 
@@ -149,32 +157,45 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
             return;
         }
 
-        // Show loading dialog
-        showLoadingDialog("Updating boarding house...");
-
+        // Show loading dialog with progress message
+        showLoadingDialog("Saving changes...");
+        
         // Update boarding house details on server
         updateBoardingHouseOnServer();
     }
 
     private void updateBoardingHouseOnServer() {
-        String url = "http://192.168.101.6/BoardEase2/update_boarding_houses.php";
+        String url = "http://192.168.254.121/BoardEase2/update_boarding_houses.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     hideLoadingDialog();
-
-                    if (response.contains("success")) {
-                        // Success - handle images or finish
-                        if (!imageUris.isEmpty()) {
-                            showImageUploadDialog();
-                            uploadImagesSequentially(0);
+                    
+                        if (response.contains("success")) {
+                            // Success - check if images were modified
+                            if (imagesWereModified()) {
+                                // First delete removed images from database
+                                if (!removedImagePaths.isEmpty()) {
+                                    deleteRemovedImagesFromDatabase();
+                                } else {
+                                    // No images to delete, proceed with uploads
+                                    ArrayList<Uri> newImages = getNewImages();
+                                    if (!newImages.isEmpty()) {
+                                        showImageUploadDialog();
+                                        uploadNewImagesSequentially(newImages, 0);
+                                    } else {
+                                        Toast.makeText(this, "Boarding house updated successfully!", Toast.LENGTH_SHORT).show();
+                                        finishWithSuccess();
+                                    }
+                                }
+                            } else {
+                                // No image changes
+                                Toast.makeText(this, "Changes saved successfully!", Toast.LENGTH_SHORT).show();
+                                finishWithSuccess();
+                            }
                         } else {
-                            Toast.makeText(this, "Boarding house updated successfully!", Toast.LENGTH_SHORT).show();
-                            finishWithSuccess();
+                            Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show();
                         }
-                    } else {
-                        Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show();
-                    }
                 },
                 error -> {
                     hideLoadingDialog();
@@ -198,25 +219,25 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
 
         Volley.newRequestQueue(this).add(request);
     }
-
+    
     // Custom request class to handle POST data properly
     private static class CustomStringRequest extends com.android.volley.Request<String> {
         private final com.android.volley.Response.Listener<String> mListener;
         private final Map<String, String> mParams;
-
-        public CustomStringRequest(int method, String url, Map<String, String> params,
-                                 com.android.volley.Response.Listener<String> listener,
+        
+        public CustomStringRequest(int method, String url, Map<String, String> params, 
+                                 com.android.volley.Response.Listener<String> listener, 
                                  com.android.volley.Response.ErrorListener errorListener) {
             super(method, url, errorListener);
             mListener = listener;
             mParams = params;
         }
-
+        
         @Override
         protected Map<String, String> getParams() {
             return mParams;
         }
-
+        
         @Override
         protected com.android.volley.Response<String> parseNetworkResponse(com.android.volley.NetworkResponse response) {
             String parsed;
@@ -227,7 +248,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
             }
             return com.android.volley.Response.success(parsed, com.android.volley.toolbox.HttpHeaderParser.parseCacheHeaders(response));
         }
-
+        
         @Override
         protected void deliverResponse(String response) {
             mListener.onResponse(response);
@@ -235,27 +256,32 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void fetchBoardingHouseDetails() {
-        String url = "http://192.168.101.6/BoardEase2/get_boarding_houses.php";
-
+        String url = "http://192.168.254.121/BoardEase2/get_boarding_houses.php";
+        
+        // Clear existing images to avoid duplication
+        imageUris.clear();
+        originalImageUris.clear();
+        uriToPathMap.clear();
+        
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
                         System.out.println("API Response: " + response);
-
+                        
                         if (response == null || response.trim().isEmpty()) {
                             Toast.makeText(this, "Empty response from server", Toast.LENGTH_SHORT).show();
                             return;
                         }
-
+                        
                         JSONObject obj = new JSONObject(response);
-
+                        
                         // Check for error
                         if (obj.has("error")) {
                             Toast.makeText(this, "Server Error: " + obj.getString("error"), Toast.LENGTH_SHORT).show();
                             return;
                         }
-
+                        
                         // Populate fields
                         etBhName.setText(obj.optString("bh_name", ""));
                         etBhAddress.setText(obj.optString("bh_address", ""));
@@ -274,6 +300,17 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                                     try {
                                         Uri uri = Uri.parse(imagePath);
                                         imageUris.add(uri);
+                                        originalImageUris.add(uri); // Track as original image
+                                        
+                                        // Store the relative path (without domain and leading slash) for database deletion
+                                        String relativePath = imagePath;
+                                        if (imagePath.contains("/uploads/")) {
+                                            relativePath = imagePath.substring(imagePath.indexOf("/uploads/") + 1); // +1 to remove leading slash
+                                        }
+                                        uriToPathMap.put(uri, relativePath); // Map URI to relative path for deletion tracking
+                                        
+                                        System.out.println("DEBUG: Full path: " + imagePath);
+                                        System.out.println("DEBUG: Relative path: " + relativePath);
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -281,12 +318,10 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                             }
                         }
 
-                        // Update UI
-                        imageAdapter.notifyDataSetChanged();
-                        if (!imageUris.isEmpty()) {
-                            ivPlaceholder.setVisibility(ImageView.GONE);
-                            viewPagerImages.setVisibility(ViewPager2.VISIBLE);
-                        }
+                        // Update UI - create new adapter to ensure proper refresh
+                        imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
+                        viewPagerImages.setAdapter(imageAdapter);
+                        updateImageViewsVisibility();
 
                         // Hide loading dialog
                         hideLoadingDialog();
@@ -315,7 +350,190 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         queue.add(request);
     }
 
+    // Helper method to get only new images (not in original list)
+    private ArrayList<Uri> getNewImages() {
+        ArrayList<Uri> newImages = new ArrayList<>();
+        for (Uri uri : imageUris) {
+            if (!originalImageUris.contains(uri)) {
+                newImages.add(uri);
+            }
+        }
+        return newImages;
+    }
+    
+    // Helper method to check if images were modified (added or removed)
+    private boolean imagesWereModified() {
+        // Check if any new images were added
+        ArrayList<Uri> newImages = getNewImages();
+        if (!newImages.isEmpty()) {
+            System.out.println("DEBUG: New images detected: " + newImages.size());
+            return true;
+        }
+        
+        // Check if any original images were removed
+        removedImagePaths.clear(); // Clear previous removals
+        boolean hasRemovals = false;
+        
+        System.out.println("DEBUG: Checking for removed images...");
+        System.out.println("DEBUG: Original images count: " + originalImageUris.size());
+        System.out.println("DEBUG: Current images count: " + imageUris.size());
+        System.out.println("DEBUG: URI to Path Map size: " + uriToPathMap.size());
+        
+        // Debug: Print all original URIs
+        for (int i = 0; i < originalImageUris.size(); i++) {
+            Uri originalUri = originalImageUris.get(i);
+            System.out.println("DEBUG: Original URI " + i + ": " + originalUri.toString());
+            String path = uriToPathMap.get(originalUri);
+            System.out.println("DEBUG: Mapped path: " + path);
+        }
+        
+        // Debug: Print all current URIs
+        for (int i = 0; i < imageUris.size(); i++) {
+            Uri currentUri = imageUris.get(i);
+            System.out.println("DEBUG: Current URI " + i + ": " + currentUri.toString());
+        }
+        
+        for (Uri originalUri : originalImageUris) {
+            boolean isInCurrentList = imageUris.contains(originalUri);
+            System.out.println("DEBUG: Checking URI: " + originalUri.toString());
+            System.out.println("DEBUG: Is in current list? " + isInCurrentList);
+            
+            if (!isInCurrentList) {
+                // This image was removed, add its path to removal list
+                String imagePath = uriToPathMap.get(originalUri);
+                System.out.println("DEBUG: Found removed URI: " + originalUri.toString());
+                System.out.println("DEBUG: Path for removed URI: " + imagePath);
+                
+                if (imagePath != null) {
+                    removedImagePaths.add(imagePath);
+                    System.out.println("DEBUG: Added to removal list: " + imagePath);
+                    hasRemovals = true;
+                } else {
+                    System.out.println("DEBUG: WARNING - No path found for removed URI!");
+                }
+            }
+        }
+        
+        if (hasRemovals) {
+            System.out.println("DEBUG: Total removed images: " + removedImagePaths.size());
+            for (String path : removedImagePaths) {
+                System.out.println("DEBUG: Will delete: " + path);
+            }
+        } else {
+            System.out.println("DEBUG: No images were removed");
+        }
+        
+        return hasRemovals;
+    }
+    
+    private void deleteRemovedImagesFromDatabase() {
+        String url = "http://192.168.254.121/BoardEase2/delete_bh_images.php";
+        
+        System.out.println("DEBUG: Starting database deletion...");
+        System.out.println("DEBUG: BH ID: " + bhId);
+        System.out.println("DEBUG: Images to delete: " + removedImagePaths.size());
+        
+        // Create JSON array of image paths to delete
+        JSONArray imagePathsArray = new JSONArray();
+        for (String imagePath : removedImagePaths) {
+            imagePathsArray.put(imagePath);
+            System.out.println("DEBUG: Adding to JSON: " + imagePath);
+        }
+        
+        System.out.println("DEBUG: JSON array: " + imagePathsArray.toString());
+        
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        System.out.println("Delete images response: " + response);
+                        System.out.println("Response length: " + response.length());
+                        
+                        // Check if response is HTML (PHP error)
+                        if (response.trim().startsWith("<")) {
+                            System.out.println("ERROR: Server returned HTML instead of JSON");
+                            System.out.println("HTML Response: " + response);
+                            Toast.makeText(this, "Server returned HTML. Check PHP errors.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        
+                        // Check if response is empty
+                        if (response.trim().isEmpty()) {
+                            System.out.println("ERROR: Empty response from server");
+                            Toast.makeText(this, "Empty response from server", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        JSONObject obj = new JSONObject(response);
+                        
+                        if (obj.has("success")) {
+                            System.out.println("DEBUG: PHP deletion successful!");
+                            String message = obj.optString("message", "Images deleted");
+                            int deletedCount = obj.optInt("deleted_count", 0);
+                            System.out.println("DEBUG: PHP message: " + message);
+                            System.out.println("DEBUG: PHP deleted count: " + deletedCount);
+                            
+                            // Show success message with deletion count
+                            if (deletedCount > 0) {
+                                Toast.makeText(this, "Successfully deleted " + deletedCount + " image(s)!", Toast.LENGTH_SHORT).show();
+                            }
+                            
+                            // Images deleted successfully, now handle new image uploads
+                            ArrayList<Uri> newImages = getNewImages();
+                            if (!newImages.isEmpty()) {
+                                showImageUploadDialog();
+                                uploadNewImagesSequentially(newImages, 0);
+                            } else {
+                                Toast.makeText(this, "Changes saved successfully!", Toast.LENGTH_SHORT).show();
+                                finishWithSuccess();
+                            }
+                        } else {
+                            String error = obj.optString("error", "Failed to delete images");
+                            System.out.println("DEBUG: PHP deletion failed: " + error);
+                            Toast.makeText(this, "Error deleting images: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.out.println("ERROR: Exception parsing delete response: " + e.getMessage());
+                        System.out.println("Raw response: " + response);
+                        Toast.makeText(this, "Error parsing delete response: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                },
+                error -> {
+                    error.printStackTrace();
+                    Toast.makeText(this, "Error deleting images: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("bh_id", String.valueOf(bhId));
+                params.put("image_paths", imagePathsArray.toString());
+                return params;
+            }
+        };
+        
+        Volley.newRequestQueue(this).add(request);
+    }
+    
+    private void uploadNewImagesSequentially(ArrayList<Uri> newImages, int index) {
+        if (index >= newImages.size()) {
+            // All new images uploaded
+            hideImageUploadDialog();
+            Toast.makeText(this, "Changes saved successfully!", Toast.LENGTH_SHORT).show();
+            finishWithSuccess();
+            return;
+        }
+        
+        // Update progress immediately when starting upload
+        updateImageUploadProgress(index + 1, newImages.size());
+        
+        // Start upload immediately on UI thread for faster response
+        runOnUiThread(() -> uploadSingleImage(newImages.get(index), index));
+    }
+
     private void uploadImagesSequentially(int index) {
+
+    
         if (index >= imageUris.size()) {
             // All images uploaded
             hideImageUploadDialog();
@@ -331,83 +549,68 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
             return;
         }
 
-        // Update progress
+        // Update progress immediately
         updateImageUploadProgress(index + 1, imageUris.size());
-
+        
+        // Start upload immediately on UI thread for faster response
         Uri imageUri = imageUris.get(index);
-        uploadSingleImage(imageUri, index);
+        runOnUiThread(() -> uploadSingleImage(imageUri, index));
     }
 
     private void uploadSingleImage(Uri imageUri, int index) {
-        String url = "http://192.168.101.6/BoardEase2/upload_bh_image.php";
-
-        System.out.println("=== IMAGE UPLOAD DEBUG START ===");
-        System.out.println("Image URI: " + imageUri.toString());
-        System.out.println("Image index: " + index);
-        System.out.println("Total images: " + imageUris.size());
-
+        String url = "http://192.168.254.121/BoardEase2/upload_bh_image.php";
+        
+        // Optimized upload - removed debug logs for faster performance
+        
         try {
             // Check if URI is valid
             if (imageUri == null) {
-                System.out.println("ERROR: Image URI is null");
                 Toast.makeText(this, "Image URI is null", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // Try to open input stream
-            InputStream inputStream = null;
-            try {
-                inputStream = getContentResolver().openInputStream(imageUri);
-                if (inputStream == null) {
-                    System.out.println("ERROR: Could not open input stream for URI: " + imageUri);
-                    Toast.makeText(this, "Could not read image file", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            } catch (Exception e) {
-                System.out.println("ERROR: Exception opening input stream: " + e.getMessage());
-                Toast.makeText(this, "Error opening image file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            
+            // Open input stream with optimized error handling
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                Toast.makeText(this, "Could not read image file", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // Convert URI to byte array
+            
+            // Convert URI to byte array with optimized buffer size
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192]; // Larger buffer for faster reading
             int length;
-            int totalBytes = 0;
-
+            
             while ((length = inputStream.read(buffer)) != -1) {
                 byteArrayOutputStream.write(buffer, 0, length);
-                totalBytes += length;
             }
-
+            
             byte[] imageData = byteArrayOutputStream.toByteArray();
             inputStream.close();
             byteArrayOutputStream.close();
-
-            System.out.println("Image data size: " + imageData.length + " bytes");
-            System.out.println("Total bytes read: " + totalBytes);
-
+            
             if (imageData.length == 0) {
-                System.out.println("ERROR: Image data is empty");
                 Toast.makeText(this, "Image file is empty", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // Convert to base64
-            String base64Image = android.util.Base64.encodeToString(imageData, android.util.Base64.DEFAULT);
-            System.out.println("Base64 length: " + base64Image.length());
-            System.out.println("=== IMAGE UPLOAD DEBUG END ===");
-
-            // Create string request with base64 data
+            
+            // Convert to base64 with NO_WRAP for better performance
+            String base64Image = android.util.Base64.encodeToString(imageData, android.util.Base64.NO_WRAP);
+            
+            // Create optimized request
             StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
-                        System.out.println("Image upload response: " + response);
                         JSONObject obj = new JSONObject(response);
-
+                        
                         if (obj.has("success")) {
-                            // Upload next image
-                            uploadImagesSequentially(index + 1);
+                            // Upload next image immediately
+                            ArrayList<Uri> newImages = getNewImages();
+                            if (!newImages.isEmpty()) {
+                                uploadNewImagesSequentially(newImages, index + 1);
+                            } else {
+                                uploadImagesSequentially(index + 1);
+                            }
                         } else {
                             String error = obj.optString("error", "Image upload failed");
                             Toast.makeText(this, "Image upload failed: " + error, Toast.LENGTH_SHORT).show();
@@ -430,9 +633,18 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                     return params;
                 }
             };
-
-            Volley.newRequestQueue(this).add(request);
-
+            
+            // Set timeout using RetryPolicy
+            request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                8000, // 8 second timeout
+                com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+            ));
+            
+            // Use optimized request queue
+            RequestQueue queue = Volley.newRequestQueue(this);
+            queue.add(request);
+            
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("ERROR: Exception in uploadSingleImage: " + e.getMessage());
@@ -470,7 +682,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
             imageUploadDialog.setCancelable(false);
             imageUploadDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         }
-        imageUploadDialog.setMessage("Uploading images...");
+        imageUploadDialog.setMessage("Uploading new images...");
         imageUploadDialog.setMax(100);
         imageUploadDialog.setProgress(0);
         imageUploadDialog.show();
@@ -486,8 +698,48 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         if (imageUploadDialog != null && imageUploadDialog.isShowing()) {
             int progress = (current * 100) / total;
             imageUploadDialog.setProgress(progress);
-            imageUploadDialog.setMessage("Uploading images... " + current + "/" + total);
+            imageUploadDialog.setMessage("Uploading image " + current + " of " + total + " (" + progress + "%)");
         }
+    }
+    
+    // Helper method to update image views visibility
+    private void updateImageViewsVisibility() {
+        if (imageUris.isEmpty()) {
+            // No images - show placeholder, hide ViewPager and FAB
+            ivPlaceholder.setVisibility(ImageView.VISIBLE);
+            viewPagerImages.setVisibility(ViewPager2.GONE);
+            fabAddImages.setVisibility(View.GONE);
+        } else {
+            // Has images - hide placeholder, show ViewPager and FAB
+            ivPlaceholder.setVisibility(ImageView.GONE);
+            viewPagerImages.setVisibility(ViewPager2.VISIBLE);
+            fabAddImages.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    // Method to handle image removal
+    private void removeImage(int position) {
+        System.out.println("DEBUG: Removing image at position: " + position);
+        System.out.println("DEBUG: Before removal - imageUris size: " + imageUris.size());
+        System.out.println("DEBUG: Before removal - originalImageUris size: " + originalImageUris.size());
+        
+        // Get the URI that's being removed for debugging
+        if (position < imageUris.size()) {
+            Uri removedUri = imageUris.get(position);
+            System.out.println("DEBUG: Removing URI: " + removedUri.toString());
+        }
+        
+        // Remove the image from the list
+        imageUris.remove(position);
+        
+        System.out.println("DEBUG: After removal - imageUris size: " + imageUris.size());
+        
+        // Create a new adapter instance to force ViewPager2 refresh
+        imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
+        viewPagerImages.setAdapter(imageAdapter);
+        
+        // Update visibility
+        updateImageViewsVisibility();
     }
 
     @Override
