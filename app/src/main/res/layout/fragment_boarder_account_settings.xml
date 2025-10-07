@@ -78,7 +78,8 @@
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/ic_person"
-                    app:startIconTint="@color/brown">
+                    app:startIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etFullName"
@@ -99,7 +100,8 @@
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/email"
-                    app:startIconTint="@color/brown">
+                    app:startIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEmail"
@@ -120,7 +122,8 @@
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/call"
-                    app:startIconTint="@color/brown">
+                    app:startIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etContactNumber"
@@ -141,7 +144,8 @@
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/ic_calendar"
-                    app:startIconTint="@color/brown">
+                    app:startIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etBirthdate"
@@ -164,7 +168,8 @@
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/location"
-                    app:startIconTint="@color/brown">
+                    app:startIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAddress"
@@ -238,7 +243,8 @@
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
+                    app:endIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etCurrentPassword"
@@ -261,7 +267,8 @@
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
+                    app:endIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etNewPassword"
@@ -284,7 +291,8 @@
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
+                    app:endIconTint="@color/brown"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etConfirmPassword"
