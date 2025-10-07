@@ -204,7 +204,8 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            String UPLOAD_URL = "http://192.168.137.1/boardease2/insert_registration.php";
+            // Using your WiFi IP address: 192.168.1.3
+            String UPLOAD_URL = "http://192.168.1.3/boardease2/insert_registration.php";
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
