@@ -2,12 +2,15 @@ package com.example.mock;
 
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -39,7 +42,8 @@ public class OwnerProfileFragment extends Fragment {
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
-    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
+    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp, layoutSignOut;
+    private Button btnLogout;
 
     public OwnerProfileFragment() {
         // Required empty public constructor
@@ -74,6 +78,8 @@ public class OwnerProfileFragment extends Fragment {
         tvOwnerName = view.findViewById(R.id.tvOwnerName);
         tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
         tvSignOut = view.findViewById(R.id.tvSignOut);
+        layoutSignOut = view.findViewById(R.id.layoutSignOut);
+        btnLogout = view.findViewById(R.id.btnLogout);
 
         layoutPayments = view.findViewById(R.id.layoutPayments);
         layoutNotifications = view.findViewById(R.id.layoutNotifications);
@@ -94,9 +100,28 @@ public class OwnerProfileFragment extends Fragment {
         layoutMessages.setOnClickListener(v -> Toast.makeText(getContext(), "Open Messages", Toast.LENGTH_SHORT).show());
         layoutAccountSettings.setOnClickListener(v -> openAccountSettings());
         layoutGcashInfo.setOnClickListener(v -> openGcashInfo());
-        layoutAboutApp.setOnClickListener(v -> Toast.makeText(getContext(), "Open About App", Toast.LENGTH_SHORT).show());
+        layoutAboutApp.setOnClickListener(v -> showAboutAppDialog());
 
-        tvSignOut.setOnClickListener(v -> Toast.makeText(getContext(), "Signing Out...", Toast.LENGTH_SHORT).show());
+        // Sign Out - Both text and button trigger logout
+        if (layoutSignOut != null) {
+            layoutSignOut.setOnClickListener(v -> {
+                try {
+                    showSignOutConfirmationDialog();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                try {
+                    showSignOutConfirmationDialog();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
 
         return view;
     }
@@ -220,5 +245,62 @@ public class OwnerProfileFragment extends Fragment {
      */
     public void refreshProfile() {
         loadOwnerProfile();
+    }
+    
+    private void showAboutAppDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("About BoardEase");
+            builder.setMessage("BoardEase v1.0.0\n\n" +
+                    "A comprehensive platform for managing boarding house accommodations.\n\n" +
+                    "Owner Features:\n" +
+                    "• Manage boarding houses\n" +
+                    "• Track bookings\n" +
+                    "• Handle payments\n" +
+                    "• Communicate with boarders\n\n" +
+                    "© 2024 BoardEase. All rights reserved.");
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showSignOutConfirmationDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Sign Out");
+            builder.setMessage("Are you sure you want to sign out?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try {
+                        // Use the Login.logout() method to properly sign out
+                        Login.logout(getContext());
+                        Toast.makeText(getContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error signing out", Toast.LENGTH_SHORT).show();
+                    }
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
