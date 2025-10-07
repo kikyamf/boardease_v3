@@ -24,6 +24,9 @@
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
         <activity
+            android:name=".BoarderDashboard"
+            android:exported="false" />
+        <activity
             android:name=".EditRoomActivity"
             android:exported="false" />
         <activity
