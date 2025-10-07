@@ -55,8 +55,7 @@ public class BoarderDashboard extends AppCompatActivity {
                         } else if (itemId == R.id.nav_activity) {
                             selectedFragment = new BoarderBookingFragment();
                         } else if (itemId == R.id.nav_profile) {
-                            // TODO: Create BoarderProfileFragment
-                            selectedFragment = new BoarderHomeFragment(); // Placeholder
+                            selectedFragment = new BoarderProfileFragment();
                         }
                         
                         if (selectedFragment != null) {
