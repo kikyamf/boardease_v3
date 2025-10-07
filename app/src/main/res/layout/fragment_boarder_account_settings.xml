@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="16dp">
+
+            <!-- Back Button -->
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Back"
+                android:src="@drawable/arrowleft" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Account Settings"
+                android:textSize="20sp"
+                android:fontFamily="@font/poppins_medium"
+                android:gravity="center"
+                android:textColor="#000000" />
+
+            <!-- Placeholder for symmetry -->
+            <View
+                android:layout_width="36dp"
+                android:layout_height="36dp" />
+        </LinearLayout>
+
+        <!-- Personal Information Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:backgroundTint="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Section Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Personal Information"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Full Name -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/ic_person"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etFullName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Full Name"
+                        android:inputType="textPersonName"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Email -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/email"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Email Address"
+                        android:inputType="textEmailAddress"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Contact Number -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/call"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etContactNumber"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Contact Number"
+                        android:inputType="phone"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Birthdate -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/ic_calendar"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etBirthdate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Birthdate (YYYY-MM-DD)"
+                        android:inputType="date"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:focusable="false"
+                        android:clickable="true" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Address -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/location"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Address (Optional)"
+                        android:inputType="textPostalAddress"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Save Changes Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveChanges"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save Changes"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/poppins_medium"
+                    android:backgroundTint="@color/brown"
+                    app:cornerRadius="8dp"
+                    android:paddingVertical="12dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Privacy & Security Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:backgroundTint="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Section Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Privacy &amp; Security"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Change Password Label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Change Password"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Current Password -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCurrentPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Current Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- New Password -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etNewPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="New Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Confirm New Password -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etConfirmPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Confirm New Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Update Password Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUpdatePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Update Password"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/poppins_medium"
+                    android:backgroundTint="@color/brown"
+                    app:cornerRadius="8dp"
+                    android:paddingVertical="12dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Loading Indicator -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginVertical="16dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

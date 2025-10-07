@@ -128,8 +128,15 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutAccountSettings != null) {
                 layoutAccountSettings.setOnClickListener(v -> {
                     try {
-                        Toast.makeText(getContext(), "Account Settings - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Navigate to account settings
+                        // Navigate to account settings fragment
+                        if (getActivity() != null) {
+                            BoarderAccountSettingsFragment accountSettingsFragment = BoarderAccountSettingsFragment.newInstance();
+                            getActivity().getSupportFragmentManager()
+                                    .beginTransaction()
+                                    .replace(R.id.fragment_container, accountSettingsFragment)
+                                    .addToBackStack(null)
+                                    .commit();
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
