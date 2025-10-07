@@ -283,6 +283,47 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         }
     }
 
+    @Override
+    public void onDeleteClick(Listing boardingHouse) {
+        try {
+            showDeleteConfirmationDialog(boardingHouse);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showDeleteConfirmationDialog(Listing boardingHouse) {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Delete from Favorites");
+            builder.setMessage("Do you really want to delete \"" + boardingHouse.getBhName() + "\" from favorites?");
+            
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // User confirmed deletion
+                    removeFromFavorites(boardingHouse);
+                    String message = "Removed from favorites: " + boardingHouse.getBhName();
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }
+            });
+            
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // User cancelled deletion
+                    dialog.dismiss();
+                }
+            });
+            
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void removeFromFavorites(Listing boardingHouse) {
         try {
             // Remove from local lists
