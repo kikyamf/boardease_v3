@@ -145,12 +145,17 @@ public class Login extends AppCompatActivity {
         // Show progress dialog
         progressDialog.show();
         
+        // Log the login attempt
+        Log.d("LoginAttempt", "Attempting login for email: " + email);
+        Log.d("LoginAttempt", "Login URL: " + LOGIN_URL);
+        
         // Create login request
         StringRequest stringRequest = new StringRequest(Request.Method.POST, LOGIN_URL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         progressDialog.dismiss();
+                        Log.d("LoginResponse", "Server response: " + response);
                         handleLoginResponse(response);
                     }
                 },
@@ -159,7 +164,22 @@ public class Login extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
                         Log.e("LoginError", "Volley error: " + error.getMessage());
-                        Toast.makeText(Login.this, "Network error. Please check your connection.", Toast.LENGTH_SHORT).show();
+                        Log.e("LoginError", "Error details: " + error.toString());
+                        
+                        String errorMessage = "Network error: ";
+                        if (error.getMessage() != null) {
+                            errorMessage += error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage += "HTTP " + error.networkResponse.statusCode;
+                            if (error.networkResponse.data != null) {
+                                String responseBody = new String(error.networkResponse.data);
+                                Log.e("LoginError", "Response body: " + responseBody);
+                            }
+                        } else {
+                            errorMessage += "Unknown network error";
+                        }
+                        
+                        Toast.makeText(Login.this, errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
             @Override
