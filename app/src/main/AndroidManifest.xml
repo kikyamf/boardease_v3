@@ -48,7 +48,7 @@
             android:name=".Type"
             android:exported="false" />
         <activity
-            android:name=".BoarderDashboard"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -103,6 +103,45 @@
             android:exported="false" />
         <activity
             android:name=".ReviewsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivitySimple"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Registration2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderDashboard"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PreBookingPhase1Activity"
+            android:exported="false" />
+        <activity
+            android:name=".PreBookingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BookingConfirmationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OwnerMessages"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderMessages"
+            android:exported="false" />
+        <activity
+            android:name=".Details"
             android:exported="false" />
     </application>
 
