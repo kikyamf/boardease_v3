@@ -79,99 +79,140 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     }
 
     private void initializeViews(View view) {
-        etSearch = view.findViewById(R.id.etSearch);
-        rvRecommendedBH = view.findViewById(R.id.rvRecommendedBH);
-        rvNearbyBH = view.findViewById(R.id.rvNearbyBH);
-        btnSeeAll = view.findViewById(R.id.btnSeeAll);
-        btnMyBookings = view.findViewById(R.id.cardMyBookings);
-        btnFavorites = view.findViewById(R.id.cardFavorites);
-        ivNotification = view.findViewById(R.id.ivNotification);
-        ivMessage = view.findViewById(R.id.ivMessage);
-        tvBoarderName = view.findViewById(R.id.tvBoarderName);
+        try {
+            etSearch = view.findViewById(R.id.etSearch);
+            rvRecommendedBH = view.findViewById(R.id.rvRecommendedBH);
+            rvNearbyBH = view.findViewById(R.id.rvNearbyBH);
+            btnSeeAll = view.findViewById(R.id.btnSeeAll);
+            btnMyBookings = view.findViewById(R.id.cardMyBookings);
+            btnFavorites = view.findViewById(R.id.cardFavorites);
+            ivNotification = view.findViewById(R.id.ivNotification);
+            ivMessage = view.findViewById(R.id.ivMessage);
+            tvBoarderName = view.findViewById(R.id.tvBoarderName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupRecyclerViews() {
-        // Initialize data lists
-        recommendedBoardingHouses = new ArrayList<>();
-        nearbyBoardingHouses = new ArrayList<>();
+        try {
+            // Initialize data lists
+            recommendedBoardingHouses = new ArrayList<>();
+            nearbyBoardingHouses = new ArrayList<>();
 
-        // Setup Recommended BHs RecyclerView (Horizontal)
-        recommendedAdapter = new BoardingHouseAdapter(getContext(), recommendedBoardingHouses, this);
-        LinearLayoutManager recommendedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
-        rvRecommendedBH.setLayoutManager(recommendedLayoutManager);
-        rvRecommendedBH.setAdapter(recommendedAdapter);
+            // Setup Recommended BHs RecyclerView (Horizontal)
+            if (rvRecommendedBH != null && getContext() != null) {
+                recommendedAdapter = new BoardingHouseAdapter(getContext(), recommendedBoardingHouses, this);
+                LinearLayoutManager recommendedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+                rvRecommendedBH.setLayoutManager(recommendedLayoutManager);
+                rvRecommendedBH.setAdapter(recommendedAdapter);
+            }
 
-        // Setup Nearby BHs RecyclerView (Vertical)
-        nearbyAdapter = new BoardingHouseAdapter(getContext(), nearbyBoardingHouses, this);
-        LinearLayoutManager nearbyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
-        rvNearbyBH.setLayoutManager(nearbyLayoutManager);
-        rvNearbyBH.setAdapter(nearbyAdapter);
+            // Setup Nearby BHs RecyclerView (Vertical)
+            if (rvNearbyBH != null && getContext() != null) {
+                nearbyAdapter = new BoardingHouseAdapter(getContext(), nearbyBoardingHouses, this);
+                LinearLayoutManager nearbyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+                rvNearbyBH.setLayoutManager(nearbyLayoutManager);
+                rvNearbyBH.setAdapter(nearbyAdapter);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupClickListeners() {
         // Search functionality
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        if (etSearch != null) {
+            etSearch.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // TODO: Implement search functionality
-                // For now, just show a toast
-                if (s.length() > 0) {
-                    Toast.makeText(getContext(), "Searching for: " + s.toString(), Toast.LENGTH_SHORT).show();
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    try {
+                        // TODO: Implement search functionality
+                        // For now, just show a toast
+                        if (s.length() > 0 && getContext() != null) {
+                            Toast.makeText(getContext(), "Searching for: " + s.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
 
         // See All button - Navigate to BoarderExploreFragment
-        btnSeeAll.setOnClickListener(v -> {
-            // Navigate to explore fragment
-            if (getActivity() instanceof BoarderDashboard) {
-                BoarderDashboard dashboard = (BoarderDashboard) getActivity();
-                // Switch to explore tab (nav_post)
-                dashboard.switchToTab(R.id.nav_post);
-            }
-        });
+        if (btnSeeAll != null) {
+            btnSeeAll.setOnClickListener(v -> {
+                try {
+                    // Navigate to explore fragment
+                    if (getActivity() instanceof BoarderDashboard) {
+                        BoarderDashboard dashboard = (BoarderDashboard) getActivity();
+                        // Switch to explore tab (nav_post)
+                        dashboard.switchToTab(R.id.nav_post);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getContext(), "Navigation error", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         // My Bookings button
-        btnMyBookings.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "My Bookings - Coming Soon!", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to bookings fragment
-        });
+        if (btnMyBookings != null) {
+            btnMyBookings.setOnClickListener(v -> {
+                Toast.makeText(getContext(), "My Bookings - Coming Soon!", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to bookings fragment
+            });
+        }
 
         // Favorites button
-        btnFavorites.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Favorites - Coming Soon!", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to favorites fragment
-        });
+        if (btnFavorites != null) {
+            btnFavorites.setOnClickListener(v -> {
+                Toast.makeText(getContext(), "Favorites - Coming Soon!", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to favorites fragment
+            });
+        }
 
         // Notification icon
-        ivNotification.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Notifications - Coming Soon!", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to notifications
-        });
+        if (ivNotification != null) {
+            ivNotification.setOnClickListener(v -> {
+                Toast.makeText(getContext(), "Notifications - Coming Soon!", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to notifications
+            });
+        }
 
         // Message icon
-        ivMessage.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Messages - Coming Soon!", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to messages
-        });
+        if (ivMessage != null) {
+            ivMessage.setOnClickListener(v -> {
+                Toast.makeText(getContext(), "Messages - Coming Soon!", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to messages
+            });
+        }
     }
 
     private void loadMockData() {
-        // Create mock data for recommended boarding houses
-        createRecommendedMockData();
-        
-        // Create mock data for nearby boarding houses
-        createNearbyMockData();
-        
-        // Update adapters
-        recommendedAdapter.notifyDataSetChanged();
-        nearbyAdapter.notifyDataSetChanged();
+        try {
+            // Create mock data for recommended boarding houses
+            createRecommendedMockData();
+            
+            // Create mock data for nearby boarding houses
+            createNearbyMockData();
+            
+            // Update adapters
+            if (recommendedAdapter != null) {
+                recommendedAdapter.notifyDataSetChanged();
+            }
+            if (nearbyAdapter != null) {
+                nearbyAdapter.notifyDataSetChanged();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createRecommendedMockData() {

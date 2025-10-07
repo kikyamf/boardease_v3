@@ -36,35 +36,46 @@ public class BoarderDashboard extends AppCompatActivity {
     }
 
     private void initializeBottomNavigation() {
-        bottomNavigationView = findViewById(R.id.boarder_bottom_navigation);
-        
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
+        try {
+            bottomNavigationView = findViewById(R.id.boarder_bottom_navigation);
             
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                selectedFragment = new BoarderHomeFragment();
-            } else if (itemId == R.id.nav_post) {
-                // TODO: Replace with BoarderExploreFragment when created
-                selectedFragment = new ExploreFragment(); // Using existing ExploreFragment as placeholder
-            } else if (itemId == R.id.nav_manage) {
-                // TODO: Create BoarderFavoritesFragment
-                selectedFragment = new BoarderHomeFragment(); // Placeholder
-            } else if (itemId == R.id.nav_activity) {
-                // TODO: Create BoarderBookingsFragment
-                selectedFragment = new BoarderHomeFragment(); // Placeholder
-            } else if (itemId == R.id.nav_profile) {
-                // TODO: Create BoarderProfileFragment
-                selectedFragment = new BoarderHomeFragment(); // Placeholder
+            if (bottomNavigationView != null) {
+                bottomNavigationView.setOnItemSelectedListener(item -> {
+                    try {
+                        Fragment selectedFragment = null;
+                        
+                        int itemId = item.getItemId();
+                        if (itemId == R.id.nav_home) {
+                            selectedFragment = new BoarderHomeFragment();
+                        } else if (itemId == R.id.nav_post) {
+                            // TODO: Replace with BoarderExploreFragment when created
+                            selectedFragment = new ExploreFragment(); // Using existing ExploreFragment as placeholder
+                        } else if (itemId == R.id.nav_manage) {
+                            // TODO: Create BoarderFavoritesFragment
+                            selectedFragment = new BoarderHomeFragment(); // Placeholder
+                        } else if (itemId == R.id.nav_activity) {
+                            // TODO: Create BoarderBookingsFragment
+                            selectedFragment = new BoarderHomeFragment(); // Placeholder
+                        } else if (itemId == R.id.nav_profile) {
+                            // TODO: Create BoarderProfileFragment
+                            selectedFragment = new BoarderHomeFragment(); // Placeholder
+                        }
+                        
+                        if (selectedFragment != null) {
+                            loadFragment(selectedFragment);
+                            return true;
+                        }
+                        
+                        return false;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+                });
             }
-            
-            if (selectedFragment != null) {
-                loadFragment(selectedFragment);
-                return true;
-            }
-            
-            return false;
-        });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadFragment(Fragment fragment) {
