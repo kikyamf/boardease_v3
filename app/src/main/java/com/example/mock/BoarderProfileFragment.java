@@ -1,8 +1,16 @@
 package com.example.mock;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +19,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +49,13 @@ public class BoarderProfileFragment extends Fragment {
     private TextView tvSignOut;
     private LinearLayout layoutSignOut;
     private android.widget.Button btnLogout;
+    
+    // Image handling
+    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private ActivityResultLauncher<Intent> cameraLauncher;
+    private ActivityResultLauncher<String> galleryLauncher;
+    private Uri cameraImageUri;
+    private File cameraImageFile;
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
@@ -66,6 +91,7 @@ public class BoarderProfileFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         initializeViews(view);
+        initializeImageHandlers();
         setupClickListeners();
         loadUserData();
     }
@@ -98,7 +124,60 @@ public class BoarderProfileFragment extends Fragment {
             e.printStackTrace();
         }
     }
+    
+    private void initializeImageHandlers() {
+        // Permission request launcher
+        requestPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        showImageSourceDialog();
+                    } else {
+                        Toast.makeText(getContext(), "Permission denied. Cannot access camera or gallery.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
 
+        // Camera launcher
+        cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == getActivity().RESULT_OK) {
+                        try {
+                            // Load the captured image
+                            Bitmap bitmap = BitmapFactory.decodeFile(cameraImageFile.getAbsolutePath());
+                            if (bitmap != null) {
+                                ivProfilePic.setImageBitmap(bitmap);
+                                Toast.makeText(getContext(), "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+
+        // Gallery launcher
+        galleryLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        try {
+                            Bitmap bitmap = getBitmapFromUri(uri);
+                            if (bitmap != null) {
+                                ivProfilePic.setImageBitmap(bitmap);
+                                Toast.makeText(getContext(), "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+    }
+    
     private void setupClickListeners() {
         try {
             // Back button
@@ -119,8 +198,18 @@ public class BoarderProfileFragment extends Fragment {
             if (ivEditProfile != null) {
                 ivEditProfile.setOnClickListener(v -> {
                     try {
-                        Toast.makeText(getContext(), "Edit Profile Picture - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Implement profile picture editing
+                        openImageSelector();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+            
+            // Profile picture click
+            if (ivProfilePic != null) {
+                ivProfilePic.setOnClickListener(v -> {
+                    try {
+                        openImageSelector();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -346,6 +435,102 @@ public class BoarderProfileFragment extends Fragment {
             dialog.show();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    
+    private void openImageSelector() {
+        // Check permissions first
+        String permission;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permission = Manifest.permission.READ_MEDIA_IMAGES;
+        } else {
+            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+        }
+
+        if (ContextCompat.checkSelfPermission(getContext(), permission) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissionLauncher.launch(permission);
+        } else {
+            showImageSourceDialog();
+        }
+    }
+    
+    private void showImageSourceDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Select Profile Picture");
+            builder.setMessage("Choose how you want to set your profile picture");
+            
+            builder.setPositiveButton("Camera", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    openCamera();
+                }
+            });
+            
+            builder.setNegativeButton("Gallery", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    openGallery();
+                }
+            });
+            
+            builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void openCamera() {
+        try {
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            
+            // Create a file to store the image
+            cameraImageFile = new File(getContext().getExternalFilesDir(null), "profile_pic_" + System.currentTimeMillis() + ".jpg");
+            cameraImageUri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", cameraImageFile);
+            
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+            cameraLauncher.launch(cameraIntent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error opening camera", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void openGallery() {
+        try {
+            galleryLauncher.launch("image/*");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error opening gallery", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        try {
+            InputStream inputStream = getContext().getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                throw new IOException("Cannot open input stream for URI: " + uri);
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+            
+            if (bitmap == null) {
+                throw new IOException("Failed to decode bitmap from URI: " + uri);
+            }
+            
+            return bitmap;
+        } catch (Exception e) {
+            throw new IOException("Error processing image: " + e.getMessage(), e);
         }
     }
 }
