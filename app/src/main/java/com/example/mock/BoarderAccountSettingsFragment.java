@@ -33,7 +33,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private ProgressBar progressBar;
 
     // Personal Information Fields
-    private TextInputEditText etFullName;
+    private TextInputEditText etFirstName;
+    private TextInputEditText etMiddleName;
+    private TextInputEditText etLastName;
     private TextInputEditText etEmail;
     private TextInputEditText etContactNumber;
     private TextInputEditText etBirthdate;
@@ -49,7 +51,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
     // SharedPreferences for storing user data
     private SharedPreferences userPrefs;
     private static final String PREFS_NAME = "boarder_user_prefs";
-    private static final String KEY_FULL_NAME = "full_name";
+    private static final String KEY_FIRST_NAME = "first_name";
+    private static final String KEY_MIDDLE_NAME = "middle_name";
+    private static final String KEY_LAST_NAME = "last_name";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_CONTACT = "contact_number";
     private static final String KEY_BIRTHDATE = "birthdate";
@@ -91,7 +95,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
             progressBar = view.findViewById(R.id.progressBar);
 
             // Personal Information fields
-            etFullName = view.findViewById(R.id.etFirstName);
+            etFirstName = view.findViewById(R.id.etFirstName);
+            etMiddleName = view.findViewById(R.id.etMiddleName);
+            etLastName = view.findViewById(R.id.etLastName);
             etEmail = view.findViewById(R.id.etEmail);
             etContactNumber = view.findViewById(R.id.etContactNumber);
             etBirthdate = view.findViewById(R.id.etBirthdate);
@@ -174,13 +180,17 @@ public class BoarderAccountSettingsFragment extends Fragment {
         try {
             // Load user data from SharedPreferences
             if (userPrefs != null) {
-                String fullName = userPrefs.getString(KEY_FULL_NAME, "John Doe");
+                String firstName = userPrefs.getString(KEY_FIRST_NAME, "John");
+                String middleName = userPrefs.getString(KEY_MIDDLE_NAME, "Michael");
+                String lastName = userPrefs.getString(KEY_LAST_NAME, "Doe");
                 String email = userPrefs.getString(KEY_EMAIL, "john.doe@email.com");
                 String contact = userPrefs.getString(KEY_CONTACT, "09123456789");
                 String birthdate = userPrefs.getString(KEY_BIRTHDATE, "1995-01-01");
                 String address = userPrefs.getString(KEY_ADDRESS, "Tagbilaran City");
 
-                if (etFullName != null) etFullName.setText(fullName);
+                if (etFirstName != null) etFirstName.setText(firstName);
+                if (etMiddleName != null) etMiddleName.setText(middleName);
+                if (etLastName != null) etLastName.setText(lastName);
                 if (etEmail != null) etEmail.setText(email);
                 if (etContactNumber != null) etContactNumber.setText(contact);
                 if (etBirthdate != null) etBirthdate.setText(birthdate);
@@ -230,7 +240,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
             setLoading(true);
 
             // Get input values
-            String fullName = etFullName.getText().toString().trim();
+            String firstName = etFirstName.getText().toString().trim();
+            String middleName = etMiddleName.getText().toString().trim();
+            String lastName = etLastName.getText().toString().trim();
             String email = etEmail.getText().toString().trim();
             String contact = etContactNumber.getText().toString().trim();
             String birthdate = etBirthdate.getText().toString().trim();
@@ -239,7 +251,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
             // Save to SharedPreferences (in real app, save to Firebase)
             if (userPrefs != null) {
                 SharedPreferences.Editor editor = userPrefs.edit();
-                editor.putString(KEY_FULL_NAME, fullName);
+                editor.putString(KEY_FIRST_NAME, firstName);
+                editor.putString(KEY_MIDDLE_NAME, middleName);
+                editor.putString(KEY_LAST_NAME, lastName);
                 editor.putString(KEY_EMAIL, email);
                 editor.putString(KEY_CONTACT, contact);
                 editor.putString(KEY_BIRTHDATE, birthdate);
@@ -267,9 +281,15 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private boolean validatePersonalInformation() {
         try {
             // Check if fields are empty
-            if (TextUtils.isEmpty(etFullName.getText().toString().trim())) {
-                etFullName.setError("Full name is required");
-                etFullName.requestFocus();
+            if (TextUtils.isEmpty(etFirstName.getText().toString().trim())) {
+                etFirstName.setError("First name is required");
+                etFirstName.requestFocus();
+                return false;
+            }
+
+            if (TextUtils.isEmpty(etLastName.getText().toString().trim())) {
+                etLastName.setError("Last name is required");
+                etLastName.requestFocus();
                 return false;
             }
 
