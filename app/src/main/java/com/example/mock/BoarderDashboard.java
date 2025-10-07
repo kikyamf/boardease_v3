@@ -75,4 +75,11 @@ public class BoarderDashboard extends AppCompatActivity {
             currentFragment = fragment;
         }
     }
+
+    // Public method to switch to a specific tab
+    public void switchToTab(int tabId) {
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(tabId);
+        }
+    }
 }
