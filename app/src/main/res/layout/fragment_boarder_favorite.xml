@@ -24,30 +24,19 @@
             android:textColor="#000000"
             android:fontFamily="@font/poppins_bold" />
 
-        <!-- Search Icon (Optional) -->
-        <ImageView
-            android:id="@+id/ivSearch"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/search"
-            android:contentDescription="Search favorites"
-            android:padding="4dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:visibility="gone" />
 
     </LinearLayout>
 
-    <!-- Search Bar (Hidden by default, can be toggled) -->
+
+    <!-- Search Bar -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardSearchBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="16dp"
         android:backgroundTint="#FFFFFF"
         app:cardCornerRadius="30dp"
-        app:cardElevation="3dp"
-        android:visibility="gone">
+        app:cardElevation="3dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -73,63 +62,8 @@
                 android:textColor="#000000"
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_regular" />
-
-            <ImageButton
-                android:id="@+id/btnCloseSearch"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_arrow_back"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Close search" />
-
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-
-    <!-- Filter and Sort Options -->
-    <LinearLayout
-        android:id="@+id/layoutFilterSort"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="16dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFilter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:text="Filter"
-            android:textColor="#333333"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_medium"
-            app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
-            app:strokeWidth="1dp"
-            android:backgroundTint="#FFFFFF"
-            app:icon="@drawable/ic_arrow_down"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSort"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="Sort"
-            android:textColor="#333333"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_medium"
-            app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
-            app:strokeWidth="1dp"
-            android:backgroundTint="#FFFFFF"
-            app:icon="@drawable/ic_arrow_down"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
-    </LinearLayout>
 
     <!-- Results Count -->
     <TextView

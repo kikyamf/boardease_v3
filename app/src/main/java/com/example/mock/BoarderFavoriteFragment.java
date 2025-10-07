@@ -37,15 +37,10 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     // Views
     private RecyclerView rvFavorites;
     private LinearLayout layoutEmptyState;
-    private LinearLayout layoutFilterSort;
     private ProgressBar progressBar;
     private TextView tvFavoritesCount;
     private EditText etSearchFavorites;
     private MaterialButton btnExploreNow;
-    private MaterialButton btnFilter;
-    private MaterialButton btnSort;
-    private ImageView ivSearch;
-    private View cardSearchBar;
 
     // Adapter and Data
     private BoardingHouseAdapter favoritesAdapter;
@@ -91,15 +86,10 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         try {
             rvFavorites = view.findViewById(R.id.rvFavorites);
             layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
-            layoutFilterSort = view.findViewById(R.id.layoutFilterSort);
             progressBar = view.findViewById(R.id.progressBar);
             tvFavoritesCount = view.findViewById(R.id.tvFavoritesCount);
             etSearchFavorites = view.findViewById(R.id.etSearchFavorites);
             btnExploreNow = view.findViewById(R.id.btnExploreNow);
-            btnFilter = view.findViewById(R.id.btnFilter);
-            btnSort = view.findViewById(R.id.btnSort);
-            ivSearch = view.findViewById(R.id.ivSearch);
-            cardSearchBar = view.findViewById(R.id.cardSearchBar);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -150,54 +140,8 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                 }
             });
         }
-
-        // Filter button
-        if (btnFilter != null) {
-            btnFilter.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "Filter options - Coming Soon!", Toast.LENGTH_SHORT).show();
-                // TODO: Implement filter functionality
-            });
-        }
-
-        // Sort button
-        if (btnSort != null) {
-            btnSort.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "Sort options - Coming Soon!", Toast.LENGTH_SHORT).show();
-                // TODO: Implement sort functionality
-            });
-        }
-
-        // Search icon toggle
-        if (ivSearch != null) {
-            ivSearch.setOnClickListener(v -> {
-                toggleSearchBar();
-            });
-        }
-
-        // Close search button
-        View btnCloseSearch = getView().findViewById(R.id.btnCloseSearch);
-        if (btnCloseSearch != null) {
-            btnCloseSearch.setOnClickListener(v -> {
-                toggleSearchBar();
-            });
-        }
     }
 
-    private void toggleSearchBar() {
-        if (cardSearchBar != null) {
-            if (cardSearchBar.getVisibility() == View.GONE) {
-                cardSearchBar.setVisibility(View.VISIBLE);
-                if (etSearchFavorites != null) {
-                    etSearchFavorites.requestFocus();
-                }
-            } else {
-                cardSearchBar.setVisibility(View.GONE);
-                if (etSearchFavorites != null) {
-                    etSearchFavorites.setText("");
-                }
-            }
-        }
-    }
 
     private void loadFavorites() {
         try {
