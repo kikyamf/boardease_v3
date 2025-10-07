@@ -29,6 +29,8 @@ public class BoarderProfileFragment extends Fragment {
     private TextView tvBoarderName;
     private TextView tvBoarderEmail;
     private TextView tvSignOut;
+    private LinearLayout layoutSignOut;
+    private android.widget.Button btnLogout;
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
@@ -91,6 +93,8 @@ public class BoarderProfileFragment extends Fragment {
             
             // Sign out
             tvSignOut = view.findViewById(R.id.tvSignOut);
+            layoutSignOut = view.findViewById(R.id.layoutSignOut);
+            btnLogout = view.findViewById(R.id.btnLogout);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -232,9 +236,19 @@ public class BoarderProfileFragment extends Fragment {
                 });
             }
 
-            // Sign Out
-            if (tvSignOut != null) {
-                tvSignOut.setOnClickListener(v -> {
+            // Sign Out - Both text and button trigger logout
+            if (layoutSignOut != null) {
+                layoutSignOut.setOnClickListener(v -> {
+                    try {
+                        showSignOutConfirmationDialog();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+            
+            if (btnLogout != null) {
+                btnLogout.setOnClickListener(v -> {
                     try {
                         showSignOutConfirmationDialog();
                     } catch (Exception e) {
@@ -249,16 +263,33 @@ public class BoarderProfileFragment extends Fragment {
 
     private void loadUserData() {
         try {
-            // Load user data from SharedPreferences or API
-            // For now, using mock data
+            // Load user data from SharedPreferences
+            String userName = Login.getCurrentUserName(getContext());
+            String userEmail = Login.getCurrentUserEmail(getContext());
+            
             if (tvBoarderName != null) {
-                tvBoarderName.setText("John Doe"); // Mock name
+                if (userName != null && !userName.isEmpty()) {
+                    tvBoarderName.setText(userName);
+                } else {
+                    tvBoarderName.setText("User Name"); // Fallback
+                }
             }
             if (tvBoarderEmail != null) {
-                tvBoarderEmail.setText("john.doe@email.com"); // Mock email
+                if (userEmail != null && !userEmail.isEmpty()) {
+                    tvBoarderEmail.setText(userEmail);
+                } else {
+                    tvBoarderEmail.setText("user@email.com"); // Fallback
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            // Fallback to mock data if there's an error
+            if (tvBoarderName != null) {
+                tvBoarderName.setText("User Name");
+            }
+            if (tvBoarderEmail != null) {
+                tvBoarderEmail.setText("user@email.com");
+            }
         }
     }
 
@@ -295,8 +326,14 @@ public class BoarderProfileFragment extends Fragment {
             builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    // TODO: Implement sign out functionality
-                    Toast.makeText(getContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
+                    try {
+                        // Use the Login.logout() method to properly sign out
+                        Login.logout(getContext());
+                        Toast.makeText(getContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error signing out", Toast.LENGTH_SHORT).show();
+                    }
                     dialog.dismiss();
                 }
             });

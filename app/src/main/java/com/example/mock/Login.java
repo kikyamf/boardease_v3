@@ -47,7 +47,7 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "user_email";
     
-    // Server URL
+    // Server URL - Update this path if login.php is in a different location
     private static final String LOGIN_URL = "http://192.168.1.3/boardease2/login.php";
 
     @Override
