@@ -94,7 +94,6 @@ public class BoarderProfileFragment extends Fragment {
             // Sign out
             tvSignOut = view.findViewById(R.id.tvSignOut);
             layoutSignOut = view.findViewById(R.id.layoutSignOut);
-            btnLogout = view.findViewById(R.id.btnLogout);
         } catch (Exception e) {
             e.printStackTrace();
         }
