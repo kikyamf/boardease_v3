@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.mock.BoardingHouseDetailsActivity;
+import com.example.mock.BoarderFavoriteFragment;
 import com.example.mock.Listing;
 import com.example.mock.R;
 import java.util.List;
@@ -75,9 +76,9 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
         // Set favorite button click listener
         holder.btnFavorite.setOnClickListener(v -> {
             if (favoriteClickListener != null) {
-                // Toggle favorite state
-                boolean isFavorite = false; // Placeholder - get from model
-                favoriteClickListener.onFavoriteClick(boardingHouse, !isFavorite);
+                // Check if already in favorites
+                boolean isCurrentlyFavorite = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
+                favoriteClickListener.onFavoriteClick(boardingHouse, !isCurrentlyFavorite);
             }
         });
     }

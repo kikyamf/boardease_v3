@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- Header Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="24dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Your Favorites"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold" />
+
+        <!-- Search Icon (Optional) -->
+        <ImageView
+            android:id="@+id/ivSearch"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/search"
+            android:contentDescription="Search favorites"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Search Bar (Hidden by default, can be toggled) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardSearchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#FFFFFF"
+        app:cardCornerRadius="30dp"
+        app:cardElevation="3dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/search"
+                android:contentDescription="Search" />
+
+            <EditText
+                android:id="@+id/etSearchFavorites"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Search your favorites..."
+                android:background="@android:color/transparent"
+                android:paddingStart="12dp"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <ImageButton
+                android:id="@+id/btnCloseSearch"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_back"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close search" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Filter and Sort Options -->
+    <LinearLayout
+        android:id="@+id/layoutFilterSort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFilter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Filter"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium"
+            app:cornerRadius="20dp"
+            app:strokeColor="#E0E0E0"
+            app:strokeWidth="1dp"
+            android:backgroundTint="#FFFFFF"
+            app:icon="@drawable/ic_arrow_down"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSort"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Sort"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium"
+            app:cornerRadius="20dp"
+            app:strokeColor="#E0E0E0"
+            app:strokeWidth="1dp"
+            android:backgroundTint="#FFFFFF"
+            app:icon="@drawable/ic_arrow_down"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+    </LinearLayout>
+
+    <!-- Results Count -->
+    <TextView
+        android:id="@+id/tvFavoritesCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="8dp"
+        android:text="0 favorites"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:fontFamily="@font/poppins_regular" />
+
+    <!-- Favorites RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFavorites"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="24dp"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp" />
+
+    <!-- Loading Indicator -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginVertical="24dp"
+        android:visibility="gone" />
+
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyState"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/btn_heart"
+            android:contentDescription="No favorites"
+            android:alpha="0.3"
+            android:tint="#A18167" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You haven't added any favorites yet"
+            android:textSize="18sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_medium"
+            android:layout_marginTop="16dp"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start exploring and add boarding houses to your favorites"
+            android:textSize="14sp"
+            android:textColor="#999999"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginTop="8dp"
+            android:gravity="center" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExploreNow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Explore Now"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="@color/brown"
+            app:cornerRadius="25dp"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="12dp"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

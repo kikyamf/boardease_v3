@@ -51,8 +51,7 @@ public class BoarderDashboard extends AppCompatActivity {
                             // TODO: Replace with BoarderExploreFragment when created
                             selectedFragment = new ExploreFragment(); // Using existing ExploreFragment as placeholder
                         } else if (itemId == R.id.nav_manage) {
-                            // TODO: Create BoarderFavoritesFragment
-                            selectedFragment = new BoarderHomeFragment(); // Placeholder
+                            selectedFragment = new BoarderFavoriteFragment();
                         } else if (itemId == R.id.nav_activity) {
                             // TODO: Create BoarderBookingsFragment
                             selectedFragment = new BoarderHomeFragment(); // Placeholder

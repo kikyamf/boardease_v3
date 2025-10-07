@@ -242,16 +242,21 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
 
     @Override
     public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
-        // Handle favorite button click (for both adapters)
-        String message = isFavorite ? "Added to favorites: " + boardingHouse.getBhName() 
-                                   : "Removed from favorites: " + boardingHouse.getBhName();
-        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-        
-        // TODO: Implement actual favorite functionality
-        // This could involve:
-        // 1. Adding/removing from favorites list
-        // 2. Updating UI to show favorite state
-        // 3. Saving to local database or sending to server
+        try {
+            if (isFavorite) {
+                // Add to favorites
+                BoarderFavoriteFragment.addToFavorites(getContext(), boardingHouse);
+                String message = "Added to favorites: " + boardingHouse.getBhName();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            } else {
+                // Remove from favorites
+                String message = "Removed from favorites: " + boardingHouse.getBhName();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                // TODO: Implement remove from favorites functionality
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Custom ItemDecoration for horizontal spacing
