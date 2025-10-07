@@ -10,7 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="32dp">
 
         <!-- Header Section -->
         <LinearLayout
@@ -18,28 +20,30 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingBottom="16dp">
+            android:paddingBottom="20dp">
 
             <!-- Back Button -->
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="wrap_content"
+                android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:background="@android:color/transparent"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Back"
-                android:src="@drawable/arrowleft" />
+                android:src="@drawable/arrowleft"
+                android:tint="#5D4037" />
 
+            <!-- Title -->
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Account Settings"
                 android:textSize="20sp"
-                android:fontFamily="@font/poppins_medium"
+                android:fontFamily="@font/poppins_semibold"
                 android:gravity="center"
                 android:textColor="#000000" />
 
-            <!-- Placeholder for symmetry -->
+            <!-- Placeholder -->
             <View
                 android:layout_width="36dp"
                 android:layout_height="36dp" />
@@ -49,9 +53,11 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="5dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E0E0E0"
             android:backgroundTint="#FFFFFF">
 
             <LinearLayout
@@ -60,7 +66,6 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <!-- Section Title -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -68,40 +73,94 @@
                     android:textSize="18sp"
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="#000000"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="12dp" />
 
-                <!-- Full Name -->
+                <!-- Each field spaced properly -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/ic_person"
-                    app:startIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:startIconDrawable="@drawable/ic_name"
+                    app:startIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etFullName"
+                        android:id="@+id/etFirstName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Full Name"
-                        android:inputType="textPersonName"
+                        android:hint="First Name"
+                        android:inputType="text"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Email -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/ic_name"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etMiddleName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Middle Name"
+                        android:inputType="text"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxStrokeColor="@color/brown"
+                    app:hintTextColor="@color/brown"
+                    app:startIconDrawable="@drawable/ic_name"
+                    app:startIconTint="@color/brown">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etLastName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Last Name"
+                        android:inputType="textEmailAddress"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/email"
-                    app:startIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:startIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEmail"
@@ -111,19 +170,17 @@
                         android:inputType="textEmailAddress"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Contact Number -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/call"
-                    app:startIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:startIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etContactNumber"
@@ -133,19 +190,17 @@
                         android:inputType="phone"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Birthdate -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/ic_calendar"
-                    app:startIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:startIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etBirthdate"
@@ -157,19 +212,17 @@
                         android:fontFamily="@font/poppins_regular"
                         android:focusable="false"
                         android:clickable="true" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Address -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/location"
-                    app:startIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:startIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etAddress"
@@ -179,10 +232,8 @@
                         android:inputType="textPostalAddress"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Save Changes Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveChanges"
                     android:layout_width="match_parent"
@@ -192,9 +243,8 @@
                     android:textColor="#FFFFFF"
                     android:fontFamily="@font/poppins_medium"
                     android:backgroundTint="@color/brown"
-                    app:cornerRadius="8dp"
+                    app:cornerRadius="10dp"
                     android:paddingVertical="12dp" />
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -202,9 +252,10 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="5dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E0E0E0"
             android:backgroundTint="#FFFFFF">
 
             <LinearLayout
@@ -213,7 +264,6 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <!-- Section Title -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -221,9 +271,8 @@
                     android:textSize="18sp"
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="#000000"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="12dp" />
 
-                <!-- Change Password Label -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -231,20 +280,19 @@
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium"
                     android:textColor="#333333"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="10dp" />
 
-                <!-- Current Password -->
+                <!-- Password fields -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etCurrentPassword"
@@ -254,21 +302,18 @@
                         android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- New Password -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etNewPassword"
@@ -278,21 +323,18 @@
                         android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Confirm New Password -->
                 <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
                     app:startIconDrawable="@drawable/key"
                     app:startIconTint="@color/brown"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etConfirmPassword"
@@ -302,10 +344,8 @@
                         android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
-
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Update Password Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnUpdatePassword"
                     android:layout_width="match_parent"
@@ -315,9 +355,8 @@
                     android:textColor="#FFFFFF"
                     android:fontFamily="@font/poppins_medium"
                     android:backgroundTint="@color/brown"
-                    app:cornerRadius="8dp"
+                    app:cornerRadius="10dp"
                     android:paddingVertical="12dp" />
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -327,8 +366,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginVertical="16dp"
+            android:layout_marginTop="20dp"
             android:visibility="gone" />
-
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

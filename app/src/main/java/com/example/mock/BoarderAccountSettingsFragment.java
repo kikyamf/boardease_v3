@@ -91,7 +91,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             progressBar = view.findViewById(R.id.progressBar);
 
             // Personal Information fields
-            etFullName = view.findViewById(R.id.etFullName);
+            etFullName = view.findViewById(R.id.etFirstName);
             etEmail = view.findViewById(R.id.etEmail);
             etContactNumber = view.findViewById(R.id.etContactNumber);
             etBirthdate = view.findViewById(R.id.etBirthdate);
