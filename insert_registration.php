@@ -42,6 +42,9 @@ if (!$firstName || !$lastName || !$email || !$password) {
     exit;
 }
 
+// Hash the password for security
+$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
 // Handle file uploads
 $uploadDir = "uploads/"; // make sure this folder exists and is writable
 
@@ -79,7 +82,7 @@ if (!$stmt) {
 
 $stmt->bind_param("ssssssssssssssss",
     $role, $firstName, $middleName, $lastName, $birthDate,
-    $phone, $address, $email, $password, $gcashNum,
+    $phone, $address, $email, $hashedPassword, $gcashNum,
     $idType, $idNumber, $isAgreed,
     $idFrontPath, $idBackPath, $gcashQRPath
 );
