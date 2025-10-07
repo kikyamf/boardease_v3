@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mock.adapters.BoardingHouseAdapter;
+import com.example.mock.adapters.BoardingHouseCarouselAdapter;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
  * BoarderHomeFragment - Main home page for boarders
  * Displays recommended boarding houses carousel and nearby boarding houses list
  */
-public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener {
+public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener, BoardingHouseCarouselAdapter.OnFavoriteClickListener {
 
     // Views
     private EditText etSearch;
@@ -42,7 +43,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private TextView tvBoarderName;
 
     // Adapters
-    private BoardingHouseAdapter recommendedAdapter;
+    private BoardingHouseCarouselAdapter recommendedAdapter;
     private BoardingHouseAdapter nearbyAdapter;
 
     // Data
@@ -102,7 +103,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
 
             // Setup Recommended BHs RecyclerView (Horizontal)
             if (rvRecommendedBH != null && getContext() != null) {
-                recommendedAdapter = new BoardingHouseAdapter(getContext(), recommendedBoardingHouses, this);
+                recommendedAdapter = new BoardingHouseCarouselAdapter(getContext(), recommendedBoardingHouses, this);
                 LinearLayoutManager recommendedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
                 rvRecommendedBH.setLayoutManager(recommendedLayoutManager);
                 rvRecommendedBH.setAdapter(recommendedAdapter);
@@ -241,7 +242,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
 
     @Override
     public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
-        // Handle favorite button click
+        // Handle favorite button click (for both adapters)
         String message = isFavorite ? "Added to favorites: " + boardingHouse.getBhName() 
                                    : "Removed from favorites: " + boardingHouse.getBhName();
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
@@ -251,5 +252,24 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         // 1. Adding/removing from favorites list
         // 2. Updating UI to show favorite state
         // 3. Saving to local database or sending to server
+    }
+
+    // Custom ItemDecoration for horizontal spacing
+    public static class HorizontalSpacingItemDecoration extends RecyclerView.ItemDecoration {
+        private final int spacing;
+
+        public HorizontalSpacingItemDecoration(int spacing) {
+            this.spacing = spacing;
+        }
+
+        @Override
+        public void getItemOffsets(android.graphics.Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+            int position = parent.getChildAdapterPosition(view);
+            
+            // Add spacing to the right of each item except the last one
+            if (position != parent.getAdapter().getItemCount() - 1) {
+                outRect.right = spacing;
+            }
+        }
     }
 }
