@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -211,13 +212,43 @@ public class Registration2Activity extends AppCompatActivity {
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
                     response -> {
                         try {
-                            JSONObject obj = new JSONObject(new String(response.data));
-                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                            String responseString = new String(response.data);
+                            Log.d("RegistrationResponse", "Server response: " + responseString);
+                            
+                            JSONObject obj = new JSONObject(responseString);
+                            String message = obj.getString("message");
+                            boolean success = obj.getBoolean("success");
+                            
+                            if (success) {
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                                // Navigate to login after successful registration
+                                Intent intent = new Intent(this, Login.class);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                Toast.makeText(this, "Registration failed: " + message, Toast.LENGTH_SHORT).show();
+                            }
                         } catch (Exception e) {
+                            Log.e("RegistrationError", "Response parsing error: " + e.getMessage());
                             e.printStackTrace();
+                            Toast.makeText(this, "Server response error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     },
-                    error -> Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                    error -> {
+                        Log.e("RegistrationError", "Volley error: " + error.getMessage());
+                        Log.e("RegistrationError", "Error details: " + error.toString());
+                        
+                        String errorMessage = "Upload failed: ";
+                        if (error.getMessage() != null) {
+                            errorMessage += error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage += "HTTP " + error.networkResponse.statusCode;
+                        } else {
+                            errorMessage += "Unknown network error";
+                        }
+                        
+                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                    }
             ) {
                 @Override
                 protected Map<String, String> getParams() {

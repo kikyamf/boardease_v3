@@ -5,6 +5,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Log the request for debugging
+error_log("Registration request received at " . date('Y-m-d H:i:s'));
+error_log("POST data: " . print_r($_POST, true));
+error_log("FILES data: " . print_r($_FILES, true));
+
 // Database connection
 $servername = "localhost";
 $username   = "root"; // adjust if needed
@@ -92,11 +97,14 @@ if ($stmt->execute()) {
         "success" => true,
         "message" => "Registration successful!"
     );
+    error_log("Registration successful for user: " . $email);
     echo json_encode($response);
 } else {
+    $errorMsg = "Database insert error: " . $stmt->error;
+    error_log("Registration failed: " . $errorMsg);
     $response = array(
         "success" => false,
-        "message" => "Database insert error: " . $stmt->error
+        "message" => $errorMsg
     );
     echo json_encode($response);
 }
