@@ -79,7 +79,6 @@ public class OwnerProfileFragment extends Fragment {
         tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
         tvSignOut = view.findViewById(R.id.tvSignOut);
         layoutSignOut = view.findViewById(R.id.layoutSignOut);
-        btnLogout = view.findViewById(R.id.btnLogout);
 
         layoutPayments = view.findViewById(R.id.layoutPayments);
         layoutNotifications = view.findViewById(R.id.layoutNotifications);
