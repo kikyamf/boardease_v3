@@ -10,14 +10,8 @@
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="608dp"
-
+        android:layout_height="0dp"
         android:layout_weight="1" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="13dp"
-        android:background="@color/white" />
 
     <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

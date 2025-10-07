@@ -24,7 +24,7 @@
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
         <activity
-            android:name=".BoarderDashboard"
+            android:name=".MainActivity"
             android:exported="false" />
         <activity
             android:name=".EditRoomActivity"
@@ -46,9 +46,9 @@
             android:exported="false" />
         <activity
             android:name=".Type"
-            android:exported="false" /> <!-- Make Details the launcher activity -->
+            android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".BoarderDashboard"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -64,7 +64,7 @@
             android:exported="false" />
         <activity
             android:name=".Login"
-            android:exported="false" /> <!-- MainActivity is no longer the launcher -->
+            android:exported="false" />
         <activity
             android:name=".Messages"
             android:exported="false" />
