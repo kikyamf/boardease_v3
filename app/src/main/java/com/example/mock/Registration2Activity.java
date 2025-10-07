@@ -3,6 +3,7 @@ package com.example.mock;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -13,6 +14,9 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -46,6 +50,8 @@ public class Registration2Activity extends AppCompatActivity {
     // File paths for ID images
     private String idFrontPath = null;
     private String idBackPath = null;
+    private Uri idFrontUri = null;
+    private Uri idBackUri = null;
 
     // Get data from first registration screen
     String role, firstName, middleName, lastName, birthDate, phone, address, email, password, gcashNum, qrPath;
@@ -90,6 +96,7 @@ public class Registration2Activity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         ivUploadF.setImageURI(uri); // show image
+                        idFrontUri = uri; // save URI
                         idFrontPath = uri.toString(); // save URI path
                     }
                 }
@@ -100,6 +107,7 @@ public class Registration2Activity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         ivUploadB.setImageURI(uri); // show image
+                        idBackUri = uri; // save URI
                         idBackPath = uri.toString(); // save URI path
                     }
                 }
@@ -152,12 +160,25 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            if (idFrontPath == null || idBackPath == null) {
+            if (idFrontUri == null || idBackUri == null) {
                 Toast.makeText(this, "Please upload front and back ID images", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Toast.makeText(this, "Front: " + idFrontPath + "\nBack: " + idBackPath, Toast.LENGTH_LONG).show();
+            // Convert URIs to Bitmaps
+            try {
+                frontBitmap = getBitmapFromUri(idFrontUri);
+                backBitmap = getBitmapFromUri(idBackUri);
+                
+                // For QR code, we need to get it from the first activity
+                if (qrPath != null) {
+                    Uri qrUri = Uri.parse(qrPath);
+                    qrBitmap = getBitmapFromUri(qrUri);
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, "Error processing images: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             String UPLOAD_URL = "http://192.168.137.1/boardease2/insert_registration.php";
 
@@ -216,5 +237,14 @@ public class Registration2Activity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        InputStream inputStream = getContentResolver().openInputStream(uri);
+        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+        if (inputStream != null) {
+            inputStream.close();
+        }
+        return bitmap;
     }
 }
