@@ -23,15 +23,29 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     private Context context;
     private List<Listing> boardingHouseList;
     private OnFavoriteClickListener favoriteClickListener;
+    private OnDeleteClickListener deleteClickListener;
+    private boolean showDeleteButton = false;
     
     public interface OnFavoriteClickListener {
         void onFavoriteClick(Listing boardingHouse, boolean isFavorite);
+    }
+    
+    public interface OnDeleteClickListener {
+        void onDeleteClick(Listing boardingHouse);
     }
     
     public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnFavoriteClickListener favoriteClickListener) {
         this.context = context;
         this.boardingHouseList = boardingHouseList;
         this.favoriteClickListener = favoriteClickListener;
+    }
+    
+    public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnFavoriteClickListener favoriteClickListener, OnDeleteClickListener deleteClickListener, boolean showDeleteButton) {
+        this.context = context;
+        this.boardingHouseList = boardingHouseList;
+        this.favoriteClickListener = favoriteClickListener;
+        this.deleteClickListener = deleteClickListener;
+        this.showDeleteButton = showDeleteButton;
     }
     
     @NonNull
@@ -80,6 +94,11 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             context.startActivity(intent);
         });
         
+        // Show/hide delete button based on adapter configuration
+        if (holder.btnDelete != null) {
+            holder.btnDelete.setVisibility(showDeleteButton ? View.VISIBLE : View.GONE);
+        }
+        
         // Set favorite button click listener
         holder.btnFavorite.setOnClickListener(v -> {
             if (favoriteClickListener != null) {
@@ -88,6 +107,15 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
                 favoriteClickListener.onFavoriteClick(boardingHouse, !isCurrentlyFavorite);
             }
         });
+        
+        // Set delete button click listener
+        if (holder.btnDelete != null) {
+            holder.btnDelete.setOnClickListener(v -> {
+                if (deleteClickListener != null) {
+                    deleteClickListener.onDeleteClick(boardingHouse);
+                }
+            });
+        }
     }
     
     @Override
@@ -103,7 +131,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     public static class BoardingHouseViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
         TextView tvBoardingHouseName, tvLocation, tvDescription, tvAccommodationTypes, tvPrice;
-        ImageButton btnFavorite;
+        ImageButton btnFavorite, btnDelete;
         
         public BoardingHouseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -114,6 +142,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             tvAccommodationTypes = itemView.findViewById(R.id.tvAccommodationTypes);
             tvPrice = itemView.findViewById(R.id.tvPrice);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }
 }

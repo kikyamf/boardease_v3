@@ -1,5 +1,7 @@
 package com.example.mock;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -32,7 +34,7 @@ import java.util.Set;
  * BoarderFavoriteFragment - Displays user's favorite boarding houses
  * Allows users to view, search, and manage their favorite listings
  */
-public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener {
+public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener, BoardingHouseAdapter.OnDeleteClickListener {
 
     // Views
     private RecyclerView rvFavorites;
@@ -100,7 +102,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             allFavorites = new ArrayList<>();
             filteredFavorites = new ArrayList<>();
 
-            favoritesAdapter = new BoardingHouseAdapter(getContext(), filteredFavorites, this);
+            favoritesAdapter = new BoardingHouseAdapter(getContext(), filteredFavorites, this, this, true);
             LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvFavorites.setLayoutManager(layoutManager);
             rvFavorites.setAdapter(favoritesAdapter);
