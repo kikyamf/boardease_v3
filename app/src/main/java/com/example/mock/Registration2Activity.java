@@ -1,10 +1,13 @@
 package com.example.mock;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -14,6 +17,9 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,6 +61,9 @@ public class Registration2Activity extends AppCompatActivity {
 
     // Get data from first registration screen
     String role, firstName, middleName, lastName, birthDate, phone, address, email, password, gcashNum, qrPath;
+    
+    // Permission request launcher
+    private ActivityResultLauncher<String> requestPermissionLauncher;
 
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
@@ -89,6 +98,21 @@ public class Registration2Activity extends AppCompatActivity {
         password = getIntent().getStringExtra("password");
         gcashNum = getIntent().getStringExtra("gcashNum");
         qrPath = getIntent().getStringExtra("qrUri");
+
+        // Initialize permission request launcher
+        requestPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        // Permission granted, you can proceed with image operations
+                    } else {
+                        Toast.makeText(this, "Permission denied. Cannot access images.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        // Check and request permissions
+        checkAndRequestPermissions();
 
         // Prepare image pickers
         pickFrontImageLauncher = registerForActivityResult(
@@ -239,12 +263,36 @@ public class Registration2Activity extends AppCompatActivity {
         });
     }
 
-    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
-        InputStream inputStream = getContentResolver().openInputStream(uri);
-        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-        if (inputStream != null) {
-            inputStream.close();
+    private void checkAndRequestPermissions() {
+        String permission;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permission = Manifest.permission.READ_MEDIA_IMAGES;
+        } else {
+            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
         }
-        return bitmap;
+
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissionLauncher.launch(permission);
+        }
+    }
+
+    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                throw new IOException("Cannot open input stream for URI: " + uri);
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+            
+            if (bitmap == null) {
+                throw new IOException("Failed to decode bitmap from URI: " + uri);
+            }
+            
+            return bitmap;
+        } catch (Exception e) {
+            throw new IOException("Error processing image: " + e.getMessage(), e);
+        }
     }
 }
