@@ -24,6 +24,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     private List<Listing> boardingHouseList;
     private OnFavoriteClickListener favoriteClickListener;
     private OnDeleteClickListener deleteClickListener;
+    private OnBoardingHouseClickListener boardingHouseClickListener;
     private boolean showDeleteButton = false;
     
     public interface OnFavoriteClickListener {
@@ -34,10 +35,20 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         void onDeleteClick(Listing boardingHouse);
     }
     
+    public interface OnBoardingHouseClickListener {
+        void onBoardingHouseClick(Listing boardingHouse);
+    }
+    
     public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnFavoriteClickListener favoriteClickListener) {
         this.context = context;
         this.boardingHouseList = boardingHouseList;
         this.favoriteClickListener = favoriteClickListener;
+    }
+    
+    public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnBoardingHouseClickListener boardingHouseClickListener) {
+        this.context = context;
+        this.boardingHouseList = boardingHouseList;
+        this.boardingHouseClickListener = boardingHouseClickListener;
     }
     
     public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnFavoriteClickListener favoriteClickListener, OnDeleteClickListener deleteClickListener, boolean showDeleteButton) {
@@ -87,11 +98,17 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         
         // Set click listener for the entire card
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, BoardingHouseDetailsActivity.class);
-            intent.putExtra("boarding_house_id", boardingHouse.getBhId());
-            intent.putExtra("boarding_house_name", boardingHouse.getBhName());
-            intent.putExtra("boarding_house_image", boardingHouse.getImagePath());
-            context.startActivity(intent);
+            if (boardingHouseClickListener != null) {
+                // Use callback if provided (for guest mode)
+                boardingHouseClickListener.onBoardingHouseClick(boardingHouse);
+            } else {
+                // Default behavior (navigate to details)
+                Intent intent = new Intent(context, BoardingHouseDetailsActivity.class);
+                intent.putExtra("boarding_house_id", boardingHouse.getBhId());
+                intent.putExtra("boarding_house_name", boardingHouse.getBhName());
+                intent.putExtra("boarding_house_image", boardingHouse.getImagePath());
+                context.startActivity(intent);
+            }
         });
         
         // Show/hide delete button based on adapter configuration

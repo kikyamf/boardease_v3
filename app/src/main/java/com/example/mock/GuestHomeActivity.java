@@ -31,7 +31,7 @@ import java.util.List;
  * GuestHomeActivity - Guest view of the main page
  * Displays listings with search functionality and guest restrictions
  */
-public class GuestHomeActivity extends AppCompatActivity implements BoardingHouseAdapter.OnBoardingHouseClickListener {
+public class GuestHomeActivity extends AppCompatActivity implements BoardingHouseAdapter.OnBoardingHouseClickListener, BoardingHouseAdapter.OnFavoriteClickListener {
 
     // Views
     private EditText etSearch;
@@ -151,7 +151,7 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
     }
 
     @Override
-    public void onFavoriteClick(Listing listing) {
+    public void onFavoriteClick(Listing listing, boolean isFavorite) {
         // Show guest restriction dialog for favorites too
         showGuestRestrictionDialog();
     }
