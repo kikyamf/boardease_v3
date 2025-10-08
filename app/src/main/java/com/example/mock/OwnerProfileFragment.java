@@ -9,7 +9,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -36,13 +35,12 @@ import java.util.Map;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.254.121/BoardEase2/get_owner_profile.php";
+    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
     private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
-    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp, layoutSignOut;
-    private Button btnLogout;
+    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
 
     public OwnerProfileFragment() {
         // Required empty public constructor
@@ -77,7 +75,6 @@ public class OwnerProfileFragment extends Fragment {
         tvOwnerName = view.findViewById(R.id.tvOwnerName);
         tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
         tvSignOut = view.findViewById(R.id.tvSignOut);
-        layoutSignOut = view.findViewById(R.id.layoutSignOut);
 
         layoutPayments = view.findViewById(R.id.layoutPayments);
         layoutNotifications = view.findViewById(R.id.layoutNotifications);
@@ -98,28 +95,9 @@ public class OwnerProfileFragment extends Fragment {
         layoutMessages.setOnClickListener(v -> Toast.makeText(getContext(), "Open Messages", Toast.LENGTH_SHORT).show());
         layoutAccountSettings.setOnClickListener(v -> openAccountSettings());
         layoutGcashInfo.setOnClickListener(v -> openGcashInfo());
-        layoutAboutApp.setOnClickListener(v -> showAboutAppDialog());
+        layoutAboutApp.setOnClickListener(v -> Toast.makeText(getContext(), "Open About App", Toast.LENGTH_SHORT).show());
 
-        // Sign Out - Both text and button trigger logout
-        if (layoutSignOut != null) {
-            layoutSignOut.setOnClickListener(v -> {
-                try {
-                    showSignOutConfirmationDialog();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        
-        if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> {
-                try {
-                    showSignOutConfirmationDialog();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+        tvSignOut.setOnClickListener(v -> showSignOutConfirmationDialog());
 
         return view;
     }
@@ -201,7 +179,7 @@ public class OwnerProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "http://192.168.254.121/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -245,31 +223,6 @@ public class OwnerProfileFragment extends Fragment {
         loadOwnerProfile();
     }
     
-    private void showAboutAppDialog() {
-        try {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            builder.setTitle("About BoardEase");
-            builder.setMessage("BoardEase v1.0.0\n\n" +
-                    "A comprehensive platform for managing boarding house accommodations.\n\n" +
-                    "Owner Features:\n" +
-                    "• Manage boarding houses\n" +
-                    "• Track bookings\n" +
-                    "• Handle payments\n" +
-                    "• Communicate with boarders\n\n" +
-                    "© 2024 BoardEase. All rights reserved.");
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private void showSignOutConfirmationDialog() {
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());

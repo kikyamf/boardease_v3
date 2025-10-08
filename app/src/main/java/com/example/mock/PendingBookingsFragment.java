@@ -1,5 +1,7 @@
 package com.example.mock;
 
+import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,15 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +32,8 @@ public class PendingBookingsFragment extends Fragment {
     private RecyclerView recyclerView;
     private PendingBookingsAdapter adapter;
     private List<BookingData> pendingBookings;
+    private ProgressDialog progressDialog;
+    private RequestQueue requestQueue;
     private int userId;
 
     public static PendingBookingsFragment newInstance(int userId) {
@@ -44,7 +57,10 @@ public class PendingBookingsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Initialize with sample data
+        // Initialize request queue
+        requestQueue = Volley.newRequestQueue(getContext());
+
+        // Initialize with empty list
         pendingBookings = new ArrayList<>();
         loadPendingBookings();
 
@@ -52,57 +68,211 @@ public class PendingBookingsFragment extends Fragment {
     }
 
     private void loadPendingBookings() {
-        // Sample data - replace with actual API call
-        pendingBookings.clear();
-        pendingBookings.add(new BookingData(
-            "John Doe",
-            "john.doe@email.com",
-            "09123456789",
-            "Room 1 - Single",
-            "2025-01-15",
-            "2025-04-15",
-            "P3,000.00",
-            "Long-term",
-            "Pending"
-        ));
-        pendingBookings.add(new BookingData(
-            "Jane Smith",
-            "jane.smith@email.com",
-            "09123456788",
-            "Room 2 - Double",
-            "2025-01-20",
-            "2025-02-20",
-            "P2,500.00",
-            "Short-term",
-            "Pending"
-        ));
+        showProgressDialog("Loading pending bookings...");
+        
+        String url = "http://192.168.101.6/BoardEase2/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            JSONArray bookingsArray = data.getJSONArray("pending_bookings");
+                            
+                            pendingBookings.clear();
+                            
+                            for (int i = 0; i < bookingsArray.length(); i++) {
+                                JSONObject bookingObj = bookingsArray.getJSONObject(i);
+                                
+                                BookingData booking = new BookingData(
+                                    bookingObj.getInt("booking_id"),
+                                    bookingObj.getString("boarder_name"),
+                                    bookingObj.getString("boarder_email"),
+                                    bookingObj.getString("boarder_phone"),
+                                    bookingObj.getString("room_name"),
+                                    bookingObj.getString("start_date"),
+                                    bookingObj.getString("end_date"),
+                                    bookingObj.getString("amount"),
+                                    bookingObj.getString("rent_type"),
+                                    bookingObj.getString("status"),
+                                    bookingObj.getString("boarding_house_name"),
+                                    bookingObj.getString("boarding_house_address"),
+                                    bookingObj.getString("booking_date"),
+                                    bookingObj.getString("payment_status"),
+                                    bookingObj.getString("notes"),
+                                    bookingObj.getString("profile_image"),
+                                    bookingObj.getInt("boarder_id"),
+                                    bookingObj.getInt("room_id"),
+                                    bookingObj.getInt("boarding_house_id")
+                                );
+                                
+                                pendingBookings.add(booking);
+                            }
+                            
+                            adapter = new PendingBookingsAdapter(pendingBookings, new PendingBookingsAdapter.OnBookingActionListener() {
+                                @Override
+                                public void onApprove(BookingData booking) {
+                                    // Handle approve booking
+                                    approveBooking(booking);
+                                }
 
-        adapter = new PendingBookingsAdapter(pendingBookings, new PendingBookingsAdapter.OnBookingActionListener() {
-            @Override
-            public void onApprove(BookingData booking) {
-                // Handle approve booking
-                Toast.makeText(getContext(), "Approved booking for " + booking.getBoarderName(), Toast.LENGTH_SHORT).show();
-                // Remove from pending list
-                pendingBookings.remove(booking);
-                adapter.notifyDataSetChanged();
+                                @Override
+                                public void onDecline(BookingData booking) {
+                                    // Handle decline booking
+                                    declineBooking(booking);
+                                }
+
+                                @Override
+                                public void onViewDetails(BookingData booking) {
+                                    // Navigate to booking details
+                                    Intent intent = new Intent(getContext(), BookingDetailsActivity.class);
+                                    // TODO: Pass booking data through intent
+                                    startActivity(intent);
+                                }
+                            });
+                            
+                            recyclerView.setAdapter(adapter);
+                        } else {
+                            Toast.makeText(getContext(), "Error loading bookings: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                        hideProgressDialog();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing booking data", Toast.LENGTH_SHORT).show();
+                        hideProgressDialog();
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Error loading bookings: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    hideProgressDialog();
+                });
+
+        requestQueue.add(request);
+    }
+    
+    private void approveBooking(BookingData booking) {
+        showProgressDialog("Approving booking...");
+        
+        String url = "http://192.168.101.6/BoardEase2/approve_booking.php";
+        
+        JSONObject requestBody = new JSONObject();
+        try {
+            requestBody.put("booking_id", booking.getBookingId());
+            requestBody.put("owner_id", userId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, requestBody,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            Toast.makeText(getContext(), "Booking approved successfully!", Toast.LENGTH_SHORT).show();
+                            // Remove from pending list
+                            pendingBookings.remove(booking);
+                            adapter.notifyDataSetChanged();
+                        } else {
+                            Toast.makeText(getContext(), "Error: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                        hideProgressDialog();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                        hideProgressDialog();
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Error approving booking: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    hideProgressDialog();
+                });
+
+        requestQueue.add(request);
+    }
+    
+    private void declineBooking(BookingData booking) {
+        showProgressDialog("Declining booking...");
+        
+        String url = "http://192.168.101.6/BoardEase2/decline_booking.php";
+        
+        JSONObject requestBody = new JSONObject();
+        try {
+            requestBody.put("booking_id", booking.getBookingId());
+            requestBody.put("owner_id", userId);
+            requestBody.put("reason", "Declined by owner");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, requestBody,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            Toast.makeText(getContext(), "Booking declined.", Toast.LENGTH_SHORT).show();
+                            // Remove from pending list
+                            pendingBookings.remove(booking);
+                            adapter.notifyDataSetChanged();
+                        } else {
+                            Toast.makeText(getContext(), "Error: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                        hideProgressDialog();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                        hideProgressDialog();
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Error declining booking: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    hideProgressDialog();
+                });
+
+        requestQueue.add(request);
+    }
+    
+    private void showProgressDialog(String message) {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
             }
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage(message);
+            progressDialog.setCancelable(false);
+            progressDialog.setIndeterminate(true);
+            progressDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            @Override
-            public void onDecline(BookingData booking) {
-                // Handle decline booking
-                Toast.makeText(getContext(), "Declined booking for " + booking.getBoarderName(), Toast.LENGTH_SHORT).show();
-                // Remove from pending list
-                pendingBookings.remove(booking);
-                adapter.notifyDataSetChanged();
+    private void hideProgressDialog() {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
             }
-
-            @Override
-            public void onViewDetails(BookingData booking) {
-                // Handle view details
-                Toast.makeText(getContext(), "View details for " + booking.getBoarderName(), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        recyclerView.setAdapter(adapter);
+            progressDialog = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        hideProgressDialog();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

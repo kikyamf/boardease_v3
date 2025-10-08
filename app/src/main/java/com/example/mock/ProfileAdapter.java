@@ -16,10 +16,25 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
 
     private Context context;
     private List<ProfileModel> profileList;
+    private boolean selectionMode = false;
+    private OnItemClickListener onItemClickListener;
+
+    public interface OnItemClickListener {
+        void onItemClick(ProfileModel profile);
+    }
 
     public ProfileAdapter(Context context, List<ProfileModel> profileList) {
         this.context = context;
         this.profileList = profileList;
+    }
+
+    public void setSelectionMode(boolean selectionMode) {
+        this.selectionMode = selectionMode;
+        notifyDataSetChanged();
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.onItemClickListener = listener;
     }
 
     @NonNull
@@ -32,8 +47,36 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
     @Override
     public void onBindViewHolder(@NonNull ProfileViewHolder holder, int position) {
         ProfileModel profile = profileList.get(position);
-        holder.profileName.setText(profile.getName());
+        
+        // Show full name for search results, first name for horizontal profiles
+        String fullName = profile.getName();
+        if (selectionMode) {
+            // In search mode, show full name
+            holder.profileName.setText(fullName);
+        } else {
+            // In horizontal profile mode, show first name only
+            String firstName = fullName.split(" ")[0];
+            holder.profileName.setText(firstName);
+        }
         holder.profileImage.setImageResource(profile.getImageResId());
+        
+        // No status text needed for horizontal profile display
+        
+        // Handle selection mode
+        if (selectionMode) {
+            holder.itemView.setBackgroundColor(profile.isSelected() ? 
+                context.getResources().getColor(android.R.color.holo_blue_light) : 
+                context.getResources().getColor(android.R.color.transparent));
+        } else {
+            holder.itemView.setBackgroundColor(context.getResources().getColor(android.R.color.transparent));
+        }
+        
+        // Set click listener
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(profile);
+            }
+        });
     }
 
     @Override

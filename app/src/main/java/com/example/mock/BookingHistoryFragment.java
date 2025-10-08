@@ -1,5 +1,7 @@
 package com.example.mock;
 
+import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,15 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +32,8 @@ public class BookingHistoryFragment extends Fragment {
     private RecyclerView recyclerView;
     private BookingHistoryAdapter adapter;
     private List<BookingData> bookingHistory;
+    private ProgressDialog progressDialog;
+    private RequestQueue requestQueue;
     private int userId;
 
     public static BookingHistoryFragment newInstance(int userId) {
@@ -44,7 +57,10 @@ public class BookingHistoryFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Initialize with sample data
+        // Initialize request queue
+        requestQueue = Volley.newRequestQueue(getContext());
+
+        // Initialize with empty list
         bookingHistory = new ArrayList<>();
         loadBookingHistory();
 
@@ -52,50 +68,120 @@ public class BookingHistoryFragment extends Fragment {
     }
 
     private void loadBookingHistory() {
-        // Sample data - replace with actual API call
-        bookingHistory.clear();
-        bookingHistory.add(new BookingData(
-            "Alex Brown",
-            "alex.brown@email.com",
-            "09123456785",
-            "Room 1 - Single",
-            "2024-10-01",
-            "2024-12-31",
-            "P3,000.00",
-            "Long-term",
-            "Completed"
-        ));
-        bookingHistory.add(new BookingData(
-            "Emma Davis",
-            "emma.davis@email.com",
-            "09123456784",
-            "Room 2 - Double",
-            "2024-11-15",
-            "2024-12-15",
-            "P2,500.00",
-            "Short-term",
-            "Completed"
-        ));
-        bookingHistory.add(new BookingData(
-            "Tom Wilson",
-            "tom.wilson@email.com",
-            "09123456783",
-            "Room 3 - Single",
-            "2024-09-01",
-            "2024-10-01",
-            "P3,000.00",
-            "Short-term",
-            "Expired"
-        ));
+        showProgressDialog("Loading booking history...");
+        
+        String url = "http://192.168.101.6/BoardEase2/get_booking_history.php?user_id=" + userId + "&user_type=owner";
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            JSONArray bookingsArray = data.getJSONArray("booking_history");
+                            
+                            bookingHistory.clear();
+                            
+                            for (int i = 0; i < bookingsArray.length(); i++) {
+                                JSONObject bookingObj = bookingsArray.getJSONObject(i);
+                                
+                                BookingData booking = new BookingData(
+                                    bookingObj.getInt("booking_id"),
+                                    bookingObj.getString("boarder_name"),
+                                    bookingObj.getString("boarder_email"),
+                                    bookingObj.getString("boarder_phone"),
+                                    bookingObj.getString("room_name"),
+                                    bookingObj.getString("start_date"),
+                                    bookingObj.getString("end_date"),
+                                    bookingObj.getString("amount"),
+                                    bookingObj.getString("rent_type"),
+                                    bookingObj.getString("status"),
+                                    bookingObj.getString("boarding_house_name"),
+                                    bookingObj.getString("boarding_house_address"),
+                                    bookingObj.getString("booking_date"),
+                                    bookingObj.getString("payment_status"),
+                                    bookingObj.getString("notes"),
+                                    bookingObj.getString("profile_image"),
+                                    bookingObj.getInt("boarder_id"),
+                                    bookingObj.getInt("room_id"),
+                                    bookingObj.getInt("boarding_house_id")
+                                );
+                                
+                                bookingHistory.add(booking);
+                            }
+                            
+                            adapter = new BookingHistoryAdapter(bookingHistory, new BookingHistoryAdapter.OnBookingActionListener() {
+                                @Override
+                                public void onViewDetails(BookingData booking) {
+                                    // Navigate to booking details
+                                    Intent intent = new Intent(getContext(), BookingDetailsActivity.class);
+                                    // TODO: Pass booking data through intent
+                                    startActivity(intent);
+                                }
+                            });
+                            
+                            recyclerView.setAdapter(adapter);
+                        } else {
+                            Toast.makeText(getContext(), "Error loading booking history: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                        hideProgressDialog();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing booking history data", Toast.LENGTH_SHORT).show();
+                        hideProgressDialog();
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Error loading booking history: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    hideProgressDialog();
+                });
 
-        adapter = new BookingHistoryAdapter(bookingHistory, new BookingHistoryAdapter.OnBookingActionListener() {
-            @Override
-            public void onViewDetails(BookingData booking) {
-                // Handle view details
-                Toast.makeText(getContext(), "View details for " + booking.getBoarderName(), Toast.LENGTH_SHORT).show();
+        requestQueue.add(request);
+    }
+    
+    private void showProgressDialog(String message) {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
             }
-        });
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage(message);
+            progressDialog.setCancelable(false);
+            progressDialog.setIndeterminate(true);
+            progressDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-        recyclerView.setAdapter(adapter);
+    private void hideProgressDialog() {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            progressDialog = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        hideProgressDialog();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

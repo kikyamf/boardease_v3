@@ -1,15 +1,13 @@
 package com.example.mock;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.util.Log;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -18,12 +16,6 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -36,6 +28,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.android.volley.Request;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -52,19 +45,15 @@ public class Registration2Activity extends AppCompatActivity {
     Bitmap frontBitmap;
     Bitmap backBitmap;
     TextView tvLogin;
+    private boolean isRegistering = false; // Flag to prevent multiple registrations
 
 
     // File paths for ID images
     private String idFrontPath = null;
     private String idBackPath = null;
-    private Uri idFrontUri = null;
-    private Uri idBackUri = null;
 
     // Get data from first registration screen
     String role, firstName, middleName, lastName, birthDate, phone, address, email, password, gcashNum, qrPath;
-    
-    // Permission request launcher
-    private ActivityResultLauncher<String> requestPermissionLauncher;
 
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
@@ -99,21 +88,18 @@ public class Registration2Activity extends AppCompatActivity {
         password = getIntent().getStringExtra("password");
         gcashNum = getIntent().getStringExtra("gcashNum");
         qrPath = getIntent().getStringExtra("qrUri");
-
-        // Initialize permission request launcher
-        requestPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        // Permission granted, you can proceed with image operations
-                    } else {
-                        Toast.makeText(this, "Permission denied. Cannot access images.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-
-        // Check and request permissions
-        checkAndRequestPermissions();
+        
+        // Initialize QR bitmap from qrPath
+        if (qrPath != null && !qrPath.isEmpty()) {
+            try {
+                Uri qrUri = Uri.parse(qrPath);
+                ContentResolver resolver = getContentResolver();
+                qrBitmap = BitmapFactory.decodeStream(resolver.openInputStream(qrUri));
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Error loading QR image", Toast.LENGTH_SHORT).show();
+            }
+        }
 
         // Prepare image pickers
         pickFrontImageLauncher = registerForActivityResult(
@@ -121,8 +107,23 @@ public class Registration2Activity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         ivUploadF.setImageURI(uri); // show image
-                        idFrontUri = uri; // save URI
                         idFrontPath = uri.toString(); // save URI path
+                        // Convert URI to Bitmap
+                        try {
+                            Log.d("Registration2", "Front URI: " + uri.toString());
+                            ContentResolver resolver = getContentResolver();
+                            frontBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
+                            if (frontBitmap == null) {
+                                Log.e("Registration2", "Failed to decode front image from URI");
+                                Toast.makeText(this, "Failed to load front image", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d("Registration2", "Front image loaded successfully, size: " + frontBitmap.getWidth() + "x" + frontBitmap.getHeight());
+                                // Remove the success toast - it's just for debugging
+                            }
+                        } catch (Exception e) {
+                            Log.e("Registration2", "Error loading front image", e);
+                            Toast.makeText(this, "Error loading front image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
         );
@@ -132,8 +133,23 @@ public class Registration2Activity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         ivUploadB.setImageURI(uri); // show image
-                        idBackUri = uri; // save URI
                         idBackPath = uri.toString(); // save URI path
+                        // Convert URI to Bitmap
+                        try {
+                            Log.d("Registration2", "Back URI: " + uri.toString());
+                            ContentResolver resolver = getContentResolver();
+                            backBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
+                            if (backBitmap == null) {
+                                Log.e("Registration2", "Failed to decode back image from URI");
+                                Toast.makeText(this, "Failed to load back image", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d("Registration2", "Back image loaded successfully, size: " + backBitmap.getWidth() + "x" + backBitmap.getHeight());
+                                // Remove the success toast - it's just for debugging
+                            }
+                        } catch (Exception e) {
+                            Log.e("Registration2", "Error loading back image", e);
+                            Toast.makeText(this, "Error loading back image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
         );
@@ -166,6 +182,12 @@ public class Registration2Activity extends AppCompatActivity {
 
         // Register button click
         btnReg.setOnClickListener(v -> {
+            // Prevent multiple clicks
+            if (isRegistering) {
+                Toast.makeText(this, "Registration in progress, please wait...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selectedIdType = spinnerVId.getSelectedItem().toString();
             String idNumber = etIdNumber.getText().toString().trim();
             boolean isAgreed = cbAgree.isChecked();
@@ -185,69 +207,95 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            if (idFrontUri == null || idBackUri == null) {
+            if (idFrontPath == null || idBackPath == null) {
                 Toast.makeText(this, "Please upload front and back ID images", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Convert URIs to Bitmaps
-            try {
-                frontBitmap = getBitmapFromUri(idFrontUri);
-                backBitmap = getBitmapFromUri(idBackUri);
-                
-                // For QR code, we need to get it from the first activity
-                if (qrPath != null) {
-                    Uri qrUri = Uri.parse(qrPath);
-                    qrBitmap = getBitmapFromUri(qrUri);
-                }
-            } catch (Exception e) {
-                Toast.makeText(this, "Error processing images: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            // Check if Bitmaps are null and initialize them if needed
+            if (frontBitmap == null || backBitmap == null || qrBitmap == null) {
+                String errorMsg = "Error loading images: ";
+                if (frontBitmap == null) errorMsg += "Front image null. ";
+                if (backBitmap == null) errorMsg += "Back image null. ";
+                if (qrBitmap == null) errorMsg += "QR image null. ";
+                Toast.makeText(this, errorMsg + "Please try uploading again.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            // Using your WiFi IP address: 192.168.1.3
-            String UPLOAD_URL = "http://192.168.1.3/boardease2/insert_registration.php";
+            // Set registering flag and disable button
+            isRegistering = true;
+            btnReg.setEnabled(false);
+            btnReg.setText("Registering...");
+
+            // Debug info - remove toast message
+            Log.d("Registration2", "Front: " + idFrontPath + ", Back: " + idBackPath);
+            Log.d("Registration2", "BirthDate being sent: '" + birthDate + "'");
+
+            String UPLOAD_URL = "http://192.168.101.6/BoardEase2/insert_registration.php";
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
                     response -> {
                         try {
                             String responseString = new String(response.data);
-                            Log.d("RegistrationResponse", "Server response: " + responseString);
+                            Log.d("Registration2", "Server response: " + responseString);
+                            
+                            // Check if response starts with HTML (error)
+                            if (responseString.trim().startsWith("<")) {
+                                Toast.makeText(this, "Server error: Invalid response format", Toast.LENGTH_LONG).show();
+                                Log.e("Registration2", "Server returned HTML instead of JSON: " + responseString);
+                                return;
+                            }
                             
                             JSONObject obj = new JSONObject(responseString);
                             String message = obj.getString("message");
                             boolean success = obj.getBoolean("success");
                             
+                            Log.d("Registration2", "Response - Success: " + success + ", Message: " + message);
+                            
+                            // Re-enable button
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
+                            
                             if (success) {
+                                Log.d("Registration2", "Registration successful, navigating to login");
                                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                                // Navigate to login after successful registration
-                                Intent intent = new Intent(this, Login.class);
+                                // Registration successful, navigate to login
+                                Intent intent = new Intent(Registration2Activity.this, Login.class);
                                 startActivity(intent);
                                 finish();
                             } else {
-                                Toast.makeText(this, "Registration failed: " + message, Toast.LENGTH_SHORT).show();
+                                Log.d("Registration2", "Registration failed: " + message);
+                                // Handle specific error messages
+                                if (message.contains("Duplicate entry") && message.contains("email")) {
+                                    Toast.makeText(this, "This email is already registered. Please use a different email or try logging in.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                                }
                             }
+                        } catch (JSONException e) {
+                            Log.e("Registration2", "JSON parsing error: " + e.getMessage());
+                            // Re-enable button on error
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
+                            Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
-                            Log.e("RegistrationError", "Response parsing error: " + e.getMessage());
-                            e.printStackTrace();
-                            Toast.makeText(this, "Server response error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e("Registration2", "Unexpected error: " + e.getMessage());
+                            // Re-enable button on error
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
+                            Toast.makeText(this, "Unexpected error occurred. Please try again.", Toast.LENGTH_LONG).show();
                         }
                     },
                     error -> {
-                        Log.e("RegistrationError", "Volley error: " + error.getMessage());
-                        Log.e("RegistrationError", "Error details: " + error.toString());
-                        
-                        String errorMessage = "Upload failed: ";
-                        if (error.getMessage() != null) {
-                            errorMessage += error.getMessage();
-                        } else if (error.networkResponse != null) {
-                            errorMessage += "HTTP " + error.networkResponse.statusCode;
-                        } else {
-                            errorMessage += "Unknown network error";
-                        }
-                        
-                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                        // Re-enable button on error
+                        isRegistering = false;
+                        btnReg.setEnabled(true);
+                        btnReg.setText("REGISTER");
+                        Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     }
             ) {
                 @Override
@@ -293,38 +341,5 @@ public class Registration2Activity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-    }
-
-    private void checkAndRequestPermissions() {
-        String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permission = Manifest.permission.READ_MEDIA_IMAGES;
-        } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        }
-
-        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(permission);
-        }
-    }
-
-    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            if (inputStream == null) {
-                throw new IOException("Cannot open input stream for URI: " + uri);
-            }
-            
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            inputStream.close();
-            
-            if (bitmap == null) {
-                throw new IOException("Failed to decode bitmap from URI: " + uri);
-            }
-            
-            return bitmap;
-        } catch (Exception e) {
-            throw new IOException("Error processing image: " + e.getMessage(), e);
-        }
     }
 }

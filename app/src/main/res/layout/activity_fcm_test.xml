@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Firebase Cloud Messaging Test"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FCM Token:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#666666"
+        android:layout_marginBottom="8dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#F5F5F5"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tokenTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No token available. Click 'Get Token' to retrieve your FCM token."
+            android:textSize="12sp"
+            android:textColor="#333333"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="4dp" />
+
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/getTokenButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Get Token"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/main_button_background"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/copyTokenButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Copy Token"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/main_button_background"
+            android:textColor="#FFFFFF"
+            android:enabled="false" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Instructions:\n1. Click 'Get Token' to retrieve your FCM token\n2. Copy the token and use it in your PHP test\n3. The token will be saved automatically for future use"
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:layout_marginTop="16dp"
+        android:lineSpacingExtra="2dp" />
+
+</LinearLayout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

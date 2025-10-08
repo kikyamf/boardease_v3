@@ -85,7 +85,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -133,7 +133,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -181,7 +181,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -229,7 +229,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -246,7 +246,7 @@
             <ImageView
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_star"
+                android:src="@drawable/ic_star_filled"
                 android:tint="#FFC107" />
 
             <LinearLayout
@@ -276,10 +276,18 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
     </LinearLayout>
 
 </LinearLayout>
+
+
+
+
+
+
+
+

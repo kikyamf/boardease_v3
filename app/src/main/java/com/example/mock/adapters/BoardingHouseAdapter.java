@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.mock.BoardingHouseDetailsActivity;
 import com.example.mock.BoardingHouseDetailsActivitySimple;
-import com.example.mock.BoarderFavoriteFragment;
 import com.example.mock.Listing;
 import com.example.mock.R;
 import java.util.List;
@@ -26,6 +25,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     private OnDeleteClickListener deleteClickListener;
     private OnBoardingHouseClickListener boardingHouseClickListener;
     private boolean showDeleteButton = false;
+    private boolean showDeleteButton;
     
     public interface OnFavoriteClickListener {
         void onFavoriteClick(Listing boardingHouse, boolean isFavorite);
@@ -43,6 +43,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         this.context = context;
         this.boardingHouseList = boardingHouseList;
         this.favoriteClickListener = favoriteClickListener;
+        this.showDeleteButton = false;
     }
     
     public BoardingHouseAdapter(Context context, List<Listing> boardingHouseList, OnBoardingHouseClickListener boardingHouseClickListener) {
@@ -111,27 +112,25 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             }
         });
         
-        // Show/hide delete button based on adapter configuration
-        if (holder.btnDelete != null) {
-            holder.btnDelete.setVisibility(showDeleteButton ? View.VISIBLE : View.GONE);
-        }
-        
         // Set favorite button click listener
         holder.btnFavorite.setOnClickListener(v -> {
             if (favoriteClickListener != null) {
-                // Check if already in favorites
-                boolean isCurrentlyFavorite = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
-                favoriteClickListener.onFavoriteClick(boardingHouse, !isCurrentlyFavorite);
+                // Toggle favorite state (you might need to add isFavorite field to Listing model)
+                boolean isFavorite = false; // Placeholder - get from model
+                favoriteClickListener.onFavoriteClick(boardingHouse, !isFavorite);
             }
         });
         
-        // Set delete button click listener
-        if (holder.btnDelete != null) {
+        // Set delete button visibility and click listener
+        if (showDeleteButton) {
+            holder.btnDelete.setVisibility(View.VISIBLE);
             holder.btnDelete.setOnClickListener(v -> {
                 if (deleteClickListener != null) {
                     deleteClickListener.onDeleteClick(boardingHouse);
                 }
             });
+        } else {
+            holder.btnDelete.setVisibility(View.GONE);
         }
     }
     

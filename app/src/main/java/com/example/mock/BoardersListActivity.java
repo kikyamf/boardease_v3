@@ -33,7 +33,7 @@ import java.util.Map;
 public class BoardersListActivity extends AppCompatActivity {
 
     private static final String TAG = "BoardersList";
-    private static final String GET_BOARDERS_URL = "http://192.168.254.121/BoardEase2/get_owner_boarders.php";
+    private static final String GET_BOARDERS_URL = "http://192.168.101.6/BoardEase2/get_owner_boarders.php";
 
     private int userId;
     private ProgressDialog progressDialog;
@@ -205,3 +205,11 @@ public class BoardersListActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+
+
+
+
+

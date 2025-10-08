@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.util.Log;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Initialize FCM token
+        initializeFCMToken();
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 
@@ -61,4 +65,24 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
     }
+
+    /**
+     * Initialize FCM token for push notifications
+     */
+    private void initializeFCMToken() {
+        FCMTokenManager.getCurrentToken(this, new FCMTokenManager.TokenCallback() {
+            @Override
+            public void onTokenReceived(String token) {
+                Log.d("MainActivity", "FCM Token received: " + token);
+                // You can send this token to your server here
+                // For now, we'll just log it
+            }
+
+            @Override
+            public void onTokenError(Exception error) {
+                Log.e("MainActivity", "Failed to get FCM token", error);
+            }
+        });
+    }
+
 }

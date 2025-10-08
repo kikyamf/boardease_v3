@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -43,10 +44,13 @@ dependencies {
     implementation ("com.android.volley:volley:1.2.1")
 
     implementation ("androidx.viewpager2:viewpager2:1.1.0-beta01")
-
-
+    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     implementation ("me.relex:circleindicator:2.1.6")
     implementation ("com.github.bumptech.glide:glide:4.15.1")
     annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
+
+    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 }

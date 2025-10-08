@@ -76,3 +76,10 @@ public class ActivityFragment extends Fragment {
         startActivity(intent);
     }
 }
+
+
+
+
+
+
+

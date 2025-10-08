@@ -41,12 +41,35 @@
             android:textColor="#777"/>
     </LinearLayout>
 
-    <!-- Time -->
-    <TextView
-        android:id="@+id/messageTime"
+    <!-- Time and Unread Badge -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="8:22 PM"
-        android:textSize="12sp"
-        android:textColor="#AAA"/>
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/messageTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="8:22 PM"
+            android:textSize="12sp"
+            android:textColor="#AAA"/>
+
+        <!-- Unread Count Badge -->
+        <TextView
+            android:id="@+id/unreadBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/circle_bg"
+            android:backgroundTint="#2196F3"
+            android:text="3"
+            android:textColor="@color/white"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:visibility="gone"/>
+
+    </LinearLayout>
 </LinearLayout>

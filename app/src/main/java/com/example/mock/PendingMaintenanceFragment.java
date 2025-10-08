@@ -27,14 +27,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PendingMaintenanceFragment extends Fragment {
 
     private static final String TAG = "PendingMaintenance";
-    private static final String GET_MAINTENANCE_REQUESTS_URL = "http://192.168.254.121/BoardEase2/get_maintenance_requests.php";
-    private static final String UPDATE_MAINTENANCE_STATUS_URL = "http://192.168.254.121/BoardEase2/update_maintenance_status.php";
+    private static final String GET_MAINTENANCE_REQUESTS_URL = "http://192.168.101.6/BoardEase2/get_maintenance_requests.php";
+    private static final String UPDATE_MAINTENANCE_STATUS_URL = "http://192.168.101.6/BoardEase2/update_maintenance_status.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyLayout;
@@ -91,117 +92,48 @@ public class PendingMaintenanceFragment extends Fragment {
     private void loadMaintenanceRequests() {
         showProgressDialog("Loading pending maintenance requests...");
 
-        StringRequest request = new StringRequest(Request.Method.POST, GET_MAINTENANCE_REQUESTS_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        hideProgressDialog();
-                        Log.d(TAG, "Server Response: " + response);
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            if (jsonResponse.getBoolean("success")) {
-                                JSONArray requestsArray = jsonResponse.getJSONArray("maintenance_requests");
-                                maintenanceRequests.clear();
-
-                                for (int i = 0; i < requestsArray.length(); i++) {
-                                    JSONObject requestObj = requestsArray.getJSONObject(i);
-                                    String status = requestObj.getString("status");
-                                    
-                                    // Only show pending requests
-                                    if ("Pending".equals(status)) {
-                                        MaintenanceRequest maintenanceRequest = new MaintenanceRequest(
-                                                requestObj.getInt("request_id"),
-                                                requestObj.getString("boarder_name"),
-                                                requestObj.getString("boarding_house_name"),
-                                                requestObj.getString("room_number"),
-                                                requestObj.getString("maintenance_type"),
-                                                requestObj.getString("description"),
-                                                requestObj.getString("request_date"),
-                                                requestObj.getString("status"),
-                                                requestObj.getString("priority")
-                                        );
-                                        maintenanceRequests.add(maintenanceRequest);
-                                    }
-                                }
-
-                                adapter.notifyDataSetChanged();
-                                updateEmptyState();
-                            } else {
-                                Toast.makeText(getContext(), "Failed to load maintenance requests", Toast.LENGTH_SHORT).show();
-                                updateEmptyState();
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
-                            Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
-                            updateEmptyState();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        hideProgressDialog();
-                        Log.e(TAG, "Volley Error: " + error.getMessage());
-                        Toast.makeText(getContext(), "Error loading maintenance requests", Toast.LENGTH_SHORT).show();
-                        updateEmptyState();
-                    }
-                }) {
+        MaintenanceApiService apiService = new MaintenanceApiService(getContext());
+        apiService.getMaintenanceRequests(userId, "owner", "pending", "all", "all", new MaintenanceApiService.MaintenanceApiCallback() {
             @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("user_id", String.valueOf(userId));
-                params.put("status", "pending");
-                return params;
+            public void onSuccess(List<MaintenanceRequest> requests) {
+                hideProgressDialog();
+                maintenanceRequests.clear();
+                maintenanceRequests.addAll(requests);
+                adapter.notifyDataSetChanged();
+                updateEmptyState();
+                Log.d(TAG, "Loaded " + requests.size() + " pending maintenance requests");
             }
-        };
 
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        queue.add(request);
+            @Override
+            public void onError(String error) {
+                hideProgressDialog();
+                Log.e(TAG, "Error loading pending maintenance requests: " + error);
+                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                updateEmptyState();
+            }
+        });
     }
 
     private void updateMaintenanceStatus(int requestId, String newStatus) {
         showProgressDialog("Updating status...");
 
-        StringRequest request = new StringRequest(Request.Method.POST, UPDATE_MAINTENANCE_STATUS_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        hideProgressDialog();
-                        Log.d(TAG, "Update Response: " + response);
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            if (jsonResponse.getBoolean("success")) {
-                                Toast.makeText(getContext(), "Status updated successfully", Toast.LENGTH_SHORT).show();
-                                // Reload the list to reflect changes
-                                loadMaintenanceRequests();
-                            } else {
-                                Toast.makeText(getContext(), "Failed to update status", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
-                            Toast.makeText(getContext(), "Error updating status", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        hideProgressDialog();
-                        Log.e(TAG, "Volley Error: " + error.getMessage());
-                        Toast.makeText(getContext(), "Error updating status", Toast.LENGTH_SHORT).show();
-                    }
-                }) {
+        MaintenanceApiService apiService = new MaintenanceApiService(getContext());
+        apiService.updateMaintenanceStatus(requestId, newStatus, "", "", "", "", "", "", userId, new MaintenanceApiService.SimpleCallback() {
             @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("request_id", String.valueOf(requestId));
-                params.put("status", newStatus);
-                return params;
+            public void onSuccess(String message) {
+                hideProgressDialog();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                // Reload the list to reflect changes
+                loadMaintenanceRequests();
             }
-        };
 
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        queue.add(request);
+            @Override
+            public void onError(String error) {
+                hideProgressDialog();
+                Log.e(TAG, "Error updating maintenance status: " + error);
+                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void updateEmptyState() {
@@ -229,6 +161,16 @@ public class PendingMaintenanceFragment extends Fragment {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

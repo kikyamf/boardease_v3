@@ -17,9 +17,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
     private static final int TYPE_CARD = 1;
 
     private List<NotificationItemModel> notifList;
+    private OnNotificationClickListener listener;
+
+    public interface OnNotificationClickListener {
+        void onNotificationClick(NotificationItemModel notification);
+    }
 
     public NotificationsAdapter(List<NotificationItemModel> notifList) {
         this.notifList = notifList;
+    }
+
+    public void setOnNotificationClickListener(OnNotificationClickListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -55,6 +64,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
             cardHolder.txtMessage.setText(item.getMessage());
             cardHolder.txtTime.setText(item.getTime());
 
+            // Set consistent appearance for all notifications (read and unread look the same)
+            cardHolder.itemView.setAlpha(1.0f);
+            cardHolder.txtTitle.setTextColor(cardHolder.itemView.getContext().getResources().getColor(android.R.color.black));
+
             // Change icon depending on type
             switch (item.getType()) {
                 case "payment":
@@ -66,13 +79,23 @@ public class NotificationsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 case "announcement":
                     cardHolder.imgIcon.setImageResource(R.drawable.ic_announcement);
                     break;
-                case "reminder":
-                    cardHolder.imgIcon.setImageResource(R.drawable.ic_reminder);
+                case "booking":
+                    cardHolder.imgIcon.setImageResource(R.drawable.ic_announcement);
+                    break;
+                case "general":
+                    cardHolder.imgIcon.setImageResource(R.drawable.ic_notification1);
                     break;
                 default:
                     cardHolder.imgIcon.setImageResource(R.drawable.ic_notification1); // fallback
                     break;
             }
+
+            // Set click listener
+            cardHolder.itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onNotificationClick(item);
+                }
+            });
         }
     }
 

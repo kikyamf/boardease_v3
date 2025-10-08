@@ -165,7 +165,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void updateBoardingHouseOnServer() {
-        String url = "http://192.168.254.121/BoardEase2/update_boarding_houses.php";
+        String url = "http://192.168.101.6/BoardEase2/update_boarding_houses.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -256,7 +256,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void fetchBoardingHouseDetails() {
-        String url = "http://192.168.254.121/BoardEase2/get_boarding_houses.php";
+        String url = "http://192.168.101.6/BoardEase2/get_boarding_houses.php";
         
         // Clear existing images to avoid duplication
         imageUris.clear();
@@ -427,7 +427,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
     
     private void deleteRemovedImagesFromDatabase() {
-        String url = "http://192.168.254.121/BoardEase2/delete_bh_images.php";
+        String url = "http://192.168.101.6/BoardEase2/delete_bh_images.php";
         
         System.out.println("DEBUG: Starting database deletion...");
         System.out.println("DEBUG: BH ID: " + bhId);
@@ -558,7 +558,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void uploadSingleImage(Uri imageUri, int index) {
-        String url = "http://192.168.254.121/BoardEase2/upload_bh_image.php";
+        String url = "http://192.168.101.6/BoardEase2/upload_bh_image.php";
         
         // Optimized upload - removed debug logs for faster performance
         

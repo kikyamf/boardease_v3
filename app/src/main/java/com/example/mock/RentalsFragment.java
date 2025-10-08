@@ -111,3 +111,20 @@ public class RentalsFragment extends Fragment {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

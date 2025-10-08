@@ -36,14 +36,21 @@
             android:layout_centerInParent="true"/>
     </RelativeLayout>
 
-    <!-- 🔹 Notifications List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvNotifications"
+    <!-- 🔹 Notifications List with Swipe Refresh -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        android:scrollbars="vertical" />
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvNotifications"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="16dp"
+            android:scrollbars="vertical" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- 🔹 Empty State Layout -->
     <LinearLayout

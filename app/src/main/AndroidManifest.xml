@@ -6,17 +6,8 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <!-- Storage permissions for Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    
-    <!-- Legacy storage permissions for Android 12 and below -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="32" />
-    
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -32,9 +23,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
         <activity
             android:name=".EditRoomActivity"
             android:exported="false" />
@@ -54,8 +42,24 @@
             android:name=".Private"
             android:exported="false" />
         <activity
-            android:name=".Type"
+            android:name=".RegistrationActivity"
             android:exported="false" />
+        <activity
+            android:name=".Registration2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderDashboard"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Type"
+            android:exported="false" /> <!-- Make Details the launcher activity -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
@@ -73,7 +77,7 @@
             android:exported="false" />
         <activity
             android:name=".Login"
-            android:exported="false" />
+            android:exported="false" /> <!-- MainActivity is no longer the launcher -->
         <activity
             android:name=".Messages"
             android:exported="false" />
