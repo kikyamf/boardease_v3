@@ -19,7 +19,7 @@
             android:id="@+id/backButton"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_arrow_back"
+            android:src="@drawable/ic_arrow_back4"
             android:contentDescription="Back" />
 
         <TextView
