@@ -135,12 +135,12 @@ public class Login extends AppCompatActivity {
         if (isPasswordVisible) {
             // Hide password
             etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-            btnTogglePassword.setImageResource(R.drawable.ic_eye_closed);
+            btnTogglePassword.setImageResource(R.drawable.ic_password_hidden);
             isPasswordVisible = false;
         } else {
             // Show password
             etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-            btnTogglePassword.setImageResource(R.drawable.ic_eye_opened);
+            btnTogglePassword.setImageResource(R.drawable.ic_password_visible);
             isPasswordVisible = true;
         }
         

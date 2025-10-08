@@ -107,7 +107,7 @@
                 android:id="@+id/btnTogglePassword"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_eye_closed"
+                android:src="@drawable/ic_password_hidden"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Toggle Password Visibility"
                 android:padding="2dp" />
