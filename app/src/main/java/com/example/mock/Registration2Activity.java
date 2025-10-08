@@ -45,6 +45,7 @@ public class Registration2Activity extends AppCompatActivity {
     Bitmap frontBitmap;
     Bitmap backBitmap;
     TextView tvLogin;
+    private boolean isRegistering = false; // Flag to prevent multiple registrations
 
 
     // File paths for ID images
@@ -181,6 +182,12 @@ public class Registration2Activity extends AppCompatActivity {
 
         // Register button click
         btnReg.setOnClickListener(v -> {
+            // Prevent multiple clicks
+            if (isRegistering) {
+                Toast.makeText(this, "Registration in progress, please wait...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String selectedIdType = spinnerVId.getSelectedItem().toString();
             String idNumber = etIdNumber.getText().toString().trim();
             boolean isAgreed = cbAgree.isChecked();
@@ -215,8 +222,14 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
+            // Set registering flag and disable button
+            isRegistering = true;
+            btnReg.setEnabled(false);
+            btnReg.setText("Registering...");
+
             // Debug info - remove toast message
             Log.d("Registration2", "Front: " + idFrontPath + ", Back: " + idBackPath);
+            Log.d("Registration2", "BirthDate being sent: '" + birthDate + "'");
 
             String UPLOAD_URL = "http://192.168.101.6/BoardEase2/insert_registration.php";
 
@@ -238,23 +251,52 @@ public class Registration2Activity extends AppCompatActivity {
                             String message = obj.getString("message");
                             boolean success = obj.getBoolean("success");
                             
-                            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                            Log.d("Registration2", "Response - Success: " + success + ", Message: " + message);
+                            
+                            // Re-enable button
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
                             
                             if (success) {
+                                Log.d("Registration2", "Registration successful, navigating to login");
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                                 // Registration successful, navigate to login
                                 Intent intent = new Intent(Registration2Activity.this, Login.class);
                                 startActivity(intent);
                                 finish();
+                            } else {
+                                Log.d("Registration2", "Registration failed: " + message);
+                                // Handle specific error messages
+                                if (message.contains("Duplicate entry") && message.contains("email")) {
+                                    Toast.makeText(this, "This email is already registered. Please use a different email or try logging in.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e("Registration2", "JSON parsing error: " + e.getMessage());
+                            // Re-enable button on error
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
                             Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
                             Log.e("Registration2", "Unexpected error: " + e.getMessage());
+                            // Re-enable button on error
+                            isRegistering = false;
+                            btnReg.setEnabled(true);
+                            btnReg.setText("REGISTER");
                             Toast.makeText(this, "Unexpected error occurred. Please try again.", Toast.LENGTH_LONG).show();
                         }
                     },
-                    error -> Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                    error -> {
+                        // Re-enable button on error
+                        isRegistering = false;
+                        btnReg.setEnabled(true);
+                        btnReg.setText("REGISTER");
+                        Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
             ) {
                 @Override
                 protected Map<String, String> getParams() {

@@ -10,6 +10,7 @@ ini_set('log_errors', 1);
 error_log("Registration request received at " . date('Y-m-d H:i:s'));
 error_log("POST data: " . print_r($_POST, true));
 error_log("FILES data: " . print_r($_FILES, true));
+error_log("BirthDate received: '" . ($_POST['birthDate'] ?? 'NOT_SET') . "'");
 
 try {
 // Database connection
@@ -30,6 +31,38 @@ $firstName  = $_POST['firstName'] ?? null;
 $middleName = $_POST['middleName'] ?? null;
 $lastName   = $_POST['lastName'] ?? null;
 $birthDate  = $_POST['birthDate'] ?? null;
+
+// Validate and format birthdate
+if (!empty($birthDate)) {
+    // Try to parse the date and convert to MySQL format (YYYY-MM-DD)
+    $parsedDate = DateTime::createFromFormat('m/d/Y', $birthDate);
+    if (!$parsedDate) {
+        $parsedDate = DateTime::createFromFormat('Y-m-d', $birthDate);
+    }
+    if (!$parsedDate) {
+        $parsedDate = DateTime::createFromFormat('d/m/Y', $birthDate);
+    }
+    if (!$parsedDate) {
+        $parsedDate = DateTime::createFromFormat('m-d-Y', $birthDate);
+    }
+    if (!$parsedDate) {
+        $parsedDate = DateTime::createFromFormat('d-m-Y', $birthDate);
+    }
+    if (!$parsedDate) {
+        // Try to parse as a general date
+        $parsedDate = new DateTime($birthDate);
+    }
+    
+    if ($parsedDate) {
+        $birthDate = $parsedDate->format('Y-m-d');
+        error_log("Formatted birthdate: " . $birthDate);
+    } else {
+        error_log("Invalid birthdate format: " . $birthDate);
+        $birthDate = null; // Set to null if format is invalid
+    }
+} else {
+    error_log("Birthdate is empty or null");
+}
 $phone      = $_POST['phone'] ?? null;
 $address    = $_POST['address'] ?? null;
 $email      = $_POST['email'] ?? null;
@@ -106,7 +139,13 @@ if ($stmt->execute()) {
         "message" => "Registration successful!"
     );
     error_log("Registration successful for user: " . $email);
+    error_log("Sending success response: " . json_encode($response));
     echo json_encode($response);
+    
+    // Close resources after successful response
+    $stmt->close();
+    $conn->close();
+    exit; // Exit to prevent further execution
 } else {
     $errorMsg = "Database insert error: " . $stmt->error;
     error_log("Registration failed: " . $errorMsg);
@@ -115,10 +154,12 @@ if ($stmt->execute()) {
         "message" => $errorMsg
     );
     echo json_encode($response);
+    
+    // Close resources after error response
+    $stmt->close();
+    $conn->close();
+    exit; // Exit to prevent further execution
 }
-
-$stmt->close();
-$conn->close();
 
 } catch (Exception $e) {
     error_log("Registration error: " . $e->getMessage());
