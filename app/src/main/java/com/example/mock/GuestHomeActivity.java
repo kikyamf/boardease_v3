@@ -75,7 +75,7 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
         filteredListings = new ArrayList<>();
 
         // Setup RecyclerView
-        listingsAdapter = new BoardingHouseAdapter(this, filteredListings, this);
+        listingsAdapter = new BoardingHouseAdapter(this, filteredListings, (BoardingHouseAdapter.OnBoardingHouseClickListener) this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         rvListings.setLayoutManager(layoutManager);
         rvListings.setAdapter(listingsAdapter);
@@ -104,9 +104,9 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
         } else {
             String lowerQuery = query.toLowerCase();
             for (Listing listing : allListings) {
-                if (listing.getName().toLowerCase().contains(lowerQuery) ||
-                    listing.getLocation().toLowerCase().contains(lowerQuery) ||
-                    listing.getDescription().toLowerCase().contains(lowerQuery)) {
+                if (listing.getBhName().toLowerCase().contains(lowerQuery) ||
+                    (listing.getBhAddress() != null && listing.getBhAddress().toLowerCase().contains(lowerQuery)) ||
+                    (listing.getBhDescription() != null && listing.getBhDescription().toLowerCase().contains(lowerQuery))) {
                     filteredListings.add(listing);
                 }
             }
@@ -116,28 +116,14 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
     }
 
     private void loadMockData() {
-        // Create mock listings data
+        // Create mock listings data using the existing Listing class
         allListings.clear();
         
-        allListings.add(new Listing(1, "Sunshine Boarding House", "sample_listing", 
-            "Quezon City, Metro Manila", "Cozy and affordable boarding house with modern amenities. Perfect for students and working professionals.",
-            "Private Rooms • Bed Spacer", "₱3,500/month", 4.5f));
-            
-        allListings.add(new Listing(2, "Green Valley Dormitory", "sample_listing", 
-            "Makati City, Metro Manila", "Modern dormitory with excellent facilities and 24/7 security. Great for students near universities.",
-            "Bed Spacer • Shared Rooms", "₱2,800/month", 4.2f));
-            
-        allListings.add(new Listing(3, "Metro Student Housing", "sample_listing", 
-            "Taguig City, Metro Manila", "Premium student housing with study areas, gym, and laundry facilities. Perfect for serious students.",
-            "Private Rooms • Studio", "₱4,500/month", 4.7f));
-            
-        allListings.add(new Listing(4, "Campus View Boarding", "sample_listing", 
-            "Manila, Metro Manila", "Affordable boarding house near major universities. Clean rooms with basic amenities included.",
-            "Bed Spacer • Shared Rooms", "₱2,200/month", 3.8f));
-            
-        allListings.add(new Listing(5, "Urban Living Spaces", "sample_listing", 
-            "Pasig City, Metro Manila", "Contemporary living spaces designed for young professionals. Modern amenities and great location.",
-            "Private Rooms • Studio", "₱5,000/month", 4.3f));
+        allListings.add(new Listing(1, "Sunshine Boarding House", "sample_listing"));
+        allListings.add(new Listing(2, "Green Valley Dormitory", "sample_listing"));
+        allListings.add(new Listing(3, "Metro Student Housing", "sample_listing"));
+        allListings.add(new Listing(4, "Campus View Boarding", "sample_listing"));
+        allListings.add(new Listing(5, "Urban Living Spaces", "sample_listing"));
 
         // Initialize filtered list with all listings
         filteredListings.addAll(allListings);
@@ -189,37 +175,4 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
         }
     }
 
-    // Listing data class
-    public static class Listing {
-        private int id;
-        private String name;
-        private String imagePath;
-        private String location;
-        private String description;
-        private String accommodationTypes;
-        private String price;
-        private float rating;
-
-        public Listing(int id, String name, String imagePath, String location, String description,
-                      String accommodationTypes, String price, float rating) {
-            this.id = id;
-            this.name = name;
-            this.imagePath = imagePath;
-            this.location = location;
-            this.description = description;
-            this.accommodationTypes = accommodationTypes;
-            this.price = price;
-            this.rating = rating;
-        }
-
-        // Getters
-        public int getId() { return id; }
-        public String getName() { return name; }
-        public String getImagePath() { return imagePath; }
-        public String getLocation() { return location; }
-        public String getDescription() { return description; }
-        public String getAccommodationTypes() { return accommodationTypes; }
-        public String getPrice() { return price; }
-        public float getRating() { return rating; }
-    }
 }
