@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -76,7 +77,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         allBoardingHouses = new ArrayList<>();
         filteredBoardingHouses = new ArrayList<>();
         
-        adapter = new BoardingHouseAdapter(getContext(), filteredBoardingHouses, this);
+        adapter = new BoardingHouseAdapter(getContext(), filteredBoardingHouses, this, null, false);
         rvBoardingHouses.setLayoutManager(new LinearLayoutManager(getContext()));
         rvBoardingHouses.setAdapter(adapter);
     }
@@ -173,17 +174,20 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     @Override
     public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
-        // Handle favorite button click
-        // TODO: Implement favorite functionality
-        // This could involve:
-        // 1. Adding/removing from favorites list
-        // 2. Updating UI to show favorite state
-        // 3. Saving to local database or sending to server
-        
-        // For now, just show a toast or log
-        if (getContext() != null) {
-            String message = isFavorite ? "Added to favorites" : "Removed from favorites";
-            // Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+        try {
+            if (isFavorite) {
+                // Add to favorites
+                BoarderFavoriteFragment.addToFavorites(getContext(), boardingHouse);
+                String message = "Added to favorites: " + boardingHouse.getBhName();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            } else {
+                // Remove from favorites
+                String message = "Removed from favorites: " + boardingHouse.getBhName();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                // TODO: Implement remove from favorites functionality
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

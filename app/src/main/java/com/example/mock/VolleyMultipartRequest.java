@@ -80,6 +80,10 @@ public class VolleyMultipartRequest extends Request<NetworkResponse> {
         return bos.toByteArray();
     }
 
+    protected Map<String, String> getParams() throws AuthFailureError {
+        return new HashMap<>();
+    }
+
     protected Map<String, DataPart> getByteData() throws AuthFailureError {
         return null;
     }
