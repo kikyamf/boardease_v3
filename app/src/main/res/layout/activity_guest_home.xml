@@ -91,12 +91,12 @@
                 android:fontFamily="@font/poppins_bold"
                 android:layout_marginBottom="16dp" />
 
-            <!-- Listings RecyclerView -->
-            <RecyclerView
-                android:id="@+id/rvListings"
+            <!-- Listings Container -->
+            <LinearLayout
+                android:id="@+id/layoutListings"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false" />
+                android:orientation="vertical" />
 
         </LinearLayout>
 

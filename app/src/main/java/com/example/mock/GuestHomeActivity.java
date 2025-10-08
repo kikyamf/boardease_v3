@@ -2,13 +2,14 @@ package com.example.mock;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,33 +18,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.example.mock.adapters.BoardingHouseAdapter;
 import com.google.android.material.button.MaterialButton;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * GuestHomeActivity - Guest view of the main page
- * Displays listings with search functionality and guest restrictions
+ * GuestHomeActivity - Simple guest view of the main page
+ * Displays basic listings with guest restrictions
  */
-public class GuestHomeActivity extends AppCompatActivity implements BoardingHouseAdapter.OnBoardingHouseClickListener, BoardingHouseAdapter.OnFavoriteClickListener {
+public class GuestHomeActivity extends AppCompatActivity {
 
     // Views
     private EditText etSearch;
-    private RecyclerView rvListings;
+    private LinearLayout layoutListings;
     private TextView tvWelcome;
-
-    // Adapter
-    private BoardingHouseAdapter listingsAdapter;
-
-    // Data
-    private List<Listing> allListings;
-    private List<Listing> filteredListings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,9 +39,7 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
         setContentView(R.layout.activity_guest_home);
 
         initializeViews();
-        setupRecyclerView();
-        setupSearchFunctionality();
-        loadMockData();
+        loadSimpleListings();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -65,81 +50,123 @@ public class GuestHomeActivity extends AppCompatActivity implements BoardingHous
 
     private void initializeViews() {
         etSearch = findViewById(R.id.etSearch);
-        rvListings = findViewById(R.id.rvListings);
+        layoutListings = findViewById(R.id.layoutListings);
         tvWelcome = findViewById(R.id.tvWelcome);
     }
 
-    private void setupRecyclerView() {
-        // Initialize data lists
-        allListings = new ArrayList<>();
-        filteredListings = new ArrayList<>();
+    private void loadSimpleListings() {
+        // Create simple listing cards
+        String[] listingNames = {
+            "Sunshine Boarding House",
+            "Green Valley Dormitory", 
+            "Metro Student Housing",
+            "Campus View Boarding",
+            "Urban Living Spaces"
+        };
 
-        // Setup RecyclerView
-        listingsAdapter = new BoardingHouseAdapter(this, filteredListings, (BoardingHouseAdapter.OnBoardingHouseClickListener) this);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        rvListings.setLayoutManager(layoutManager);
-        rvListings.setAdapter(listingsAdapter);
-    }
+        String[] locations = {
+            "Quezon City, Metro Manila",
+            "Makati City, Metro Manila",
+            "Taguig City, Metro Manila", 
+            "Manila, Metro Manila",
+            "Pasig City, Metro Manila"
+        };
 
-    private void setupSearchFunctionality() {
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        String[] prices = {
+            "₱3,500/month",
+            "₱2,800/month",
+            "₱4,500/month",
+            "₱2,200/month", 
+            "₱5,000/month"
+        };
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterListings(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-    }
-
-    private void filterListings(String query) {
-        filteredListings.clear();
-        
-        if (query.isEmpty()) {
-            filteredListings.addAll(allListings);
-        } else {
-            String lowerQuery = query.toLowerCase();
-            for (Listing listing : allListings) {
-                if (listing.getBhName().toLowerCase().contains(lowerQuery) ||
-                    (listing.getBhAddress() != null && listing.getBhAddress().toLowerCase().contains(lowerQuery)) ||
-                    (listing.getBhDescription() != null && listing.getBhDescription().toLowerCase().contains(lowerQuery))) {
-                    filteredListings.add(listing);
-                }
-            }
+        for (int i = 0; i < listingNames.length; i++) {
+            createListingCard(listingNames[i], locations[i], prices[i]);
         }
+    }
+
+    private void createListingCard(String name, String location, String price) {
+        // Create a simple card layout
+        LinearLayout cardLayout = new LinearLayout(this);
+        cardLayout.setOrientation(LinearLayout.HORIZONTAL);
+        cardLayout.setPadding(16, 16, 16, 16);
+        cardLayout.setBackgroundResource(R.drawable.card_bg);
         
-        listingsAdapter.notifyDataSetChanged();
-    }
+        // Add margins
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(16, 8, 16, 8);
+        cardLayout.setLayoutParams(params);
 
-    private void loadMockData() {
-        // Create mock listings data using the existing Listing class
-        allListings.clear();
-        
-        allListings.add(new Listing(1, "Sunshine Boarding House", "sample_listing"));
-        allListings.add(new Listing(2, "Green Valley Dormitory", "sample_listing"));
-        allListings.add(new Listing(3, "Metro Student Housing", "sample_listing"));
-        allListings.add(new Listing(4, "Campus View Boarding", "sample_listing"));
-        allListings.add(new Listing(5, "Urban Living Spaces", "sample_listing"));
+        // Image
+        ImageView imgBoardingHouse = new ImageView(this);
+        imgBoardingHouse.setImageResource(R.drawable.sample_listing);
+        imgBoardingHouse.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(120, 120);
+        imgParams.setMargins(0, 0, 16, 0);
+        imgBoardingHouse.setLayoutParams(imgParams);
+        cardLayout.addView(imgBoardingHouse);
 
-        // Initialize filtered list with all listings
-        filteredListings.addAll(allListings);
-        listingsAdapter.notifyDataSetChanged();
-    }
+        // Details container
+        LinearLayout detailsLayout = new LinearLayout(this);
+        detailsLayout.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams detailsParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        detailsLayout.setLayoutParams(detailsParams);
 
-    @Override
-    public void onBoardingHouseClick(Listing listing) {
-        // Show guest restriction dialog
-        showGuestRestrictionDialog();
-    }
+        // Name
+        TextView tvName = new TextView(this);
+        tvName.setText(name);
+        tvName.setTextSize(16);
+        tvName.setTextColor(getResources().getColor(android.R.color.black));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvName.setTypeface(getResources().getFont(R.font.poppins_bold));
+        }
+        detailsLayout.addView(tvName);
 
-    @Override
-    public void onFavoriteClick(Listing listing, boolean isFavorite) {
-        // Show guest restriction dialog for favorites too
-        showGuestRestrictionDialog();
+        // Location
+        TextView tvLocation = new TextView(this);
+        tvLocation.setText(location);
+        tvLocation.setTextSize(12);
+        tvLocation.setTextColor(getResources().getColor(android.R.color.darker_gray));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvLocation.setTypeface(getResources().getFont(R.font.poppins_regular));
+        }
+        tvLocation.setPadding(0, 4, 0, 8);
+        detailsLayout.addView(tvLocation);
+
+        // Description
+        TextView tvDescription = new TextView(this);
+        tvDescription.setText("Cozy and affordable boarding house with modern amenities. Perfect for students and working professionals.");
+        tvDescription.setTextSize(12);
+        tvDescription.setTextColor(getResources().getColor(android.R.color.darker_gray));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvDescription.setTypeface(getResources().getFont(R.font.poppins_regular));
+        }
+        tvDescription.setMaxLines(2);
+        detailsLayout.addView(tvDescription);
+
+        // Price
+        TextView tvPrice = new TextView(this);
+        tvPrice.setText(price);
+        tvPrice.setTextSize(16);
+        tvPrice.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvPrice.setTypeface(getResources().getFont(R.font.poppins_bold));
+        }
+        tvPrice.setPadding(0, 8, 0, 0);
+        detailsLayout.addView(tvPrice);
+
+        cardLayout.addView(detailsLayout);
+
+        // Make card clickable
+        cardLayout.setOnClickListener(v -> showGuestRestrictionDialog());
+
+        layoutListings.addView(cardLayout);
     }
 
     private void showGuestRestrictionDialog() {
