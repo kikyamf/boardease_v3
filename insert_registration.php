@@ -1,20 +1,22 @@
 <?php
 // insert_registration.php
 
-// Enable error reporting for debugging
+// Disable error display to prevent HTML output
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 // Log the request for debugging
 error_log("Registration request received at " . date('Y-m-d H:i:s'));
 error_log("POST data: " . print_r($_POST, true));
 error_log("FILES data: " . print_r($_FILES, true));
 
+try {
 // Database connection
 $servername = "localhost";
-$username   = "root"; // adjust if needed
-$password   = "";     // adjust if needed
-$dbname     = "boardease_testing"; // adjust if needed
+$username   = "boardease"; // adjust if needed
+$password   = "boardease";     // adjust if needed
+$dbname     = "boardease2"; // adjust if needed
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -51,7 +53,7 @@ if (!$firstName || !$lastName || !$email || !$password) {
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 // Handle file uploads
-$uploadDir = "uploads/"; // make sure this folder exists and is writable
+$uploadDir = "uploads/registrations/"; // make sure this folder exists and is writable
 
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
@@ -75,23 +77,29 @@ $idFrontPath = saveFile("idFrontFile", $uploadDir);
 $idBackPath  = saveFile("idBackFile", $uploadDir);
 $gcashQRPath = saveFile("qrFile", $uploadDir);
 
+error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
+
 // Insert into DB
-$sql = "INSERT INTO registration
+$sql = "INSERT INTO registrations
     (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    die("SQL error: " . $conn->error);
+    error_log("SQL prepare error: " . $conn->error);
+    throw new Exception("SQL prepare error: " . $conn->error);
 }
 
-$stmt->bind_param("ssssssssssssssss",
+$bindResult = $stmt->bind_param("ssssssssssssssss",
     $role, $firstName, $middleName, $lastName, $birthDate,
     $phone, $address, $email, $hashedPassword, $gcashNum,
     $idType, $idNumber, $isAgreed,
     $idFrontPath, $idBackPath, $gcashQRPath
 );
 
+if (!$bindResult) {
+    error_log("Bind param error: " . $stmt->error);
+    throw new Exception("Bind param error: " . $stmt->error);
+}
 if ($stmt->execute()) {
     $response = array(
         "success" => true,
@@ -111,4 +119,14 @@ if ($stmt->execute()) {
 
 $stmt->close();
 $conn->close();
+
+} catch (Exception $e) {
+    error_log("Registration error: " . $e->getMessage());
+    error_log("Registration error trace: " . $e->getTraceAsString());
+    $response = array(
+        "success" => false,
+        "message" => "Server error: " . $e->getMessage()
+    );
+    echo json_encode($response);
+}
 ?>

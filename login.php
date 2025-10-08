@@ -50,7 +50,7 @@ $email = trim($email);
 $password = trim($password);
 
 // Prepare SQL statement to prevent SQL injection
-$stmt = $conn->prepare("SELECT id, role, first_name, last_name, email, password FROM registration WHERE email = ?");
+$stmt = $conn->prepare("SELECT id, role, first_name, last_name, email, password FROM registrations WHERE email = ?");
 if (!$stmt) {
     $response = array(
         "success" => false,

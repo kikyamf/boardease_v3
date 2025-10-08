@@ -2,6 +2,8 @@ package com.example.mock;
 
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,7 +36,7 @@ import java.util.Map;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.254.121/BoardEase2/get_owner_profile.php";
+    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
     private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
@@ -96,7 +98,7 @@ public class OwnerProfileFragment extends Fragment {
         layoutGcashInfo.setOnClickListener(v -> openGcashInfo());
         layoutAboutApp.setOnClickListener(v -> Toast.makeText(getContext(), "Open About App", Toast.LENGTH_SHORT).show());
 
-        tvSignOut.setOnClickListener(v -> Toast.makeText(getContext(), "Signing Out...", Toast.LENGTH_SHORT).show());
+        tvSignOut.setOnClickListener(v -> showSignOutConfirmationDialog());
 
         return view;
     }
@@ -178,7 +180,7 @@ public class OwnerProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "http://192.168.254.121/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -220,5 +222,37 @@ public class OwnerProfileFragment extends Fragment {
      */
     public void refreshProfile() {
         loadOwnerProfile();
+    }
+    
+    private void showSignOutConfirmationDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Sign Out");
+            builder.setMessage("Are you sure you want to sign out?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    try {
+                        // Use the Login.logout() method to properly sign out
+                        Login.logout(getContext());
+                        Toast.makeText(getContext(), "Signed out successfully", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error signing out", Toast.LENGTH_SHORT).show();
+                    }
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

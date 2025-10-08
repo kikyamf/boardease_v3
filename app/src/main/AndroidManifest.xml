@@ -42,10 +42,26 @@
             android:name=".Private"
             android:exported="false" />
         <activity
+            android:name=".RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Registration2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderDashboard"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+        <activity
             android:name=".Type"
             android:exported="false" /> <!-- Make Details the launcher activity -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

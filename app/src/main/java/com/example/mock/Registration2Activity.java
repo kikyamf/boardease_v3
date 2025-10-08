@@ -1,8 +1,11 @@
 package com.example.mock;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.util.Log;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -25,6 +28,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.android.volley.Request;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -83,6 +87,18 @@ public class Registration2Activity extends AppCompatActivity {
         password = getIntent().getStringExtra("password");
         gcashNum = getIntent().getStringExtra("gcashNum");
         qrPath = getIntent().getStringExtra("qrUri");
+        
+        // Initialize QR bitmap from qrPath
+        if (qrPath != null && !qrPath.isEmpty()) {
+            try {
+                Uri qrUri = Uri.parse(qrPath);
+                ContentResolver resolver = getContentResolver();
+                qrBitmap = BitmapFactory.decodeStream(resolver.openInputStream(qrUri));
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Error loading QR image", Toast.LENGTH_SHORT).show();
+            }
+        }
 
         // Prepare image pickers
         pickFrontImageLauncher = registerForActivityResult(
@@ -91,6 +107,22 @@ public class Registration2Activity extends AppCompatActivity {
                     if (uri != null) {
                         ivUploadF.setImageURI(uri); // show image
                         idFrontPath = uri.toString(); // save URI path
+                        // Convert URI to Bitmap
+                        try {
+                            Log.d("Registration2", "Front URI: " + uri.toString());
+                            ContentResolver resolver = getContentResolver();
+                            frontBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
+                            if (frontBitmap == null) {
+                                Log.e("Registration2", "Failed to decode front image from URI");
+                                Toast.makeText(this, "Failed to load front image", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d("Registration2", "Front image loaded successfully, size: " + frontBitmap.getWidth() + "x" + frontBitmap.getHeight());
+                                // Remove the success toast - it's just for debugging
+                            }
+                        } catch (Exception e) {
+                            Log.e("Registration2", "Error loading front image", e);
+                            Toast.makeText(this, "Error loading front image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
         );
@@ -101,6 +133,22 @@ public class Registration2Activity extends AppCompatActivity {
                     if (uri != null) {
                         ivUploadB.setImageURI(uri); // show image
                         idBackPath = uri.toString(); // save URI path
+                        // Convert URI to Bitmap
+                        try {
+                            Log.d("Registration2", "Back URI: " + uri.toString());
+                            ContentResolver resolver = getContentResolver();
+                            backBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
+                            if (backBitmap == null) {
+                                Log.e("Registration2", "Failed to decode back image from URI");
+                                Toast.makeText(this, "Failed to load back image", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.d("Registration2", "Back image loaded successfully, size: " + backBitmap.getWidth() + "x" + backBitmap.getHeight());
+                                // Remove the success toast - it's just for debugging
+                            }
+                        } catch (Exception e) {
+                            Log.e("Registration2", "Error loading back image", e);
+                            Toast.makeText(this, "Error loading back image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
         );
@@ -157,18 +205,53 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            Toast.makeText(this, "Front: " + idFrontPath + "\nBack: " + idBackPath, Toast.LENGTH_LONG).show();
+            // Check if Bitmaps are null and initialize them if needed
+            if (frontBitmap == null || backBitmap == null || qrBitmap == null) {
+                String errorMsg = "Error loading images: ";
+                if (frontBitmap == null) errorMsg += "Front image null. ";
+                if (backBitmap == null) errorMsg += "Back image null. ";
+                if (qrBitmap == null) errorMsg += "QR image null. ";
+                Toast.makeText(this, errorMsg + "Please try uploading again.", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-            String UPLOAD_URL = "http://192.168.137.1/boardease2/insert_registration.php";
+            // Debug info - remove toast message
+            Log.d("Registration2", "Front: " + idFrontPath + ", Back: " + idBackPath);
+
+            String UPLOAD_URL = "http://192.168.101.6/BoardEase2/insert_registration.php";
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
                     response -> {
                         try {
-                            JSONObject obj = new JSONObject(new String(response.data));
-                            Toast.makeText(this, obj.getString("message"), Toast.LENGTH_SHORT).show();
+                            String responseString = new String(response.data);
+                            Log.d("Registration2", "Server response: " + responseString);
+                            
+                            // Check if response starts with HTML (error)
+                            if (responseString.trim().startsWith("<")) {
+                                Toast.makeText(this, "Server error: Invalid response format", Toast.LENGTH_LONG).show();
+                                Log.e("Registration2", "Server returned HTML instead of JSON: " + responseString);
+                                return;
+                            }
+                            
+                            JSONObject obj = new JSONObject(responseString);
+                            String message = obj.getString("message");
+                            boolean success = obj.getBoolean("success");
+                            
+                            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                            
+                            if (success) {
+                                // Registration successful, navigate to login
+                                Intent intent = new Intent(Registration2Activity.this, Login.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                        } catch (JSONException e) {
+                            Log.e("Registration2", "JSON parsing error: " + e.getMessage());
+                            Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Log.e("Registration2", "Unexpected error: " + e.getMessage());
+                            Toast.makeText(this, "Unexpected error occurred. Please try again.", Toast.LENGTH_LONG).show();
                         }
                     },
                     error -> Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show()
