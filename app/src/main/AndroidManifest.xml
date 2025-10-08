@@ -152,6 +152,9 @@
         <activity
             android:name=".Details"
             android:exported="false" />
+        <activity
+            android:name=".GuestHomeActivity"
+            android:exported="false" />
             
         <!-- FileProvider for camera access -->
         <provider

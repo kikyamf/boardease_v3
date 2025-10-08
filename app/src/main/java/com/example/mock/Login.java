@@ -38,6 +38,7 @@ public class Login extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
+    private Button btnGuest;
     private TextView tvSignUp;
     private ImageButton btnTogglePassword;
     private ProgressDialog progressDialog;
@@ -87,6 +88,7 @@ public class Login extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
+        btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
         btnTogglePassword = findViewById(R.id.btnTogglePassword);
         
@@ -129,6 +131,13 @@ public class Login extends AppCompatActivity {
                 togglePasswordVisibility();
             }
         });
+
+        btnGuest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigateToGuestMode();
+            }
+        });
     }
 
     private void togglePasswordVisibility() {
@@ -146,6 +155,11 @@ public class Login extends AppCompatActivity {
         
         // Move cursor to end of text
         etPassword.setSelection(etPassword.getText().length());
+    }
+
+    private void navigateToGuestMode() {
+        Intent intent = new Intent(Login.this, GuestHomeActivity.class);
+        startActivity(intent);
     }
     
     private void performLogin() {
