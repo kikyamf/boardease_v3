@@ -55,7 +55,10 @@ public class ActivityDetailsActivity extends AppCompatActivity {
     }
 
     private void setupViewPager() {
-        pagerAdapter = new ActivityDetailsPagerAdapter(this, activityType);
+        // Get user_id from intent
+        int userId = getIntent().getIntExtra("user_id", 0);
+        
+        pagerAdapter = new ActivityDetailsPagerAdapter(this, activityType, userId);
         viewPager.setAdapter(pagerAdapter);
 
         // Set up tab layout with ViewPager2
@@ -87,10 +90,12 @@ public class ActivityDetailsActivity extends AppCompatActivity {
 
     private static class ActivityDetailsPagerAdapter extends FragmentStateAdapter {
         private String activityType;
+        private int userId;
 
-        public ActivityDetailsPagerAdapter(@NonNull FragmentActivity fragmentActivity, String activityType) {
+        public ActivityDetailsPagerAdapter(@NonNull FragmentActivity fragmentActivity, String activityType, int userId) {
             super(fragmentActivity);
             this.activityType = activityType;
+            this.userId = userId;
         }
 
         @NonNull
@@ -131,6 +136,23 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

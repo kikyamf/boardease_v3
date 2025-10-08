@@ -40,3 +40,20 @@ public class TransactionsPagerAdapter extends FragmentStateAdapter {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -56,3 +56,11 @@ public class RoomPagerAdapter extends FragmentStateAdapter {
         }
     }
 }
+
+
+
+
+
+
+
+

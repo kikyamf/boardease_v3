@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.mock.BoardingHouseDetailsActivity;
-import com.example.mock.BoardingHouseDetailsActivitySimple;
 import com.example.mock.Listing;
 import com.example.mock.R;
 import java.util.List;

@@ -159,7 +159,7 @@ public class Registration2Activity extends AppCompatActivity {
 
             Toast.makeText(this, "Front: " + idFrontPath + "\nBack: " + idBackPath, Toast.LENGTH_LONG).show();
 
-            String UPLOAD_URL = "http://192.168.137.1/boardease2/insert_registration.php";
+            String UPLOAD_URL = "http://192.168.101.6/BoardEase2/insert_registration.php";
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,

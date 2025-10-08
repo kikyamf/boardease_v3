@@ -31,17 +31,26 @@
             android:textColor="#000000" />
     </LinearLayout>
 
-    <!-- Content -->
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp" />
+
+    <!-- Empty State -->
     <LinearLayout
+        android:id="@+id/tvNoActiveRentals"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="32dp">
+        android:padding="32dp"
+        android:visibility="gone">
 
         <TextView
-            android:id="@+id/tvNoActiveRentals"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="No active rentals."
@@ -51,6 +60,24 @@
     </LinearLayout>
 
 </LinearLayout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

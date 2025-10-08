@@ -64,7 +64,7 @@
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:layout_gravity="bottom|end"
-                android:src="@drawable/ic_camera"
+                android:src="@drawable/ic_camera1"
                 android:tint="@color/white"
                 android:background="@drawable/dot_inactive"
                 android:padding="4dp"
@@ -132,7 +132,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -165,7 +165,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -197,7 +197,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -229,7 +229,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -261,7 +261,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
 
@@ -293,7 +293,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right"
+                android:src="@drawable/ic_arrow_right1"
                 android:tint="#999999" />
         </LinearLayout>
     </LinearLayout>

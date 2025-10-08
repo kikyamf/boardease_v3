@@ -23,8 +23,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     @Override
     public int getItemViewType(int position) {
-        return messages.get(position).isReceiver() ? 0 : 1;
-        // 0 = received, 1 = sent
+        return messages.get(position).isReceiver() ? 1 : 0;
+        // 0 = received (gray), 1 = sent (brown)
     }
 
     @NonNull
@@ -32,10 +32,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view;
         if (viewType == 0) {
-            // Received bubble
+            // Received bubble (gray)
             view = LayoutInflater.from(context).inflate(R.layout.item_message_receiver, parent, false);
         } else {
-            // Sent bubble
+            // Sent bubble (brown)
             view = LayoutInflater.from(context).inflate(R.layout.item_message_sender, parent, false);
         }
         return new MessageViewHolder(view);
@@ -43,7 +43,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     @Override
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
-        holder.messageText.setText(messages.get(position).getMessage());
+        MessageModel message = messages.get(position);
+        holder.messageText.setText(message.getMessage());
+        holder.messageTime.setText(message.getTimestamp());
     }
 
     @Override
@@ -53,10 +55,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText;
+        TextView messageTime;
 
         public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             messageText = itemView.findViewById(R.id.textMessage);
+            messageTime = itemView.findViewById(R.id.textTime);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.mock;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -33,8 +34,10 @@ public class ManageFragment extends Fragment {
     private List<Listing> listingList = new ArrayList<>();
     private int userId = -1; // now will be set via arguments
     private boolean isRefreshingAfterEdit = false; // Flag to track refresh after edit
+    private boolean isFirstLoad = true; // Flag to control loading dialog
 
     private TextView textViewListingCount;
+    private ProgressDialog progressDialog;
 
     private static final String ARG_USER_ID = "user_id";
 
@@ -109,7 +112,8 @@ public class ManageFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        fetchBoardingHouses(); // refresh list when coming back
+        // Don't show loading dialog when coming back from other activities
+        fetchBoardingHouses(false); // refresh list when coming back
     }
 
     @Override
@@ -122,14 +126,23 @@ public class ManageFragment extends Fragment {
                 // Set flag and show loading message
                 isRefreshingAfterEdit = true;
                 Toast.makeText(getContext(), "Refreshing listings...", Toast.LENGTH_SHORT).show();
-                fetchBoardingHouses();
+                fetchBoardingHouses(false); // Don't show loading dialog for refresh
             }
         }
     }
 
 
     private void fetchBoardingHouses() {
-        String url = "http://192.168.254.121/BoardEase2/get_boarding_houses.php";
+        fetchBoardingHouses(true); // Default to showing loading dialog
+    }
+    
+    private void fetchBoardingHouses(boolean showLoading) {
+        String url = "http://192.168.101.6/BoardEase2/get_boarding_houses.php";
+        
+        // Show loading dialog only on first load or when explicitly requested
+        if (showLoading && isFirstLoad) {
+            showProgressDialog();
+        }
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -165,13 +178,25 @@ public class ManageFragment extends Fragment {
                             Toast.makeText(getContext(), "Listings updated successfully!", Toast.LENGTH_SHORT).show();
                             isRefreshingAfterEdit = false; // Reset flag
                         }
+                        
+                        // Mark first load as complete
+                        if (isFirstLoad) {
+                            isFirstLoad = false;
+                        }
 
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Parsing error", Toast.LENGTH_SHORT).show();
+                    } finally {
+                        // Hide loading dialog
+                        hideProgressDialog();
                     }
                 },
-                error -> Toast.makeText(getContext(), "Error fetching data", Toast.LENGTH_SHORT).show()) {
+                error -> {
+                    Toast.makeText(getContext(), "Error fetching data", Toast.LENGTH_SHORT).show();
+                    // Hide loading dialog on error
+                    hideProgressDialog();
+                }) {
 
             @Override
             protected Map<String, String> getParams() {
@@ -202,7 +227,7 @@ public class ManageFragment extends Fragment {
     }
     
     private void performDeleteBoardingHouse(int bhId) {
-        String url = "http://192.168.254.121/BoardEase2/delete_boarding_house.php";
+        String url = "http://192.168.101.6/BoardEase2/delete_boarding_house.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -226,7 +251,7 @@ public class ManageFragment extends Fragment {
                         // Check if response contains success
                         if (response.contains("success")) {
                             Toast.makeText(getContext(), "Boarding house deleted successfully", Toast.LENGTH_SHORT).show();
-                            fetchBoardingHouses(); // Refresh the list
+                            fetchBoardingHouses(false); // Refresh the list without loading dialog
                         } else {
                             Toast.makeText(getContext(), "Failed to delete boarding house: " + response, Toast.LENGTH_LONG).show();
                         }
@@ -248,5 +273,28 @@ public class ManageFragment extends Fragment {
         };
 
         Volley.newRequestQueue(getContext()).add(request);
+    }
+    
+    private void showProgressDialog() {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Loading boarding houses...");
+            progressDialog.setCancelable(false);
+        }
+        if (!progressDialog.isShowing()) {
+            progressDialog.show();
+        }
+    }
+    
+    private void hideProgressDialog() {
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
+    }
+    
+    // Public method to refresh data with loading dialog (can be called from outside)
+    public void refreshListingsWithLoading() {
+        isFirstLoad = true; // Reset flag to show loading dialog
+        fetchBoardingHouses(true);
     }
 }

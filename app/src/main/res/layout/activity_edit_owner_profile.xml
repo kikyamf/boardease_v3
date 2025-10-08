@@ -67,7 +67,7 @@
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:layout_gravity="bottom|end"
-                    android:src="@drawable/ic_camera"
+                    android:src="@drawable/ic_camera1"
                     android:tint="@color/white"
                     android:background="@drawable/dot_inactive"
                     android:padding="4dp"
@@ -233,3 +233,11 @@
     </LinearLayout>
 
 </ScrollView>
+
+
+
+
+
+
+
+

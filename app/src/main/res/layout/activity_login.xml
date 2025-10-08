@@ -22,7 +22,7 @@
                 android:id="@+id/backButton"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_arrow_back"
+                android:src="@drawable/ic_arrow_back4"
                 android:contentDescription="Back" />
 
             <TextView
@@ -61,7 +61,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:src="@drawable/email"
+                android:src="@drawable/email1"
                 android:contentDescription="Email Icon"/>
 
             <EditText

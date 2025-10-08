@@ -1,9 +1,12 @@
 package com.example.mock;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,8 +20,12 @@ import java.util.List;
 public class AllPaymentsFragment extends Fragment {
 
     private RecyclerView recyclerView;
+    private TextView emptyState;
     private PaymentAdapter adapter;
     private List<PaymentData> allPayments;
+    private PaymentApiService paymentApiService;
+    private ProgressDialog progressDialog;
+    private int ownerId = 1; // TODO: Get from shared preferences or intent
 
     @Nullable
     @Override
@@ -26,50 +33,105 @@ public class AllPaymentsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_all_payments, container, false);
 
         recyclerView = view.findViewById(R.id.recyclerView);
+        emptyState = view.findViewById(R.id.emptyState);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Initialize with sample data
+        // Initialize API service
+        paymentApiService = new PaymentApiService(getContext());
         allPayments = new ArrayList<>();
+
+        // Load payments from API
         loadAllPayments();
 
         return view;
     }
 
     private void loadAllPayments() {
-        // Sample data - replace with actual API call
-        allPayments.clear();
-        allPayments.add(new PaymentData(
-            "Hanna Cuas",
-            "Room 2",
-            "long-term",
-            "₱6,000.00",
-            "₱6,000.00",
-            "3/3 months paid",
-            "Completed",
-            "2025-05-18 19:40"
-        ));
-        allPayments.add(new PaymentData(
-            "Liz",
-            "Room 1",
-            "short-term",
-            "₱2,000.00",
-            "₱1,000.00",
-            "2/1 months paid",
-            "Completed",
-            "2025-05-18 19:36"
-        ));
-        allPayments.add(new PaymentData(
-            "Christe Hanna Mae Cuas",
-            "Single",
-            "daily",
-            "₱2,800.00",
-            "₱400.00",
-            "14/2 days paid",
-            "Completed",
-            "2025-05-18 18:21"
-        ));
+        showProgressDialog("Loading payments...");
+        
+        paymentApiService.getAllPayments(ownerId, new PaymentApiService.PaymentListCallback() {
+            @Override
+            public void onSuccess(List<PaymentData> payments) {
+                hideProgressDialog();
+                allPayments.clear();
+                allPayments.addAll(payments);
+                updateUI();
+            }
 
-        adapter = new PaymentAdapter(allPayments);
-        recyclerView.setAdapter(adapter);
+            @Override
+            public void onError(String error) {
+                hideProgressDialog();
+                Toast.makeText(getContext(), "Error loading payments: " + error, Toast.LENGTH_SHORT).show();
+                updateUI();
+            }
+        });
+    }
+
+    private void updateUI() {
+        if (allPayments.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            emptyState.setVisibility(View.VISIBLE);
+            emptyState.setText("No payments found");
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            emptyState.setVisibility(View.GONE);
+            
+            if (adapter == null) {
+                adapter = new PaymentAdapter(allPayments, new PaymentAdapter.PaymentActionListener() {
+                    @Override
+                    public void onMarkAsPaid(PaymentData payment) {
+                        // Handle mark as paid action
+                    }
+
+                    @Override
+                    public void onMarkAsOverdue(PaymentData payment) {
+                        // Handle mark as overdue action
+                    }
+
+                    @Override
+                    public void onViewDetails(PaymentData payment) {
+                        // Open payment details activity
+                        android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
+                        intent.putExtra("payment", payment);
+                        startActivity(intent);
+                    }
+                });
+                recyclerView.setAdapter(adapter);
+            } else {
+                adapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    private void showProgressDialog(String message) {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setCancelable(false);
+        }
+        progressDialog.setMessage(message);
+        progressDialog.show();
+    }
+
+    private void hideProgressDialog() {
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
+    }
+
+    // Method to refresh data (can be called from parent activity)
+    public void refreshData() {
+        loadAllPayments();
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+

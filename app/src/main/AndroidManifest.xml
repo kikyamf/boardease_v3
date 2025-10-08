@@ -11,6 +11,15 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Allow cleartext traffic for development -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    
+    <!-- Firebase Cloud Messaging permissions -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:allowBackup="true"
@@ -78,10 +87,16 @@
             android:name=".Conversation"
             android:exported="false" />
         <activity
+            android:name=".CreateGroupChat"
+            android:exported="false" />
+        <activity
             android:name=".EditOwnerProfileActivity"
             android:exported="false" />
         <activity
             android:name=".BookingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BookingDetailsActivity"
             android:exported="false" />
         <activity
             android:name=".ActivityDetailsActivity"
@@ -101,6 +116,21 @@
         <activity
             android:name=".ReviewsActivity"
             android:exported="false" />
+        <activity
+            android:name=".PaymentDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentSummaryActivity"
+            android:exported="false" />
+            
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

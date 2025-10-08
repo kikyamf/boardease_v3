@@ -2,6 +2,7 @@ package com.example.mock;
 
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,12 +35,14 @@ import java.util.Map;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.254.121/BoardEase2/get_owner_profile.php";
+    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
     private int userId;
+    private boolean isFirstLoad = true; // Flag to control loading dialog
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
     private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
+    private ProgressDialog progressDialog;
 
     public OwnerProfileFragment() {
         // Required empty public constructor
@@ -120,6 +123,15 @@ public class OwnerProfileFragment extends Fragment {
     }
     
     private void loadOwnerProfile() {
+        loadOwnerProfile(true); // Default to showing loading dialog
+    }
+    
+    private void loadOwnerProfile(boolean showLoading) {
+        // Show loading dialog only on first load or when explicitly requested
+        if (showLoading && isFirstLoad) {
+            showProgressDialog();
+        }
+        
         StringRequest request = new StringRequest(Request.Method.POST, GET_OWNER_PROFILE_URL,
             new Response.Listener<String>() {
                 @Override
@@ -133,11 +145,19 @@ public class OwnerProfileFragment extends Fragment {
                             tvOwnerName.setText("Owner " + userId);
                             tvOwnerEmail.setText("owner" + userId + "@example.com");
                         }
+                        
+                        // Mark first load as complete
+                        if (isFirstLoad) {
+                            isFirstLoad = false;
+                        }
                     } catch (JSONException e) {
                         Log.e("OwnerProfile", "Error parsing profile response", e);
                         // Set default data on error
                         tvOwnerName.setText("Owner " + userId);
                         tvOwnerEmail.setText("owner" + userId + "@example.com");
+                    } finally {
+                        // Hide loading dialog
+                        hideProgressDialog();
                     }
                 }
             },
@@ -148,6 +168,8 @@ public class OwnerProfileFragment extends Fragment {
                     // Set default data on error
                     tvOwnerName.setText("Owner " + userId);
                     tvOwnerEmail.setText("owner" + userId + "@example.com");
+                    // Hide loading dialog on error
+                    hideProgressDialog();
                 }
             }
         ) {
@@ -178,7 +200,7 @@ public class OwnerProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "http://192.168.254.121/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -202,7 +224,8 @@ public class OwnerProfileFragment extends Fragment {
         // Check if the result is from EditOwnerProfileActivity, AccountSettingsActivity, or GcashInfoActivity
         if ((requestCode == 100 || requestCode == 200 || requestCode == 300) && resultCode == getActivity().RESULT_OK) {
             // Profile, account settings, or GCash info was updated successfully, refresh the data
-            loadOwnerProfile();
+            // Don't show loading dialog when refreshing after edit
+            loadOwnerProfile(false);
         }
     }
     
@@ -211,7 +234,8 @@ public class OwnerProfileFragment extends Fragment {
         super.onResume();
         // Refresh profile data when fragment becomes visible
         // This ensures any changes made in other activities are reflected
-        loadOwnerProfile();
+        // Don't show loading dialog when coming back from other activities
+        loadOwnerProfile(false);
     }
     
     /**
@@ -220,5 +244,31 @@ public class OwnerProfileFragment extends Fragment {
      */
     public void refreshProfile() {
         loadOwnerProfile();
+    }
+    
+    /**
+     * Public method to refresh profile data with loading dialog
+     * Can be called from parent activity when needed
+     */
+    public void refreshProfileWithLoading() {
+        isFirstLoad = true; // Reset flag to show loading dialog
+        loadOwnerProfile(true);
+    }
+    
+    private void showProgressDialog() {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Loading profile...");
+            progressDialog.setCancelable(false);
+        }
+        if (!progressDialog.isShowing()) {
+            progressDialog.show();
+        }
+    }
+    
+    private void hideProgressDialog() {
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
     }
 }

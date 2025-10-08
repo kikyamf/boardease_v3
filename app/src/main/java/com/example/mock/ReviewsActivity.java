@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReviewsActivity extends AppCompatActivity {
@@ -73,65 +74,27 @@ public class ReviewsActivity extends AppCompatActivity {
     private void loadReviews() {
         showProgressDialog("Loading reviews...");
 
-        StringRequest request = new StringRequest(Request.Method.POST, GET_REVIEWS_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        hideProgressDialog();
-                        Log.d(TAG, "Server Response: " + response);
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            if (jsonResponse.getBoolean("success")) {
-                                JSONArray reviewsArray = jsonResponse.getJSONArray("reviews");
-                                reviews.clear();
-
-                                for (int i = 0; i < reviewsArray.length(); i++) {
-                                    JSONObject reviewObj = reviewsArray.getJSONObject(i);
-                                    Review review = new Review(
-                                            reviewObj.getInt("review_id"),
-                                            reviewObj.getString("boarder_name"),
-                                            reviewObj.getString("boarding_house_name"),
-                                            reviewObj.getString("room_number"),
-                                            reviewObj.getInt("rating"),
-                                            reviewObj.getString("comment"),
-                                            reviewObj.getString("review_date"),
-                                            reviewObj.getString("profile_picture")
-                                    );
-                                    reviews.add(review);
-                                }
-
-                                adapter.notifyDataSetChanged();
-                                updateEmptyState();
-                            } else {
-                                Toast.makeText(ReviewsActivity.this, "Failed to load reviews", Toast.LENGTH_SHORT).show();
-                                updateEmptyState();
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
-                            Toast.makeText(ReviewsActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
-                            updateEmptyState();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        hideProgressDialog();
-                        Log.e(TAG, "Volley Error: " + error.getMessage());
-                        Toast.makeText(ReviewsActivity.this, "Error loading reviews", Toast.LENGTH_SHORT).show();
-                        updateEmptyState();
-                    }
-                }) {
+        ReviewApiService apiService = new ReviewApiService(this);
+        // Get reviews for this owner (assuming userId is owner_id)
+        apiService.getReviews(0, userId, 0, "all", "published", "newest", new ReviewApiService.ReviewApiCallback() {
             @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("user_id", String.valueOf(userId));
-                return params;
+            public void onSuccess(List<Review> reviewList) {
+                hideProgressDialog();
+                reviews.clear();
+                reviews.addAll(reviewList);
+                adapter.notifyDataSetChanged();
+                updateEmptyState();
+                Log.d(TAG, "Loaded " + reviewList.size() + " reviews");
             }
-        };
 
-        RequestQueue queue = Volley.newRequestQueue(this);
-        queue.add(request);
+            @Override
+            public void onError(String error) {
+                hideProgressDialog();
+                Log.e(TAG, "Error loading reviews: " + error);
+                Toast.makeText(ReviewsActivity.this, "Error: " + error, Toast.LENGTH_SHORT).show();
+                updateEmptyState();
+            }
+        });
     }
 
     private void updateEmptyState() {
@@ -159,6 +122,23 @@ public class ReviewsActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

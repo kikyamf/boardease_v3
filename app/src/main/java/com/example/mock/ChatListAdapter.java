@@ -21,6 +21,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     // Interface for click handling
     public interface OnItemClickListener {
         void onItemClick(ChatModel chat);
+        void onItemLongClick(ChatModel chat);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -47,12 +48,56 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
         holder.messageTime.setText(chat.getTime());
         holder.profileImage.setImageResource(chat.getImageResId());
 
-        // 🔹 Handle item clicks
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onItemClick(chat);
+        // 🔹 Handle unread message indicators (like Messenger)
+        boolean hasUnreadMessages = chat.getUnreadCount() > 0;
+        
+        if (hasUnreadMessages) {
+            // Bold text for unread messages
+            holder.userName.setTypeface(null, android.graphics.Typeface.BOLD);
+            holder.lastMessage.setTypeface(null, android.graphics.Typeface.BOLD);
+            holder.messageTime.setTypeface(null, android.graphics.Typeface.BOLD);
+            
+            // Darker colors for unread messages
+            holder.userName.setTextColor(context.getResources().getColor(android.R.color.black));
+            holder.lastMessage.setTextColor(context.getResources().getColor(android.R.color.black));
+            holder.messageTime.setTextColor(context.getResources().getColor(android.R.color.black));
+            
+            // Show unread badge with count
+            holder.unreadBadge.setVisibility(View.VISIBLE);
+            if (chat.getUnreadCount() > 99) {
+                holder.unreadBadge.setText("99+");
+            } else {
+                holder.unreadBadge.setText(String.valueOf(chat.getUnreadCount()));
             }
-        });
+        } else {
+            // Normal text for read messages
+            holder.userName.setTypeface(null, android.graphics.Typeface.NORMAL);
+            holder.lastMessage.setTypeface(null, android.graphics.Typeface.NORMAL);
+            holder.messageTime.setTypeface(null, android.graphics.Typeface.NORMAL);
+            
+            // Lighter colors for read messages
+            holder.userName.setTextColor(context.getResources().getColor(android.R.color.black));
+            holder.lastMessage.setTextColor(context.getResources().getColor(android.R.color.darker_gray));
+            holder.messageTime.setTextColor(context.getResources().getColor(android.R.color.darker_gray));
+            
+            // Hide unread badge
+            holder.unreadBadge.setVisibility(View.GONE);
+        }
+
+            // 🔹 Handle item clicks
+            holder.itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(chat);
+                }
+            });
+            
+            // 🔹 Handle long press for delete
+            holder.itemView.setOnLongClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemLongClick(chat);
+                }
+                return true; // Consume the long press event
+            });
     }
 
     @Override
@@ -62,7 +107,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
 
     public static class ChatViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
-        TextView userName, lastMessage, messageTime;
+        TextView userName, lastMessage, messageTime, unreadBadge;
 
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -70,6 +115,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
             userName = itemView.findViewById(R.id.userName);
             lastMessage = itemView.findViewById(R.id.lastMessage);
             messageTime = itemView.findViewById(R.id.messageTime);
+            unreadBadge = itemView.findViewById(R.id.unreadBadge);
         }
     }
 }

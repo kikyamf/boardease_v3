@@ -74,12 +74,12 @@ public class AddingRoomsFragment extends Fragment {
     private static ArrayList<RoomFormData> savedRoomData = new ArrayList<>();
 
     // PHP Endpoints
-    private static final String ADD_BH_URL = "http://192.168.254.121/BoardEase2/add_boarding_house.php";
-    private static final String UPDATE_BH_URL = "http://192.168.254.121/BoardEase2/update_boarding_house.php";
-    private static final String UPLOAD_BH_IMAGE_URL = "http://192.168.254.121/BoardEase2/upload_bh_image.php";
-    private static final String ADD_ROOM_URL = "http://192.168.254.121/BoardEase2/add_room.php";
-    private static final String UPDATE_ROOM_URL = "http://192.168.254.121/BoardEase2/update_room.php";
-    private static final String UPLOAD_ROOM_IMAGE_URL = "http://192.168.254.121/BoardEase2/upload_room_image.php";
+    private static final String ADD_BH_URL = "http://192.168.101.6/BoardEase2/add_boarding_house.php";
+    private static final String UPDATE_BH_URL = "http://192.168.101.6/BoardEase2/update_boarding_house.php";
+    private static final String UPLOAD_BH_IMAGE_URL = "http://192.168.101.6/BoardEase2/upload_bh_image.php";
+    private static final String ADD_ROOM_URL = "http://192.168.101.6/BoardEase2/add_room.php";
+    private static final String UPDATE_ROOM_URL = "http://192.168.101.6/BoardEase2/update_room.php";
+    private static final String UPLOAD_ROOM_IMAGE_URL = "http://192.168.101.6/BoardEase2/upload_room_image.php";
 
     public AddingRoomsFragment() {}
 

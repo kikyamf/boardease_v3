@@ -38,9 +38,9 @@ import java.util.Map;
 public class GcashInfoActivity extends AppCompatActivity {
 
     private static final String TAG = "GcashInfo";
-    private static final String GET_GCASH_INFO_URL = "http://192.168.254.121/BoardEase2/get_gcash_info.php";
-    private static final String UPDATE_GCASH_INFO_URL = "http://192.168.254.121/BoardEase2/update_gcash_info.php";
-    private static final String UPLOAD_GCASH_QR_URL = "http://192.168.254.121/BoardEase2/upload_gcash_qr.php";
+    private static final String GET_GCASH_INFO_URL = "http://192.168.101.6/BoardEase2/get_gcash_info.php";
+    private static final String UPDATE_GCASH_INFO_URL = "http://192.168.101.6/BoardEase2/update_gcash_info.php";
+    private static final String UPLOAD_GCASH_QR_URL = "http://192.168.101.6/BoardEase2/upload_gcash_qr.php";
     private static final int PICK_GCASH_QR_REQUEST = 300;
 
     private int userId;
@@ -140,7 +140,7 @@ public class GcashInfoActivity extends AppCompatActivity {
             // Set GCash QR
             currentGcashQr = gcashData.optString("gcash_qr", "");
             if (!currentGcashQr.isEmpty()) {
-                String fullImageUrl = "http://192.168.254.121/BoardEase2/" + currentGcashQr;
+                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + currentGcashQr;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.placeholder)
@@ -253,7 +253,7 @@ public class GcashInfoActivity extends AppCompatActivity {
                                 currentGcashQr = newQrPath;
                                 
                                 // Update the image view
-                                String fullImageUrl = "http://192.168.254.121/BoardEase2/" + newQrPath;
+                                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + newQrPath;
                                 Glide.with(GcashInfoActivity.this)
                                     .load(fullImageUrl)
                                     .placeholder(R.drawable.placeholder)
@@ -322,6 +322,15 @@ public class GcashInfoActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
