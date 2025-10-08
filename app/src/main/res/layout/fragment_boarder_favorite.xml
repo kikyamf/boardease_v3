@@ -6,15 +6,37 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
+    <!-- Header Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="24dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Your Favorites"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold" />
+
+
+    </LinearLayout>
+
+
     <!-- Search Bar -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
+        android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="16dp"
+        android:backgroundTint="#FFFFFF"
         app:cardCornerRadius="30dp"
-        app:cardElevation="3dp"
-        android:backgroundTint="#FFFFFF">
+        app:cardElevation="3dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -30,11 +52,11 @@
                 android:contentDescription="Search" />
 
             <EditText
-                android:id="@+id/etSearch"
+                android:id="@+id/etSearchFavorites"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Search boarding houses by location or name"
+                android:hint="Search your favorites..."
                 android:background="@android:color/transparent"
                 android:paddingStart="12dp"
                 android:textColor="#000000"
@@ -43,68 +65,21 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Filter and Sort Options -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="16dp">
-
-        <!-- Filter Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFilter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            android:text="Filter"
-            android:textColor="#333333"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_medium"
-            app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
-            app:strokeWidth="1dp"
-            android:backgroundTint="#FFFFFF"
-            app:icon="@drawable/ic_arrow_down"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
-
-        <!-- Sort Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSort"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="Sort"
-            android:textColor="#333333"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_medium"
-            app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
-            app:strokeWidth="1dp"
-            android:backgroundTint="#FFFFFF"
-            app:icon="@drawable/ic_arrow_down"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
-    </LinearLayout>
-
     <!-- Results Count -->
     <TextView
-        android:id="@+id/tvResultsCount"
+        android:id="@+id/tvFavoritesCount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="8dp"
-        android:text="Found 0 boarding houses"
+        android:text="0 favorites"
         android:textSize="14sp"
         android:textColor="#666666"
         android:fontFamily="@font/poppins_regular" />
 
-    <!-- Boarding Houses RecyclerView -->
+    <!-- Favorites RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvBoardingHouses"
+        android:id="@+id/rvFavorites"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -135,28 +110,45 @@
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/empty"
-            android:contentDescription="No results found"
-            android:alpha="0.6" />
+            android:src="@drawable/btn_heart"
+            android:contentDescription="No favorites"
+            android:alpha="0.3"
+            android:tint="#A18167" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No boarding houses found"
+            android:text="You haven't added any favorites yet"
             android:textSize="18sp"
             android:textColor="#666666"
             android:fontFamily="@font/poppins_medium"
-            android:layout_marginTop="16dp" />
+            android:layout_marginTop="16dp"
+            android:gravity="center" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Try adjusting your search criteria"
+            android:text="Start exploring and add boarding houses to your favorites"
             android:textSize="14sp"
             android:textColor="#999999"
             android:fontFamily="@font/poppins_regular"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:gravity="center" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExploreNow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Explore Now"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="@color/brown"
+            app:cornerRadius="25dp"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="12dp"
+            android:layout_marginTop="24dp" />
+
     </LinearLayout>
 
 </LinearLayout>
-

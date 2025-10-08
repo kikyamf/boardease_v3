@@ -157,17 +157,38 @@
 
         </LinearLayout>
 
-        <!-- Favorite Button -->
-        <ImageButton
-            android:id="@+id/btnFavorite"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/favorite"
-            android:contentDescription="Add to favorites"
-            android:padding="6dp"
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_gravity="top|end"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp">
+
+            <!-- Favorite Button -->
+            <ImageButton
+                android:id="@+id/btnFavorite"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/favorite"
+                android:contentDescription="Add to favorites"
+                android:padding="6dp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Delete Button (for favorites) -->
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/trash"
+                android:contentDescription="Delete from favorites"
+                android:padding="6dp"
+                android:tint="#FF5722"
+                android:visibility="gone" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

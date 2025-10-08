@@ -21,7 +21,7 @@ public class BoardingHouseDetailsActivitySimple extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_boarding_house_details_simple);
+        setContentView(R.layout.activity_boarding_house_details);
         
         // Get data from intent
         getIntentData();

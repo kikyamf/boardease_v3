@@ -11,7 +11,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-
     <!-- Header with Back + Title -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -77,20 +76,20 @@
         </FrameLayout>
 
         <TextView
-            android:id="@+id/tvOwnerName"
+            android:id="@+id/tvBoarderName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Owner Name"
+            android:text="Boarder Name"
             android:textStyle="bold"
             android:textSize="18sp"
             android:layout_marginTop="12dp"
             android:textColor="#000000" />
 
         <TextView
-            android:id="@+id/tvOwnerEmail"
+            android:id="@+id/tvBoarderEmail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="owner@email.com"
+            android:text="boarder@email.com"
             android:textSize="14sp"
             android:textColor="#777777" />
     </LinearLayout>
@@ -141,9 +140,9 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- GCash Information -->
+        <!-- My Bookings -->
         <LinearLayout
-            android:id="@+id/layoutGcashInfo"
+            android:id="@+id/layoutMyBookings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -155,7 +154,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/money"
+                android:src="@drawable/btn_booking"
                 android:tint="#795548" />
 
             <TextView
@@ -163,7 +162,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
-                android:text="GCash Information"
+                android:text="My Bookings"
                 android:textSize="16sp"
                 android:textColor="#000000" />
 
@@ -174,15 +173,49 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- Payments -->
+        <!-- My Favorites -->
         <LinearLayout
-            android:id="@+id/layoutPayments"
+            android:id="@+id/layoutMyFavorites"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="12dp"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground">
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/btn_heart"
+                android:tint="#795548" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="My Favorites"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#999999" />
+        </LinearLayout>
+
+        <!-- Payment Methods -->
+        <LinearLayout
+            android:id="@+id/layoutPaymentMethods"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -195,7 +228,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
-                android:text="Payments"
+                android:text="Payment Methods"
                 android:textSize="16sp"
                 android:textColor="#000000" />
 
@@ -214,7 +247,8 @@
             android:orientation="horizontal"
             android:padding="12dp"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground">
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -238,7 +272,7 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- Recent Viewed -->
+        <!-- Messages -->
         <LinearLayout
             android:id="@+id/layoutMessages"
             android:layout_width="match_parent"
@@ -246,7 +280,8 @@
             android:orientation="horizontal"
             android:padding="12dp"
             android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground">
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -260,6 +295,39 @@
                 android:layout_weight="1"
                 android:layout_marginStart="12dp"
                 android:text="Messages"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="#999999" />
+        </LinearLayout>
+
+        <!-- Help & Support -->
+        <LinearLayout
+            android:id="@+id/layoutHelpSupport"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_info1"
+                android:tint="#795548" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="Help &amp; Support"
                 android:textSize="16sp"
                 android:textColor="#000000" />
 

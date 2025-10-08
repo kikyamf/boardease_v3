@@ -2,10 +2,8 @@ package com.example.mock;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -157,8 +155,7 @@ public class RegistrationActivity extends AppCompatActivity {
 
                     // if you want to send QR URI
                     if (selectedQrUri != null) {
-                        String qrPath = getRealPathFromURI(selectedQrUri);
-                        a.putExtra("qrUri", qrPath);
+                        a.putExtra("qrUri", selectedQrUri.toString());
                     }
 
                     startActivity(a);
@@ -173,17 +170,5 @@ public class RegistrationActivity extends AppCompatActivity {
                 startActivity(a);
             }
         });
-    }
-    private String getRealPathFromURI(Uri uri) {
-        String[] projection = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-        if (cursor != null) {
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            String path = cursor.getString(column_index);
-            cursor.close();
-            return path;
-        }
-        return uri.getPath(); // fallback
     }
 }

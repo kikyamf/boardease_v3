@@ -6,8 +6,17 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- Storage permissions for Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    
+    <!-- Legacy storage permissions for Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -23,6 +32,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
         <activity
             android:name=".EditRoomActivity"
             android:exported="false" />
@@ -43,9 +55,9 @@
             android:exported="false" />
         <activity
             android:name=".Type"
-            android:exported="false" /> <!-- Make Details the launcher activity -->
+            android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -61,7 +73,7 @@
             android:exported="false" />
         <activity
             android:name=".Login"
-            android:exported="false" /> <!-- MainActivity is no longer the launcher -->
+            android:exported="false" />
         <activity
             android:name=".Messages"
             android:exported="false" />
@@ -101,6 +113,56 @@
         <activity
             android:name=".ReviewsActivity"
             android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivitySimple"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Registration2Activity"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderDashboard"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PreBookingPhase1Activity"
+            android:exported="false" />
+        <activity
+            android:name=".PreBookingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BookingConfirmationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OwnerMessages"
+            android:exported="false" />
+        <activity
+            android:name=".BoarderMessages"
+            android:exported="false" />
+        <activity
+            android:name=".Details"
+            android:exported="false" />
+            
+        <!-- FileProvider for camera access -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
