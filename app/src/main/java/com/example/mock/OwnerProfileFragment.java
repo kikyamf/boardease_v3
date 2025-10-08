@@ -1,6 +1,5 @@
 package com.example.mock;
 
-
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;

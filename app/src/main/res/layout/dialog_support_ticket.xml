@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#FFFFFF">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Support Ticket"
+            android:textSize="20sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseSupport"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_arrow_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close"
+            android:rotation="180" />
+
+    </LinearLayout>
+
+    <!-- Issue Description Section -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#F9FAFB"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Issue Description"
+                android:textSize="16sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Describe your issue or maintenance request..."
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxStrokeColor="#E0E0E0"
+                app:hintTextColor="#666666"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etIssueDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="4"
+                    android:maxLines="6"
+                    android:gravity="top"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:inputType="textMultiLine|textCapSentences" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelSupport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="@android:color/transparent"
+            app:cornerRadius="20dp"
+            app:strokeColor="#E0E0E0"
+            app:strokeWidth="1dp"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="8dp"
+            android:layout_marginEnd="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSendRequest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send Request"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#A18167"
+            app:cornerRadius="20dp"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

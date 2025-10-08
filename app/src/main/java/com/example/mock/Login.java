@@ -5,10 +5,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,9 +38,12 @@ public class Login extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
+    private Button btnGuest;
     private TextView tvSignUp;
+    private ImageButton btnTogglePassword;
     private ProgressDialog progressDialog;
     private RequestQueue requestQueue;
+    private boolean isPasswordVisible = false;
     
     // SharedPreferences for storing user session
     private SharedPreferences sharedPreferences;
@@ -82,7 +88,9 @@ public class Login extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
+        btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
+        btnTogglePassword = findViewById(R.id.btnTogglePassword);
         
         // Initialize progress dialog
         progressDialog = new ProgressDialog(this);
@@ -116,6 +124,42 @@ public class Login extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        btnTogglePassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePasswordVisibility();
+            }
+        });
+
+        btnGuest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigateToGuestMode();
+            }
+        });
+    }
+
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            // Hide password
+            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            btnTogglePassword.setImageResource(R.drawable.ic_password_hidden);
+            isPasswordVisible = false;
+        } else {
+            // Show password
+            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+            btnTogglePassword.setImageResource(R.drawable.ic_password_visible);
+            isPasswordVisible = true;
+        }
+        
+        // Move cursor to end of text
+        etPassword.setSelection(etPassword.getText().length());
+    }
+
+    private void navigateToGuestMode() {
+        Intent intent = new Intent(Login.this, GuestHomeActivity.class);
+        startActivity(intent);
     }
     
     private void performLogin() {
