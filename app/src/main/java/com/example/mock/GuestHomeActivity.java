@@ -31,6 +31,8 @@ public class GuestHomeActivity extends AppCompatActivity {
     private EditText etSearch;
     private LinearLayout layoutListings;
     private TextView tvWelcome;
+    private ImageView ivLogin;
+    private ImageView ivSignup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +54,12 @@ public class GuestHomeActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         layoutListings = findViewById(R.id.layoutListings);
         tvWelcome = findViewById(R.id.tvWelcome);
+        ivLogin = findViewById(R.id.ivLogin);
+        ivSignup = findViewById(R.id.ivSignup);
+        
+        // Set click listeners for login and signup buttons
+        ivLogin.setOnClickListener(v -> navigateToLogin());
+        ivSignup.setOnClickListener(v -> navigateToSignup());
     }
 
     private void loadSimpleListings() {
@@ -200,6 +208,16 @@ public class GuestHomeActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Error showing dialog", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(this, Login.class);
+        startActivity(intent);
+    }
+
+    private void navigateToSignup() {
+        Intent intent = new Intent(this, RegistrationActivity.class);
+        startActivity(intent);
     }
 
 }
