@@ -283,40 +283,127 @@
                     android:layout_marginBottom="10dp" />
 
                 <!-- Current Password Field -->
-                <EditText
-                    android:id="@+id/etCurrentPassword"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    android:hint="Current Password"
-                    android:inputType="textPassword"
-                    android:textSize="16sp"
-                    android:padding="12dp"
-                    android:background="@drawable/edittext_background" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/edittext_background"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/key"
+                        android:contentDescription="Password Icon"/>
+
+                    <EditText
+                        android:id="@+id/etCurrentPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="Current Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:padding="10dp"
+                        android:textColor="@color/black" />
+
+                    <ImageView
+                        android:id="@+id/ivToggleCurrentPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+
+                </LinearLayout>
 
                 <!-- New Password Field -->
-                <EditText
-                    android:id="@+id/etNewPassword"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    android:hint="New Password"
-                    android:inputType="textPassword"
-                    android:textSize="16sp"
-                    android:padding="12dp"
-                    android:background="@drawable/edittext_background" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/edittext_background"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/key"
+                        android:contentDescription="Password Icon"/>
+
+                    <EditText
+                        android:id="@+id/etNewPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="New Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:padding="10dp"
+                        android:textColor="@color/black" />
+
+                    <ImageView
+                        android:id="@+id/ivToggleNewPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+
+                </LinearLayout>
 
                 <!-- Confirm New Password Field -->
-                <EditText
-                    android:id="@+id/etConfirmPassword"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    android:hint="Confirm New Password"
-                    android:inputType="textPassword"
-                    android:textSize="16sp"
-                    android:padding="12dp"
-                    android:background="@drawable/edittext_background" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/edittext_background"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/key"
+                        android:contentDescription="Password Icon"/>
+
+                    <EditText
+                        android:id="@+id/etConfirmPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="Confirm New Password"
+                        android:inputType="textPassword"
+                        android:textSize="16sp"
+                        android:padding="10dp"
+                        android:textColor="@color/black" />
+
+                    <ImageView
+                        android:id="@+id/ivToggleConfirmPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+
+                </LinearLayout>
 
                 <!-- Password fields -->
 
