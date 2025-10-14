@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mock.ChatItem;
+import com.example.mock.MessagesActivity;
 import com.example.mock.R;
 
 import java.util.List;
