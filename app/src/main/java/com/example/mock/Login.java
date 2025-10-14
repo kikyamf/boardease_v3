@@ -41,6 +41,7 @@ public class Login extends AppCompatActivity {
     private Button btnGuest;
     private TextView tvSignUp;
     private ImageButton btnTogglePassword;
+    private ImageView backButton;
     private ProgressDialog progressDialog;
     private RequestQueue requestQueue;
     private boolean isPasswordVisible = false;
@@ -91,6 +92,15 @@ public class Login extends AppCompatActivity {
         btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
         btnTogglePassword = findViewById(R.id.btnTogglePassword);
+        backButton = findViewById(R.id.backButton);
+        
+        // Set up back button click listener
+        backButton.setOnClickListener(v -> {
+            // Navigate back to WelcomeActivity
+            Intent intent = new Intent(Login.this, WelcomeActivity.class);
+            startActivity(intent);
+            finish();
+        });
         
         // Initialize progress dialog
         progressDialog = new ProgressDialog(this);
