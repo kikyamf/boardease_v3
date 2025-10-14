@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Group of people outline -->
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M25,45 C25,40 30,35 35,35 C40,35 45,40 45,45 L45,55 C45,60 40,65 35,65 C30,65 25,60 25,55 Z" />
+    
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M55,45 C55,40 60,35 65,35 C70,35 75,40 75,45 L75,55 C75,60 70,65 65,65 C60,65 55,60 55,55 Z" />
+    
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M85,45 C85,40 90,35 95,35 C100,35 105,40 105,45 L105,55 C105,60 100,65 95,65 C90,65 85,60 85,55 Z" />
+    
+    <!-- User heads -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M35,30 C32,30 30,32 30,35 C30,38 32,40 35,40 C38,40 40,38 40,35 C40,32 38,30 35,30 Z" />
+    
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M65,30 C62,30 60,32 60,35 C60,38 62,40 65,40 C68,40 70,38 70,35 C70,32 68,30 65,30 Z" />
+    
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M95,30 C92,30 90,32 90,35 C90,38 92,40 95,40 C98,40 100,38 100,35 C100,32 98,30 95,30 Z" />
+    
+    <!-- "No" symbol -->
+    <path
+        android:strokeColor="#FF6B6B"
+        android:strokeWidth="3"
+        android:pathData="M95,20 L105,30 M105,20 L95,30" />
+</vector>

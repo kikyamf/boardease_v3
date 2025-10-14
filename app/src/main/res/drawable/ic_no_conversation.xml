@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Chat bubble -->
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M30,40 L70,40 L70,60 L50,60 L45,65 L50,60 L30,60 Z" />
+    
+    <!-- Message lines -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M35,45 L65,45 M35,50 L60,50 M35,55 L55,55" />
+    
+    <!-- Speech bubble with question mark -->
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M50,50 L90,50 L90,70 L70,70 L65,75 L70,70 L50,70 Z" />
+    
+    <!-- Question mark -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M75,60 C75,58 76,57 78,57 C80,57 81,58 81,60 C81,62 80,63 78,63 C76,63 75,62 75,60 Z M75,65 L75,68" />
+    
+    <!-- "No" symbol -->
+    <path
+        android:strokeColor="#FF6B6B"
+        android:strokeWidth="3"
+        android:pathData="M95,25 L105,35 M105,25 L95,35" />
+</vector>

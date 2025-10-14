@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M40,40m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    
+    <!-- User icon -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M40,25 C35,25 31,29 31,34 L31,40 C31,42 33,44 35,44 L45,44 C47,44 49,42 49,40 L49,34 C49,29 45,25 40,25 Z" />
+    
+    <!-- User head -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M40,20 C36,20 33,23 33,27 C33,31 36,34 40,34 C44,34 47,31 47,27 C47,23 44,20 40,20 Z" />
+    
+    <!-- "No" symbol -->
+    <path
+        android:strokeColor="#FF6B6B"
+        android:strokeWidth="2"
+        android:pathData="M60,15 L70,25 M70,15 L60,25" />
+</vector>

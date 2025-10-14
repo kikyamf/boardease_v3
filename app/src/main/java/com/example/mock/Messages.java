@@ -9,6 +9,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
@@ -37,7 +38,10 @@ import java.util.Map;
 public class Messages extends AppCompatActivity {
 
     private ImageView backButton, searchButton, addGroupButton;
+    private TextView textNewGC;
     private RecyclerView profileRecyclerView, chatListRecyclerView;
+    private LinearLayout layoutEmptyChatList, layoutEmptyProfileList;
+    private View dividerView;
     private RequestQueue requestQueue;
     private int currentUserId;
     private String currentUserType;
@@ -89,8 +93,12 @@ public class Messages extends AppCompatActivity {
         backButton = findViewById(R.id.backButton);
         searchButton = findViewById(R.id.searchButton);
         addGroupButton = findViewById(R.id.addGroupButton);
+        textNewGC = findViewById(R.id.textNewGC);
+        dividerView = findViewById(R.id.dividerView);
         profileRecyclerView = findViewById(R.id.profileRecyclerView);
         chatListRecyclerView = findViewById(R.id.chatListRecyclerView);
+        layoutEmptyChatList = findViewById(R.id.layoutEmptyChatList);
+        layoutEmptyProfileList = findViewById(R.id.layoutEmptyProfileList);
 
         // Back button action
         backButton.setOnClickListener(v -> finish());
@@ -98,18 +106,29 @@ public class Messages extends AppCompatActivity {
         // Search button action
         searchButton.setOnClickListener(v -> showSearchDialog());
 
-        // Add group action - temporarily allow all users for debugging
+        // Add group action - only for owners
         addGroupButton.setOnClickListener(v -> {
             Log.d("Messages", "Add button clicked. Current user type: '" + currentUserType + "'");
-            Log.d("Messages", "Opening CreateGroupChat activity for debugging");
-            Toast.makeText(this, "Debug: Opening CreateGroupChat. Role: " + currentUserType, Toast.LENGTH_LONG).show();
-            Intent intent = new Intent(Messages.this, CreateGroupChat.class);
-            startActivityForResult(intent, 1001);
+            if ("BH Owner".equals(currentUserType) || "Owner".equals(currentUserType)) {
+                Intent intent = new Intent(Messages.this, CreateGroupChat.class);
+                startActivityForResult(intent, 1001);
+            } else {
+                Toast.makeText(this, "Only boarding house owners can create group chats", Toast.LENGTH_SHORT).show();
+            }
         });
         
-        // Show add button for debugging - always visible
-        addGroupButton.setVisibility(View.VISIBLE);
-        Log.d("Messages", "Add button always visible for debugging. Role: " + currentUserType);
+        // Show/hide add button, text, and divider based on user role
+        if ("BH Owner".equals(currentUserType) || "Owner".equals(currentUserType)) {
+            addGroupButton.setVisibility(View.VISIBLE);
+            textNewGC.setVisibility(View.VISIBLE);
+            dividerView.setVisibility(View.VISIBLE);
+            Log.d("Messages", "Add button, text, and divider visible for owner. Role: " + currentUserType);
+        } else {
+            addGroupButton.setVisibility(View.GONE);
+            textNewGC.setVisibility(View.GONE);
+            dividerView.setVisibility(View.GONE);
+            Log.d("Messages", "Add button, text, and divider hidden for boarder. Role: " + currentUserType);
+        }
 
         // Setup RecyclerViews
         setupRecyclerViews();
@@ -252,6 +271,7 @@ public class Messages extends AppCompatActivity {
                             }
                             
                             profileAdapter.notifyDataSetChanged();
+                            updateProfileEmptyState();
                         } else {
                             Toast.makeText(this, "Error loading users: " + response.getString("message"), Toast.LENGTH_SHORT).show();
                         }
@@ -299,10 +319,21 @@ public class Messages extends AppCompatActivity {
                                 ChatModel chat;
                                 
                                 if (chatObj.getString("chat_type").equals("individual")) {
+                                    // Format individual message with sender name
+                                    // Only show "You: message" when current user sent it
+                                    // Don't show other person's name since it's obvious in 1-on-1 conversation
+                                    String lastMessage = chatObj.getString("last_message");
+                                    String senderName = chatObj.optString("last_sender_name", "");
+                                    
+                                    String formattedMessage = lastMessage;
+                                    if (!senderName.isEmpty() && senderName.equals("You")) {
+                                        formattedMessage = senderName + ": " + lastMessage;
+                                    }
+                                    
                                     chat = new ChatModel(
                                         chatObj.getString("other_user_name"),
-                                        chatObj.getString("last_message"),
-                                        chatObj.getString("last_message_time"),
+                                        formattedMessage,
+                                        formatTime(chatObj.getString("last_message_time")),
                                         R.drawable.ic_profile,
                                         chatObj.getInt("other_user_id"),
                                         chatObj.getString("chat_type"),
@@ -312,10 +343,19 @@ public class Messages extends AppCompatActivity {
                                         chatObj.getString("other_user_name")
                                     );
                                 } else {
+                                    // Format group message with sender name
+                                    String lastMessage = chatObj.getString("last_message");
+                                    String senderName = chatObj.optString("last_sender_name", "");
+                                    
+                                    String formattedMessage = lastMessage;
+                                    if (!senderName.isEmpty() && !lastMessage.equals("No messages yet")) {
+                                        formattedMessage = senderName + ": " + lastMessage;
+                                    }
+                                    
                                     chat = new ChatModel(
                                         chatObj.getString("group_name"),
-                                        chatObj.getString("last_message"),
-                                        chatObj.getString("last_message_time"),
+                                        formattedMessage,
+                                        formatTime(chatObj.getString("last_message_time")),
                                         R.drawable.ic_profile,
                                         chatObj.getInt("group_id"),
                                         chatObj.getString("chat_type"),
@@ -334,6 +374,7 @@ public class Messages extends AppCompatActivity {
                             }
                             
                             chatListAdapter.notifyDataSetChanged();
+                            updateChatEmptyState();
                         } else {
                             Toast.makeText(this, "Error loading chats: " + response.getString("message"), Toast.LENGTH_SHORT).show();
                         }
@@ -792,5 +833,49 @@ public class Messages extends AppCompatActivity {
         super.onPause();
         // Hide progress dialog when activity is paused
         hideProgressDialog();
+    }
+    
+    private void updateProfileEmptyState() {
+        if (profileList.isEmpty()) {
+            profileRecyclerView.setVisibility(View.GONE);
+            layoutEmptyProfileList.setVisibility(View.VISIBLE);
+        } else {
+            profileRecyclerView.setVisibility(View.VISIBLE);
+            layoutEmptyProfileList.setVisibility(View.GONE);
+        }
+    }
+    
+    private void updateChatEmptyState() {
+        if (chatList.isEmpty()) {
+            chatListRecyclerView.setVisibility(View.GONE);
+            layoutEmptyChatList.setVisibility(View.VISIBLE);
+        } else {
+            chatListRecyclerView.setVisibility(View.VISIBLE);
+            layoutEmptyChatList.setVisibility(View.GONE);
+        }
+    }
+    
+    // Helper method to format time as "2:50 PM"
+    private String formatTime(String timestamp) {
+        try {
+            // Handle null or empty timestamps
+            if (timestamp == null || timestamp.isEmpty() || timestamp.equals("null")) {
+                return "";
+            }
+            
+            // Parse the timestamp (assuming format like "2025-10-14 14:32:48")
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date date = inputFormat.parse(timestamp);
+            
+            // Format as "2:50 PM"
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("h:mm a");
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, return empty string for null/empty timestamps
+            if (timestamp == null || timestamp.isEmpty() || timestamp.equals("null")) {
+                return "";
+            }
+            return timestamp;
+        }
     }
 }

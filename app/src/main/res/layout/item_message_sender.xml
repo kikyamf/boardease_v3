@@ -6,6 +6,18 @@
     android:orientation="vertical"
     android:padding="6dp">
 
+    <!-- Sender name for group chats -->
+    <TextView
+        android:id="@+id/textSenderName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="12sp"
+        android:textColor="#666666"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="2dp"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/textMessage"
         android:layout_width="wrap_content"

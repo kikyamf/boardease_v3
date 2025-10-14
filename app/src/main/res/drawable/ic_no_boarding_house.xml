@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M100,100m-80,0a80,80 0,1 1,160 0a80,80 0,1 1,-160 0" />
+    
+    <!-- House outline -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M100,40L60,70v80h30v-40h20v40h30V70z" />
+    
+    <!-- House roof -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M100,30L50,65L100,100L150,65z" />
+    
+    <!-- Door -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M85,120h30v30h-30z" />
+    
+    <!-- Window -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M70,90h20v20h-20z" />
+    
+    <!-- Plus sign in circle -->
+    <path
+        android:fillColor="@color/brown"
+        android:pathData="M100,140m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0" />
+    
+    <!-- Plus horizontal line -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M90,140h20v4h-20z" />
+    
+    <!-- Plus vertical line -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,130v20h4v-20z" />
+    
+    <!-- Text "Add" -->
+    <path
+        android:fillColor="@color/brown"
+        android:pathData="M100,170L95,175L100,180L105,175z" />
+</vector>
+
+

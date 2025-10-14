@@ -144,6 +144,44 @@
                     android:clipToPadding="false"
                     android:padding="4dp" />
 
+                <!-- Empty State for Members -->
+                <LinearLayout
+                    android:id="@+id/layoutEmptyMembers"
+                    android:layout_width="match_parent"
+                    android:layout_height="400dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:padding="24dp"
+                    android:background="#FFFFFF">
+
+                    <ImageView
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:src="@drawable/ic_no_members"
+                        android:contentDescription="No Members"
+                        android:layout_marginBottom="16dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No members available"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginTop="12dp"
+                        android:textColor="#000"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="There are no boarders available to add to this group chat."
+                        android:textSize="14sp"
+                        android:textColor="#888888"
+                        android:gravity="center"
+                        android:layout_marginTop="8dp"/>
+                </LinearLayout>
+
             </LinearLayout>
 
         </LinearLayout>
@@ -176,6 +214,7 @@
     </LinearLayout>
 
 </LinearLayout>
+
 
 
 

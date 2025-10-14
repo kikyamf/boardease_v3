@@ -8,8 +8,10 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,6 +38,7 @@ public class Conversation extends AppCompatActivity {
     private ImageView btnBack, chatProfileImage, btnMembers;
     private TextView chatUserName;
     private RecyclerView recyclerMessages;
+    private LinearLayout layoutEmptyMessages;
     private EditText editMessage;
     private ImageButton btnSend;
 
@@ -50,6 +53,8 @@ public class Conversation extends AppCompatActivity {
     private int groupId;
     private boolean isSendingMessage = false; // Prevent duplicate sends
     private String lastSentMessage = ""; // Track last sent message to prevent duplicates
+    private long lastMarkAsReadTime = 0; // Track when messages were last marked as read
+    private static final long MARK_AS_READ_DELAY = 2000; // 2 seconds delay between mark as read calls
     
     // Broadcast receiver for real-time message updates
     private final android.content.BroadcastReceiver messageUpdateReceiver = new android.content.BroadcastReceiver() {
@@ -93,6 +98,7 @@ public class Conversation extends AppCompatActivity {
         chatUserName = findViewById(R.id.chatUserName);
         btnMembers = findViewById(R.id.btnMembers);
         recyclerMessages = findViewById(R.id.recyclerMessages);
+        layoutEmptyMessages = findViewById(R.id.layoutEmptyMessages);
         editMessage = findViewById(R.id.editMessage);
         btnSend = findViewById(R.id.btnSend);
 
@@ -123,9 +129,33 @@ public class Conversation extends AppCompatActivity {
 
         // Setup RecyclerView
         messageList = new ArrayList<>();
-        messageAdapter = new MessageAdapter(this, messageList);
+        messageAdapter = new MessageAdapter(this, messageList, chatType);
         recyclerMessages.setLayoutManager(new LinearLayoutManager(this));
         recyclerMessages.setAdapter(messageAdapter);
+        
+        // Add scroll listener to mark messages as read when user scrolls to bottom
+        recyclerMessages.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                
+                // Check if user has scrolled to the bottom (meaning they've seen all messages)
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager != null) {
+                    int lastVisiblePosition = layoutManager.findLastVisibleItemPosition();
+                    int totalItemCount = layoutManager.getItemCount();
+                    
+                    // If user is at the bottom of the conversation, mark messages as read
+                    if (lastVisiblePosition >= totalItemCount - 1) {
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastMarkAsReadTime > MARK_AS_READ_DELAY) {
+                            markMessagesAsRead();
+                            lastMarkAsReadTime = currentTime;
+                        }
+                    }
+                }
+            }
+        });
 
         // Load real messages from database
         loadMessages();
@@ -138,8 +168,47 @@ public class Conversation extends AppCompatActivity {
             }
         });
         
-        // Mark messages as read when conversation is opened
-        markMessagesAsRead();
+        // Auto-scroll to bottom when keyboard appears (EditText gains focus)
+        editMessage.setOnFocusChangeListener((v, hasFocus) -> {
+            android.util.Log.d("Conversation", "EditText focus changed - hasFocus: " + hasFocus + ", messageList size: " + messageList.size());
+            if (hasFocus && !messageList.isEmpty()) {
+                // Scroll to bottom when user starts typing with delay for keyboard animation
+                scrollToBottomWithDelay();
+            }
+        });
+        
+        // Also scroll when user clicks on the EditText
+        editMessage.setOnClickListener(v -> {
+            android.util.Log.d("Conversation", "EditText clicked - messageList size: " + messageList.size());
+            if (!messageList.isEmpty()) {
+                // Force immediate scroll first, then delayed scroll
+                scrollToBottom();
+                scrollToBottomWithDelay();
+            }
+        });
+        
+        // Also handle touch events
+        editMessage.setOnTouchListener((v, event) -> {
+            android.util.Log.d("Conversation", "EditText touched - messageList size: " + messageList.size());
+            if (!messageList.isEmpty()) {
+                scrollToBottom();
+            }
+            return false; // Let the event continue to be processed
+        });
+        
+        // Listen for layout changes to detect keyboard appearance
+        recyclerMessages.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            // This will be called when the layout changes (including keyboard appearance)
+            android.util.Log.d("Conversation", "Layout changed - messageList size: " + messageList.size() + ", hasFocus: " + editMessage.hasFocus());
+            if (!messageList.isEmpty() && editMessage.hasFocus()) {
+                // Scroll to bottom when keyboard appears and EditText has focus
+                android.util.Log.d("Conversation", "Layout change triggered scroll");
+                scrollToBottomWithDelay();
+            }
+        });
+        
+        // Don't mark messages as read immediately - let user view them first
+        // markMessagesAsRead();
         
         // Register broadcast receiver for real-time message updates
         android.content.IntentFilter filter = new android.content.IntentFilter("com.example.mock.NEW_MESSAGE_RECEIVED");
@@ -162,22 +231,34 @@ public class Conversation extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Mark messages as read when returning to conversation
-        markMessagesAsRead();
+        // Don't mark messages as read automatically - let user view them first
+        // markMessagesAsRead();
     }
     
     private void markMessagesAsRead() {
         android.util.Log.d("Conversation", "markMessagesAsRead called for user: " + currentUserId);
+        android.util.Log.d("Conversation", "Chat type: " + chatType);
+        android.util.Log.d("Conversation", "Other user ID: " + otherUserId);
+        android.util.Log.d("Conversation", "Group ID: " + groupId);
         
-        String url = "http://192.168.101.6/BoardEase2/mark_messages_read.php";
+        String url = "http://192.168.101.6/BoardEase2/mark_specific_messages_read.php";
         
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("user_id", currentUserId);
-            if (otherUserId != -1) {
-                jsonObject.put("sender_id", otherUserId); // Mark messages from this specific sender as read
+            jsonObject.put("conversation_type", chatType);
+            
+            if ("individual".equals(chatType) && otherUserId != -1) {
+                jsonObject.put("other_user_id", otherUserId);
+                android.util.Log.d("Conversation", "Marking individual messages as read from user: " + otherUserId);
+            } else if ("group".equals(chatType) && groupId != -1) {
+                jsonObject.put("group_id", groupId);
+                android.util.Log.d("Conversation", "Marking group messages as read from group: " + groupId);
             }
+            
+            android.util.Log.d("Conversation", "Request JSON: " + jsonObject.toString());
         } catch (JSONException e) {
+            android.util.Log.e("Conversation", "Error creating JSON", e);
             e.printStackTrace();
             return;
         }
@@ -205,6 +286,9 @@ public class Conversation extends AppCompatActivity {
             },
             error -> {
                 android.util.Log.e("Conversation", "API request error", error);
+                android.util.Log.e("Conversation", "Error details: " + error.getMessage());
+                android.util.Log.e("Conversation", "Network response code: " + (error.networkResponse != null ? error.networkResponse.statusCode : "null"));
+                android.util.Log.e("Conversation", "Network response data: " + (error.networkResponse != null ? new String(error.networkResponse.data) : "null"));
                 error.printStackTrace();
             }
         );
@@ -247,7 +331,7 @@ public class Conversation extends AppCompatActivity {
                                         messageObj.getInt("sender_id"),
                                         messageObj.getInt("receiver_id"),
                                         messageObj.getString("message"),
-                                        messageObj.getString("timestamp"),
+                                        formatTime(messageObj.getString("timestamp")),
                                         messageObj.getString("status"),
                                         messageObj.getBoolean("is_from_current_user"),
                                         messageObj.getString("sender_name"),
@@ -259,7 +343,7 @@ public class Conversation extends AppCompatActivity {
                                         messageObj.getInt("message_id"),
                                         messageObj.getInt("sender_id"),
                                         messageObj.getString("message_text"),
-                                        messageObj.getString("timestamp"),
+                                        formatTime(messageObj.getString("timestamp")),
                                         messageObj.getString("status"),
                                         messageObj.getString("sender_name")
                                     );
@@ -270,8 +354,16 @@ public class Conversation extends AppCompatActivity {
                             }
                             
                             messageAdapter.notifyDataSetChanged();
+                            updateMessagesEmptyState();
                             if (!messageList.isEmpty()) {
-                                recyclerMessages.scrollToPosition(messageList.size() - 1);
+                                // Scroll to bottom with smooth animation
+                                scrollToBottom();
+                                
+                                // Mark messages as read after scrolling to bottom (user has seen the conversation)
+                                android.os.Handler handler = new android.os.Handler();
+                                handler.postDelayed(() -> {
+                                    markMessagesAsRead();
+                                }, 1000); // 1 second delay after loading messages
                             }
                         } else {
                             Toast.makeText(this, "Error loading messages: " + response.getString("error"), Toast.LENGTH_SHORT).show();
@@ -363,8 +455,8 @@ public class Conversation extends AppCompatActivity {
         // Clear input
         editMessage.setText("");
         
-        // Scroll to bottom
-        recyclerMessages.scrollToPosition(messageList.size() - 1);
+        // Scroll to bottom with smooth animation
+        scrollToBottom();
         
         // Send message with FCM notification
         if (chatType.equals("individual")) {
@@ -642,10 +734,8 @@ public class Conversation extends AppCompatActivity {
                     messageList.add(newMessage);
                     messageAdapter.notifyDataSetChanged();
                     
-                    // Scroll to bottom
-                    if (!messageList.isEmpty()) {
-                        recyclerMessages.scrollToPosition(messageList.size() - 1);
-                    }
+                    // Scroll to bottom with smooth animation
+                    scrollToBottom();
                     
                     // Mark messages as read since user is in the conversation
                     markMessagesAsRead();
@@ -653,6 +743,51 @@ public class Conversation extends AppCompatActivity {
             }
         } catch (Exception e) {
             android.util.Log.e("Conversation", "Error handling new message", e);
+        }
+    }
+    
+    private void updateMessagesEmptyState() {
+        if (messageList.isEmpty()) {
+            recyclerMessages.setVisibility(View.GONE);
+            layoutEmptyMessages.setVisibility(View.VISIBLE);
+        } else {
+            recyclerMessages.setVisibility(View.VISIBLE);
+            layoutEmptyMessages.setVisibility(View.GONE);
+        }
+    }
+    
+    private void scrollToBottom() {
+        if (!messageList.isEmpty()) {
+            recyclerMessages.post(() -> {
+                recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+            });
+        }
+    }
+    
+    private void scrollToBottomWithDelay() {
+        if (!messageList.isEmpty()) {
+            android.util.Log.d("Conversation", "scrollToBottomWithDelay called - messageList size: " + messageList.size());
+            // Add a small delay to ensure keyboard animation is complete
+            recyclerMessages.postDelayed(() -> {
+                android.util.Log.d("Conversation", "Executing delayed scroll to position: " + (messageList.size() - 1));
+                recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+            }, 300); // 300ms delay
+        }
+    }
+    
+    // Helper method to format time as "2:50 PM"
+    private String formatTime(String timestamp) {
+        try {
+            // Parse the timestamp (assuming format like "2025-10-14 14:32:48")
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date date = inputFormat.parse(timestamp);
+            
+            // Format as "2:50 PM"
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("h:mm a");
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, return the original timestamp
+            return timestamp;
         }
     }
 }

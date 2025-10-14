@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M20,20m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    
+    <!-- House outline -->
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="2"
+        android:pathData="M8,25 L8,30 L12,30 L12,28 L14,28 L14,30 L18,30 L18,25 L20,25 L20,20 L15,15 L10,20 Z" />
+    
+    <!-- Door -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M11,25 L11,30 L13,30 L13,25 Z" />
+    
+    <!-- Window -->
+    <path
+        android:strokeColor="#CCCCCC"
+        android:strokeWidth="1"
+        android:pathData="M15,22 L17,22 L17,24 L15,24 Z" />
+    
+    <!-- "No" symbol -->
+    <path
+        android:strokeColor="#FF6B6B"
+        android:strokeWidth="2"
+        android:pathData="M28,8 L32,12 M32,8 L28,12" />
+</vector>

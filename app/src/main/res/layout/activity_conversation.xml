@@ -85,6 +85,45 @@
             android:clipToPadding="false"
             android:scrollbars="vertical"/>
 
+        <!-- Empty State for Messages -->
+        <LinearLayout
+            android:id="@+id/layoutEmptyMessages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone"
+            android:padding="24dp"
+            android:background="#FFFFFF">
+
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_no_conversation"
+                android:contentDescription="No Messages"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No messages yet"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginTop="12dp"
+                android:textColor="#000"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start the conversation by sending your first message."
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:gravity="center"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
         <!-- Bottom input bar -->
         <LinearLayout
             android:id="@+id/messageBox"
