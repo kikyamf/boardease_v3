@@ -13,11 +13,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+// Firebase imports - uncomment when Firebase is added to project
+// import com.google.firebase.database.DataSnapshot;
+// import com.google.firebase.database.DatabaseError;
+// import com.google.firebase.database.DatabaseReference;
+// import com.google.firebase.database.FirebaseDatabase;
+// import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +45,8 @@ public class MessagesActivity extends AppCompatActivity {
     private List<ChatProfile> activeProfiles;
     private List<ChatItem> allChats;
 
-    // Firebase
-    private DatabaseReference databaseReference;
+    // Firebase - will be used when Firebase is added to project
+    // private DatabaseReference databaseReference;
     private String currentUserId;
     private String userRole;
 
@@ -93,7 +94,9 @@ public class MessagesActivity extends AppCompatActivity {
 
     private void initializeFirebase() {
         try {
-            databaseReference = FirebaseDatabase.getInstance().getReference();
+            // Firebase initialization - uncomment when Firebase is added to project
+            // databaseReference = FirebaseDatabase.getInstance().getReference();
+            
             // Get current user ID and role from SharedPreferences or Firebase Auth
             currentUserId = getCurrentUserId();
             userRole = getUserRole();
@@ -196,85 +199,79 @@ public class MessagesActivity extends AppCompatActivity {
 
     private void loadDirectMessages() {
         try {
-            DatabaseReference dmRef = databaseReference.child("direct_messages")
-                    .orderByChild("participants/" + currentUserId)
-                    .equalTo(true);
-
-            dmRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    try {
-                        List<ChatItem> dmChats = new ArrayList<>();
-                        
-                        for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
-                            ChatItem chat = chatSnapshot.getValue(ChatItem.class);
-                            if (chat != null) {
-                                chat.setChatId(chatSnapshot.getKey());
-                                chat.setChatType(CHAT_TYPE_DM);
-                                dmChats.add(chat);
-                            }
-                        }
-                        
-                        // Add to main chat list
-                        allChats.addAll(dmChats);
-                        updateActiveProfiles();
-                        sortAndUpdateChats();
-                        
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error processing DM data", e);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e(TAG, "Error loading DMs: " + error.getMessage());
-                }
-            });
-
+            // Mock data - replace with Firebase when available
+            List<ChatItem> dmChats = new ArrayList<>();
+            
+            // Sample DM chats
+            ChatItem dm1 = new ChatItem();
+            dm1.setChatId("dm_001");
+            dm1.setChatType(CHAT_TYPE_DM);
+            dm1.setLastMessage("Hey, how are you?");
+            dm1.setTimestamp(System.currentTimeMillis() - 300000); // 5 minutes ago
+            dm1.setUnreadCount(2);
+            dm1.setOtherParticipantId("user_002");
+            dm1.setOtherParticipantName("John Doe");
+            dm1.setOtherParticipantImageUrl("");
+            dmChats.add(dm1);
+            
+            ChatItem dm2 = new ChatItem();
+            dm2.setChatId("dm_002");
+            dm2.setChatType(CHAT_TYPE_DM);
+            dm2.setLastMessage("Thanks for the help!");
+            dm2.setTimestamp(System.currentTimeMillis() - 1800000); // 30 minutes ago
+            dm2.setUnreadCount(0);
+            dm2.setOtherParticipantId("user_003");
+            dm2.setOtherParticipantName("Jane Smith");
+            dm2.setOtherParticipantImageUrl("");
+            dmChats.add(dm2);
+            
+            // Add to main chat list
+            allChats.addAll(dmChats);
+            updateActiveProfiles();
+            sortAndUpdateChats();
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error setting up DM listener", e);
+            Log.e(TAG, "Error loading mock DMs", e);
         }
     }
 
     private void loadGroupChats() {
         try {
-            DatabaseReference gcRef = databaseReference.child("group_chats")
-                    .orderByChild("members/" + currentUserId)
-                    .equalTo(true);
-
-            gcRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    try {
-                        List<ChatItem> gcChats = new ArrayList<>();
-                        
-                        for (DataSnapshot chatSnapshot : snapshot.getChildren()) {
-                            ChatItem chat = chatSnapshot.getValue(ChatItem.class);
-                            if (chat != null) {
-                                chat.setChatId(chatSnapshot.getKey());
-                                chat.setChatType(CHAT_TYPE_GC);
-                                gcChats.add(chat);
-                            }
-                        }
-                        
-                        // Add to main chat list
-                        allChats.addAll(gcChats);
-                        updateActiveProfiles();
-                        sortAndUpdateChats();
-                        
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error processing GC data", e);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e(TAG, "Error loading GCs: " + error.getMessage());
-                }
-            });
-
+            // Mock data - replace with Firebase when available
+            List<ChatItem> gcChats = new ArrayList<>();
+            
+            // Sample Group Chat
+            ChatItem gc1 = new ChatItem();
+            gc1.setChatId("gc_001");
+            gc1.setChatType(CHAT_TYPE_GC);
+            gc1.setLastMessage("Welcome to the boarding house group!");
+            gc1.setTimestamp(System.currentTimeMillis() - 600000); // 10 minutes ago
+            gc1.setUnreadCount(5);
+            gc1.setGroupId("group_001");
+            gc1.setGroupName("Boarding House Group");
+            gc1.setGroupImageUrl("");
+            gc1.setCreatedBy("owner_001");
+            gcChats.add(gc1);
+            
+            ChatItem gc2 = new ChatItem();
+            gc2.setChatId("gc_002");
+            gc2.setChatType(CHAT_TYPE_GC);
+            gc2.setLastMessage("Meeting tomorrow at 2 PM");
+            gc2.setTimestamp(System.currentTimeMillis() - 3600000); // 1 hour ago
+            gc2.setUnreadCount(0);
+            gc2.setGroupId("group_002");
+            gc2.setGroupName("House Rules Discussion");
+            gc2.setGroupImageUrl("");
+            gc2.setCreatedBy("owner_001");
+            gcChats.add(gc2);
+            
+            // Add to main chat list
+            allChats.addAll(gcChats);
+            updateActiveProfiles();
+            sortAndUpdateChats();
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error setting up GC listener", e);
+            Log.e(TAG, "Error loading mock GCs", e);
         }
     }
 
