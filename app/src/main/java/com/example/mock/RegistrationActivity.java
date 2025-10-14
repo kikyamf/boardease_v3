@@ -28,7 +28,7 @@ public class RegistrationActivity extends AppCompatActivity {
 
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etEmail, etPassword, etGcashNum;
     TextView tvLogin;
-    ImageView UploadQr, ivTogglePassword;
+    ImageView UploadQr, ivTogglePassword, backButton;
     Button btnNext;
     boolean isPasswordVisible = false;
 
@@ -68,6 +68,15 @@ public class RegistrationActivity extends AppCompatActivity {
         tvLogin = findViewById(R.id.tvLogin);
 
         UploadQr = findViewById(R.id.UploadQr);
+        backButton = findViewById(R.id.backButton);
+
+        // Set up back button click listener
+        backButton.setOnClickListener(v -> {
+            // Navigate back to WelcomeActivity
+            Intent intent = new Intent(RegistrationActivity.this, WelcomeActivity.class);
+            startActivity(intent);
+            finish();
+        });
 
         // Create a list of choices
         String[] roles = {"Select --", "Boarder", "BH Owner"};

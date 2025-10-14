@@ -37,7 +37,7 @@ import java.util.Map;
 public class Registration2Activity extends AppCompatActivity {
 
     Spinner spinnerVId;
-    ImageView ivUploadF, ivUploadB;
+    ImageView ivUploadF, ivUploadB, backButton;
     EditText etIdNumber;
     CheckBox cbAgree;
     Button btnReg;
@@ -70,11 +70,32 @@ public class Registration2Activity extends AppCompatActivity {
         spinnerVId = findViewById(R.id.spinnerVId);
         ivUploadF = findViewById(R.id.ivUploadF);
         ivUploadB = findViewById(R.id.ivUploadB);
+        backButton = findViewById(R.id.backButton);
         etIdNumber = findViewById(R.id.etidNumber);
         cbAgree = findViewById(R.id.cbAgree);
         btnReg = findViewById(R.id.btnReg);
 
         tvLogin = findViewById(R.id.tvLogin);
+
+        // Set up back button click listener
+        backButton.setOnClickListener(v -> {
+            // Navigate back to RegistrationActivity
+            Intent intent = new Intent(Registration2Activity.this, RegistrationActivity.class);
+            // Pass back the data that was passed to this activity
+            intent.putExtra("role", role);
+            intent.putExtra("firstName", firstName);
+            intent.putExtra("middleName", middleName);
+            intent.putExtra("lastName", lastName);
+            intent.putExtra("birthDate", birthDate);
+            intent.putExtra("phone", phone);
+            intent.putExtra("address", address);
+            intent.putExtra("email", email);
+            intent.putExtra("password", password);
+            intent.putExtra("gcashNum", gcashNum);
+            intent.putExtra("qrPath", qrPath);
+            startActivity(intent);
+            finish();
+        });
 
         // Retrieve data passed from RegistrationActivity
         role = getIntent().getStringExtra("role");
