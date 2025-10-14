@@ -283,85 +283,40 @@
                     android:layout_marginBottom="10dp" />
 
                 <!-- Current Password Field -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                <EditText
+                    android:id="@+id/etCurrentPassword"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/key"
-                    app:startIconTint="@color/brown"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCurrentPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Current Password"
-                        android:inputType="textPassword"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:hint="Current Password"
+                    android:inputType="textPassword"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:background="@drawable/edittext_background" />
 
                 <!-- New Password Field -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                <EditText
+                    android:id="@+id/etNewPassword"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/key"
-                    app:startIconTint="@color/brown"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etNewPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="New Password"
-                        android:inputType="textPassword"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:hint="New Password"
+                    android:inputType="textPassword"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:background="@drawable/edittext_background" />
 
                 <!-- Confirm New Password Field -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                <EditText
+                    android:id="@+id/etConfirmPassword"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginBottom="12dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxStrokeColor="@color/brown"
-                    app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/key"
-                    app:startIconTint="@color/brown"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/brown">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etConfirmPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Confirm New Password"
-                        android:inputType="textPassword"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:hint="Confirm New Password"
+                    android:inputType="textPassword"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:background="@drawable/edittext_background" />
 
                 <!-- Password fields -->
 
