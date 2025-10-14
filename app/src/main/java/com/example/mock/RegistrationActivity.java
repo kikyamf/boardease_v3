@@ -15,6 +15,8 @@ import android.app.DatePickerDialog;
 import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 
 import java.util.Calendar;
 
@@ -68,7 +70,11 @@ public class RegistrationActivity extends AppCompatActivity {
         tvLogin = findViewById(R.id.tvLogin);
 
         UploadQr = findViewById(R.id.UploadQr);
+        ivTogglePassword = findViewById(R.id.ivTogglePassword);
         backButton = findViewById(R.id.backButton);
+
+        // Set up password toggle functionality
+        ivTogglePassword.setOnClickListener(v -> togglePasswordVisibility());
 
         // Set up back button click listener
         backButton.setOnClickListener(v -> {
@@ -179,5 +185,21 @@ public class RegistrationActivity extends AppCompatActivity {
                 startActivity(a);
             }
         });
+    }
+
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            // Hide password
+            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            ivTogglePassword.setImageResource(R.drawable.ic_password_hidden);
+            isPasswordVisible = false;
+        } else {
+            // Show password
+            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+            ivTogglePassword.setImageResource(R.drawable.ic_password_visible);
+            isPasswordVisible = true;
+        }
+        // Move cursor to end of text
+        etPassword.setSelection(etPassword.getText().length());
     }
 }
