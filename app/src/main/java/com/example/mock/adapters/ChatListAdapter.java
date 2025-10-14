@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mock.ChatItem;
-import com.example.mock.MessagesActivity;
 import com.example.mock.R;
 
 import java.util.List;
@@ -33,12 +32,6 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     public ChatListAdapter(List<ChatItem> chatList, OnChatClickListener listener) {
         this.chatList = chatList;
         this.onChatClickListener = listener;
-    }
-    
-    // Constructor for MessagesActivity
-    public ChatListAdapter(List<ChatItem> chatList, MessagesActivity activity) {
-        this.chatList = chatList;
-        this.onChatClickListener = activity::onChatClick;
     }
 
     @NonNull

@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mock.ChatProfile;
-import com.example.mock.MessagesActivity;
 import com.example.mock.R;
 
 import java.util.List;
@@ -32,12 +31,6 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
     public ProfileAdapter(List<ChatProfile> profiles, OnProfileClickListener listener) {
         this.profiles = profiles;
         this.onProfileClickListener = listener;
-    }
-    
-    // Constructor for MessagesActivity
-    public ProfileAdapter(List<ChatProfile> profiles, MessagesActivity activity) {
-        this.profiles = profiles;
-        this.onProfileClickListener = activity::onProfileClick;
     }
 
     @NonNull
