@@ -50,6 +50,16 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private TextInputEditText etNewPassword;
     private TextInputEditText etConfirmPassword;
     private MaterialButton btnUpdatePassword;
+    
+    // Password Toggle Icons
+    private ImageView ivToggleCurrentPassword;
+    private ImageView ivToggleNewPassword;
+    private ImageView ivToggleConfirmPassword;
+    
+    // Password visibility states
+    private boolean isCurrentPasswordVisible = false;
+    private boolean isNewPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     // SharedPreferences for storing user data
     private SharedPreferences userPrefs;
@@ -112,6 +122,11 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etNewPassword = view.findViewById(R.id.etNewPassword);
             etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
             btnUpdatePassword = view.findViewById(R.id.btnUpdatePassword);
+            
+            // Password toggle icons
+            ivToggleCurrentPassword = view.findViewById(R.id.ivToggleCurrentPassword);
+            ivToggleNewPassword = view.findViewById(R.id.ivToggleNewPassword);
+            ivToggleConfirmPassword = view.findViewById(R.id.ivToggleConfirmPassword);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -173,6 +188,19 @@ public class BoarderAccountSettingsFragment extends Fragment {
                         e.printStackTrace();
                     }
                 });
+            }
+
+            // Password toggle listeners
+            if (ivToggleCurrentPassword != null) {
+                ivToggleCurrentPassword.setOnClickListener(v -> toggleCurrentPasswordVisibility());
+            }
+            
+            if (ivToggleNewPassword != null) {
+                ivToggleNewPassword.setOnClickListener(v -> toggleNewPasswordVisibility());
+            }
+            
+            if (ivToggleConfirmPassword != null) {
+                ivToggleConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -492,6 +520,57 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (btnUpdatePassword != null) {
                 btnUpdatePassword.setEnabled(!isLoading);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleCurrentPasswordVisibility() {
+        try {
+            if (isCurrentPasswordVisible) {
+                etCurrentPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_hidden);
+                isCurrentPasswordVisible = false;
+            } else {
+                etCurrentPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_visible);
+                isCurrentPasswordVisible = true;
+            }
+            etCurrentPassword.setSelection(etCurrentPassword.getText().length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleNewPasswordVisibility() {
+        try {
+            if (isNewPasswordVisible) {
+                etNewPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_hidden);
+                isNewPasswordVisible = false;
+            } else {
+                etNewPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_visible);
+                isNewPasswordVisible = true;
+            }
+            etNewPassword.setSelection(etNewPassword.getText().length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleConfirmPasswordVisibility() {
+        try {
+            if (isConfirmPasswordVisible) {
+                etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_hidden);
+                isConfirmPasswordVisible = false;
+            } else {
+                etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_visible);
+                isConfirmPasswordVisible = true;
+            }
+            etConfirmPassword.setSelection(etConfirmPassword.getText().length());
         } catch (Exception e) {
             e.printStackTrace();
         }
