@@ -340,10 +340,54 @@ public class BoarderAccountSettingsFragment extends Fragment {
             String currentPassword = etCurrentPassword.getText().toString().trim();
             String newPassword = etNewPassword.getText().toString().trim();
 
+            // Simulate current password verification (in real app, verify with Firebase Auth)
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    // Simulate password verification
+                    if (verifyCurrentPassword(currentPassword)) {
+                        // Password is correct, proceed with update
+                        performPasswordUpdate(newPassword);
+                    } else {
+                        // Current password is incorrect
+                        setLoading(false);
+                        etCurrentPassword.setError("Current password is incorrect");
+                        etCurrentPassword.requestFocus();
+                        Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    setLoading(false);
+                    Toast.makeText(getContext(), "Error verifying password", Toast.LENGTH_SHORT).show();
+                }
+            }, 1500);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setLoading(false);
+            Toast.makeText(getContext(), "Error updating password", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean verifyCurrentPassword(String currentPassword) {
+        // In a real app, this would verify against Firebase Auth or your backend
+        // For demo purposes, we'll simulate with a stored password
+        String storedPassword = userPrefs.getString("stored_password", "Demo123");
+        return currentPassword.equals(storedPassword);
+    }
+
+    private void performPasswordUpdate(String newPassword) {
+        try {
             // Simulate password update (in real app, use Firebase Auth)
             new android.os.Handler().postDelayed(() -> {
                 try {
                     setLoading(false);
+                    
+                    // Store new password (in real app, update Firebase Auth)
+                    if (userPrefs != null) {
+                        SharedPreferences.Editor editor = userPrefs.edit();
+                        editor.putString("stored_password", newPassword);
+                        editor.apply();
+                    }
                     
                     // Clear password fields
                     if (etCurrentPassword != null) etCurrentPassword.setText("");
@@ -354,8 +398,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }, 2000);
-
+            }, 1000);
         } catch (Exception e) {
             e.printStackTrace();
             setLoading(false);
@@ -378,10 +421,27 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 return false;
             }
 
-            // Check password length
+            // Enhanced password validation
             String newPassword = etNewPassword.getText().toString().trim();
-            if (newPassword.length() < 6) {
-                etNewPassword.setError("Password must be at least 6 characters");
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            
+            // Check if new password is same as current password
+            if (newPassword.equals(currentPassword)) {
+                etNewPassword.setError("New password must be different from current password");
+                etNewPassword.requestFocus();
+                return false;
+            }
+
+            // Check password length
+            if (newPassword.length() < 8) {
+                etNewPassword.setError("Password must be at least 8 characters");
+                etNewPassword.requestFocus();
+                return false;
+            }
+
+            // Check for strong password requirements
+            if (!isStrongPassword(newPassword)) {
+                etNewPassword.setError("Password must contain at least one uppercase letter, one lowercase letter, and one number");
                 etNewPassword.requestFocus();
                 return false;
             }
@@ -405,6 +465,15 @@ public class BoarderAccountSettingsFragment extends Fragment {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private boolean isStrongPassword(String password) {
+        // Check for at least one uppercase letter, one lowercase letter, and one number
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasLowercase = password.matches(".*[a-z].*");
+        boolean hasNumber = password.matches(".*[0-9].*");
+        
+        return hasUppercase && hasLowercase && hasNumber;
     }
 
     private void setLoading(boolean isLoading) {

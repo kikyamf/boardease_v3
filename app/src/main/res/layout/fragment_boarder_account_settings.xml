@@ -282,7 +282,7 @@
                     android:textColor="#333333"
                     android:layout_marginBottom="10dp" />
 
-                <!-- Password fields -->
+                <!-- Current Password Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -294,19 +294,22 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/ic_name"
-                    app:startIconTint="@color/brown">
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCurrentPass"
+                        android:id="@+id/etCurrentPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Current Password"
-                        android:inputType="text"
+                        android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- New Password Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -318,19 +321,22 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/ic_name"
-                    app:startIconTint="@color/brown">
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etNewPass"
+                        android:id="@+id/etNewPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="New Password"
-                        android:inputType="text"
+                        android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Confirm New Password Field -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -342,15 +348,17 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="@color/brown"
                     app:hintTextColor="@color/brown"
-                    app:startIconDrawable="@drawable/ic_name"
-                    app:startIconTint="@color/brown">
+                    app:startIconDrawable="@drawable/key"
+                    app:startIconTint="@color/brown"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/brown">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etConfirmNewPass"
+                        android:id="@+id/etConfirmPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Confirm New Password"
-                        android:inputType="text"
+                        android:inputType="textPassword"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_regular" />
                 </com.google.android.material.textfield.TextInputLayout>
