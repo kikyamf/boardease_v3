@@ -42,32 +42,36 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvNotifications"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:padding="16dp"
-            android:scrollbars="vertical" />
+            android:layout_height="match_parent">
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvNotifications"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="16dp"
+                android:scrollbars="vertical" />
 
-    <!-- 🔹 Empty State Layout -->
-    <LinearLayout
-        android:id="@+id/emptyLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="gone"
-        android:padding="24dp">
+            <!-- 🔹 Empty State Layout -->
+            <LinearLayout
+                android:id="@+id/emptyLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone"
+                android:padding="24dp"
+                android:background="#FFFFFF">
 
         <ImageView
             android:id="@+id/ivEmpty"
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:src="@drawable/empty"
-        android:contentDescription="Empty State"/>
+            android:contentDescription="No Notifications"
+            android:layout_marginBottom="16dp"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -87,5 +91,9 @@
             android:textColor="#888888"
             android:gravity="center"
             android:layout_marginTop="8dp"/>
-    </LinearLayout>
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </LinearLayout>

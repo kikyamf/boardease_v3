@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -64,9 +65,25 @@ public class Messages extends AppCompatActivity {
         // Initialize Volley
         requestQueue = Volley.newRequestQueue(this);
 
-        // Get current user info - using hardcoded user_id = 1 for testing
-        currentUserId = 1; // Hardcoded user_id for testing
-        currentUserType = "owner"; // Set user type as owner
+        // Get current user info from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        
+        // Handle String type for user_id (stored as String in Login.java)
+        String userIdString = sharedPreferences.getString("user_id", "1");
+        try {
+            currentUserId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            currentUserId = 1; // Default fallback
+        }
+        // Get user type from session
+        currentUserType = sharedPreferences.getString("user_role", "Boarder");
+        Log.d("Messages", "Current user type: " + currentUserType);
+        
+        // Debug: Check all SharedPreferences keys
+        Map<String, ?> allPrefs = sharedPreferences.getAll();
+        for (Map.Entry<String, ?> entry : allPrefs.entrySet()) {
+            Log.d("Messages", "SharedPrefs - " + entry.getKey() + ": " + entry.getValue());
+        }
 
         // Initialize views
         backButton = findViewById(R.id.backButton);
@@ -81,11 +98,18 @@ public class Messages extends AppCompatActivity {
         // Search button action
         searchButton.setOnClickListener(v -> showSearchDialog());
 
-        // Add group action
+        // Add group action - temporarily allow all users for debugging
         addGroupButton.setOnClickListener(v -> {
+            Log.d("Messages", "Add button clicked. Current user type: '" + currentUserType + "'");
+            Log.d("Messages", "Opening CreateGroupChat activity for debugging");
+            Toast.makeText(this, "Debug: Opening CreateGroupChat. Role: " + currentUserType, Toast.LENGTH_LONG).show();
             Intent intent = new Intent(Messages.this, CreateGroupChat.class);
-            startActivityForResult(intent, 1001); // Request code for group creation
+            startActivityForResult(intent, 1001);
         });
+        
+        // Show add button for debugging - always visible
+        addGroupButton.setVisibility(View.VISIBLE);
+        Log.d("Messages", "Add button always visible for debugging. Role: " + currentUserType);
 
         // Setup RecyclerViews
         setupRecyclerViews();
@@ -194,19 +218,37 @@ public class Messages extends AppCompatActivity {
                             JSONArray usersArray = data.getJSONArray("users");
                             profileList.clear();
                             
-                            for (int i = 0; i < usersArray.length(); i++) {
-                                JSONObject userObj = usersArray.getJSONObject(i);
-                                ProfileModel profile = new ProfileModel(
-                                    userObj.getInt("user_id"),
-                                    userObj.getString("full_name"),
-                                    userObj.getString("user_type"),
-                                    userObj.getString("email"),
-                                    userObj.getString("phone"),
-                                    R.drawable.ic_profile,
-                                    userObj.getBoolean("has_device_token"),
-                                    userObj.getBoolean("has_device_token") ? "Online" : "Offline"
-                                );
-                                profileList.add(profile);
+                            if (usersArray.length() > 0) {
+                                for (int i = 0; i < usersArray.length(); i++) {
+                                    JSONObject userObj = usersArray.getJSONObject(i);
+                                    
+                                    // Get boarding house info if available
+                                    String boardingHouseName = "";
+                                    String boardingHouseAddress = "";
+                                    if (userObj.has("boarding_house_name")) {
+                                        boardingHouseName = userObj.getString("boarding_house_name");
+                                    }
+                                    if (userObj.has("boarding_house_address")) {
+                                        boardingHouseAddress = userObj.getString("boarding_house_address");
+                                    }
+                                    
+                                    ProfileModel profile = new ProfileModel(
+                                        userObj.getInt("user_id"),
+                                        userObj.getString("full_name"),
+                                        userObj.getString("user_type"),
+                                        userObj.getString("email"),
+                                        userObj.getString("phone"),
+                                        R.drawable.ic_profile,
+                                        userObj.getBoolean("has_device_token"),
+                                        userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                        boardingHouseName,
+                                        boardingHouseAddress
+                                    );
+                                    profileList.add(profile);
+                                }
+                            } else {
+                                // Show empty state - no users found
+                                Log.d("Messages", "No users found for messaging");
                             }
                             
                             profileAdapter.notifyDataSetChanged();
@@ -251,7 +293,8 @@ public class Messages extends AppCompatActivity {
                             android.util.Log.d("LoadChatList", "Found " + chatsArray.length() + " chats");
                             chatList.clear();
                             
-                            for (int i = 0; i < chatsArray.length(); i++) {
+                            if (chatsArray.length() > 0) {
+                                for (int i = 0; i < chatsArray.length(); i++) {
                                 JSONObject chatObj = chatsArray.getJSONObject(i);
                                 ChatModel chat;
                                 
@@ -284,6 +327,10 @@ public class Messages extends AppCompatActivity {
                                 }
                                 
                                 chatList.add(chat);
+                                }
+                            } else {
+                                // Show empty state - no chats found
+                                android.util.Log.d("LoadChatList", "No chats found");
                             }
                             
                             chatListAdapter.notifyDataSetChanged();
@@ -702,9 +749,16 @@ public class Messages extends AppCompatActivity {
     }
     
     private int getCurrentUserId() {
-        // Get current user ID from SharedPreferences or wherever it's stored
-        // This should match how you get the user ID in other parts of the app
-        return 1; // Replace with actual user ID retrieval logic
+        // Get current user ID from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        
+        // Handle String type for user_id (stored as String in Login.java)
+        String userIdString = sharedPreferences.getString("user_id", "1");
+        try {
+            return Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            return 1; // Default fallback
+        }
     }
     
     private void showProgressDialog(String message) {

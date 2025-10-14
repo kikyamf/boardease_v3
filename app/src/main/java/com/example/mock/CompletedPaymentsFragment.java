@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.ProgressDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,7 +26,7 @@ public class CompletedPaymentsFragment extends Fragment {
     private List<PaymentData> completedPayments;
     private PaymentApiService paymentApiService;
     private ProgressDialog progressDialog;
-    private int ownerId = 1; // TODO: Get from shared preferences or intent
+    private int ownerId;
     
     @Nullable
     @Override
@@ -35,6 +36,17 @@ public class CompletedPaymentsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
         
+        // Get owner ID from SharedPreferences
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", getContext().MODE_PRIVATE);
+        
+        // Handle String type for user_id (stored as String in Login.java)
+        String userIdString = sharedPreferences.getString("user_id", "1");
+        try {
+            ownerId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            ownerId = 1; // Default fallback
+        }
+
         // Initialize API service
         paymentApiService = new PaymentApiService(getContext());
         completedPayments = new ArrayList<>();

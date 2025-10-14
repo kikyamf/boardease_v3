@@ -76,8 +76,16 @@ public class Conversation extends AppCompatActivity {
         // Initialize Volley
         requestQueue = Volley.newRequestQueue(this);
 
-        // Get current user info - using hardcoded user_id = 1 for testing
-        currentUserId = 1; // Hardcoded user_id for testing
+        // Get current user info from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        
+        // Handle String type for user_id (stored as String in Login.java)
+        String userIdString = sharedPreferences.getString("user_id", "1");
+        try {
+            currentUserId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            currentUserId = 1; // Default fallback
+        }
 
         // Bind views
         btnBack = findViewById(R.id.btnBack);

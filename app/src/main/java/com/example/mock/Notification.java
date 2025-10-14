@@ -63,8 +63,20 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
         requestQueue = Volley.newRequestQueue(this);
         
         // Get user ID from shared preferences
-        sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE);
-        currentUserId = sharedPreferences.getInt("user_id", 1); // Default to 1 for testing
+        sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        
+        // Handle both String and Integer types for user_id
+        try {
+            currentUserId = sharedPreferences.getInt("user_id", 1);
+        } catch (ClassCastException e) {
+            // If stored as String, convert to int
+            String userIdString = sharedPreferences.getString("user_id", "1");
+            try {
+                currentUserId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException ex) {
+                currentUserId = 1; // Default fallback
+            }
+        }
     }
 
     private void initializeData() {
@@ -72,7 +84,6 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
 
         // Back button action
         btnBack.setOnClickListener(v -> finish());
-
         // Setup swipe refresh
         swipeRefreshLayout.setOnRefreshListener(this::loadNotifications);
     }
@@ -104,18 +115,17 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
                                 JSONObject data = response.getJSONObject("data");
                                 JSONArray notifications = data.getJSONArray("notifications");
                                 
+                                android.util.Log.d("Notification", "Received " + notifications.length() + " notifications from server");
+                                
                                 notifList.clear();
                                 
                                 // Add notifications with date headers
                                 addNotificationsWithHeaders(notifications);
                                 
+                                android.util.Log.d("Notification", "After processing, notifList size: " + notifList.size());
+                                
                                 // Update UI
                                 updateUI();
-                                
-                                // Show success message if no notifications
-                                if (notifications.length() == 0) {
-                                    showToast("No notifications found");
-                                }
                                 
                             } else {
                                 String errorMsg = response.getString("message");
@@ -211,11 +221,15 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
         notificationsAdapter.notifyDataSetChanged();
         
         if (notifList.isEmpty()) {
+            // Show empty state
             recyclerNotifications.setVisibility(View.GONE);
             emptyLayout.setVisibility(View.VISIBLE);
+            android.util.Log.d("Notification", "Showing empty state - no notifications found");
         } else {
+            // Show notifications list
             recyclerNotifications.setVisibility(View.VISIBLE);
             emptyLayout.setVisibility(View.GONE);
+            android.util.Log.d("Notification", "Showing notifications list - count: " + notifList.size());
         }
     }
 
@@ -307,7 +321,7 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
 
     private void markAllNotificationsAsRead() {
         android.util.Log.d("NotificationBadge", "markAllNotificationsAsRead() called for user: " + currentUserId);
-        android.util.Log.d("NotificationBadge", "SharedPreferences user_id: " + sharedPreferences.getInt("user_id", -1));
+        android.util.Log.d("NotificationBadge", "SharedPreferences user_id: " + sharedPreferences.getString("user_id", "1"));
         String url = "http://192.168.101.6/BoardEase2/mark_all_notifications_read.php";
         
         JSONObject params = new JSONObject();
@@ -391,3 +405,4 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
         hideProgressDialog();
     }
 }
+

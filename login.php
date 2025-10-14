@@ -14,9 +14,9 @@ header('Content-Type: application/json');
 
 // Database connection
 $servername = "localhost";
-$username   = "root";
-$password   = "";
-$dbname     = "boardease_testing";
+$username   = "boardease";
+$password   = "boardease";
+$dbname     = "boardease2";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -50,7 +50,10 @@ $email = trim($email);
 $password = trim($password);
 
 // Prepare SQL statement to prevent SQL injection
-$stmt = $conn->prepare("SELECT id, role, first_name, last_name, email, password FROM registrations WHERE email = ?");
+$stmt = $conn->prepare("SELECT r.id, r.role, r.first_name, r.last_name, r.email, r.password, r.status, u.user_id 
+                        FROM registrations r 
+                        LEFT JOIN users u ON r.id = u.reg_id 
+                        WHERE r.email = ?");
 if (!$stmt) {
     $response = array(
         "success" => false,
@@ -84,19 +87,44 @@ if ($result->num_rows === 0) {
     }
     
     if ($passwordValid) {
-        $response = array(
-            "success" => true,
-            "message" => "Login successful",
-            "user" => array(
-                "id" => $user['id'],
-                "role" => $user['role'],
-                "firstName" => $user['first_name'],
-                "lastName" => $user['last_name'],
-                "email" => $user['email']
-            )
-        );
-        error_log("Login successful for user: " . $email);
-        echo json_encode($response);
+        // Check if account is approved by admin
+        if ($user['status'] === 'approved') {
+            $response = array(
+                "success" => true,
+                "message" => "Login successful",
+                "user" => array(
+                    "id" => $user['user_id'] ? $user['user_id'] : $user['id'], // Use user_id if available, fallback to registration id
+                    "role" => $user['role'],
+                    "firstName" => $user['first_name'],
+                    "lastName" => $user['last_name'],
+                    "email" => $user['email']
+                )
+            );
+            error_log("Login successful for user: " . $email);
+            error_log("Response being sent: " . json_encode($response));
+            echo json_encode($response);
+        } else if ($user['status'] === 'pending') {
+            $response = array(
+                "success" => false,
+                "message" => "Your account is still pending admin approval. Please wait for approval before logging in."
+            );
+            error_log("Login blocked - account pending approval for: " . $email);
+            echo json_encode($response);
+        } else if ($user['status'] === 'rejected') {
+            $response = array(
+                "success" => false,
+                "message" => "Your account has been rejected. Please contact the administrator for more information."
+            );
+            error_log("Login blocked - account rejected for: " . $email);
+            echo json_encode($response);
+        } else {
+            $response = array(
+                "success" => false,
+                "message" => "Your account status is invalid. Please contact the administrator."
+            );
+            error_log("Login blocked - invalid account status for: " . $email . " Status: " . $user['status']);
+            echo json_encode($response);
+        }
     } else {
         $response = array(
             "success" => false,

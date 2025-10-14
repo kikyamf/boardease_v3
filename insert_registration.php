@@ -112,10 +112,10 @@ $gcashQRPath = saveFile("qrFile", $uploadDir);
 
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
 
-// Insert into DB
+// Insert into DB with pending status for admin approval
 $sql = "INSERT INTO registrations
-    (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr, status, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("SQL prepare error: " . $conn->error);
@@ -136,9 +136,9 @@ if (!$bindResult) {
 if ($stmt->execute()) {
     $response = array(
         "success" => true,
-        "message" => "Registration successful!"
+        "message" => "Registration submitted successfully! Your account is pending admin approval. You will be notified once approved."
     );
-    error_log("Registration successful for user: " . $email);
+    error_log("Registration submitted for approval - user: " . $email);
     error_log("Sending success response: " . json_encode($response));
     echo json_encode($response);
     

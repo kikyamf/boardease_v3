@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +39,7 @@ public class ManageFragment extends Fragment {
 
     private TextView textViewListingCount;
     private ProgressDialog progressDialog;
+    private LinearLayout layoutEmptyState;
 
     private static final String ARG_USER_ID = "user_id";
 
@@ -75,6 +77,7 @@ public class ManageFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         textViewListingCount = view.findViewById(R.id.tvListingCount);
+        layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
 
         adapter = new ListingAdapter(getContext(), listingList, new ListingAdapter.OnItemActionListener() {
             @Override
@@ -171,6 +174,15 @@ public class ManageFragment extends Fragment {
                             textViewListingCount.setText("You have (" + count + ") listing");
                         } else {
                             textViewListingCount.setText("You have (" + count + ") listings");
+                        }
+                        
+                        // Show/hide empty state
+                        if (count == 0) {
+                            recyclerView.setVisibility(View.GONE);
+                            layoutEmptyState.setVisibility(View.VISIBLE);
+                        } else {
+                            recyclerView.setVisibility(View.VISIBLE);
+                            layoutEmptyState.setVisibility(View.GONE);
                         }
                         
                         // Show success message if this was a refresh after edit

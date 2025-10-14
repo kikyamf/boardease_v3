@@ -25,7 +25,6 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     private OnDeleteClickListener deleteClickListener;
     private OnBoardingHouseClickListener boardingHouseClickListener;
     private boolean showDeleteButton = false;
-    private boolean showDeleteButton;
     
     public interface OnFavoriteClickListener {
         void onFavoriteClick(Listing boardingHouse, boolean isFavorite);

@@ -53,6 +53,9 @@
         <activity
             android:name=".WelcomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".GuestHomeActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -118,58 +121,8 @@
             android:name=".ReviewsActivity"
             android:exported="false" />
         <activity
-            android:name=".BoardingHouseDetailsActivitySimple"
+            android:name=".CreateGroupChat"
             android:exported="false" />
-        <activity
-            android:name=".WelcomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".RegistrationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Registration2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".BoarderDashboard"
-            android:exported="false" />
-        <activity
-            android:name=".PaymentActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PreBookingPhase1Activity"
-            android:exported="false" />
-        <activity
-            android:name=".PreBookingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".BookingConfirmationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".BoardingHouseDetailsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".OwnerMessages"
-            android:exported="false" />
-        <activity
-            android:name=".BoarderMessages"
-            android:exported="false" />
-        <activity
-            android:name=".Details"
-            android:exported="false" />
-        <activity
-            android:name=".GuestHomeActivity"
-            android:exported="false" />
-            
-        <!-- FileProvider for camera access -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
     </application>
 
 </manifest>

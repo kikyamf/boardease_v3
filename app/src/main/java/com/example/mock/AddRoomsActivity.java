@@ -1,5 +1,6 @@
 package com.example.mock;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -13,12 +14,23 @@ public class AddRoomsActivity extends AppCompatActivity {
 
     private int bhId;
     private String bhName;
-    private int userId = 1; // Default user ID, you can get this from shared preferences
+    private int userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_rooms);
+
+        // Get user ID from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        
+        // Handle String type for user_id (stored as String in Login.java)
+        String userIdString = sharedPreferences.getString("user_id", "1");
+        try {
+            userId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            userId = 1; // Default fallback
+        }
 
         // Get data from intent
         bhId = getIntent().getIntExtra("bh_id", -1);
