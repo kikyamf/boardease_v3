@@ -267,17 +267,12 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     }
 
     @Override
-    public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
+    public void onFavoriteClick(Listing boardingHouse) {
         try {
-            if (!isFavorite) {
-                // Remove from favorites
-                removeFromFavorites(boardingHouse);
-                String message = "Removed from favorites: " + boardingHouse.getBhName();
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            } else {
-                // This shouldn't happen in favorites fragment, but handle it gracefully
-                Toast.makeText(getContext(), "Already in favorites!", Toast.LENGTH_SHORT).show();
-            }
+            // Remove from favorites
+            removeFromFavorites(boardingHouse);
+            String message = "Removed from favorites: " + boardingHouse.getBhName();
+            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -173,18 +173,19 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     }
     
     @Override
-    public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
+    public void onFavoriteClick(Listing boardingHouse) {
         try {
-            if (isFavorite) {
+            // Toggle favorite status
+            boolean isCurrentlyFavorite = BoarderFavoriteFragment.isFavorite(getContext(), boardingHouse.getBhId());
+            if (isCurrentlyFavorite) {
+                // Remove from favorites
+                String message = "Removed from favorites: " + boardingHouse.getBhName();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            } else {
                 // Add to favorites
                 BoarderFavoriteFragment.addToFavorites(getContext(), boardingHouse);
                 String message = "Added to favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            } else {
-                // Remove from favorites
-                String message = "Removed from favorites: " + boardingHouse.getBhName();
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                // TODO: Implement remove from favorites functionality
             }
         } catch (Exception e) {
             e.printStackTrace();
