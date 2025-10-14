@@ -24,7 +24,7 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
     private List<ChatProfile> profiles;
     private OnProfileClickListener onProfileClickListener;
 
-    public interface OnProfileClickListener {
+    public static interface OnProfileClickListener {
         void onProfileClick(ChatProfile profile);
     }
 

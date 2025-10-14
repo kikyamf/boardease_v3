@@ -25,7 +25,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     private List<ChatItem> chatList;
     private OnChatClickListener onChatClickListener;
 
-    public interface OnChatClickListener {
+    public static interface OnChatClickListener {
         void onChatClick(ChatItem chat);
     }
 
