@@ -18,27 +18,27 @@ import java.util.List;
 public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdapter.BoardingHouseViewHolder> {
     
     private Context context;
-    private List<BoardingHouse> boardingHouses;
+    private List<Listing> boardingHouses;
     private OnFavoriteClickListener onFavoriteClickListener;
     private OnDeleteClickListener onDeleteClickListener;
     private boolean showDeleteButton;
     
     public interface OnFavoriteClickListener {
-        void onFavoriteClick(BoardingHouse boardingHouse);
+        void onFavoriteClick(Listing boardingHouse);
     }
     
     public interface OnDeleteClickListener {
-        void onDeleteClick(BoardingHouse boardingHouse);
+        void onDeleteClick(Listing boardingHouse);
     }
     
-    public BoardingHouseAdapter(Context context, List<BoardingHouse> boardingHouses, OnFavoriteClickListener favoriteListener) {
+    public BoardingHouseAdapter(Context context, List<Listing> boardingHouses, OnFavoriteClickListener favoriteListener) {
         this.context = context;
         this.boardingHouses = boardingHouses;
         this.onFavoriteClickListener = favoriteListener;
         this.showDeleteButton = false;
     }
     
-    public BoardingHouseAdapter(Context context, List<BoardingHouse> boardingHouses, OnFavoriteClickListener favoriteListener, OnDeleteClickListener deleteListener, boolean showDeleteButton) {
+    public BoardingHouseAdapter(Context context, List<Listing> boardingHouses, OnFavoriteClickListener favoriteListener, OnDeleteClickListener deleteListener, boolean showDeleteButton) {
         this.context = context;
         this.boardingHouses = boardingHouses;
         this.onFavoriteClickListener = favoriteListener;
@@ -55,7 +55,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     
     @Override
     public void onBindViewHolder(@NonNull BoardingHouseViewHolder holder, int position) {
-        BoardingHouse boardingHouse = boardingHouses.get(position);
+        Listing boardingHouse = boardingHouses.get(position);
         
         // Set boarding house data
         holder.tvBoardingHouseName.setText(boardingHouse.getName());
@@ -130,37 +130,5 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
             btnDelete = itemView.findViewById(R.id.btnDelete);
         }
-    }
-    
-    // BoardingHouse data class
-    public static class BoardingHouse {
-        private int id;
-        private String name;
-        private String location;
-        private String price;
-        private float rating;
-        private String imagePath;
-        private boolean isFavorite;
-        
-        public BoardingHouse(int id, String name, String location, String price, float rating, String imagePath, boolean isFavorite) {
-            this.id = id;
-            this.name = name;
-            this.location = location;
-            this.price = price;
-            this.rating = rating;
-            this.imagePath = imagePath;
-            this.isFavorite = isFavorite;
-        }
-        
-        // Getters and setters
-        public int getId() { return id; }
-        public String getName() { return name; }
-        public String getLocation() { return location; }
-        public String getPrice() { return price; }
-        public float getRating() { return rating; }
-        public String getImagePath() { return imagePath; }
-        public boolean isFavorite() { return isFavorite; }
-        
-        public void setFavorite(boolean favorite) { isFavorite = favorite; }
     }
 }

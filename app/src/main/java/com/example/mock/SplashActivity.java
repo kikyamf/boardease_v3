@@ -64,7 +64,7 @@ public class SplashActivity extends AppCompatActivity {
             intent = new Intent(SplashActivity.this, BoarderDashboard.class);
         } else if ("BH Owner".equals(userRole)) {
             // Navigate to MainActivity (Owner Dashboard)
-            intent = new Intent(SplashActivity.this, MainActivity.class);
+            intent = new Intent(SplashActivity.this, BoarderDashboard.class);
         } else {
             // Unknown role, go to Welcome screen
             intent = new Intent(SplashActivity.this, WelcomeActivity.class);

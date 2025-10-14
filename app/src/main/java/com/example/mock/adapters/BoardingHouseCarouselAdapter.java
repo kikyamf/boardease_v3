@@ -18,14 +18,14 @@ import java.util.List;
 public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingHouseCarouselAdapter.CarouselViewHolder> {
     
     private Context context;
-    private List<BoardingHouseAdapter.BoardingHouse> boardingHouses;
+    private List<Listing> boardingHouses;
     private OnFavoriteClickListener onFavoriteClickListener;
     
     public interface OnFavoriteClickListener {
-        void onFavoriteClick(BoardingHouseAdapter.BoardingHouse boardingHouse);
+        void onFavoriteClick(Listing boardingHouse);
     }
     
-    public BoardingHouseCarouselAdapter(Context context, List<BoardingHouseAdapter.BoardingHouse> boardingHouses, OnFavoriteClickListener favoriteListener) {
+    public BoardingHouseCarouselAdapter(Context context, List<Listing> boardingHouses, OnFavoriteClickListener favoriteListener) {
         this.context = context;
         this.boardingHouses = boardingHouses;
         this.onFavoriteClickListener = favoriteListener;
@@ -40,7 +40,7 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
     
     @Override
     public void onBindViewHolder(@NonNull CarouselViewHolder holder, int position) {
-        BoardingHouseAdapter.BoardingHouse boardingHouse = boardingHouses.get(position);
+        Listing boardingHouse = boardingHouses.get(position);
         
         // Set boarding house data
         holder.tvBoardingHouseName.setText(boardingHouse.getName());

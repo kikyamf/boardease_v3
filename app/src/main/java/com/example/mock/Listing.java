@@ -68,6 +68,10 @@ public class Listing {
     public String getContactNumber() { return contactNumber; }
     public String getOwnerName() { return ownerName; }
     
+    // Alias methods for compatibility
+    public int getBhId() { return id; }
+    public String getBhName() { return name; }
+    
     // Setters
     public void setId(int id) { this.id = id; }
     public void setName(String name) { this.name = name; }

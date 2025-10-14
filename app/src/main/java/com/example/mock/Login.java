@@ -158,7 +158,7 @@ public class Login extends AppCompatActivity {
     }
 
     private void navigateToGuestMode() {
-        Intent intent = new Intent(Login.this, GuestHomeActivity.class);
+        Intent intent = new Intent(Login.this, WelcomeActivity.class);
         startActivity(intent);
     }
     
@@ -291,7 +291,7 @@ public class Login extends AppCompatActivity {
             intent = new Intent(Login.this, BoarderDashboard.class);
         } else if ("BH Owner".equals(userRole)) {
             // Navigate to MainActivity (Owner Dashboard)
-            intent = new Intent(Login.this, MainActivity.class);
+            intent = new Intent(Login.this, BoarderDashboard.class);
         } else {
             // Unknown role, show error
             Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();
