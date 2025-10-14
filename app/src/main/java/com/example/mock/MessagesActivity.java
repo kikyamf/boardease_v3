@@ -170,12 +170,22 @@ public class MessagesActivity extends AppCompatActivity {
     private void setupRecyclerViews() {
         try {
             // Profile RecyclerView (horizontal)
-            profileAdapter = new ProfileAdapter(activeProfiles, this::onProfileClick);
+            profileAdapter = new ProfileAdapter(activeProfiles, new ProfileAdapter.OnProfileClickListener() {
+                @Override
+                public void onProfileClick(ChatProfile profile) {
+                    MessagesActivity.this.onProfileClick(profile);
+                }
+            });
             profileRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
             profileRecyclerView.setAdapter(profileAdapter);
 
             // Chat List RecyclerView (vertical)
-            chatListAdapter = new ChatListAdapter(allChats, this::onChatClick);
+            chatListAdapter = new ChatListAdapter(allChats, new ChatListAdapter.OnChatClickListener() {
+                @Override
+                public void onChatClick(ChatItem chat) {
+                    MessagesActivity.this.onChatClick(chat);
+                }
+            });
             chatListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
             chatListRecyclerView.setAdapter(chatListAdapter);
 
