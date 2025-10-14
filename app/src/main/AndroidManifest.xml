@@ -24,24 +24,6 @@
         android:theme="@style/Theme.Mock"
         tools:targetApi="31">
         <activity
-            android:name=".EditRoomActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AddRoomsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Notification"
-            android:exported="false" />
-        <activity
-            android:name=".Add"
-            android:exported="false" />
-        <activity
-            android:name=".Bed"
-            android:exported="false" />
-        <activity
-            android:name=".Private"
-            android:exported="false" />
-        <activity
             android:name=".RegistrationActivity"
             android:exported="false" />
         <activity
@@ -61,9 +43,6 @@
             android:name=".MainActivity"
             android:exported="false" />
         <activity
-            android:name=".Type"
-            android:exported="false" /> <!-- Make Details the launcher activity -->
-        <activity
             android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
@@ -73,55 +52,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Manage"
-            android:exported="false" />
-        <activity
-            android:name=".Room"
-            android:exported="false" />
-        <activity
             android:name=".Login"
             android:exported="false" /> <!-- MainActivity is no longer the launcher -->
         <activity
-            android:name=".Messages"
-            android:exported="false" />
-        <activity
-            android:name=".EditBoardingHouseActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TransactionsLogsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".RoomViewActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Conversation"
-            android:exported="false" />
-        <activity
-            android:name=".EditOwnerProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name=".BookingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ActivityDetailsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AccountSettingsActivity"
-            android:exported="false" />
-        <activity
             android:name=".GcashInfoActivity"
-            android:exported="false" />
-        <activity
-            android:name=".BoardersListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MaintenanceRequestsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ReviewsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CreateGroupChat"
             android:exported="false" />
     </application>
 

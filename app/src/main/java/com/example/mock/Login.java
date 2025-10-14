@@ -291,7 +291,9 @@ public class Login extends AppCompatActivity {
             intent = new Intent(Login.this, BoarderDashboard.class);
         } else if ("BH Owner".equals(userRole)) {
             // Navigate to MainActivity (Owner Dashboard)
-            intent = new Intent(Login.this, MainActivity.class);
+            //just a prototype. this should be MainActivity
+            Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();
+            return;
         } else {
             // Unknown role, show error
             Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();

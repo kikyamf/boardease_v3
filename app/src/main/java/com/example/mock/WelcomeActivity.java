@@ -87,10 +87,12 @@ public class WelcomeActivity extends AppCompatActivity {
         if ("Boarder".equals(userRole)) {
             // Navigate to BoarderDashboard
             intent = new Intent(WelcomeActivity.this, BoarderDashboard.class);
-        } else if ("BH Owner".equals(userRole)) {
-            // Navigate to MainActivity (Owner Dashboard)
-            intent = new Intent(WelcomeActivity.this, MainActivity.class);
-        } else {
+        }
+//        else if ("BH Owner".equals(userRole)) {
+//            // Navigate to MainActivity (Owner Dashboard)
+//            intent = new Intent(WelcomeActivity.this, MainActivity.class);
+//        }
+        else {
             // Unknown role, stay on welcome screen
             return;
         }

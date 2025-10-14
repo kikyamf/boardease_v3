@@ -2,6 +2,7 @@ package com.example.mock;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.telecom.Call;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -38,7 +39,7 @@ public class Type extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     // Explicitly go back to Details activity
-                    Intent intent = new Intent(Type.this, Details.class);
+                    Intent intent = new Intent(Type.this, Call.Details.class);
                     startActivity(intent);
                     finish(); // para dili mag-stack ang Bed activity
                 }
