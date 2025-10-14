@@ -33,6 +33,12 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
         this.chatList = chatList;
         this.onChatClickListener = listener;
     }
+    
+    // Constructor for MessagesActivity
+    public ChatListAdapter(List<ChatItem> chatList, MessagesActivity activity) {
+        this.chatList = chatList;
+        this.onChatClickListener = activity::onChatClick;
+    }
 
     @NonNull
     @Override

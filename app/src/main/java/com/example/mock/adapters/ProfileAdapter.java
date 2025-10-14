@@ -32,6 +32,12 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
         this.profiles = profiles;
         this.onProfileClickListener = listener;
     }
+    
+    // Constructor for MessagesActivity
+    public ProfileAdapter(List<ChatProfile> profiles, MessagesActivity activity) {
+        this.profiles = profiles;
+        this.onProfileClickListener = activity::onProfileClick;
+    }
 
     @NonNull
     @Override
