@@ -54,9 +54,20 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "user_email";
+    private static final String KEY_USER_MIDDLE_NAME = "user_middle_name";
+    private static final String KEY_USER_PHONE = "user_phone";
+    private static final String KEY_USER_ADDRESS = "user_address";
+    private static final String KEY_USER_BIRTH_DATE = "user_birth_date";
+    private static final String KEY_USER_GCASH_NUMBER = "user_gcash_number";
+    private static final String KEY_USER_QR_CODE_PATH = "user_qr_code_path";
+    private static final String KEY_USER_VALID_ID_TYPE = "user_valid_id_type";
+    private static final String KEY_USER_ID_NUMBER = "user_id_number";
+    private static final String KEY_USER_ID_FRONT_FILE = "user_id_front_file";
+    private static final String KEY_USER_ID_BACK_FILE = "user_id_back_file";
+    private static final String KEY_USER_STATUS = "user_status";
     
     // Server URL - Update this path if login.php is in a different location
-    private static final String LOGIN_URL = "http://192.168.101.6/BoardEase2/login.php";
+    private static final String LOGIN_URL = "http://192.168.1.9/boardease_v3/login.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -265,8 +276,23 @@ public class Login extends AppCompatActivity {
                 String lastName = userObject.getString("lastName");
                 String userEmail = userObject.getString("email");
                 
+                // Store additional user data
+                String middleName = userObject.optString("middleName", "");
+                String phone = userObject.optString("phone", "");
+                String address = userObject.optString("address", "");
+                String birthDate = userObject.optString("birthDate", "");
+                String gcashNumber = userObject.optString("gcashNumber", "");
+                String qrCodePath = userObject.optString("qrCodePath", "");
+                String validIdType = userObject.optString("validIdType", "");
+                String idNumber = userObject.optString("idNumber", "");
+                String idFrontFile = userObject.optString("idFrontFile", "");
+                String idBackFile = userObject.optString("idBackFile", "");
+                String status = userObject.optString("status", "");
+                
                 // Store user session in SharedPreferences
-                saveUserSession(userId, userRole, firstName + " " + lastName, userEmail);
+                saveUserSession(userId, userRole, firstName + " " + lastName, userEmail, 
+                              middleName, phone, address, birthDate, gcashNumber, qrCodePath,
+                              validIdType, idNumber, idFrontFile, idBackFile, status);
                 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
@@ -285,12 +311,26 @@ public class Login extends AppCompatActivity {
         }
     }
     
-    private void saveUserSession(String userId, String userRole, String userName, String userEmail) {
+    private void saveUserSession(String userId, String userRole, String userName, String userEmail, 
+                               String middleName, String phone, String address, String birthDate, 
+                               String gcashNumber, String qrCodePath, String validIdType, String idNumber,
+                               String idFrontFile, String idBackFile, String status) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_ROLE, userRole);
         editor.putString(KEY_USER_NAME, userName);
         editor.putString(KEY_USER_EMAIL, userEmail);
+        editor.putString(KEY_USER_MIDDLE_NAME, middleName);
+        editor.putString(KEY_USER_PHONE, phone);
+        editor.putString(KEY_USER_ADDRESS, address);
+        editor.putString(KEY_USER_BIRTH_DATE, birthDate);
+        editor.putString(KEY_USER_GCASH_NUMBER, gcashNumber);
+        editor.putString(KEY_USER_QR_CODE_PATH, qrCodePath);
+        editor.putString(KEY_USER_VALID_ID_TYPE, validIdType);
+        editor.putString(KEY_USER_ID_NUMBER, idNumber);
+        editor.putString(KEY_USER_ID_FRONT_FILE, idFrontFile);
+        editor.putString(KEY_USER_ID_BACK_FILE, idBackFile);
+        editor.putString(KEY_USER_STATUS, status);
         editor.apply();
     }
     
@@ -301,10 +341,8 @@ public class Login extends AppCompatActivity {
             // Navigate to BoarderDashboard
             intent = new Intent(Login.this, BoarderDashboard.class);
         } else if ("BH Owner".equals(userRole)) {
-            // Navigate to MainActivity (Owner Dashboard)
-            //just a prototype. this should be MainActivity
-            Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();
-            return;
+            // Navigate to BHOwnerDashboard
+            intent = new Intent(Login.this, BHOwnerDashboard.class);
         } else {
             // Unknown role, show error
             Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();
@@ -348,5 +386,60 @@ public class Login extends AppCompatActivity {
     public static String getCurrentUserEmail(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_EMAIL, null);
+    }
+    
+    public static String getCurrentUserMiddleName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_MIDDLE_NAME, null);
+    }
+    
+    public static String getCurrentUserPhone(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_PHONE, null);
+    }
+    
+    public static String getCurrentUserAddress(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_ADDRESS, null);
+    }
+    
+    public static String getCurrentUserBirthDate(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_BIRTH_DATE, null);
+    }
+    
+    public static String getCurrentUserGcashNumber(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_GCASH_NUMBER, null);
+    }
+    
+    public static String getCurrentUserQrCodePath(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_QR_CODE_PATH, null);
+    }
+    
+    public static String getCurrentUserValidIdType(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_VALID_ID_TYPE, null);
+    }
+    
+    public static String getCurrentUserIdNumber(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_ID_NUMBER, null);
+    }
+    
+    public static String getCurrentUserIdFrontFile(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_ID_FRONT_FILE, null);
+    }
+    
+    public static String getCurrentUserIdBackFile(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_ID_BACK_FILE, null);
+    }
+    
+    public static String getCurrentUserStatus(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString(KEY_USER_STATUS, null);
     }
 }

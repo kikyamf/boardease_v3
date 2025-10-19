@@ -354,6 +354,10 @@ public class BoarderProfileFragment extends Fragment {
             // Load user data from SharedPreferences
             String userName = Login.getCurrentUserName(getContext());
             String userEmail = Login.getCurrentUserEmail(getContext());
+            String userPhone = Login.getCurrentUserPhone(getContext());
+            String userAddress = Login.getCurrentUserAddress(getContext());
+            String userBirthDate = Login.getCurrentUserBirthDate(getContext());
+            String userGcashNumber = Login.getCurrentUserGcashNumber(getContext());
             
             if (tvBoarderName != null) {
                 if (userName != null && !userName.isEmpty()) {
@@ -369,6 +373,12 @@ public class BoarderProfileFragment extends Fragment {
                     tvBoarderEmail.setText("user@email.com"); // Fallback
                 }
             }
+            
+            // You can add more TextViews to display additional user information
+            // For example, if you have TextViews for phone, address, etc.
+            // tvUserPhone.setText(userPhone != null ? userPhone : "Not provided");
+            // tvUserAddress.setText(userAddress != null ? userAddress : "Not provided");
+            
         } catch (Exception e) {
             e.printStackTrace();
             // Fallback to mock data if there's an error

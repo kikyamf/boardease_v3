@@ -33,6 +33,9 @@
             android:name=".BoarderDashboard"
             android:exported="false" />
         <activity
+            android:name=".BHOwnerDashboard"
+            android:exported="false" />
+        <activity
             android:name=".WelcomeActivity"
             android:exported="false" />
         <activity

@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease_testing'; // Updated with your actual database name
+$dbname = 'boardease_testing';
 $username = 'root'; // Update with your database username
 $password = ''; // Update with your database password
 
@@ -66,12 +66,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Prepare SQL query to get user data based on your registration table structure
-    $sql = "SELECT id, first_name, last_name, middle_name, email, password, role, 
-                   phone, address, birth_date, gcash_num, gcash_qr, valid_id_type, 
-                   id_number, idFrontFile, idBackFile, status
-            FROM registration 
-            WHERE email = :email AND status = 'approved'";
+    // Query to get user data from your registration table
+    $sql = "SELECT * FROM registration WHERE email = :email AND status = 'approved'";
     
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':email', $email, PDO::PARAM_STR);
@@ -87,8 +83,11 @@ try {
         exit();
     }
     
-    // Verify password
-    if (!password_verify($password, $user['password'])) {
+    // Verify password - adjust column name as needed
+    $storedPassword = $user['password'] ?? $user['Password'] ?? $user['PASSWORD'] ?? '';
+    
+    // Check if password matches (adjust based on how passwords are stored)
+    if (!password_verify($password, $storedPassword) && $password !== $storedPassword) {
         echo json_encode([
             'success' => false,
             'message' => 'Invalid email or password'
@@ -96,7 +95,7 @@ try {
         exit();
     }
     
-    // Prepare user data for response (exclude password)
+    // Prepare user data for response based on your registration table structure
     $userData = [
         'id' => $user['id'],
         'firstName' => $user['first_name'],

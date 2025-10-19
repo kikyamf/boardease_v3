@@ -18,25 +18,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.bumptech.glide.Glide;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
-    private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
@@ -84,7 +69,7 @@ public class OwnerProfileFragment extends Fragment {
         layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
 
         // Load owner profile data
-        loadOwnerProfile();
+        loadUserData();
 
         // Click Events
         ivEditProfile.setOnClickListener(v -> openEditProfile());
@@ -120,81 +105,56 @@ public class OwnerProfileFragment extends Fragment {
         startActivityForResult(intent, 300); // Use request code 300 for GCash info
     }
     
-    private void loadOwnerProfile() {
-        StringRequest request = new StringRequest(Request.Method.POST, GET_OWNER_PROFILE_URL,
-            new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        if (jsonResponse.getBoolean("success")) {
-                            populateProfileData(jsonResponse);
-                        } else {
-                            // Set default data if profile not found
-                            tvOwnerName.setText("Owner " + userId);
-                            tvOwnerEmail.setText("owner" + userId + "@example.com");
-                        }
-                    } catch (JSONException e) {
-                        Log.e("OwnerProfile", "Error parsing profile response", e);
-                        // Set default data on error
-                        tvOwnerName.setText("Owner " + userId);
-                        tvOwnerEmail.setText("owner" + userId + "@example.com");
-                    }
-                }
-            },
-            new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("OwnerProfile", "Error loading profile", error);
-                    // Set default data on error
-                    tvOwnerName.setText("Owner " + userId);
-                    tvOwnerEmail.setText("owner" + userId + "@example.com");
-                }
-            }
-        ) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("user_id", String.valueOf(userId));
-                return params;
-            }
-        };
-        
-        RequestQueue queue = Volley.newRequestQueue(getContext());
-        queue.add(request);
-    }
-    
-    private void populateProfileData(JSONObject profileData) {
+    private void loadUserData() {
         try {
-            // Set name
-            String firstName = profileData.optString("f_name", "");
-            String lastName = profileData.optString("l_name", "");
-            String fullName = firstName + " " + lastName;
-            tvOwnerName.setText(fullName.trim());
+            // Load user data from SharedPreferences
+            String userName = Login.getCurrentUserName(getContext());
+            String userEmail = Login.getCurrentUserEmail(getContext());
+            String userPhone = Login.getCurrentUserPhone(getContext());
+            String userAddress = Login.getCurrentUserAddress(getContext());
+            String userBirthDate = Login.getCurrentUserBirthDate(getContext());
+            String userGcashNumber = Login.getCurrentUserGcashNumber(getContext());
+            String userQrCodePath = Login.getCurrentUserQrCodePath(getContext());
             
-            // Set email
-            String email = profileData.optString("email", "");
-            tvOwnerEmail.setText(email);
+            if (tvOwnerName != null) {
+                if (userName != null && !userName.isEmpty()) {
+                    tvOwnerName.setText(userName);
+                } else {
+                    tvOwnerName.setText("Owner Name"); // Fallback
+                }
+            }
+            if (tvOwnerEmail != null) {
+                if (userEmail != null && !userEmail.isEmpty()) {
+                    tvOwnerEmail.setText(userEmail);
+                } else {
+                    tvOwnerEmail.setText("owner@email.com"); // Fallback
+                }
+            }
             
-            // Load profile picture
-            String profilePicPath = profileData.optString("profile_picture", "");
-            if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
-                Glide.with(this)
-                    .load(fullImageUrl)
-                    .placeholder(R.drawable.btn_profile)
-                    .error(R.drawable.btn_profile)
-                    .centerCrop()
-                    .into(ivProfilePic);
+            // Load profile picture if available
+            if (userQrCodePath != null && !userQrCodePath.isEmpty()) {
+                // You can load the QR code image here if needed
+                // For now, we'll use a default profile picture
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
             } else {
-                // Set default profile picture
                 ivProfilePic.setImageResource(R.drawable.btn_profile);
             }
             
         } catch (Exception e) {
-            Log.e("OwnerProfile", "Error populating profile data", e);
+            e.printStackTrace();
+            // Fallback to mock data if there's an error
+            if (tvOwnerName != null) {
+                tvOwnerName.setText("Owner Name");
+            }
+            if (tvOwnerEmail != null) {
+                tvOwnerEmail.setText("owner@email.com");
+            }
+            if (ivProfilePic != null) {
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
+            }
         }
     }
+    
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -203,7 +163,7 @@ public class OwnerProfileFragment extends Fragment {
         // Check if the result is from EditOwnerProfileActivity, AccountSettingsActivity, or GcashInfoActivity
         if ((requestCode == 100 || requestCode == 200 || requestCode == 300) && resultCode == getActivity().RESULT_OK) {
             // Profile, account settings, or GCash info was updated successfully, refresh the data
-            loadOwnerProfile();
+            loadUserData();
         }
     }
     
@@ -212,7 +172,7 @@ public class OwnerProfileFragment extends Fragment {
         super.onResume();
         // Refresh profile data when fragment becomes visible
         // This ensures any changes made in other activities are reflected
-        loadOwnerProfile();
+        loadUserData();
     }
     
     /**
@@ -220,7 +180,7 @@ public class OwnerProfileFragment extends Fragment {
      * Can be called from parent activity when needed
      */
     public void refreshProfile() {
-        loadOwnerProfile();
+        loadUserData();
     }
     
     private void showSignOutConfirmationDialog() {

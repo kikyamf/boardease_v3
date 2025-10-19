@@ -209,26 +209,63 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void loadUserData() {
         try {
-            // Load user data from SharedPreferences
-            if (userPrefs != null) {
-                String firstName = userPrefs.getString(KEY_FIRST_NAME, "John");
-                String middleName = userPrefs.getString(KEY_MIDDLE_NAME, "Michael");
-                String lastName = userPrefs.getString(KEY_LAST_NAME, "Doe");
-                String email = userPrefs.getString(KEY_EMAIL, "john.doe@email.com");
-                String contact = userPrefs.getString(KEY_CONTACT, "09123456789");
-                String birthdate = userPrefs.getString(KEY_BIRTHDATE, "1995-01-01");
-                String address = userPrefs.getString(KEY_ADDRESS, "Tagbilaran City");
+            // Load user data from Login SharedPreferences
+            String fullName = Login.getCurrentUserName(getContext());
+            String middleName = Login.getCurrentUserMiddleName(getContext());
+            String email = Login.getCurrentUserEmail(getContext());
+            String contact = Login.getCurrentUserPhone(getContext());
+            String birthdate = Login.getCurrentUserBirthDate(getContext());
+            String address = Login.getCurrentUserAddress(getContext());
 
-                if (etFirstName != null) etFirstName.setText(firstName);
-                if (etMiddleName != null) etMiddleName.setText(middleName);
-                if (etLastName != null) etLastName.setText(lastName);
-                if (etEmail != null) etEmail.setText(email);
-                if (etContactNumber != null) etContactNumber.setText(contact);
-                if (etBirthdate != null) etBirthdate.setText(birthdate);
-                if (etAddress != null) etAddress.setText(address);
+            // Extract first and last name from the full name
+            String firstName = "";
+            String lastName = "";
+            
+            if (fullName != null && !fullName.isEmpty()) {
+                String[] nameParts = fullName.split(" ");
+                if (nameParts.length >= 2) {
+                    firstName = nameParts[0];
+                    lastName = nameParts[nameParts.length - 1];
+                    // If we have more than 2 parts, the middle name is everything in between
+                    if (nameParts.length > 2 && (middleName == null || middleName.isEmpty())) {
+                        StringBuilder middleNameBuilder = new StringBuilder();
+                        for (int i = 1; i < nameParts.length - 1; i++) {
+                            if (i > 1) middleNameBuilder.append(" ");
+                            middleNameBuilder.append(nameParts[i]);
+                        }
+                        middleName = middleNameBuilder.toString();
+                    }
+                } else if (nameParts.length == 1) {
+                    firstName = nameParts[0];
+                }
             }
+
+            // Set default values if data is null or empty
+            if (firstName == null || firstName.isEmpty()) firstName = "First Name";
+            if (middleName == null) middleName = "";
+            if (lastName == null || lastName.isEmpty()) lastName = "Last Name";
+            if (email == null || email.isEmpty()) email = "user@email.com";
+            if (contact == null) contact = "";
+            if (birthdate == null) birthdate = "";
+            if (address == null) address = "";
+
+            if (etFirstName != null) etFirstName.setText(firstName);
+            if (etMiddleName != null) etMiddleName.setText(middleName);
+            if (etLastName != null) etLastName.setText(lastName);
+            if (etEmail != null) etEmail.setText(email);
+            if (etContactNumber != null) etContactNumber.setText(contact);
+            if (etBirthdate != null) etBirthdate.setText(birthdate);
+            if (etAddress != null) etAddress.setText(address);
         } catch (Exception e) {
             e.printStackTrace();
+            // Set fallback values
+            if (etFirstName != null) etFirstName.setText("First Name");
+            if (etMiddleName != null) etMiddleName.setText("");
+            if (etLastName != null) etLastName.setText("Last Name");
+            if (etEmail != null) etEmail.setText("user@email.com");
+            if (etContactNumber != null) etContactNumber.setText("");
+            if (etBirthdate != null) etBirthdate.setText("");
+            if (etAddress != null) etAddress.setText("");
         }
     }
 
