@@ -67,7 +67,11 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_STATUS = "user_status";
     
     // Server URL - Update this path if login.php is in a different location
-    private static final String LOGIN_URL = "http://192.168.1.9/boardease_v3/login.php";
+    // Try these URLs in order:
+    // 1. http://192.168.1.9/boardease_v3/login.php
+    // 2. http://192.168.1.9/login.php  
+    // 3. http://192.168.1.9/boardease_v3/boardease_v3/login.php
+    private static final String LOGIN_URL = "http://192.168.137.1/login.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
