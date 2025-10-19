@@ -12,9 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease_testing'; // Updated with your actual database name
-$username = 'root'; // Update with your database username
-$password = ''; // Update with your database password
+$dbname = 'boardease_testing'; // Your actual database name
+$username = 'root'; // Your actual database username
+$password = ''; // Your actual database password
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);

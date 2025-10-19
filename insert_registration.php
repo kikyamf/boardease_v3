@@ -15,9 +15,9 @@ error_log("BirthDate received: '" . ($_POST['birthDate'] ?? 'NOT_SET') . "'");
 try {
 // Database connection
 $servername = "localhost";
-$username   = "boardease"; // adjust if needed
-$password   = "boardease";     // adjust if needed
-$dbname     = "boardease2"; // adjust if needed
+$username   = "root"; // Updated to match your database
+$password   = "";     // Updated to match your database
+$dbname     = "boardease_testing"; // Updated to match your database
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -113,7 +113,7 @@ $gcashQRPath = saveFile("qrFile", $uploadDir);
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
 
 // Insert into DB with pending status for admin approval
-$sql = "INSERT INTO registrations
+$sql = "INSERT INTO registration
     (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr, status, created_at) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
 $stmt = $conn->prepare($sql);
