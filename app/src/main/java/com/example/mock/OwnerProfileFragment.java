@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
+    private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
@@ -32,19 +33,23 @@ public class OwnerProfileFragment extends Fragment {
     }
 
 
-    public static OwnerProfileFragment newInstance(int userId) {
-        OwnerProfileFragment fragment = new OwnerProfileFragment();
-        Bundle args = new Bundle();
-        args.putInt(ARG_USER_ID, userId);
-        fragment.setArguments(args);
-        return fragment;
+    public static OwnerProfileFragment newInstance() {
+        return new OwnerProfileFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            userId = getArguments().getInt(ARG_USER_ID);
+        // Get user ID from login session
+        if (getContext() != null) {
+            String userIdString = Login.getCurrentUserId(getContext());
+            if (userIdString != null && !userIdString.isEmpty()) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                } catch (NumberFormatException e) {
+                    userId = 0; // Default value if parsing fails
+                }
+            }
         }
     }
 
@@ -88,21 +93,33 @@ public class OwnerProfileFragment extends Fragment {
     }
     
     private void openEditProfile() {
-        Intent intent = new Intent(getContext(), EditOwnerProfileActivity.class);
-        intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 100); // Use request code 100 for profile edit
+        if (userId > 0) {
+            Intent intent = new Intent(getContext(), EditOwnerProfileActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivityForResult(intent, 100); // Use request code 100 for profile edit
+        } else {
+            Toast.makeText(getContext(), "User ID not available", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void openAccountSettings() {
-        Intent intent = new Intent(getContext(), AccountSettingsActivity.class);
-        intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 200); // Use request code 200 for account settings
+        if (userId > 0) {
+            Intent intent = new Intent(getContext(), AccountSettingsActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivityForResult(intent, 200); // Use request code 200 for account settings
+        } else {
+            Toast.makeText(getContext(), "User ID not available", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void openGcashInfo() {
-        Intent intent = new Intent(getContext(), GcashInfoActivity.class);
-        intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 300); // Use request code 300 for GCash info
+        if (userId > 0) {
+            Intent intent = new Intent(getContext(), GcashInfoActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivityForResult(intent, 300); // Use request code 300 for GCash info
+        } else {
+            Toast.makeText(getContext(), "User ID not available", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void loadUserData() {
