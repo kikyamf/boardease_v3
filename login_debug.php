@@ -12,9 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease_testing'; // Updated with your actual database name
-$username = 'root'; // Update with your database username
-$password = ''; // Update with your database password
+$dbname = 'boardease_testing';
+$username = 'root';
+$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
@@ -66,12 +66,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Prepare SQL query to get user data based on your registration table structure
-    $sql = "SELECT id, first_name, last_name, middle_name, email, password, role, 
-                   phone, address, birth_date, gcash_num, gcash_qr, valid_id_type, 
-                   id_number, idFrontFile, idBackFile, status
-            FROM registration 
-            WHERE email = :email AND status = 'approved'";
+    // Query to get user data from your registration table
+    $sql = "SELECT * FROM registration WHERE email = :email AND status = 'approved'";
     
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':email', $email, PDO::PARAM_STR);
@@ -82,10 +78,23 @@ try {
     if (!$user) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid email or password'
+            'message' => 'User not found or not approved',
+            'debug' => [
+                'email' => $email,
+                'query' => $sql
+            ]
         ]);
         exit();
     }
+    
+    // Debug information
+    $debugInfo = [
+        'email' => $email,
+        'stored_password' => $user['password'],
+        'input_password' => $password,
+        'password_length' => strlen($user['password']),
+        'input_length' => strlen($password)
+    ];
     
     // Verify password - handle both plain text and hashed passwords
     $passwordMatch = false;
@@ -93,21 +102,24 @@ try {
     // First try password_verify for hashed passwords
     if (password_verify($password, $user['password'])) {
         $passwordMatch = true;
+        $debugInfo['verification_method'] = 'password_verify';
     }
     // If password_verify fails, try plain text comparison
     else if ($password === $user['password']) {
         $passwordMatch = true;
+        $debugInfo['verification_method'] = 'plain_text';
     }
     
     if (!$passwordMatch) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid email or password'
+            'message' => 'Invalid email or password',
+            'debug' => $debugInfo
         ]);
         exit();
     }
     
-    // Prepare user data for response (exclude password)
+    // Prepare user data for response based on your registration table structure
     $userData = [
         'id' => $user['id'],
         'firstName' => $user['first_name'],
@@ -131,7 +143,8 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Login successful',
-        'user' => $userData
+        'user' => $userData,
+        'debug' => $debugInfo
     ]);
     
 } catch(PDOException $e) {
