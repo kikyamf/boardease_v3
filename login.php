@@ -87,17 +87,8 @@ try {
         exit();
     }
     
-    // Verify password - handle both plain text and hashed passwords
-    $passwordMatch = false;
-    
-    // First try password_verify for hashed passwords
-    if (password_verify($password, $user['password'])) {
-        $passwordMatch = true;
-    }
-    // If password_verify fails, try plain text comparison
-    else if ($password === $user['password']) {
-        $passwordMatch = true;
-    }
+    // Verify password - plain text comparison (since passwords are not hashed yet)
+    $passwordMatch = ($password === $user['password']);
     
     if (!$passwordMatch) {
         echo json_encode([
