@@ -66,7 +66,28 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    // Prepare SQL query to get user data based on your registration table structure
+    // Debug: Log the received email
+    error_log("Login attempt for email: " . $email);
+    
+    // First, check if user exists (without status filter for debugging)
+    $sql_check = "SELECT id, email, status FROM registration WHERE email = :email";
+    $stmt_check = $pdo->prepare($sql_check);
+    $stmt_check->bindParam(':email', $email, PDO::PARAM_STR);
+    $stmt_check->execute();
+    $user_check = $stmt_check->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user_check) {
+        error_log("User not found in database for email: " . $email);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Email not found in database'
+        ]);
+        exit();
+    }
+    
+    error_log("User found - ID: " . $user_check['id'] . ", Status: " . $user_check['status']);
+    
+    // Now check with status filter
     $sql = "SELECT id, first_name, last_name, middle_name, email, password, role, 
                    phone, address, birth_date, gcash_num, gcash_qr, valid_id_type, 
                    id_number, idFrontFile, idBackFile, status
@@ -80,20 +101,23 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$user) {
+        error_log("User found but status is not 'approved'. Current status: " . $user_check['status']);
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid email or password'
+            'message' => 'Account not approved. Current status: ' . $user_check['status']
         ]);
         exit();
     }
     
     // Verify password - plain text comparison (since passwords are not hashed yet)
+    error_log("Comparing passwords - Input: '" . $password . "' vs Database: '" . $user['password'] . "'");
     $passwordMatch = ($password === $user['password']);
     
     if (!$passwordMatch) {
+        error_log("Password mismatch for user: " . $email);
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid email or password'
+            'message' => 'Invalid password'
         ]);
         exit();
     }
