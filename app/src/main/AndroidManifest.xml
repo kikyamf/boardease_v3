@@ -56,6 +56,9 @@
             android:name=".Login"
             android:exported="false" /> <!-- MainActivity is no longer the launcher -->
         <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false" />
+        <activity
             android:name=".GcashInfoActivity"
             android:exported="false" />
     </application>
