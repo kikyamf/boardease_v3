@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -109,7 +110,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void initializeViews(View view) {
         try {
-            System.out.println("initializeViews called"); // Debug log
+            Log.d("BoarderAccountSettings", "initializeViews called"); // Debug log
             // Header views
             btnBack = view.findViewById(R.id.btnBack);
             progressBar = view.findViewById(R.id.progressBar);
@@ -140,9 +141,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
             llPasswordFields = view.findViewById(R.id.llPasswordFields);
             ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
             
-            System.out.println("llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
-            System.out.println("llPasswordFields found: " + (llPasswordFields != null)); // Debug log
-            System.out.println("ivExpandCollapse found: " + (ivExpandCollapse != null)); // Debug log
+            Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
+            Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null)); // Debug log
+            Log.d("BoarderAccountSettings", "ivExpandCollapse found: " + (ivExpandCollapse != null)); // Debug log
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -160,7 +161,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void setupClickListeners() {
         try {
-            System.out.println("setupClickListeners called"); // Debug log
+            Log.d("BoarderAccountSettings", "setupClickListeners called"); // Debug log
             // Back button
             if (btnBack != null) {
                 btnBack.setOnClickListener(v -> {
@@ -178,16 +179,16 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (llPrivacyHeader != null) {
                 llPrivacyHeader.setOnClickListener(v -> {
                     try {
-                        System.out.println("Privacy header clicked!"); // Debug log
+                        Log.d("BoarderAccountSettings", "Privacy header clicked!"); // Debug log
                         Toast.makeText(getContext(), "Privacy section clicked!", Toast.LENGTH_SHORT).show();
                         togglePasswordSection();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
-                System.out.println("Privacy header click listener set"); // Debug log
+                Log.d("BoarderAccountSettings", "Privacy header click listener set"); // Debug log
             } else {
-                System.out.println("llPrivacyHeader is null!"); // Debug log
+                Log.d("BoarderAccountSettings", "llPrivacyHeader is null!"); // Debug log
             }
 
             // Birthdate picker
