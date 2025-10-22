@@ -10,6 +10,7 @@ import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -40,7 +41,8 @@ public class Login extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private Button btnLogin;
     private Button btnGuest;
-    private TextView tvSignUp;
+    private TextView tvSignUp, tvForgotPassword;
+    private CheckBox chkRemember;
     private ImageButton btnTogglePassword;
     private ImageView backButton;
     private ProgressDialog progressDialog;
@@ -66,6 +68,11 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_ID_BACK_FILE = "user_id_back_file";
     private static final String KEY_USER_STATUS = "user_status";
     
+    // Remember me preferences
+    private static final String KEY_REMEMBER_ME = "remember_me";
+    private static final String KEY_SAVED_EMAIL = "saved_email";
+    private static final String KEY_SAVED_PASSWORD = "saved_password";
+    
     // Server URL - Update this path if login.php is in a different location
     // Try these URLs in order:
     // 1. http://192.168.1.3/boardease_v3/login.php
@@ -90,6 +97,9 @@ public class Login extends AppCompatActivity {
         
         // Check if user is already logged in
         checkExistingSession();
+        
+        // Load saved credentials if remember me was checked
+        loadSavedCredentials();
 
         // Set click listeners
         setClickListeners();
@@ -107,6 +117,8 @@ public class Login extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        chkRemember = findViewById(R.id.chkRemember);
         btnTogglePassword = findViewById(R.id.btnTogglePassword);
         backButton = findViewById(R.id.backButton);
         
@@ -164,6 +176,13 @@ public class Login extends AppCompatActivity {
                 navigateToGuestMode();
             }
         });
+        
+        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigateToForgotPassword();
+            }
+        });
     }
 
     private void togglePasswordVisibility() {
@@ -186,6 +205,37 @@ public class Login extends AppCompatActivity {
     private void navigateToGuestMode() {
         Intent intent = new Intent(Login.this, GuestHomeActivity.class);
         startActivity(intent);
+    }
+    
+    private void navigateToForgotPassword() {
+        Intent intent = new Intent(Login.this, ForgotPasswordActivity.class);
+        startActivity(intent);
+    }
+    
+    private void loadSavedCredentials() {
+        boolean rememberMe = sharedPreferences.getBoolean(KEY_REMEMBER_ME, false);
+        if (rememberMe) {
+            String savedEmail = sharedPreferences.getString(KEY_SAVED_EMAIL, "");
+            String savedPassword = sharedPreferences.getString(KEY_SAVED_PASSWORD, "");
+            
+            etEmail.setText(savedEmail);
+            etPassword.setText(savedPassword);
+            chkRemember.setChecked(true);
+        }
+    }
+    
+    private void saveCredentials(String email, String password, boolean rememberMe) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(KEY_REMEMBER_ME, rememberMe);
+        
+        if (rememberMe) {
+            editor.putString(KEY_SAVED_EMAIL, email);
+            editor.putString(KEY_SAVED_PASSWORD, password);
+        } else {
+            editor.remove(KEY_SAVED_EMAIL);
+            editor.remove(KEY_SAVED_PASSWORD);
+        }
+        editor.apply();
     }
     
     private void performLogin() {
@@ -297,6 +347,10 @@ public class Login extends AppCompatActivity {
                 saveUserSession(userId, userRole, firstName + " " + lastName, userEmail, 
                               middleName, phone, address, birthDate, gcashNumber, qrCodePath,
                               validIdType, idNumber, idFrontFile, idBackFile, status);
+                
+                // Save credentials if remember me is checked
+                boolean rememberMe = chkRemember.isChecked();
+                saveCredentials(email, password, rememberMe);
                 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
