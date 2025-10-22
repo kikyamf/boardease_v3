@@ -276,7 +276,7 @@ public class Login extends AppCompatActivity {
                     public void onResponse(String response) {
                         progressDialog.dismiss();
                         Log.d("LoginResponse", "Server response: " + response);
-                        handleLoginResponse(response);
+                        handleLoginResponse(response, email, password);
                     }
                 },
                 new Response.ErrorListener() {
@@ -315,7 +315,7 @@ public class Login extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
     
-    private void handleLoginResponse(String response) {
+    private void handleLoginResponse(String response, String email, String password) {
         try {
             JSONObject jsonObject = new JSONObject(response);
             boolean success = jsonObject.getBoolean("success");
