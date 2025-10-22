@@ -87,10 +87,8 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/ic_name"
                     app:startIconTint="#A18167">
 
@@ -116,10 +114,8 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/ic_name"
                     app:startIconTint="#A18167">
 
@@ -145,10 +141,8 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/ic_name"
                     app:startIconTint="#A18167">
 
@@ -174,10 +168,8 @@
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/email"
                     app:startIconTint="#A18167">
 
@@ -199,10 +191,8 @@
                     android:layout_marginBottom="12dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/call"
                     app:startIconTint="#A18167">
 
@@ -224,10 +214,8 @@
                     android:layout_marginBottom="12dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/ic_calendar"
                     app:startIconTint="#A18167">
 
@@ -251,10 +239,8 @@
                     android:layout_marginBottom="20dp"
                     app:boxStrokeColor="#A18167"
                     app:boxStrokeColorFocused="#A18167"
-                    app:boxStrokeColorUnfocused="#A18167"
                     app:hintTextColor="#A18167"
                     app:floatingLabelTextColor="#A18167"
-                    app:boxBackgroundColor="#FFFFFF"
                     app:startIconDrawable="@drawable/location"
                     app:startIconTint="#A18167">
 
