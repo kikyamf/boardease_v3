@@ -269,10 +269,12 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutPaymentMethods != null) {
                 layoutPaymentMethods.setOnClickListener(v -> {
                     try {
-                        Toast.makeText(getContext(), "Payment Methods - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Navigate to payment methods
+                        // Navigate to PaymentMethodsActivity
+                        Intent intent = new Intent(getActivity(), PaymentMethodsActivity.class);
+                        startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening payment methods", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

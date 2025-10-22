@@ -59,6 +59,9 @@
             android:name=".ForgotPasswordActivity"
             android:exported="false" />
         <activity
+            android:name=".PaymentMethodsActivity"
+            android:exported="false" />
+        <activity
             android:name=".GcashInfoActivity"
             android:exported="false" />
     </application>
