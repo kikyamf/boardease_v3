@@ -647,24 +647,30 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
     
+    public void onPrivacyHeaderClick(View view) {
+        Log.d("BoarderAccountSettings", "onPrivacyHeaderClick called from layout!"); // Debug log
+        Toast.makeText(getContext(), "Privacy header clicked via layout!", Toast.LENGTH_SHORT).show();
+        togglePasswordSection();
+    }
+    
     private void togglePasswordSection() {
         try {
-            System.out.println("togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
+            Log.d("BoarderAccountSettings", "togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
             if (isPasswordSectionExpanded) {
                 // Collapse the section
                 llPasswordFields.setVisibility(View.GONE);
                 ivExpandCollapse.setRotation(0f); // Point down
                 isPasswordSectionExpanded = false;
-                System.out.println("Section collapsed"); // Debug log
+                Log.d("BoarderAccountSettings", "Section collapsed"); // Debug log
             } else {
                 // Expand the section
                 llPasswordFields.setVisibility(View.VISIBLE);
                 ivExpandCollapse.setRotation(180f); // Point up
                 isPasswordSectionExpanded = true;
-                System.out.println("Section expanded"); // Debug log
+                Log.d("BoarderAccountSettings", "Section expanded"); // Debug log
             }
         } catch (Exception e) {
-            System.out.println("Error in togglePasswordSection: " + e.getMessage()); // Debug log
+            Log.d("BoarderAccountSettings", "Error in togglePasswordSection: " + e.getMessage()); // Debug log
             e.printStackTrace();
         }
     }
