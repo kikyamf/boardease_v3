@@ -138,11 +138,11 @@ public class BoarderAccountSettingsFragment extends Fragment {
             ivToggleCurrentPassword = view.findViewById(R.id.ivToggleCurrentPassword);
             ivToggleNewPassword = view.findViewById(R.id.ivToggleNewPassword);
             ivToggleConfirmPassword = view.findViewById(R.id.ivToggleConfirmPassword);
-            
-            // Collapsible Privacy Section
-            llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
-            llPasswordFields = view.findViewById(R.id.llPasswordFields);
-            ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
+//
+//            // Collapsible Privacy Section
+//            llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
+//            llPasswordFields = view.findViewById(R.id.llPasswordFields);
+//            ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
             
             Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
             Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null)); // Debug log
