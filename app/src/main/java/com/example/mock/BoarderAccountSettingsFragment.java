@@ -106,6 +106,9 @@ public class BoarderAccountSettingsFragment extends Fragment {
         initializeSharedPreferences();
         setupClickListeners();
         loadUserData();
+        
+        // Set up privacy header click listener directly here
+        setupPrivacyHeaderClick();
     }
 
     private void initializeViews(View view) {
@@ -647,20 +650,36 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
     
-    public void onPrivacyHeaderClick(View view) {
+    private void setupPrivacyHeaderClick() {
         try {
-            Log.d("BoarderAccountSettings", "onPrivacyHeaderClick called from layout!"); // Debug log
-            Toast.makeText(getContext(), "Privacy header clicked via layout!", Toast.LENGTH_SHORT).show();
-            
-            // Check if views are initialized
-            if (llPasswordFields == null || ivExpandCollapse == null) {
-                Log.d("BoarderAccountSettings", "Views not initialized yet");
-                return;
+            Log.d("BoarderAccountSettings", "setupPrivacyHeaderClick called");
+            if (llPrivacyHeader != null) {
+                llPrivacyHeader.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        try {
+                            Log.d("BoarderAccountSettings", "Privacy header clicked!");
+                            Toast.makeText(getContext(), "Privacy header clicked!", Toast.LENGTH_SHORT).show();
+                            
+                            // Check if views are initialized
+                            if (llPasswordFields == null || ivExpandCollapse == null) {
+                                Log.d("BoarderAccountSettings", "Views not initialized yet");
+                                return;
+                            }
+                            
+                            togglePasswordSection();
+                        } catch (Exception e) {
+                            Log.d("BoarderAccountSettings", "Error in privacy header click: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                Log.d("BoarderAccountSettings", "Privacy header click listener set successfully");
+            } else {
+                Log.d("BoarderAccountSettings", "llPrivacyHeader is null in setupPrivacyHeaderClick");
             }
-            
-            togglePasswordSection();
         } catch (Exception e) {
-            Log.d("BoarderAccountSettings", "Error in onPrivacyHeaderClick: " + e.getMessage());
+            Log.d("BoarderAccountSettings", "Error in setupPrivacyHeaderClick: " + e.getMessage());
             e.printStackTrace();
         }
     }
