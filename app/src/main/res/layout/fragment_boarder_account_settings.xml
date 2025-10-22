@@ -312,7 +312,7 @@
                         android:id="@+id/ivExpandCollapse"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:src="@drawable/ic_expand_more"
+                        android:src="@drawable/ic_arrow_down"
                         android:contentDescription="Expand/Collapse"
                         android:tint="#666666" />
                 </LinearLayout>
