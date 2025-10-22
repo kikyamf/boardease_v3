@@ -271,23 +271,60 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Header Section (Always Visible) -->
+                <LinearLayout
+                    android:id="@+id/llPrivacyHeader"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Privacy &amp; Security"
-                    android:textSize="18sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:textColor="#000000"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="8dp"
+                    android:layout_margin="-8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Privacy &amp; Security"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/poppins_semibold"
+                            android:textColor="#000000"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Change Password"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins_medium"
+                            android:textColor="#333333" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/ivExpandCollapse"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_expand_more"
+                        android:contentDescription="Expand/Collapse"
+                        android:tint="#666666" />
+                </LinearLayout>
+
+                <!-- Password Fields Section (Collapsible) -->
+                <LinearLayout
+                    android:id="@+id/llPasswordFields"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Change Password"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/poppins_medium"
-                    android:textColor="#333333"
-                    android:layout_marginBottom="10dp" />
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="12dp">
 
                 <!-- Current Password Field -->
                 <LinearLayout
@@ -412,19 +449,20 @@
 
                 </LinearLayout>
 
-                <!-- Password fields -->
+                    <!-- Password fields -->
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnUpdatePassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Update Password"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    android:fontFamily="@font/poppins_medium"
-                    android:backgroundTint="#A18167"
-                    app:cornerRadius="10dp"
-                    android:paddingVertical="12dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUpdatePassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Update Password"
+                        android:textSize="16sp"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="#A18167"
+                        app:cornerRadius="10dp"
+                        android:paddingVertical="12dp" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
