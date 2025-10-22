@@ -109,6 +109,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void initializeViews(View view) {
         try {
+            System.out.println("initializeViews called"); // Debug log
             // Header views
             btnBack = view.findViewById(R.id.btnBack);
             progressBar = view.findViewById(R.id.progressBar);
@@ -138,6 +139,10 @@ public class BoarderAccountSettingsFragment extends Fragment {
             llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
             llPasswordFields = view.findViewById(R.id.llPasswordFields);
             ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
+            
+            System.out.println("llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
+            System.out.println("llPasswordFields found: " + (llPasswordFields != null)); // Debug log
+            System.out.println("ivExpandCollapse found: " + (ivExpandCollapse != null)); // Debug log
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -155,6 +160,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void setupClickListeners() {
         try {
+            System.out.println("setupClickListeners called"); // Debug log
             // Back button
             if (btnBack != null) {
                 btnBack.setOnClickListener(v -> {
@@ -172,11 +178,16 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (llPrivacyHeader != null) {
                 llPrivacyHeader.setOnClickListener(v -> {
                     try {
+                        System.out.println("Privacy header clicked!"); // Debug log
+                        Toast.makeText(getContext(), "Privacy section clicked!", Toast.LENGTH_SHORT).show();
                         togglePasswordSection();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
+                System.out.println("Privacy header click listener set"); // Debug log
+            } else {
+                System.out.println("llPrivacyHeader is null!"); // Debug log
             }
 
             // Birthdate picker
@@ -637,18 +648,22 @@ public class BoarderAccountSettingsFragment extends Fragment {
     
     private void togglePasswordSection() {
         try {
+            System.out.println("togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
             if (isPasswordSectionExpanded) {
                 // Collapse the section
                 llPasswordFields.setVisibility(View.GONE);
                 ivExpandCollapse.setRotation(0f); // Point down
                 isPasswordSectionExpanded = false;
+                System.out.println("Section collapsed"); // Debug log
             } else {
                 // Expand the section
                 llPasswordFields.setVisibility(View.VISIBLE);
                 ivExpandCollapse.setRotation(180f); // Point up
                 isPasswordSectionExpanded = true;
+                System.out.println("Section expanded"); // Debug log
             }
         } catch (Exception e) {
+            System.out.println("Error in togglePasswordSection: " + e.getMessage()); // Debug log
             e.printStackTrace();
         }
     }
