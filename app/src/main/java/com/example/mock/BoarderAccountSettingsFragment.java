@@ -648,14 +648,37 @@ public class BoarderAccountSettingsFragment extends Fragment {
     }
     
     public void onPrivacyHeaderClick(View view) {
-        Log.d("BoarderAccountSettings", "onPrivacyHeaderClick called from layout!"); // Debug log
-        Toast.makeText(getContext(), "Privacy header clicked via layout!", Toast.LENGTH_SHORT).show();
-        togglePasswordSection();
+        try {
+            Log.d("BoarderAccountSettings", "onPrivacyHeaderClick called from layout!"); // Debug log
+            Toast.makeText(getContext(), "Privacy header clicked via layout!", Toast.LENGTH_SHORT).show();
+            
+            // Check if views are initialized
+            if (llPasswordFields == null || ivExpandCollapse == null) {
+                Log.d("BoarderAccountSettings", "Views not initialized yet");
+                return;
+            }
+            
+            togglePasswordSection();
+        } catch (Exception e) {
+            Log.d("BoarderAccountSettings", "Error in onPrivacyHeaderClick: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     private void togglePasswordSection() {
         try {
             Log.d("BoarderAccountSettings", "togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
+            
+            // Double check views are not null
+            if (llPasswordFields == null) {
+                Log.d("BoarderAccountSettings", "llPasswordFields is null");
+                return;
+            }
+            if (ivExpandCollapse == null) {
+                Log.d("BoarderAccountSettings", "ivExpandCollapse is null");
+                return;
+            }
+            
             if (isPasswordSectionExpanded) {
                 // Collapse the section
                 llPasswordFields.setVisibility(View.GONE);
