@@ -33,9 +33,9 @@ import java.util.Map;
 public class BedSpacersFragment extends Fragment {
 
     private static final String ARG_BH_ID = "bh_id";
-    private static final String GET_ROOMS_URL = "http://192.168.101.6/BoardEase2/get_rooms.php";
-    private static final String DELETE_ROOM_URL = "http://192.168.101.6/BoardEase2/delete_room.php";
-    private static final String GET_ROOM_UNITS_URL = "http://192.168.101.6/BoardEase2/get_room_units.php";
+    private static final String GET_ROOMS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_rooms.php";
+    private static final String DELETE_ROOM_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/delete_room.php";
+    private static final String GET_ROOM_UNITS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_room_units.php";
 
     private int bhId;
     private RecyclerView recyclerView;
@@ -360,6 +360,7 @@ public class BedSpacersFragment extends Fragment {
         queue.add(request);
     }
 }
+
 
 
 

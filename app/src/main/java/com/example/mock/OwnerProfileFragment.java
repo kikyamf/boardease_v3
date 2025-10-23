@@ -35,7 +35,7 @@ import java.util.Map;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
+    private static final String GET_OWNER_PROFILE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_owner_profile.php";
     private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
@@ -179,7 +179,7 @@ public class OwnerProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)

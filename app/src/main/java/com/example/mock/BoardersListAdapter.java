@@ -59,7 +59,7 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
 
         // Set profile picture
         if (boarder.getProfilePicture() != null && !boarder.getProfilePicture().isEmpty()) {
-            String fullImageUrl = "http://192.168.101.6/BoardEase2/" + boarder.getProfilePicture();
+            String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + boarder.getProfilePicture();
             Glide.with(holder.itemView.getContext())
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -91,6 +91,7 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
         }
     }
 }
+
 
 
 

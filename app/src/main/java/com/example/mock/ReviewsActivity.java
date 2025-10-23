@@ -31,7 +31,7 @@ import java.util.Map;
 public class ReviewsActivity extends AppCompatActivity {
 
     private static final String TAG = "ReviewsActivity";
-    private static final String GET_REVIEWS_URL = "http://192.168.101.6/BoardEase2/get_reviews.php";
+    private static final String GET_REVIEWS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_reviews.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyLayout;

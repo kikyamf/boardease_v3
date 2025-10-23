@@ -109,3 +109,5 @@ public class RentalsAdapter extends RecyclerView.Adapter<RentalsAdapter.ViewHold
 
 
 
+
+

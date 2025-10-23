@@ -31,8 +31,8 @@ import java.util.Map;
 public class EditRoomActivity extends AppCompatActivity {
 
     private static final int IMAGE_PICK_CODE = 1001;
-    private static final String UPDATE_ROOM_URL = "http://192.168.101.6/BoardEase2/update_room.php";
-    private static final String UPLOAD_ROOM_IMAGE_URL = "http://192.168.101.6/BoardEase2/upload_room_image.php";
+    private static final String UPDATE_ROOM_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/update_room.php";
+    private static final String UPLOAD_ROOM_IMAGE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/upload_room_image.php";
 
     // Room data
     private int roomId;
@@ -156,7 +156,7 @@ public class EditRoomActivity extends AppCompatActivity {
 
         // Fetch room images from server
         RequestQueue queue = Volley.newRequestQueue(this);
-        StringRequest request = new StringRequest(Request.Method.POST, "http://192.168.101.6/BoardEase2/get_rooms.php",
+        StringRequest request = new StringRequest(Request.Method.POST, "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_rooms.php",
                 response -> {
                     try {
                         System.out.println("DEBUG: Room images response: " + response);
@@ -172,7 +172,7 @@ public class EditRoomActivity extends AppCompatActivity {
                                     for (int j = 0; j < images.length(); j++) {
                                         String imagePath = images.getString(j);
                                         // Convert relative path to full URL
-                                        String fullImageUrl = "http://192.168.101.6/BoardEase2/" + imagePath;
+                                        String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + imagePath;
                                         Uri imageUri = Uri.parse(fullImageUrl);
                                         
                                         imageUris.add(imageUri);
@@ -482,6 +482,7 @@ public class EditRoomActivity extends AppCompatActivity {
         finish();
     }
 }
+
 
 
 

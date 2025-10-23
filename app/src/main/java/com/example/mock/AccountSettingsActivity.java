@@ -38,8 +38,8 @@ import java.util.Map;
 public class AccountSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = "AccountSettings";
-    private static final String GET_ACCOUNT_INFO_URL = "http://192.168.101.6/BoardEase2/get_account_info.php";
-    private static final String UPDATE_ACCOUNT_INFO_URL = "http://192.168.101.6/BoardEase2/update_account_info.php";
+    private static final String GET_ACCOUNT_INFO_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_account_info.php";
+    private static final String UPDATE_ACCOUNT_INFO_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/update_account_info.php";
 
     private int userId;
     private ProgressDialog progressDialog;
@@ -233,6 +233,7 @@ public class AccountSettingsActivity extends AppCompatActivity {
         }
     }
 }
+
 
 
 

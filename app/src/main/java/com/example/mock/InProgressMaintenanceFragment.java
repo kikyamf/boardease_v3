@@ -33,7 +33,7 @@ import java.util.Map;
 public class InProgressMaintenanceFragment extends Fragment {
 
     private static final String TAG = "InProgressMaintenance";
-    private static final String GET_MAINTENANCE_REQUESTS_URL = "http://192.168.101.6/BoardEase2/get_maintenance_requests.php";
+    private static final String GET_MAINTENANCE_REQUESTS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_maintenance_requests.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyLayout;
@@ -178,6 +178,7 @@ public class InProgressMaintenanceFragment extends Fragment {
         }
     }
 }
+
 
 
 

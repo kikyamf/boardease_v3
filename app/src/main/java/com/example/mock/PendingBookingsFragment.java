@@ -70,7 +70,7 @@ public class PendingBookingsFragment extends Fragment {
     private void loadPendingBookings() {
         showProgressDialog("Loading pending bookings...");
         
-        String url = "http://192.168.101.6/BoardEase2/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -153,7 +153,7 @@ public class PendingBookingsFragment extends Fragment {
     private void approveBooking(BookingData booking) {
         showProgressDialog("Approving booking...");
         
-        String url = "http://192.168.101.6/BoardEase2/approve_booking.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/approve_booking.php";
         
         JSONObject requestBody = new JSONObject();
         try {
@@ -192,7 +192,7 @@ public class PendingBookingsFragment extends Fragment {
     private void declineBooking(BookingData booking) {
         showProgressDialog("Declining booking...");
         
-        String url = "http://192.168.101.6/BoardEase2/decline_booking.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/decline_booking.php";
         
         JSONObject requestBody = new JSONObject();
         try {
@@ -261,6 +261,7 @@ public class PendingBookingsFragment extends Fragment {
         hideProgressDialog();
     }
 }
+
 
 
 

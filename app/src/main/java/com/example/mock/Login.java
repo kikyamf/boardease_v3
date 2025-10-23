@@ -54,7 +54,8 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_EMAIL = "user_email";
     
     // Server URL - Update this path if login.php is in a different location
-    private static final String LOGIN_URL = "http://192.168.101.6/BoardEase2/login.php";
+    private static final String LOGIN_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/login.php";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

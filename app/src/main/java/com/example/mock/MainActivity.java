@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void sendTokenToServer(String token) {
         // Server URL - update this to match your server path
-        String url = "http://192.168.101.6/BoardEase2/register_device_token.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/register_device_token.php";
         
         // Create request using Volley
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,

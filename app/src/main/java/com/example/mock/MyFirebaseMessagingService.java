@@ -235,7 +235,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String userId = prefs.getString("user_id", "1"); // Use actual user ID, fallback to 1 if not found
         
         // Server URL - update this to match your server path
-        String url = "http://192.168.101.6/BoardEase2/register_device_token.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/register_device_token.php";
         
         // Create request using Volley
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
@@ -270,6 +270,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         Volley.newRequestQueue(this).add(stringRequest);
     }
 }
+
+
+
+
 
 
 

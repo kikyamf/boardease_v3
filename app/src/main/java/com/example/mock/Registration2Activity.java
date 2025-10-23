@@ -231,7 +231,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("Registration2", "Front: " + idFrontPath + ", Back: " + idBackPath);
             Log.d("Registration2", "BirthDate being sent: '" + birthDate + "'");
 
-            String UPLOAD_URL = "http://192.168.101.6/BoardEase2/insert_registration.php";
+            String UPLOAD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/insert_registration.php";
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,

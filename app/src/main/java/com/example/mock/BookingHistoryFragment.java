@@ -70,7 +70,7 @@ public class BookingHistoryFragment extends Fragment {
     private void loadBookingHistory() {
         showProgressDialog("Loading booking history...");
         
-        String url = "http://192.168.101.6/BoardEase2/get_booking_history.php?user_id=" + userId + "&user_type=owner";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_booking_history.php?user_id=" + userId + "&user_type=owner";
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -170,6 +170,7 @@ public class BookingHistoryFragment extends Fragment {
         hideProgressDialog();
     }
 }
+
 
 
 

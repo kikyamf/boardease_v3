@@ -458,7 +458,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 return;
             }
             
-            String url = "http://192.168.101.6/BoardEase2/get_unread_count.php?user_id=" + currentUserId;
+            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + currentUserId;
             android.util.Log.d("BoarderHomeFragment", "API URL: " + url);
             android.util.Log.d("BoarderHomeFragment", "=== Making API request ===");
             
@@ -522,7 +522,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 return;
             }
             
-            String url = "http://192.168.101.6/BoardEase2/get_notifications.php?user_id=" + currentUserId;
+            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + currentUserId;
             android.util.Log.d("BoarderHomeFragment", "Notification API URL: " + url);
             android.util.Log.d("BoarderHomeFragment", "=== Making notification API request ===");
             

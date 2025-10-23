@@ -42,9 +42,9 @@ import java.util.Map;
 public class EditOwnerProfileActivity extends AppCompatActivity {
 
     private static final String TAG = "EditOwnerProfile";
-    private static final String GET_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/get_owner_profile.php";
-    private static final String UPDATE_OWNER_PROFILE_URL = "http://192.168.101.6/BoardEase2/update_owner_profile.php";
-    private static final String UPLOAD_PROFILE_PIC_URL = "http://192.168.101.6/BoardEase2/upload_profile_picture.php";
+    private static final String GET_OWNER_PROFILE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_owner_profile.php";
+    private static final String UPDATE_OWNER_PROFILE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/update_owner_profile.php";
+    private static final String UPLOAD_PROFILE_PIC_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/upload_profile_picture.php";
     
     private static final int PICK_IMAGE_REQUEST = 1;
     
@@ -214,7 +214,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
                 currentProfilePicPath = profilePicPath;
-                String fullImageUrl = "http://192.168.101.6/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -447,6 +447,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         }
     }
 }
+
 
 
 

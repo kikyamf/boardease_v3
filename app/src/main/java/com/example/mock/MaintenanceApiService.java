@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class MaintenanceApiService {
     private static final String TAG = "MaintenanceApiService";
-    private static final String BASE_URL = "http://192.168.101.6/BoardEase2/";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
     
     private Context context;
     private RequestQueue requestQueue;
@@ -427,6 +427,8 @@ public class MaintenanceApiService {
         requestQueue.add(request);
     }
 }
+
+
 
 
 

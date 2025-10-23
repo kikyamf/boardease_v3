@@ -165,7 +165,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void updateBoardingHouseOnServer() {
-        String url = "http://192.168.101.6/BoardEase2/update_boarding_houses.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/update_boarding_houses.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -256,7 +256,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void fetchBoardingHouseDetails() {
-        String url = "http://192.168.101.6/BoardEase2/get_boarding_houses.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
         
         // Clear existing images to avoid duplication
         imageUris.clear();

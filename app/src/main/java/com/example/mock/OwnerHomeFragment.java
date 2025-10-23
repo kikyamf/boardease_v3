@@ -257,7 +257,7 @@ public class OwnerHomeFragment extends Fragment {
     }
 
     private void fetchOwnerDashboardData() {
-        String url = "http://192.168.101.6/BoardEase2/get_owner_dashboard.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_owner_dashboard.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -340,7 +340,7 @@ public class OwnerHomeFragment extends Fragment {
     private void checkUnreadMessages() {
         android.util.Log.d("MessageBadge", "Checking unread messages for user: " + userId);
         
-        String url = "http://192.168.101.6/BoardEase2/get_unread_count.php?user_id=" + userId;
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + userId;
         
         JsonObjectRequest request = new JsonObjectRequest(
             Request.Method.GET, url, null,
@@ -469,7 +469,7 @@ public class OwnerHomeFragment extends Fragment {
         }
         
         android.util.Log.d("NotificationBadge", "Checking unread notifications for user: " + userId);
-        String url = "http://192.168.101.6/BoardEase2/get_unread_notif_count.php?user_id=" + userId;
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_notif_count.php?user_id=" + userId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
             response -> {

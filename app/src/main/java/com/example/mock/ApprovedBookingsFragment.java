@@ -70,7 +70,7 @@ public class ApprovedBookingsFragment extends Fragment {
     private void loadApprovedBookings() {
         showProgressDialog("Loading approved bookings...");
         
-        String url = "http://192.168.101.6/BoardEase2/get_approved_bookings.php?user_id=" + userId + "&user_type=owner";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_approved_bookings.php?user_id=" + userId + "&user_type=owner";
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -170,6 +170,7 @@ public class ApprovedBookingsFragment extends Fragment {
         hideProgressDialog();
     }
 }
+
 
 
 
