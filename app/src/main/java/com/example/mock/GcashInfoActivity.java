@@ -49,8 +49,8 @@ public class GcashInfoActivity extends AppCompatActivity {
     // Views
     private EditText etGcashNumber;
     private ImageView ivGcashQr;
-    private Button btnSaveChanges, btnUpdateGcashQr;
-    private ImageView btnBack;
+    private Button btnSaveChanges;
+    private ImageView btnBack, btnUpdateGcashQr;
 
     // Data
     private String currentGcashNumber, currentGcashQr;

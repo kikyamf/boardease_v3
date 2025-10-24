@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -48,9 +50,15 @@ public class AccountSettingsActivity extends AppCompatActivity {
     private EditText etEmail, etCurrentPassword, etNewPassword, etConfirmPassword;
     private Button btnSaveChanges;
     private ImageView btnBack;
+    private ImageView ivToggleCurrentPassword, ivToggleNewPassword, ivToggleConfirmPassword;
 
     // Data
     private String currentEmail;
+    
+    // Password visibility states
+    private boolean isCurrentPasswordVisible = false;
+    private boolean isNewPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +83,11 @@ public class AccountSettingsActivity extends AppCompatActivity {
         etNewPassword = findViewById(R.id.etNewPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
 
+        // Password toggle icons
+        ivToggleCurrentPassword = findViewById(R.id.ivToggleCurrentPassword);
+        ivToggleNewPassword = findViewById(R.id.ivToggleNewPassword);
+        ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
+
         // Save button
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
     }
@@ -83,6 +96,11 @@ public class AccountSettingsActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         btnSaveChanges.setOnClickListener(v -> saveAccountChanges());
+        
+        // Password toggle listeners
+        ivToggleCurrentPassword.setOnClickListener(v -> toggleCurrentPasswordVisibility());
+        ivToggleNewPassword.setOnClickListener(v -> toggleNewPasswordVisibility());
+        ivToggleConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
     }
 
     private void loadAccountInfo() {
@@ -230,6 +248,64 @@ public class AccountSettingsActivity extends AppCompatActivity {
     private void hideProgressDialog() {
         if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
+        }
+    }
+    
+    // Password visibility toggle methods
+    private void toggleCurrentPasswordVisibility() {
+        try {
+            if (isCurrentPasswordVisible) {
+                // Hide password - show dots
+                etCurrentPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_hidden);
+                isCurrentPasswordVisible = false;
+            } else {
+                // Show password - show text
+                etCurrentPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_visible);
+                isCurrentPasswordVisible = true;
+            }
+            etCurrentPassword.setSelection(etCurrentPassword.getText().length());
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling current password visibility", e);
+        }
+    }
+    
+    private void toggleNewPasswordVisibility() {
+        try {
+            if (isNewPasswordVisible) {
+                // Hide password - show dots
+                etNewPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_hidden);
+                isNewPasswordVisible = false;
+            } else {
+                // Show password - show text
+                etNewPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_visible);
+                isNewPasswordVisible = true;
+            }
+            etNewPassword.setSelection(etNewPassword.getText().length());
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling new password visibility", e);
+        }
+    }
+    
+    private void toggleConfirmPasswordVisibility() {
+        try {
+            if (isConfirmPasswordVisible) {
+                // Hide password - show dots
+                etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_hidden);
+                isConfirmPasswordVisible = false;
+            } else {
+                // Show password - show text
+                etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_visible);
+                isConfirmPasswordVisible = true;
+            }
+            etConfirmPassword.setSelection(etConfirmPassword.getText().length());
+        } catch (Exception e) {
+            Log.e(TAG, "Error toggling confirm password visibility", e);
         }
     }
 }

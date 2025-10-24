@@ -1,58 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/light_gray">
+    android:orientation="vertical"
+    android:background="#F8F9FA">
 
+    <!-- Status Bar -->
+
+    <!-- Fixed Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="@android:color/white"
+        android:elevation="2dp">
 
-        <!-- Status Bar -->
+        <ImageButton
+            android:id="@+id/ivBack"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Back"
+            android:src="@drawable/arrowleft" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Edit Room"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:textColor="#000000" />
+
         <View
-            android:layout_width="match_parent"
-            android:layout_height="24dp"
-            android:background="@color/white" />
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
 
-        <!-- Navigation Bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:background="@color/white"
-            android:elevation="2dp">
+    </LinearLayout>
 
-            <ImageView
-                android:id="@+id/ivBack"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:src="@drawable/ic_arrow_back"
-                android:tint="@color/black"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="4dp" />
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#F8F9FA">
 
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Edit Room"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:gravity="center" />
-
-            <View
-                android:layout_width="24dp"
-                android:layout_height="24dp" />
-
-        </LinearLayout>
-
-        <!-- Form Content -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -125,8 +121,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -138,109 +134,154 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Room Details"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginBottom="16dp" />
+                        android:textSize="18sp"
+                        android:textColor="#212529"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:layout_marginBottom="12dp" />
 
                     <!-- Title -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:hint="Room Title"
-                        app:boxStrokeColor="@color/brown"
-                        app:hintTextColor="@color/brown">
+                        android:text="Room Title *"
+                        android:textSize="14sp"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginBottom="8dp" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etTitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="#000000"
-                            android:inputType="textCapWords" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <EditText
+                        android:id="@+id/etTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter room title"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textCapWords"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="16dp" />
 
                     <!-- Description -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:hint="Description"
-                        app:boxStrokeColor="@color/brown"
-                        app:hintTextColor="@color/brown">
+                        android:text="Description *"
+                        android:textSize="14sp"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginBottom="8dp" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etDescription"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="#000000"
-                            android:inputType="textMultiLine"
-                            android:lines="3" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <EditText
+                        android:id="@+id/etDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="70dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter room description"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textMultiLine"
+                        android:gravity="top|start"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:maxLines="3"
+                        android:layout_marginBottom="16dp" />
 
                     <!-- Price and Capacity Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginBottom="16dp">
 
-                        <com.google.android.material.textfield.TextInputLayout
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginEnd="8dp"
-                            android:hint="Price (₱)"
-                            app:boxStrokeColor="@color/brown"
-                            app:hintTextColor="@color/brown">
+                            android:orientation="vertical">
 
-                            <com.google.android.material.textfield.TextInputEditText
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Price (₱) *"
+                                android:textSize="14sp"
+                                android:textColor="#495057"
+                                android:fontFamily="@font/poppins_medium"
+                                android:layout_marginBottom="8dp" />
+
+                            <EditText
                                 android:id="@+id/etPrice"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textColor="#000000"
-                                android:inputType="number" />
+                                android:layout_height="56dp"
+                                android:background="@drawable/modern_edittext_focused"
+                                android:padding="16dp"
+                                android:hint="Enter price"
+                                android:textColor="#212529"
+                                android:textColorHint="#6C757D"
+                                android:inputType="number"
+                                android:fontFamily="@font/poppins_regular"
+                                android:textSize="16sp" />
 
-                        </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
 
-                        <com.google.android.material.textfield.TextInputLayout
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="8dp"
-                            android:hint="Capacity"
-                            app:boxStrokeColor="@color/brown"
-                            app:hintTextColor="@color/brown">
+                            android:orientation="vertical">
 
-                            <com.google.android.material.textfield.TextInputEditText
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Capacity *"
+                                android:textSize="14sp"
+                                android:textColor="#495057"
+                                android:fontFamily="@font/poppins_medium"
+                                android:layout_marginBottom="8dp" />
+
+                            <EditText
                                 android:id="@+id/etCapacity"
                                 android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textColor="#000000"
-                                android:inputType="number" />
+                                android:layout_height="56dp"
+                                android:background="@drawable/modern_edittext_focused"
+                                android:padding="16dp"
+                                android:hint="Enter capacity"
+                                android:textColor="#212529"
+                                android:textColorHint="#6C757D"
+                                android:inputType="number"
+                                android:fontFamily="@font/poppins_regular"
+                                android:textSize="16sp" />
 
-                        </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
 
                     </LinearLayout>
 
                     <!-- Total Rooms -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="Total Units"
-                        app:boxStrokeColor="@color/brown"
-                        app:hintTextColor="@color/brown">
+                        android:text="Total Units *"
+                        android:textSize="14sp"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginBottom="8dp" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etTotalRooms"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="#000000"
-                            android:inputType="number" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
+                    <EditText
+                        android:id="@+id/etTotalRooms"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter total units"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="number"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp" />
 
                 </LinearLayout>
 
@@ -253,13 +294,15 @@
                 android:layout_height="56dp"
                 android:text="Save Changes"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                android:backgroundTint="#A97A50"
-                android:layout_marginTop="16dp" />
+                android:fontFamily="@font/poppins_semibold"
+                android:background="@drawable/modern_button_ripple"
+                android:textColor="#FFFFFF"
+                android:letterSpacing="0.5"
+                android:layout_marginTop="8dp"
+                android:stateListAnimator="@null" />
 
         </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
-</ScrollView>
+</LinearLayout>

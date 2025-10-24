@@ -1,317 +1,457 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:orientation="vertical"
+    android:background="#F8F9FA">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Fixed Header Section - Always at top -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintVertical_chainStyle="packed">
+        android:layout_margin="16dp"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="#FFFFFF">
 
-        <!-- Top labels -->
-        <TextView
-            android:id="@+id/tvAddNew"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add new"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp"/>
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <TextView
-            android:id="@+id/tvListing"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Listing"
-            android:textColor="#000000"
-            android:textSize="40sp"
-            android:textStyle="bold"
-            android:fontFamily="@font/poppins_semibold"
-            app:layout_constraintTop_toBottomOf="@id/tvAddNew"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="-10dp"
-            android:layout_marginStart="24dp" />
-
-        <!-- Symbol/Icon in upper-right -->
-        <ImageView
-            android:id="@+id/ivSymbol"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/boxadd"
-            android:contentDescription="Options"
-            android:scaleType="fitCenter"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="16dp" />
-
-        <!-- Placeholder + Swipable Image Preview -->
-
-
-        <FrameLayout
-            android:id="@+id/flImageContainer"
-            android:layout_width="0dp"
-            android:layout_height="220dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp"
-            app:layout_constraintTop_toBottomOf="@id/tvListing"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-            <!-- Placeholder Image (clickable, default visible) -->
-            <ImageView
-                android:id="@+id/ivPlaceholder"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/dashed_border"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_upload_cloud"
-                android:contentDescription="Click here to upload"
-                android:padding="40dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:tint="#888888"
-                android:visibility="visible" />
-
-            <!-- Overlayed Text -->
-            <TextView
-                android:id="@+id/tvUploadText"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Click here to upload"
-                android:textColor="#888888"
-                android:textSize="14sp"
-                android:layout_gravity="bottom|center_horizontal"
-                android:layout_marginBottom="12dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <!-- ViewPager for selected images (hidden by default) -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPagerImages"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAddNew"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add new"
+                        android:textSize="16sp"
+                        android:textColor="#6C757D"
+                        android:fontFamily="@font/poppins_medium"
+                        android:letterSpacing="0.5"/>
+
+                    <TextView
+                        android:id="@+id/tvListing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Listing"
+                        android:textColor="#212529"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:layout_marginTop="-4dp" />
+
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/ivSymbol"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/boxadd"
+                    android:contentDescription="Add listing"
+                    android:scaleType="fitCenter"
+                    android:alpha="0.8" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingTop="8dp">
+
+        <!-- Image Upload Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:padding="12dp"
-                android:visibility="gone" />
-        </FrameLayout>
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Property Photos"
+                    android:textSize="18sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="12dp" />
+
+                <FrameLayout
+                    android:id="@+id/flImageContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:background="@drawable/modern_dashed_border">
+
+                    <!-- Placeholder Image (clickable, default visible) -->
+                    <ImageView
+                        android:id="@+id/ivPlaceholder"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_upload_cloud"
+                        android:contentDescription="Click here to upload"
+                        android:padding="40dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:tint="#A97A50"
+                        android:visibility="visible" />
+
+                    <!-- Overlayed Text -->
+                    <TextView
+                        android:id="@+id/tvUploadText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap to add photos"
+                        android:textColor="#A97A50"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- ViewPager for selected images (hidden by default) -->
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/viewPagerImages"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:padding="12dp"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Basic Information Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Name"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toBottomOf="@id/flImageContainer"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-        <EditText
-            android:id="@+id/etTitle"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:hint="Enter name"
-            android:textColor="#000000"
-            android:padding="12dp"
-            android:background="@drawable/edittext_background"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <!-- DETAILS SECTION -->
-        <TextView
-            android:id="@+id/tvDetails"
-            android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Basic Information"
+                    android:textSize="18sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Property Name -->
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Property Name"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Enter property name"
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:padding="16dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Address -->
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Address"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Enter complete address"
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:padding="16dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Property Details Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="BH Details"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toBottomOf="@id/etTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-        <GridLayout
-            android:id="@+id/glDetails"
-            android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Property Details"
+                    android:textSize="18sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="16dp" />
+
+                <GridLayout
+                    android:id="@+id/glDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:rowCount="3">
+
+                    <!-- Bathrooms -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bathrooms"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="8dp"/>
+
+                    <EditText
+                        android:id="@+id/etBathrooms"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:hint="Number"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="number"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="12dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="16dp"
+                        android:layout_columnWeight="1"/>
+
+                    <!-- Area -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Area (sqm)"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="8dp"/>
+
+                    <EditText
+                        android:id="@+id/etArea"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:hint="Size"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="number"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="12dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="16dp"
+                        android:layout_columnWeight="1"/>
+
+                    <!-- Build Year -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Build Year"
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_columnWeight="1"
+                        android:layout_marginEnd="8dp"/>
+
+                    <EditText
+                        android:id="@+id/etBuildYear"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:hint="Year"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="number"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="12dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:layout_columnWeight="1"/>
+
+                </GridLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Description Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="2"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp"
-            app:layout_constraintTop_toBottomOf="@id/tvDetails"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-            <TextView
-                android:text="Bathrooms:"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"
-                android:layout_columnWeight="1"/>
-            <EditText
-                android:id="@+id/etBathrooms"
-                android:hint="Enter no. of bathrooms"
-                android:textColor="#000000"
-                android:inputType="number"
-                android:background="@drawable/edittext_background"
-                android:padding="8dp"
-                android:layout_marginBottom="12dp"
-                android:layout_columnWeight="2"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-            <TextView
-                android:text="Area (sqft):"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"
-                android:layout_columnWeight="1"/>
-            <EditText
-                android:id="@+id/etArea"
-                android:hint="Enter area size"
-                android:textColor="#000000"
-                android:inputType="number"
-                android:background="@drawable/edittext_background"
-                android:padding="8dp"
-                android:layout_marginBottom="12dp"
-                android:layout_columnWeight="2"/>
+                <TextView
+                    android:id="@+id/tvDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Description"
+                    android:textSize="18sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="8dp" />
 
-            <TextView
-                android:text="Build Year:"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="4dp"
-                android:layout_columnWeight="1"/>
-            <EditText
-                android:id="@+id/etBuildYear"
-                android:hint="Enter year"
-                android:textColor="#000000"
-                android:inputType="number"
-                android:background="@drawable/edittext_background"
-                android:padding="8dp"
-                android:layout_marginBottom="12dp"
-                android:layout_columnWeight="2"/>
-        </GridLayout>
+                <EditText
+                    android:id="@+id/etDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:hint="Describe your property..."
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:gravity="top|start"
+                    android:padding="16dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:inputType="textMultiLine"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:maxLines="4" />
 
-        <!-- Address -->
-        <TextView
-            android:id="@+id/tvAddress"
-            android:layout_width="wrap_content"
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Rules Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Address"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toBottomOf="@id/glDetails"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp" />
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-        <EditText
-            android:id="@+id/etAddress"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:hint="Enter address"
-            android:textColor="#000000"
-            android:padding="12dp"
-            android:background="@drawable/edittext_background"
-            app:layout_constraintTop_toBottomOf="@id/tvAddress"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <!-- Description -->
-        <TextView
-            android:id="@+id/tvDescription"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toBottomOf="@id/etAddress"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp" />
+                <TextView
+                    android:id="@+id/tvRules"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="House Rules"
+                    android:textSize="18sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:layout_marginBottom="8dp" />
 
-        <EditText
-            android:id="@+id/etDescription"
-            android:layout_width="0dp"
-            android:layout_height="120dp"
-            android:hint="Enter description"
-            android:textColor="#000000"
-            android:gravity="top|start"
-            android:padding="12dp"
-            android:background="@drawable/edittext_background"
-            android:inputType="textMultiLine"
-            app:layout_constraintTop_toBottomOf="@id/tvDescription"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp" />
+                <EditText
+                    android:id="@+id/etRules"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:hint="List the house rules..."
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:gravity="top|start"
+                    android:padding="16dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:inputType="textMultiLine"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:maxLines="4" />
 
-        <!-- Rules -->
-        <TextView
-            android:id="@+id/tvRules"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rules"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintTop_toBottomOf="@id/etDescription"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="24dp" />
+            </LinearLayout>
 
-        <EditText
-            android:id="@+id/etRules"
-            android:layout_width="0dp"
-            android:layout_height="120dp"
-            android:hint="Enter rules"
-            android:textColor="#000000"
-            android:gravity="top|start"
-            android:padding="12dp"
-            android:background="@drawable/edittext_background"
-            android:inputType="textMultiLine"
-            app:layout_constraintTop_toBottomOf="@id/tvRules"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp" />
+        </androidx.cardview.widget.CardView>
 
-        <!-- Next Button -->
-        <Button
-            android:id="@+id/btnNext"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:text="Next"
-            android:textSize="20sp"
-            android:fontFamily="@font/poppins_regular"
-            android:backgroundTint="#A97A50"
-            android:textColor="#FFFFFF"
-            app:layout_constraintTop_toBottomOf="@id/etRules"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="80dp"
-            android:layout_marginEnd="80dp" />
+            <!-- Next Button -->
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Continue"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold"
+                android:background="@drawable/modern_button_ripple"
+                android:textColor="#FFFFFF"
+                android:letterSpacing="0.5"
+                android:layout_marginTop="8dp"
+                android:stateListAnimator="@null" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView>
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

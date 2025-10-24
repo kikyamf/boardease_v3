@@ -64,9 +64,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_notification1"
-                        android:background="@drawable/circle_border1"
+                        android:background="@drawable/icon_hover_effect"
                         android:padding="10dp"
-                        android:contentDescription="Notification" />
+                        android:contentDescription="Notification"
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <!-- Red Dot -->
                     <View
@@ -91,13 +93,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_message1"
-                        android:background="@drawable/circle_border1"
+                        android:background="@drawable/icon_hover_effect"
                         android:padding="10dp"
-
                         android:contentDescription="Message"
-
-
-                        />
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <View
                         android:id="@+id/badgeMsg"
@@ -121,7 +121,11 @@
             android:layout_marginTop="24dp"
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
 
             <LinearLayout
                 android:id="@+id/noofListings"
@@ -177,7 +181,11 @@
             android:layout_marginTop="16dp"
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
 
             <LinearLayout
                 android:id="@+id/layoutTotalBoarders"
@@ -240,7 +248,11 @@
             android:layout_marginTop="8dp"
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -285,7 +297,11 @@
             android:layout_marginTop="12dp"
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="6dp">
+            app:cardElevation="6dp"
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -342,7 +358,10 @@
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
-            android:foreground="?attr/selectableItemBackground">
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
 
             <LinearLayout
                 android:layout_width="match_parent"

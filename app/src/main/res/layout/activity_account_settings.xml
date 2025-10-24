@@ -1,131 +1,232 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:orientation="vertical"
+    android:background="#F8F9FA">
 
+    <!-- Status Bar -->
+
+    <!-- Fixed Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="@color/white"
+        android:elevation="2dp">
 
-        <!-- Header -->
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="@color/black"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Account Settings"
+            android:textSize="20sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:gravity="center"
+            android:textColor="#000000" />
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+    </LinearLayout>
+
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#F8F9FA">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingBottom="20dp">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <ImageView
-                android:id="@+id/btnBack"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:src="@drawable/ic_arrow_back"
-                android:tint="@color/black"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="4dp" />
-
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Account Settings"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:textColor="#000000" />
-
-            <View
-                android:layout_width="36dp"
-                android:layout_height="36dp" />
-        </LinearLayout>
-
-        <!-- Email Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Email &amp; Password"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="16dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
+        <!-- Email & Password Section -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Email Address"
-            app:boxStrokeColor="@color/brown"
-            app:hintTextColor="@color/brown">
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEmail"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#000000"
-                android:inputType="textEmailAddress" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilCurrentPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Current Password (required to change password)"
-            app:endIconMode="password_toggle"
-            app:endIconTint="#795548"
-            app:boxStrokeColor="@color/brown"
-            app:hintTextColor="@color/brown">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email &amp; Password"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="#212529"
+                    android:layout_marginBottom="12dp" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etCurrentPassword"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#000000"
-                android:inputType="textPassword" />
-        </com.google.android.material.textfield.TextInputLayout>
+                <!-- Email -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email Address *"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilNewPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="New Password (leave empty to keep current)"
-            app:endIconMode="password_toggle"
-            app:endIconTint="#795548"
-            app:boxStrokeColor="@color/brown"
-            app:hintTextColor="@color/brown">
+                <EditText
+                    android:id="@+id/etEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:hint="Enter email address"
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:inputType="textEmailAddress"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="16dp" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etNewPassword"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#000000"
-                android:inputType="textPassword" />
-        </com.google.android.material.textfield.TextInputLayout>
+                <!-- Current Password -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Current Password *"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilConfirmPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:hint="Confirm New Password"
-            app:endIconMode="password_toggle"
-            app:endIconTint="#795548"
-            app:boxStrokeColor="@color/brown"
-            app:hintTextColor="@color/brown">
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etConfirmPassword"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#000000"
-                android:inputType="textPassword" />
-        </com.google.android.material.textfield.TextInputLayout>
+                    <EditText
+                        android:id="@+id/etCurrentPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter current password"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textPassword"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp" />
+                    
+                    <ImageView
+                        android:id="@+id/ivToggleCurrentPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+                </FrameLayout>
+
+                <!-- New Password -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="New Password"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp">
+
+                    <EditText
+                        android:id="@+id/etNewPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter new password (optional)"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textPassword"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp" />
+                    
+                    <ImageView
+                        android:id="@+id/ivToggleNewPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+                </FrameLayout>
+
+                <!-- Confirm Password -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Confirm New Password"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/etConfirmPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Confirm new password"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textPassword"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp" />
+                    
+                    <ImageView
+                        android:id="@+id/ivToggleConfirmPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+                </FrameLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
 
         <!-- Save Button -->
@@ -135,18 +236,18 @@
             android:layout_height="56dp"
             android:text="Save Changes"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:backgroundTint="#A97A50"
-            android:layout_marginTop="16dp" />
+            android:fontFamily="@font/poppins_semibold"
+            android:background="@drawable/modern_button_ripple"
+            android:textColor="#FFFFFF"
+            android:letterSpacing="0.5"
+            android:layout_marginTop="8dp"
+            android:stateListAnimator="@null" />
 
-    </LinearLayout>
+        </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
 
-
-
-
+</LinearLayout>
 
 
 

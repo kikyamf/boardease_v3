@@ -112,6 +112,22 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
 
         // Save Changes button
         findViewById(R.id.btnSaveChanges).setOnClickListener(v -> saveChanges());
+        
+        // Back button
+        findViewById(R.id.btnBack).setOnClickListener(v -> {
+            // Check if there are unsaved changes
+            if (hasUnsavedChanges()) {
+                // Show confirmation dialog
+                new android.app.AlertDialog.Builder(this)
+                    .setTitle("Unsaved Changes")
+                    .setMessage("You have unsaved changes. Are you sure you want to go back?")
+                    .setPositiveButton("Discard", (dialog, which) -> finish())
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            } else {
+                finish();
+            }
+        });
     }
 
     private void pickImages() {
@@ -121,6 +137,41 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(intent, 2001);
+    }
+    
+    // Check if there are unsaved changes
+    private boolean hasUnsavedChanges() {
+        // Check if any text fields have been modified
+        String currentName = etBhName.getText().toString().trim();
+        String currentAddress = etBhAddress.getText().toString().trim();
+        String currentDescription = etBhDescription.getText().toString().trim();
+        String currentRules = etBhRules.getText().toString().trim();
+        String currentBathrooms = etBathrooms.getText().toString().trim();
+        String currentArea = etArea.getText().toString().trim();
+        String currentBuildYear = etBuildYear.getText().toString().trim();
+        
+        // Get original values from intent
+        String originalName = getIntent().getStringExtra("bh_name");
+        String originalAddress = getIntent().getStringExtra("bh_address");
+        String originalDescription = getIntent().getStringExtra("bh_description");
+        String originalRules = getIntent().getStringExtra("bh_rules");
+        String originalBathrooms = getIntent().getStringExtra("number_of_bathroom");
+        String originalArea = getIntent().getStringExtra("area");
+        String originalBuildYear = getIntent().getStringExtra("build_year");
+        
+        // Check if any field has changed
+        boolean textChanged = !currentName.equals(originalName != null ? originalName : "") ||
+                            !currentAddress.equals(originalAddress != null ? originalAddress : "") ||
+                            !currentDescription.equals(originalDescription != null ? originalDescription : "") ||
+                            !currentRules.equals(originalRules != null ? originalRules : "") ||
+                            !currentBathrooms.equals(originalBathrooms != null ? originalBathrooms : "") ||
+                            !currentArea.equals(originalArea != null ? originalArea : "") ||
+                            !currentBuildYear.equals(originalBuildYear != null ? originalBuildYear : "");
+        
+        // Check if images were modified
+        boolean imagesChanged = imagesWereModified();
+        
+        return textChanged || imagesChanged;
     }
 
     @Override
@@ -740,6 +791,22 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         
         // Update visibility
         updateImageViewsVisibility();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Check if there are unsaved changes
+        if (hasUnsavedChanges()) {
+            // Show confirmation dialog
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Unsaved Changes")
+                .setMessage("You have unsaved changes. Are you sure you want to go back?")
+                .setPositiveButton("Discard", (dialog, which) -> super.onBackPressed())
+                .setNegativeButton("Cancel", null)
+                .show();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
