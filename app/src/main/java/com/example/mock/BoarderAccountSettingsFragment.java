@@ -5,11 +5,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -31,6 +35,12 @@ public class BoarderAccountSettingsFragment extends Fragment {
     // Views
     private ImageButton btnBack;
     private ProgressBar progressBar;
+    
+    // Collapsible Privacy Section
+    private View llPrivacyHeader;
+    private View llPasswordFields;
+    private ImageView ivExpandCollapse;
+    private boolean isPasswordSectionExpanded = false;
 
     // Personal Information Fields
     private TextInputEditText etFirstName;
@@ -47,6 +57,16 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private TextInputEditText etNewPassword;
     private TextInputEditText etConfirmPassword;
     private MaterialButton btnUpdatePassword;
+    
+    // Password Toggle Icons
+    private ImageView ivToggleCurrentPassword;
+    private ImageView ivToggleNewPassword;
+    private ImageView ivToggleConfirmPassword;
+    
+    // Password visibility states
+    private boolean isCurrentPasswordVisible = false;
+    private boolean isNewPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     // SharedPreferences for storing user data
     private SharedPreferences userPrefs;
@@ -86,10 +106,14 @@ public class BoarderAccountSettingsFragment extends Fragment {
         initializeSharedPreferences();
         setupClickListeners();
         loadUserData();
+        
+        // Set up privacy header click listener directly here
+        setupPrivacyHeaderClick();
     }
 
     private void initializeViews(View view) {
         try {
+            Log.d("BoarderAccountSettings", "initializeViews called"); // Debug log
             // Header views
             btnBack = view.findViewById(R.id.btnBack);
             progressBar = view.findViewById(R.id.progressBar);
@@ -109,6 +133,20 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etNewPassword = view.findViewById(R.id.etNewPassword);
             etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
             btnUpdatePassword = view.findViewById(R.id.btnUpdatePassword);
+            
+            // Password toggle icons
+            ivToggleCurrentPassword = view.findViewById(R.id.ivToggleCurrentPassword);
+            ivToggleNewPassword = view.findViewById(R.id.ivToggleNewPassword);
+            ivToggleConfirmPassword = view.findViewById(R.id.ivToggleConfirmPassword);
+//
+//            // Collapsible Privacy Section
+//            llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
+//            llPasswordFields = view.findViewById(R.id.llPasswordFields);
+//            ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
+            
+            Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
+            Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null)); // Debug log
+            Log.d("BoarderAccountSettings", "ivExpandCollapse found: " + (ivExpandCollapse != null)); // Debug log
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -126,6 +164,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void setupClickListeners() {
         try {
+            Log.d("BoarderAccountSettings", "setupClickListeners called"); // Debug log
             // Back button
             if (btnBack != null) {
                 btnBack.setOnClickListener(v -> {
@@ -137,6 +176,22 @@ public class BoarderAccountSettingsFragment extends Fragment {
                         e.printStackTrace();
                     }
                 });
+            }
+            
+            // Privacy Section Collapsible
+            if (llPrivacyHeader != null) {
+                llPrivacyHeader.setOnClickListener(v -> {
+                    try {
+                        Log.d("BoarderAccountSettings", "Privacy header clicked!"); // Debug log
+                        Toast.makeText(getContext(), "Privacy section clicked!", Toast.LENGTH_SHORT).show();
+                        togglePasswordSection();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                Log.d("BoarderAccountSettings", "Privacy header click listener set"); // Debug log
+            } else {
+                Log.d("BoarderAccountSettings", "llPrivacyHeader is null!"); // Debug log
             }
 
             // Birthdate picker
@@ -171,6 +226,19 @@ public class BoarderAccountSettingsFragment extends Fragment {
                     }
                 });
             }
+
+            // Password toggle listeners
+            if (ivToggleCurrentPassword != null) {
+                ivToggleCurrentPassword.setOnClickListener(v -> toggleCurrentPasswordVisibility());
+            }
+            
+            if (ivToggleNewPassword != null) {
+                ivToggleNewPassword.setOnClickListener(v -> toggleNewPasswordVisibility());
+            }
+            
+            if (ivToggleConfirmPassword != null) {
+                ivToggleConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -178,26 +246,63 @@ public class BoarderAccountSettingsFragment extends Fragment {
 
     private void loadUserData() {
         try {
-            // Load user data from SharedPreferences
-            if (userPrefs != null) {
-                String firstName = userPrefs.getString(KEY_FIRST_NAME, "John");
-                String middleName = userPrefs.getString(KEY_MIDDLE_NAME, "Michael");
-                String lastName = userPrefs.getString(KEY_LAST_NAME, "Doe");
-                String email = userPrefs.getString(KEY_EMAIL, "john.doe@email.com");
-                String contact = userPrefs.getString(KEY_CONTACT, "09123456789");
-                String birthdate = userPrefs.getString(KEY_BIRTHDATE, "1995-01-01");
-                String address = userPrefs.getString(KEY_ADDRESS, "Tagbilaran City");
+            // Load user data from Login SharedPreferences
+            String fullName = Login.getCurrentUserName(getContext());
+            String middleName = Login.getCurrentUserMiddleName(getContext());
+            String email = Login.getCurrentUserEmail(getContext());
+            String contact = Login.getCurrentUserPhone(getContext());
+            String birthdate = Login.getCurrentUserBirthDate(getContext());
+            String address = Login.getCurrentUserAddress(getContext());
 
-                if (etFirstName != null) etFirstName.setText(firstName);
-                if (etMiddleName != null) etMiddleName.setText(middleName);
-                if (etLastName != null) etLastName.setText(lastName);
-                if (etEmail != null) etEmail.setText(email);
-                if (etContactNumber != null) etContactNumber.setText(contact);
-                if (etBirthdate != null) etBirthdate.setText(birthdate);
-                if (etAddress != null) etAddress.setText(address);
+            // Extract first and last name from the full name
+            String firstName = "";
+            String lastName = "";
+            
+            if (fullName != null && !fullName.isEmpty()) {
+                String[] nameParts = fullName.split(" ");
+                if (nameParts.length >= 2) {
+                    firstName = nameParts[0];
+                    lastName = nameParts[nameParts.length - 1];
+                    // If we have more than 2 parts, the middle name is everything in between
+                    if (nameParts.length > 2 && (middleName == null || middleName.isEmpty())) {
+                        StringBuilder middleNameBuilder = new StringBuilder();
+                        for (int i = 1; i < nameParts.length - 1; i++) {
+                            if (i > 1) middleNameBuilder.append(" ");
+                            middleNameBuilder.append(nameParts[i]);
+                        }
+                        middleName = middleNameBuilder.toString();
+                    }
+                } else if (nameParts.length == 1) {
+                    firstName = nameParts[0];
+                }
             }
+
+            // Set default values if data is null or empty
+            if (firstName == null || firstName.isEmpty()) firstName = "First Name";
+            if (middleName == null) middleName = "";
+            if (lastName == null || lastName.isEmpty()) lastName = "Last Name";
+            if (email == null || email.isEmpty()) email = "user@email.com";
+            if (contact == null) contact = "";
+            if (birthdate == null) birthdate = "";
+            if (address == null) address = "";
+
+            if (etFirstName != null) etFirstName.setText(firstName);
+            if (etMiddleName != null) etMiddleName.setText(middleName);
+            if (etLastName != null) etLastName.setText(lastName);
+            if (etEmail != null) etEmail.setText(email);
+            if (etContactNumber != null) etContactNumber.setText(contact);
+            if (etBirthdate != null) etBirthdate.setText(birthdate);
+            if (etAddress != null) etAddress.setText(address);
         } catch (Exception e) {
             e.printStackTrace();
+            // Set fallback values
+            if (etFirstName != null) etFirstName.setText("First Name");
+            if (etMiddleName != null) etMiddleName.setText("");
+            if (etLastName != null) etLastName.setText("Last Name");
+            if (etEmail != null) etEmail.setText("user@email.com");
+            if (etContactNumber != null) etContactNumber.setText("");
+            if (etBirthdate != null) etBirthdate.setText("");
+            if (etAddress != null) etAddress.setText("");
         }
     }
 
@@ -340,10 +445,54 @@ public class BoarderAccountSettingsFragment extends Fragment {
             String currentPassword = etCurrentPassword.getText().toString().trim();
             String newPassword = etNewPassword.getText().toString().trim();
 
+            // Simulate current password verification (in real app, verify with Firebase Auth)
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    // Simulate password verification
+                    if (verifyCurrentPassword(currentPassword)) {
+                        // Password is correct, proceed with update
+                        performPasswordUpdate(newPassword);
+                    } else {
+                        // Current password is incorrect
+                        setLoading(false);
+                        etCurrentPassword.setError("Current password is incorrect");
+                        etCurrentPassword.requestFocus();
+                        Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    setLoading(false);
+                    Toast.makeText(getContext(), "Error verifying password", Toast.LENGTH_SHORT).show();
+                }
+            }, 1500);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setLoading(false);
+            Toast.makeText(getContext(), "Error updating password", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean verifyCurrentPassword(String currentPassword) {
+        // In a real app, this would verify against Firebase Auth or your backend
+        // For demo purposes, we'll simulate with a stored password
+        String storedPassword = userPrefs.getString("stored_password", "Demo123");
+        return currentPassword.equals(storedPassword);
+    }
+
+    private void performPasswordUpdate(String newPassword) {
+        try {
             // Simulate password update (in real app, use Firebase Auth)
             new android.os.Handler().postDelayed(() -> {
                 try {
                     setLoading(false);
+                    
+                    // Store new password (in real app, update Firebase Auth)
+                    if (userPrefs != null) {
+                        SharedPreferences.Editor editor = userPrefs.edit();
+                        editor.putString("stored_password", newPassword);
+                        editor.apply();
+                    }
                     
                     // Clear password fields
                     if (etCurrentPassword != null) etCurrentPassword.setText("");
@@ -354,8 +503,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }, 2000);
-
+            }, 1000);
         } catch (Exception e) {
             e.printStackTrace();
             setLoading(false);
@@ -378,10 +526,27 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 return false;
             }
 
-            // Check password length
+            // Enhanced password validation
             String newPassword = etNewPassword.getText().toString().trim();
-            if (newPassword.length() < 6) {
-                etNewPassword.setError("Password must be at least 6 characters");
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            
+            // Check if new password is same as current password
+            if (newPassword.equals(currentPassword)) {
+                etNewPassword.setError("New password must be different from current password");
+                etNewPassword.requestFocus();
+                return false;
+            }
+
+            // Check password length
+            if (newPassword.length() < 8) {
+                etNewPassword.setError("Password must be at least 8 characters");
+                etNewPassword.requestFocus();
+                return false;
+            }
+
+            // Check for strong password requirements
+            if (!isStrongPassword(newPassword)) {
+                etNewPassword.setError("Password must contain at least one uppercase letter, one lowercase letter, and one number");
                 etNewPassword.requestFocus();
                 return false;
             }
@@ -407,6 +572,15 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
 
+    private boolean isStrongPassword(String password) {
+        // Check for at least one uppercase letter, one lowercase letter, and one number
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasLowercase = password.matches(".*[a-z].*");
+        boolean hasNumber = password.matches(".*[0-9].*");
+        
+        return hasUppercase && hasLowercase && hasNumber;
+    }
+
     private void setLoading(boolean isLoading) {
         try {
             if (progressBar != null) {
@@ -421,6 +595,124 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 btnUpdatePassword.setEnabled(!isLoading);
             }
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleCurrentPasswordVisibility() {
+        try {
+            if (isCurrentPasswordVisible) {
+                etCurrentPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_hidden);
+                isCurrentPasswordVisible = false;
+            } else {
+                etCurrentPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleCurrentPassword.setImageResource(R.drawable.ic_password_visible);
+                isCurrentPasswordVisible = true;
+            }
+            etCurrentPassword.setSelection(etCurrentPassword.getText().length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleNewPasswordVisibility() {
+        try {
+            if (isNewPasswordVisible) {
+                etNewPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_hidden);
+                isNewPasswordVisible = false;
+            } else {
+                etNewPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleNewPassword.setImageResource(R.drawable.ic_password_visible);
+                isNewPasswordVisible = true;
+            }
+            etNewPassword.setSelection(etNewPassword.getText().length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void toggleConfirmPasswordVisibility() {
+        try {
+            if (isConfirmPasswordVisible) {
+                etConfirmPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_hidden);
+                isConfirmPasswordVisible = false;
+            } else {
+                etConfirmPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                ivToggleConfirmPassword.setImageResource(R.drawable.ic_password_visible);
+                isConfirmPasswordVisible = true;
+            }
+            etConfirmPassword.setSelection(etConfirmPassword.getText().length());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void setupPrivacyHeaderClick() {
+        try {
+            Log.d("BoarderAccountSettings", "setupPrivacyHeaderClick called");
+            if (llPrivacyHeader != null) {
+                llPrivacyHeader.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        try {
+                            Log.d("BoarderAccountSettings", "Privacy header clicked!");
+                            Toast.makeText(getContext(), "Privacy header clicked!", Toast.LENGTH_SHORT).show();
+                            
+                            // Check if views are initialized
+                            if (llPasswordFields == null || ivExpandCollapse == null) {
+                                Log.d("BoarderAccountSettings", "Views not initialized yet");
+                                return;
+                            }
+                            
+                            togglePasswordSection();
+                        } catch (Exception e) {
+                            Log.d("BoarderAccountSettings", "Error in privacy header click: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                Log.d("BoarderAccountSettings", "Privacy header click listener set successfully");
+            } else {
+                Log.d("BoarderAccountSettings", "llPrivacyHeader is null in setupPrivacyHeaderClick");
+            }
+        } catch (Exception e) {
+            Log.d("BoarderAccountSettings", "Error in setupPrivacyHeaderClick: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void togglePasswordSection() {
+        try {
+            Log.d("BoarderAccountSettings", "togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
+            
+            // Double check views are not null
+            if (llPasswordFields == null) {
+                Log.d("BoarderAccountSettings", "llPasswordFields is null");
+                return;
+            }
+            if (ivExpandCollapse == null) {
+                Log.d("BoarderAccountSettings", "ivExpandCollapse is null");
+                return;
+            }
+            
+            if (isPasswordSectionExpanded) {
+                // Collapse the section
+                llPasswordFields.setVisibility(View.GONE);
+                ivExpandCollapse.setRotation(0f); // Point down
+                isPasswordSectionExpanded = false;
+                Log.d("BoarderAccountSettings", "Section collapsed"); // Debug log
+            } else {
+                // Expand the section
+                llPasswordFields.setVisibility(View.VISIBLE);
+                ivExpandCollapse.setRotation(180f); // Point up
+                isPasswordSectionExpanded = true;
+                Log.d("BoarderAccountSettings", "Section expanded"); // Debug log
+            }
+        } catch (Exception e) {
+            Log.d("BoarderAccountSettings", "Error in togglePasswordSection: " + e.getMessage()); // Debug log
             e.printStackTrace();
         }
     }
