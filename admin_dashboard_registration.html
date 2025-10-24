@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoardEase Admin Dashboard - Registration Approval</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8D6E63 0%, #A97A50 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            margin: 0 auto 1rem;
+        }
+
+        .stat-content h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .stat-content p {
+            color: #666;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .pending-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #8D6E63 0%, #A97A50 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .refresh-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+
+        .registrations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .registration-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .registration-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .registration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .registration-header h3 {
+            color: #8D6E63;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .registration-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .registration-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .documents-section {
+            margin-bottom: 1rem;
+        }
+
+        .documents-section h4 {
+            color: #8D6E63;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .image-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s ease;
+        }
+
+        .image-preview:hover {
+            border-color: #8D6E63;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .modal-header h2 {
+            color: #8D6E63;
+            font-size: 1.5rem;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .registrations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .registration-info {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> BoardEase Admin Dashboard</h1>
+            <p>Registration Approval System</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ffc107, #fd7e14);">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="pendingCount">0</h3>
+                    <p>Pending Approvals</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="approvedCount">0</h3>
+                    <p>Approved Today</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #dc3545, #e74c3c);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="rejectedCount">0</h3>
+                    <p>Rejected Today</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #8D6E63, #A97A50);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalCount">0</h3>
+                    <p>Total Registrations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alertContainer"></div>
+
+        <!-- Pending Registrations Section -->
+        <div class="pending-section">
+            <div class="section-header">
+                <h2><i class="fas fa-exclamation-circle"></i> Pending User Approvals</h2>
+                <button class="refresh-btn" onclick="loadRegistrations()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="section-content">
+                <div id="loading" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading registrations...
+                </div>
+                <div id="noData" class="no-data" style="display: none;">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No Pending Registrations</h3>
+                    <p>All registrations have been processed.</p>
+                </div>
+                <div id="registrationsList" class="registrations-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Document Preview</h2>
+                <span class="close" onclick="closeImageModal()">&times;</span>
+            </div>
+            <img id="modalImage" class="modal-image" src="" alt="Document Preview">
+        </div>
+    </div>
+
+    <script>
+        let registrations = [];
+
+        // Load registrations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRegistrations();
+        });
+
+        // Load pending registrations
+        async function loadRegistrations() {
+            const loading = document.getElementById('loading');
+            const noData = document.getElementById('noData');
+            const registrationsList = document.getElementById('registrationsList');
+
+            loading.style.display = 'block';
+            noData.style.display = 'none';
+            registrationsList.innerHTML = '';
+
+            try {
+                const response = await fetch('get_pending_registrations.php');
+                const data = await response.json();
+
+                if (data.success) {
+                    registrations = data.registrations;
+                    displayRegistrations();
+                    updateStats();
+                } else {
+                    showError('Failed to load registrations: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error loading registrations: ' + error.message);
+            }
+        }
+
+        // Display registrations
+        function displayRegistrations() {
+            const loading = document.getElementById('loading');
+            const noData = document.getElementById('noData');
+            const registrationsList = document.getElementById('registrationsList');
+            const pendingCount = document.getElementById('pendingCount');
+
+            loading.style.display = 'none';
+            pendingCount.textContent = registrations.length;
+
+            if (registrations.length === 0) {
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            registrationsList.innerHTML = '';
+
+            registrations.forEach(reg => {
+                const card = createRegistrationCard(reg);
+                registrationsList.appendChild(card);
+            });
+        }
+
+        // Create registration card
+        function createRegistrationCard(reg) {
+            const card = document.createElement('div');
+            card.className = 'registration-card';
+            card.id = `reg-${reg.reg_id}`;
+
+            const images = [];
+            if (reg.idFrontFile) images.push({src: reg.idFrontFile, label: 'Front ID'});
+            if (reg.idBackFile) images.push({src: reg.idBackFile, label: 'Back ID'});
+            if (reg.gcash_qr) images.push({src: reg.gcash_qr, label: 'GCash QR'});
+
+            card.innerHTML = `
+                <div class="registration-header">
+                    <h3>${reg.first_name} ${reg.middle_name ? reg.middle_name + ' ' : ''}${reg.last_name}</h3>
+                    <span class="registration-date">${new Date(reg.created_at).toLocaleString()}</span>
+                </div>
+                
+                <div class="registration-info">
+                    <div class="info-item">
+                        <div class="info-label">Role</div>
+                        <div class="info-value">${reg.role}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">${reg.email}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">${reg.phone || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Birth Date</div>
+                        <div class="info-value">${reg.birth_date || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">${reg.address || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ID Type</div>
+                        <div class="info-value">${reg.valid_id_type || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ID Number</div>
+                        <div class="info-value">${reg.id_number || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">GCash Number</div>
+                        <div class="info-value">${reg.gcash_num || 'N/A'}</div>
+                    </div>
+                </div>
+
+                ${images.length > 0 ? `
+                <div class="documents-section">
+                    <h4><i class="fas fa-images"></i> Documents</h4>
+                    ${images.map(img => `
+                        <img src="${img.src}" alt="${img.label}" class="image-preview" 
+                             onclick="showImageModal('${img.src}', '${img.label}')" title="${img.label}">
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                <div class="action-buttons">
+                    <button class="btn btn-approve" onclick="processRegistration(${reg.reg_id}, 'approve')">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button class="btn btn-reject" onclick="processRegistration(${reg.reg_id}, 'reject')">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Process registration (approve/reject)
+        async function processRegistration(regId, action) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            // Disable button and show loading
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('reg_id', regId);
+                formData.append('action', action);
+
+                const response = await fetch('approve_registration.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(`Registration ${action}d successfully!`);
+                    
+                    // Remove the card from the UI
+                    const card = document.getElementById(`reg-${regId}`);
+                    if (card) {
+                        card.style.opacity = '0.5';
+                        card.style.pointerEvents = 'none';
+                        setTimeout(() => {
+                            card.remove();
+                            loadRegistrations(); // Refresh the list
+                        }, 1000);
+                    }
+                } else {
+                    showError(`Failed to ${action} registration: ` + data.message);
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            } catch (error) {
+                showError(`Error processing registration: ` + error.message);
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        // Show image modal
+        function showImageModal(imageSrc, imageLabel) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = imageSrc;
+            modalImage.alt = imageLabel;
+            modal.style.display = 'block';
+        }
+
+        // Close image modal
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Update statistics
+        function updateStats() {
+            const pendingCount = document.getElementById('pendingCount');
+            pendingCount.textContent = registrations.length;
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            showAlert(message, 'success');
+        }
+
+        // Show error message
+        function showError(message) {
+            showAlert(message, 'error');
+        }
+
+        // Show info message
+        function showInfo(message) {
+            showAlert(message, 'info');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            alertContainer.appendChild(alert);
+            alert.style.display = 'block';
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                closeImageModal();
+            }
+        }
+
+        // Auto refresh every 30 seconds
+        setInterval(() => {
+            loadRegistrations();
+        }, 30000);
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

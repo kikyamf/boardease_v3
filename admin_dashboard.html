@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Pending Registrations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 150px;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .registration-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        .registration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .registration-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .info-value {
+            color: #333;
+            margin-top: 5px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        .btn-approve:hover {
+            background: #218838;
+        }
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-reject:hover {
+            background: #c82333;
+        }
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .modal img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard - Pending Registrations</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="pendingCount">0</div>
+                <div>Pending</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            Loading pending registrations...
+        </div>
+
+        <div id="noData" class="no-data" style="display: none;">
+            No pending registrations found.
+        </div>
+
+        <div id="registrationsList"></div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" src="" alt="Image Preview">
+        </div>
+    </div>
+
+    <script>
+        let registrations = [];
+
+        // Load pending registrations
+        async function loadPendingRegistrations() {
+            try {
+                const response = await fetch('get_pending_registrations.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    registrations = data.data;
+                    displayRegistrations();
+                } else {
+                    showError('Failed to load registrations: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error loading registrations: ' + error.message);
+            }
+        }
+
+        // Display registrations
+        function displayRegistrations() {
+            const loading = document.getElementById('loading');
+            const noData = document.getElementById('noData');
+            const registrationsList = document.getElementById('registrationsList');
+            const pendingCount = document.getElementById('pendingCount');
+
+            loading.style.display = 'none';
+            pendingCount.textContent = registrations.length;
+
+            if (registrations.length === 0) {
+                noData.style.display = 'block';
+                return;
+            }
+
+            noData.style.display = 'none';
+            registrationsList.innerHTML = '';
+
+            registrations.forEach(reg => {
+                const card = createRegistrationCard(reg);
+                registrationsList.appendChild(card);
+            });
+        }
+
+        // Create registration card
+        function createRegistrationCard(reg) {
+            const card = document.createElement('div');
+            card.className = 'registration-card';
+            card.id = `reg-${reg.id}`;
+
+            const images = [];
+            if (reg.id_front_file) images.push({src: reg.id_front_file, label: 'Front ID'});
+            if (reg.id_back_file) images.push({src: reg.id_back_file, label: 'Back ID'});
+            if (reg.gcash_qr) images.push({src: reg.gcash_qr, label: 'GCash QR'});
+
+            card.innerHTML = `
+                <div class="registration-header">
+                    <h3>${reg.full_name} (${reg.role})</h3>
+                    <span style="color: #666; font-size: 0.9em;">${new Date(reg.created_at).toLocaleString()}</span>
+                </div>
+                
+                <div class="registration-info">
+                    <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">${reg.email}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">${reg.phone || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Birth Date</div>
+                        <div class="info-value">${reg.birth_date || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">${reg.address || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ID Type</div>
+                        <div class="info-value">${reg.valid_id_type || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ID Number</div>
+                        <div class="info-value">${reg.id_number || 'N/A'}</div>
+                    </div>
+                </div>
+
+                ${images.length > 0 ? `
+                <div style="margin-bottom: 15px;">
+                    <strong>Documents:</strong><br>
+                    ${images.map(img => `
+                        <img src="${img.src}" alt="${img.label}" class="image-preview" 
+                             onclick="showImageModal('${img.src}')" title="${img.label}">
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                <div class="action-buttons">
+                    <button class="btn btn-approve" onclick="processRegistration(${reg.id}, 'approve')">
+                        Approve
+                    </button>
+                    <button class="btn btn-reject" onclick="processRegistration(${reg.id}, 'reject')">
+                        Reject
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Process registration (approve/reject)
+        async function processRegistration(id, action) {
+            if (!confirm(`Are you sure you want to ${action} this registration?`)) {
+                return;
+            }
+
+            const button = event.target;
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Processing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('registration_id', id);
+                formData.append('action', action);
+
+                const response = await fetch('approve_registration.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    // Remove the card from the list
+                    const card = document.getElementById(`reg-${id}`);
+                    if (card) {
+                        card.remove();
+                    }
+                    // Reload the list
+                    loadPendingRegistrations();
+                } else {
+                    alert('Error: ' + data.message);
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            } catch (error) {
+                alert('Error processing registration: ' + error.message);
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        // Show image modal
+        function showImageModal(src) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = src;
+            modal.style.display = 'block';
+        }
+
+        // Close modal
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const loading = document.getElementById('loading');
+            loading.innerHTML = `<div style="color: red;">Error: ${message}</div>`;
+        }
+
+        // Load registrations on page load
+        document.addEventListener('DOMContentLoaded', loadPendingRegistrations);
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadPendingRegistrations, 30000);
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

@@ -14,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+//login ni
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -255,8 +256,16 @@ public class Login extends AppCompatActivity {
                 String lastName = userObject.getString("lastName");
                 String userEmail = userObject.getString("email");
                 
+                // Get additional user details (if available)
+                String middleName = userObject.optString("middleName", "");
+                String phone = userObject.optString("phone", "");
+                String birthDate = userObject.optString("birthDate", "");
+                String address = userObject.optString("address", "");
+                String gcashNumber = userObject.optString("gcashNumber", "");
+                
                 // Store user session in SharedPreferences
-                saveUserSession(userId, userRole, firstName + " " + lastName, userEmail);
+                saveUserSession(userId, userRole, firstName + " " + lastName, userEmail, 
+                              middleName, phone, birthDate, address, gcashNumber);
                 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
@@ -275,12 +284,18 @@ public class Login extends AppCompatActivity {
         }
     }
     
-    private void saveUserSession(String userId, String userRole, String userName, String userEmail) {
+    private void saveUserSession(String userId, String userRole, String userName, String userEmail, 
+                                String middleName, String phone, String birthDate, String address, String gcashNumber) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_ROLE, userRole);
         editor.putString(KEY_USER_NAME, userName);
         editor.putString(KEY_USER_EMAIL, userEmail);
+        editor.putString("user_middle_name", middleName);
+        editor.putString("user_phone", phone);
+        editor.putString("user_birth_date", birthDate);
+        editor.putString("user_address", address);
+        editor.putString("user_gcash_number", gcashNumber);
         editor.apply();
     }
     
@@ -336,5 +351,31 @@ public class Login extends AppCompatActivity {
     public static String getCurrentUserEmail(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_EMAIL, null);
+    }
+    
+    // Additional user info methods
+    public static String getCurrentUserMiddleName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_middle_name", "");
+    }
+    
+    public static String getCurrentUserPhone(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_phone", "");
+    }
+    
+    public static String getCurrentUserBirthDate(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_birth_date", "");
+    }
+    
+    public static String getCurrentUserAddress(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_address", "");
+    }
+    
+    public static String getCurrentUserGcashNumber(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_gcash_number", "");
     }
 }

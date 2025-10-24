@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #1976D2;
+        }
+        .btn-success {
+            background-color: #4CAF50;
+        }
+        .btn-success:hover {
+            background-color: #45a049;
+        }
+        .btn-warning {
+            background-color: #ff9800;
+        }
+        .btn-warning:hover {
+            background-color: #e68900;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Notification System Test</h1>
+        
+        <div class="info">
+            <strong>📱 Instructions:</strong><br>
+            1. Test creating different types of notifications<br>
+            2. Check your Android device for FCM notifications<br>
+            3. View notifications in the app<br>
+            4. Test marking notifications as read<br>
+            5. Monitor the server logs for debugging
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Create Notification</h3>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="number" id="userId" value="1" placeholder="Enter user ID">
+            </div>
+            <div class="form-group">
+                <label>Notification Type:</label>
+                <select id="notifType">
+                    <option value="booking">Booking</option>
+                    <option value="payment">Payment</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="announcement">Announcement</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Title:</label>
+                <input type="text" id="notifTitle" placeholder="Enter notification title">
+            </div>
+            <div class="form-group">
+                <label>Message:</label>
+                <textarea id="notifMessage" placeholder="Enter notification message"></textarea>
+            </div>
+            <button class="btn btn-success" onclick="createNotification()">Create Notification</button>
+            <div id="createResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Get Notifications</h3>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="number" id="getUserId" value="1" placeholder="Enter user ID">
+            </div>
+            <button class="btn" onclick="getNotifications()">Get Notifications</button>
+            <button class="btn btn-warning" onclick="getUnreadCount()">Get Unread Count</button>
+            <div id="getResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Mark as Read</h3>
+            <div class="form-group">
+                <label>Notification ID:</label>
+                <input type="number" id="markNotifId" placeholder="Enter notification ID">
+            </div>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="number" id="markUserId" value="1" placeholder="Enter user ID">
+            </div>
+            <button class="btn" onclick="markAsRead()">Mark as Read</button>
+            <button class="btn btn-warning" onclick="markAllAsRead()">Mark All as Read</button>
+            <div id="markResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Auto Notification Tests</h3>
+            <div class="form-group">
+                <label>User ID:</label>
+                <input type="number" id="autoUserId" value="1" placeholder="Enter user ID">
+            </div>
+            <button class="btn" onclick="testBookingNotifications()">Test Booking Notifications</button>
+            <button class="btn" onclick="testPaymentNotifications()">Test Payment Notifications</button>
+            <button class="btn" onclick="testMaintenanceNotifications()">Test Maintenance Notifications</button>
+            <button class="btn" onclick="testAnnouncementNotifications()">Test Announcement Notifications</button>
+            <button class="btn btn-success" onclick="testAllNotifications()">Test All Types</button>
+            <div id="autoResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, isSuccess = true) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+            resultDiv.textContent = message;
+        }
+
+        async function createNotification() {
+            const userId = document.getElementById('userId').value;
+            const notifType = document.getElementById('notifType').value;
+            const notifTitle = document.getElementById('notifTitle').value;
+            const notifMessage = document.getElementById('notifMessage').value;
+
+            if (!userId || !notifTitle || !notifMessage) {
+                showResult('createResult', 'Please fill in all fields', false);
+                return;
+            }
+
+            showResult('createResult', 'Creating notification...\n\nPlease wait...', true);
+
+            try {
+                const formData = new FormData();
+                formData.append('user_id', userId);
+                formData.append('notif_type', notifType);
+                formData.append('notif_title', notifTitle);
+                formData.append('notif_message', notifMessage);
+                formData.append('send_fcm', 'true');
+
+                const response = await fetch('create_notification.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let result = `✅ Notification Created Successfully\n\n`;
+                    result += `Notification ID: ${data.data.notif_id}\n`;
+                    result += `User ID: ${data.data.user_id}\n`;
+                    result += `Type: ${data.data.notif_type}\n`;
+                    result += `Title: ${data.data.notif_title}\n`;
+                    result += `Message: ${data.data.notif_message}\n`;
+                    result += `FCM Sent: ${data.data.fcm_sent ? 'Yes' : 'No'}\n`;
+                    showResult('createResult', result, true);
+                } else {
+                    showResult('createResult', '❌ Failed to create notification\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('createResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function getNotifications() {
+            const userId = document.getElementById('getUserId').value;
+            showResult('getResult', 'Getting notifications...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`get_notifications.php?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    let result = `✅ Notifications Retrieved\n\n`;
+                    result += `Total: ${data.data.total_count} notifications\n`;
+                    result += `Unread: ${data.data.unread_count} notifications\n\n`;
+
+                    data.data.notifications.forEach(notif => {
+                        result += `[${notif.notif_status.toUpperCase()}] ${notif.notif_type.toUpperCase()}\n`;
+                        result += `Title: ${notif.notif_title}\n`;
+                        result += `Message: ${notif.notif_message}\n`;
+                        result += `Time: ${notif.notif_created_at}\n`;
+                        result += `ID: ${notif.notif_id}\n\n`;
+                    });
+
+                    showResult('getResult', result, true);
+                } else {
+                    showResult('getResult', '❌ Failed to get notifications\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('getResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function getUnreadCount() {
+            const userId = document.getElementById('getUserId').value;
+            showResult('getResult', 'Getting unread count...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`get_unread_notif_count.php?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    let result = `✅ Unread Count Retrieved\n\n`;
+                    result += `Total Unread: ${data.data.total_unread}\n\n`;
+                    result += `By Type:\n`;
+                    result += `- Booking: ${data.data.unread_by_type.booking}\n`;
+                    result += `- Payment: ${data.data.unread_by_type.payment}\n`;
+                    result += `- Maintenance: ${data.data.unread_by_type.maintenance}\n`;
+                    result += `- Announcement: ${data.data.unread_by_type.announcement}\n`;
+                    result += `- General: ${data.data.unread_by_type.general}\n`;
+
+                    showResult('getResult', result, true);
+                } else {
+                    showResult('getResult', '❌ Failed to get unread count\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('getResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function markAsRead() {
+            const notifId = document.getElementById('markNotifId').value;
+            const userId = document.getElementById('markUserId').value;
+
+            if (!notifId || !userId) {
+                showResult('markResult', 'Please fill in notification ID and user ID', false);
+                return;
+            }
+
+            showResult('markResult', 'Marking notification as read...\n\nPlease wait...', true);
+
+            try {
+                const formData = new FormData();
+                formData.append('notif_id', notifId);
+                formData.append('user_id', userId);
+
+                const response = await fetch('mark_notification_read.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('markResult', '✅ Notification marked as read successfully', true);
+                } else {
+                    showResult('markResult', '❌ Failed to mark as read\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('markResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function markAllAsRead() {
+            const userId = document.getElementById('markUserId').value;
+            showResult('markResult', 'Marking all notifications as read...\n\nPlease wait...', true);
+
+            try {
+                const formData = new FormData();
+                formData.append('user_id', userId);
+
+                const response = await fetch('mark_all_notifications_read.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('markResult', `✅ ${data.message}`, true);
+                } else {
+                    showResult('markResult', '❌ Failed to mark all as read\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('markResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function testBookingNotifications() {
+            const userId = document.getElementById('autoUserId').value;
+            showResult('autoResult', 'Testing booking notifications...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`test_notification_system.php?action=test_booking&user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('autoResult', '✅ Booking notifications test completed\n\nCheck your device for notifications!', true);
+                } else {
+                    showResult('autoResult', '❌ Booking test failed\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('autoResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function testPaymentNotifications() {
+            const userId = document.getElementById('autoUserId').value;
+            showResult('autoResult', 'Testing payment notifications...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`test_notification_system.php?action=test_payment&user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('autoResult', '✅ Payment notifications test completed\n\nCheck your device for notifications!', true);
+                } else {
+                    showResult('autoResult', '❌ Payment test failed\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('autoResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function testMaintenanceNotifications() {
+            const userId = document.getElementById('autoUserId').value;
+            showResult('autoResult', 'Testing maintenance notifications...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`test_notification_system.php?action=test_maintenance&user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('autoResult', '✅ Maintenance notifications test completed\n\nCheck your device for notifications!', true);
+                } else {
+                    showResult('autoResult', '❌ Maintenance test failed\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('autoResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function testAnnouncementNotifications() {
+            const userId = document.getElementById('autoUserId').value;
+            showResult('autoResult', 'Testing announcement notifications...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`test_notification_system.php?action=test_announcement&user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('autoResult', '✅ Announcement notifications test completed\n\nCheck your device for notifications!', true);
+                } else {
+                    showResult('autoResult', '❌ Announcement test failed\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('autoResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+
+        async function testAllNotifications() {
+            const userId = document.getElementById('autoUserId').value;
+            showResult('autoResult', 'Testing all notification types...\n\nPlease wait...', true);
+
+            try {
+                const response = await fetch(`test_notification_system.php?action=test_all&user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('autoResult', '✅ All notification types test completed\n\nCheck your device for multiple notifications!', true);
+                } else {
+                    showResult('autoResult', '❌ All types test failed\n\nError: ' + data.message, false);
+                }
+            } catch (error) {
+                showResult('autoResult', '❌ Error\n\n' + error.message, false);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

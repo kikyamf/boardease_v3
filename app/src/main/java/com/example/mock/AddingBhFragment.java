@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -182,14 +183,15 @@ public class AddingBhFragment extends Fragment {
     }
 
     private void goToAddingRooms() {
+        // Validate all fields before proceeding
+        if (!validateAllFields()) {
+            return;
+        }
+
+        // Get validated data
         String name = etBhName.getText().toString().trim();
         String address = etBhAddress.getText().toString().trim();
         String bathrooms = etBathrooms.getText().toString().trim();
-
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(address) || TextUtils.isEmpty(bathrooms)) {
-            Toast.makeText(getActivity(), "Please fill all required fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Save current data to static variables for persistence
         saveCurrentData();
@@ -212,6 +214,256 @@ public class AddingBhFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+    
+    /**
+     * Comprehensive validation for all fields
+     * @return true if all validations pass, false otherwise
+     */
+    private boolean validateAllFields() {
+        boolean isValid = true;
+        
+        // Validate Boarding House Name (Required)
+        if (!validateBoardingHouseName()) {
+            isValid = false;
+        }
+        
+        // Validate Address (Required)
+        if (!validateAddress()) {
+            isValid = false;
+        }
+        
+        // Validate Bathrooms (Required)
+        if (!validateBathrooms()) {
+            isValid = false;
+        }
+        
+        // Validate Area (Optional)
+        if (!validateArea()) {
+            isValid = false;
+        }
+        
+        // Validate Build Year (Optional)
+        if (!validateBuildYear()) {
+            isValid = false;
+        }
+        
+        // Validate Images (Required)
+        if (!validateImages()) {
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+    
+    /**
+     * Validate Boarding House Name
+     * Requirements: Required, minimum 3 characters, maximum 100 characters, no special characters except spaces and hyphens
+     */
+    private boolean validateBoardingHouseName() {
+        String name = etBhName.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(name)) {
+            etBhName.setError("Boarding house name is required");
+            etBhName.requestFocus();
+            Toast.makeText(getActivity(), "Please enter a boarding house name", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        if (name.length() < 3) {
+            etBhName.setError("Name must be at least 3 characters long");
+            etBhName.requestFocus();
+            Toast.makeText(getActivity(), "Boarding house name must be at least 3 characters", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        if (name.length() > 100) {
+            etBhName.setError("Name must not exceed 100 characters");
+            etBhName.requestFocus();
+            Toast.makeText(getActivity(), "Boarding house name is too long (max 100 characters)", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        // Check for valid characters (letters, numbers, spaces, hyphens, apostrophes)
+        if (!name.matches("^[a-zA-Z0-9\\s\\-']+$")) {
+            etBhName.setError("Name contains invalid characters");
+            etBhName.requestFocus();
+            Toast.makeText(getActivity(), "Name can only contain letters, numbers, spaces, hyphens, and apostrophes", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        etBhName.setError(null);
+        return true;
+    }
+    
+    /**
+     * Validate Address
+     * Requirements: Required, minimum 10 characters, maximum 200 characters
+     */
+    private boolean validateAddress() {
+        String address = etBhAddress.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(address)) {
+            etBhAddress.setError("Address is required");
+            etBhAddress.requestFocus();
+            Toast.makeText(getActivity(), "Please enter the boarding house address", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        if (address.length() < 10) {
+            etBhAddress.setError("Address must be at least 10 characters long");
+            etBhAddress.requestFocus();
+            Toast.makeText(getActivity(), "Please provide a complete address (at least 10 characters)", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        if (address.length() > 200) {
+            etBhAddress.setError("Address must not exceed 200 characters");
+            etBhAddress.requestFocus();
+            Toast.makeText(getActivity(), "Address is too long (max 200 characters)", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        etBhAddress.setError(null);
+        return true;
+    }
+    
+    /**
+     * Validate Bathrooms
+     * Requirements: Required, must be a positive number, maximum 10
+     */
+    private boolean validateBathrooms() {
+        String bathroomsStr = etBathrooms.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(bathroomsStr)) {
+            etBathrooms.setError("Number of bathrooms is required");
+            etBathrooms.requestFocus();
+            Toast.makeText(getActivity(), "Please enter the number of bathrooms", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        try {
+            int bathrooms = Integer.parseInt(bathroomsStr);
+            
+            if (bathrooms <= 0) {
+                etBathrooms.setError("Number of bathrooms must be greater than 0");
+                etBathrooms.requestFocus();
+                Toast.makeText(getActivity(), "Number of bathrooms must be greater than 0", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+            if (bathrooms > 10) {
+                etBathrooms.setError("Number of bathrooms cannot exceed 10");
+                etBathrooms.requestFocus();
+                Toast.makeText(getActivity(), "Number of bathrooms cannot exceed 10", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+        } catch (NumberFormatException e) {
+            etBathrooms.setError("Please enter a valid number");
+            etBathrooms.requestFocus();
+            Toast.makeText(getActivity(), "Please enter a valid number for bathrooms", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        etBathrooms.setError(null);
+        return true;
+    }
+    
+    /**
+     * Validate Area (Optional)
+     * Requirements: If provided, must be a positive number, maximum 10000 sqm
+     */
+    private boolean validateArea() {
+        String areaStr = etArea.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(areaStr)) {
+            // Area is optional, so empty is valid
+            etArea.setError(null);
+            return true;
+        }
+        
+        try {
+            double area = Double.parseDouble(areaStr);
+            
+            if (area <= 0) {
+                etArea.setError("Area must be greater than 0");
+                etArea.requestFocus();
+                Toast.makeText(getActivity(), "Area must be greater than 0", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+            if (area > 10000) {
+                etArea.setError("Area cannot exceed 10,000 sqm");
+                etArea.requestFocus();
+                Toast.makeText(getActivity(), "Area cannot exceed 10,000 square meters", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+        } catch (NumberFormatException e) {
+            etArea.setError("Please enter a valid number");
+            etArea.requestFocus();
+            Toast.makeText(getActivity(), "Please enter a valid number for area", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        etArea.setError(null);
+        return true;
+    }
+    
+    /**
+     * Validate Build Year (Optional)
+     * Requirements: If provided, must be a valid year between 1900 and current year
+     */
+    private boolean validateBuildYear() {
+        String buildYearStr = etBuildYear.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(buildYearStr)) {
+            // Build year is optional, so empty is valid
+            etBuildYear.setError(null);
+            return true;
+        }
+        
+        try {
+            int buildYear = Integer.parseInt(buildYearStr);
+            int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
+            
+            if (buildYear < 1900) {
+                etBuildYear.setError("Build year cannot be before 1900");
+                etBuildYear.requestFocus();
+                Toast.makeText(getActivity(), "Build year cannot be before 1900", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+            if (buildYear > currentYear) {
+                etBuildYear.setError("Build year cannot be in the future");
+                etBuildYear.requestFocus();
+                Toast.makeText(getActivity(), "Build year cannot be in the future", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            
+        } catch (NumberFormatException e) {
+            etBuildYear.setError("Please enter a valid year");
+            etBuildYear.requestFocus();
+            Toast.makeText(getActivity(), "Please enter a valid year", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        etBuildYear.setError(null);
+        return true;
+    }
+    
+    /**
+     * Validate Images
+     * Requirements: At least one image is required
+     */
+    private boolean validateImages() {
+        if (imageUris.isEmpty()) {
+            Toast.makeText(getActivity(), "Please add at least one image of the boarding house", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        
+        return true;
     }
     
     private void saveCurrentData() {
