@@ -93,3 +93,4 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
 
 
 
+
