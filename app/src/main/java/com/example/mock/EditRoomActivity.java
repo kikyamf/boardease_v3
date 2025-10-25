@@ -233,7 +233,7 @@ public class EditRoomActivity extends AppCompatActivity {
                         getContentResolver().takePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                         if (!imageUris.contains(uri)) {
-                            imageUris.add(uri);
+                            verifyAndAddImage(uri);
                         }
                     }
                 } else if (data.getData() != null) {
@@ -241,16 +241,9 @@ public class EditRoomActivity extends AppCompatActivity {
                     getContentResolver().takePersistableUriPermission(uri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     if (!imageUris.contains(uri)) {
-                        imageUris.add(uri);
+                        verifyAndAddImage(uri);
                     }
                 }
-
-                // Recreate adapter to refresh ViewPager
-                imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
-                viewPagerImages.setAdapter(imageAdapter);
-                updateImageViewsVisibility();
-
-                Toast.makeText(this, "Image(s) added", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Failed to add images", Toast.LENGTH_SHORT).show();
@@ -480,6 +473,40 @@ public class EditRoomActivity extends AppCompatActivity {
         resultIntent.putExtra("updated", true);
         setResult(Activity.RESULT_OK, resultIntent);
         finish();
+    }
+
+    /**
+     * Verifies and adds image to the list if approved
+     */
+    private void verifyAndAddImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying image...", Toast.LENGTH_SHORT).show();
+        
+        // Use smart verification (API if available, local if not)
+        ImageVerification.verifyImage(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Add image to list
+                    if (!imageUris.contains(imageUri)) {
+                        imageUris.add(imageUri);
+                        // Recreate adapter to refresh ViewPager
+                        imageAdapter = new ImageAdapter(EditRoomActivity.this, imageUris, EditRoomActivity.this::removeImage);
+                        viewPagerImages.setAdapter(imageAdapter);
+                        updateImageViewsVisibility();
+                        Toast.makeText(EditRoomActivity.this, "✅ Image approved and added", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(EditRoomActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(EditRoomActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }
 

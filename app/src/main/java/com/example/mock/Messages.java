@@ -15,6 +15,7 @@ import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -40,7 +41,8 @@ public class Messages extends AppCompatActivity {
     private ImageView backButton, searchButton, addGroupButton;
     private TextView textNewGC;
     private RecyclerView profileRecyclerView, chatListRecyclerView;
-    private LinearLayout layoutEmptyChatList, layoutEmptyProfileList;
+    private CardView layoutEmptyChatList;
+    private LinearLayout layoutEmptyProfileList;
     private View dividerView;
     private RequestQueue requestQueue;
     private int currentUserId;
@@ -133,6 +135,9 @@ public class Messages extends AppCompatActivity {
         // Setup RecyclerViews
         setupRecyclerViews();
         
+        // Load dummy data immediately for testing
+        loadDummyProfileData();
+        
         // Load real data from database
         loadUsersForMessaging();
         loadChatList();
@@ -176,11 +181,14 @@ public class Messages extends AppCompatActivity {
 
     private void setupRecyclerViews() {
         // Horizontal RecyclerView for profiles
+        Log.d("Messages", "Setting up profile RecyclerView");
         LinearLayoutManager horizontalLayoutManager =
                 new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         profileRecyclerView.setLayoutManager(horizontalLayoutManager);
         profileAdapter = new ProfileAdapter(this, profileList);
         profileRecyclerView.setAdapter(profileAdapter);
+        
+        Log.d("Messages", "Profile RecyclerView setup complete. Initial profile list size: " + profileList.size());
         
         // Set click listener for profiles to open conversations
         profileAdapter.setOnItemClickListener(profile -> {
@@ -229,13 +237,18 @@ public class Messages extends AppCompatActivity {
     private void loadUsersForMessaging() {
         String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
         
+        Log.d("Messages", "Loading users from URL: " + url);
+        
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     try {
+                        Log.d("Messages", "API Response: " + response.toString());
                         if (response.getBoolean("success")) {
                             JSONObject data = response.getJSONObject("data");
                             JSONArray usersArray = data.getJSONArray("users");
                             profileList.clear();
+                            
+                            Log.d("Messages", "Found " + usersArray.length() + " users");
                             
                             if (usersArray.length() > 0) {
                                 for (int i = 0; i < usersArray.length(); i++) {
@@ -264,27 +277,55 @@ public class Messages extends AppCompatActivity {
                                         boardingHouseAddress
                                     );
                                     profileList.add(profile);
+                                    Log.d("Messages", "Added profile: " + profile.getName());
                                 }
                             } else {
                                 // Show empty state - no users found
                                 Log.d("Messages", "No users found for messaging");
+                                // Load dummy data as fallback
+                                loadDummyProfileData();
                             }
                             
                             profileAdapter.notifyDataSetChanged();
                             updateProfileEmptyState();
                         } else {
+                            Log.e("Messages", "API Error: " + response.getString("message"));
                             Toast.makeText(this, "Error loading users: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                            // Load dummy data as fallback
+                            loadDummyProfileData();
                         }
                     } catch (JSONException e) {
+                        Log.e("Messages", "Error parsing users data", e);
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing users data", Toast.LENGTH_SHORT).show();
+                        // Load dummy data as fallback
+                        loadDummyProfileData();
                     }
                 },
                 error -> {
+                    Log.e("Messages", "Network error loading users", error);
                     Toast.makeText(this, "Error loading users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Load dummy data as fallback
+                    loadDummyProfileData();
                 });
 
         requestQueue.add(request);
+    }
+    
+    private void loadDummyProfileData() {
+        Log.d("Messages", "Loading dummy profile data");
+        profileList.clear();
+        
+        // Add some dummy profiles for testing
+        profileList.add(new ProfileModel(1, "John Doe", "Boarder", "john@example.com", "123-456-7890", R.drawable.ic_profile, true, "Online"));
+        profileList.add(new ProfileModel(2, "Jane Smith", "Boarder", "jane@example.com", "123-456-7891", R.drawable.ic_profile, false, "Offline"));
+        profileList.add(new ProfileModel(3, "Mike Johnson", "Boarder", "mike@example.com", "123-456-7892", R.drawable.ic_profile, true, "Online"));
+        profileList.add(new ProfileModel(4, "Sarah Wilson", "Boarder", "sarah@example.com", "123-456-7893", R.drawable.ic_profile, false, "Offline"));
+        
+        Log.d("Messages", "Added " + profileList.size() + " dummy profiles to list");
+        profileAdapter.notifyDataSetChanged();
+        updateProfileEmptyState();
+        Log.d("Messages", "Dummy profile data loaded: " + profileList.size() + " profiles");
     }
 
     private void loadChatList() {
@@ -836,10 +877,13 @@ public class Messages extends AppCompatActivity {
     }
     
     private void updateProfileEmptyState() {
+        Log.d("Messages", "updateProfileEmptyState called. Profile list size: " + profileList.size());
         if (profileList.isEmpty()) {
+            Log.d("Messages", "Profile list is empty, showing empty state");
             profileRecyclerView.setVisibility(View.GONE);
             layoutEmptyProfileList.setVisibility(View.VISIBLE);
         } else {
+            Log.d("Messages", "Profile list has " + profileList.size() + " items, showing RecyclerView");
             profileRecyclerView.setVisibility(View.VISIBLE);
             layoutEmptyProfileList.setVisibility(View.GONE);
         }

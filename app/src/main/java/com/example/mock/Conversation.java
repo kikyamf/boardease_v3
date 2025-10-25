@@ -326,11 +326,14 @@ public class Conversation extends AppCompatActivity {
                                 MessageModel message;
                                 
                                 if (chatType.equals("individual")) {
+                                    // Apply profanity filter to loaded message
+                                    String messageText = ProfanityFilter.filterMessage(messageObj.getString("message"));
+                                    
                                     message = new MessageModel(
                                         messageObj.getInt("message_id"),
                                         messageObj.getInt("sender_id"),
                                         messageObj.getInt("receiver_id"),
-                                        messageObj.getString("message"),
+                                        messageText,
                                         formatTime(messageObj.getString("timestamp")),
                                         messageObj.getString("status"),
                                         messageObj.getBoolean("is_from_current_user"),
@@ -338,11 +341,13 @@ public class Conversation extends AppCompatActivity {
                                         messageObj.getString("receiver_name")
                                     );
                                 } else {
-                                    // Group message
+                                    // Group message - apply profanity filter
+                                    String messageText = ProfanityFilter.filterMessage(messageObj.getString("message_text"));
+                                    
                                     message = new MessageModel(
                                         messageObj.getInt("message_id"),
                                         messageObj.getInt("sender_id"),
-                                        messageObj.getString("message_text"),
+                                        messageText,
                                         formatTime(messageObj.getString("timestamp")),
                                         messageObj.getString("status"),
                                         messageObj.getString("sender_name")
@@ -416,6 +421,20 @@ public class Conversation extends AppCompatActivity {
         if (isSendingMessage || messageText.equals(lastSentMessage)) {
             return;
         }
+        
+        // Apply profanity filter
+        String originalMessage = messageText;
+        String filteredMessage = ProfanityFilter.filterMessage(messageText);
+        
+        // Check if message was filtered
+        if (!originalMessage.equals(filteredMessage)) {
+            // Show warning to user
+            Toast.makeText(this, ProfanityFilter.getWarningMessage(), Toast.LENGTH_LONG).show();
+        }
+        
+        // Use filtered message for sending
+        messageText = filteredMessage;
+        
         isSendingMessage = true;
         lastSentMessage = messageText; // Track the message being sent
         
@@ -703,6 +722,9 @@ public class Conversation extends AppCompatActivity {
                 // Format timestamp
                 String formattedTime = new java.text.SimpleDateFormat("MMM d, h:mm a", java.util.Locale.getDefault()).format(new java.util.Date());
                 
+                // Apply profanity filter to incoming message
+                String filteredIncomingMessage = ProfanityFilter.filterMessage(messageText);
+                
                 // Create new message model
                 MessageModel newMessage;
                 if ("individual".equals(chatType)) {
@@ -710,7 +732,7 @@ public class Conversation extends AppCompatActivity {
                         messageList.size() + 1,
                         senderId,
                         receiverId,
-                        messageText,
+                        filteredIncomingMessage,
                         formattedTime,
                         "Sent",
                         true, // is_receiver = true means it's from other user
@@ -721,7 +743,7 @@ public class Conversation extends AppCompatActivity {
                     newMessage = new MessageModel(
                         messageList.size() + 1,
                         senderId,
-                        messageText,
+                        filteredIncomingMessage,
                         formattedTime,
                         "Sent",
                         senderName

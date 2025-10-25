@@ -221,7 +221,7 @@ public class GcashInfoActivity extends AppCompatActivity {
         if (requestCode == PICK_GCASH_QR_REQUEST && resultCode == RESULT_OK && data != null) {
             Uri imageUri = data.getData();
             if (imageUri != null) {
-                uploadGcashQrImage(imageUri);
+                verifyAndUploadGcashQr(imageUri);
             }
         }
     }
@@ -320,6 +320,34 @@ public class GcashInfoActivity extends AppCompatActivity {
         if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
+    }
+
+    /**
+     * Verifies and uploads GCash QR image if approved
+     */
+    private void verifyAndUploadGcashQr(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying GCash QR image...", Toast.LENGTH_SHORT).show();
+        
+        // Use QR code specific verification
+        ImageVerification.verifyQrCode(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Upload the approved image
+                    uploadGcashQrImage(imageUri);
+                    Toast.makeText(GcashInfoActivity.this, "✅ GCash QR image approved", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(GcashInfoActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(GcashInfoActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }
 

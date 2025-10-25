@@ -184,18 +184,18 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                     Uri uri = data.getClipData().getItemAt(i).getUri();
                     getContentResolver().takePersistableUriPermission(uri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                    if (!imageUris.contains(uri)) imageUris.add(uri);
+                    if (!imageUris.contains(uri)) {
+                        verifyAndAddImage(uri);
+                    }
                 }
             } else if (data.getData() != null) {
                 Uri uri = data.getData();
                 getContentResolver().takePersistableUriPermission(uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                if (!imageUris.contains(uri)) imageUris.add(uri);
+                if (!imageUris.contains(uri)) {
+                    verifyAndAddImage(uri);
+                }
             }
-            // Create new adapter to ensure proper refresh
-            imageAdapter = new ImageAdapter(this, imageUris, this::removeImage);
-            viewPagerImages.setAdapter(imageAdapter);
-            updateImageViewsVisibility();
         }
     }
 
@@ -814,6 +814,40 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         super.onDestroy();
         hideLoadingDialog();
         hideImageUploadDialog();
+    }
+
+    /**
+     * Verifies and adds image to the list if approved
+     */
+    private void verifyAndAddImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying image...", Toast.LENGTH_SHORT).show();
+        
+        // Use smart verification (API if available, local if not)
+        ImageVerification.verifyImage(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Add image to list
+                    if (!imageUris.contains(imageUri)) {
+                        imageUris.add(imageUri);
+                        // Create new adapter to ensure proper refresh
+                        imageAdapter = new ImageAdapter(EditBoardingHouseActivity.this, imageUris, EditBoardingHouseActivity.this::removeImage);
+                        viewPagerImages.setAdapter(imageAdapter);
+                        updateImageViewsVisibility();
+                        Toast.makeText(EditBoardingHouseActivity.this, "✅ Image approved and added", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(EditBoardingHouseActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(EditBoardingHouseActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
 }

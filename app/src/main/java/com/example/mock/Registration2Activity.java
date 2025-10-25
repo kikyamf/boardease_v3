@@ -106,24 +106,7 @@ public class Registration2Activity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        ivUploadF.setImageURI(uri); // show image
-                        idFrontPath = uri.toString(); // save URI path
-                        // Convert URI to Bitmap
-                        try {
-                            Log.d("Registration2", "Front URI: " + uri.toString());
-                            ContentResolver resolver = getContentResolver();
-                            frontBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
-                            if (frontBitmap == null) {
-                                Log.e("Registration2", "Failed to decode front image from URI");
-                                Toast.makeText(this, "Failed to load front image", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Log.d("Registration2", "Front image loaded successfully, size: " + frontBitmap.getWidth() + "x" + frontBitmap.getHeight());
-                                // Remove the success toast - it's just for debugging
-                            }
-                        } catch (Exception e) {
-                            Log.e("Registration2", "Error loading front image", e);
-                            Toast.makeText(this, "Error loading front image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
+                        verifyAndSetFrontImage(uri);
                     }
                 }
         );
@@ -132,24 +115,7 @@ public class Registration2Activity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        ivUploadB.setImageURI(uri); // show image
-                        idBackPath = uri.toString(); // save URI path
-                        // Convert URI to Bitmap
-                        try {
-                            Log.d("Registration2", "Back URI: " + uri.toString());
-                            ContentResolver resolver = getContentResolver();
-                            backBitmap = BitmapFactory.decodeStream(resolver.openInputStream(uri));
-                            if (backBitmap == null) {
-                                Log.e("Registration2", "Failed to decode back image from URI");
-                                Toast.makeText(this, "Failed to load back image", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Log.d("Registration2", "Back image loaded successfully, size: " + backBitmap.getWidth() + "x" + backBitmap.getHeight());
-                                // Remove the success toast - it's just for debugging
-                            }
-                        } catch (Exception e) {
-                            Log.e("Registration2", "Error loading back image", e);
-                            Toast.makeText(this, "Error loading back image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
+                        verifyAndSetBackImage(uri);
                     }
                 }
         );
@@ -340,6 +306,96 @@ public class Registration2Activity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+    }
+
+    /**
+     * Verifies and sets front ID image if approved
+     */
+    private void verifyAndSetFrontImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying front ID document...", Toast.LENGTH_SHORT).show();
+        
+        // Use ID document specific verification
+        ImageVerification.verifyIdDocument(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Set the image as selected
+                    ivUploadF.setImageURI(imageUri); // show image
+                    idFrontPath = imageUri.toString(); // save URI path
+                    
+                    // Convert URI to Bitmap
+                    try {
+                        Log.d("Registration2", "Front URI: " + imageUri.toString());
+                        ContentResolver resolver = getContentResolver();
+                        frontBitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+                        if (frontBitmap == null) {
+                            Log.e("Registration2", "Failed to decode front image from URI");
+                            Toast.makeText(Registration2Activity.this, "Failed to load front image", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d("Registration2", "Front image loaded successfully, size: " + frontBitmap.getWidth() + "x" + frontBitmap.getHeight());
+                            Toast.makeText(Registration2Activity.this, "✅ Front ID document verified", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.e("Registration2", "Error loading front image", e);
+                        Toast.makeText(Registration2Activity.this, "Error loading front image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(Registration2Activity.this, "❌ Front ID document rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(Registration2Activity.this, "Front ID document verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /**
+     * Verifies and sets back ID image if approved
+     */
+    private void verifyAndSetBackImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying back ID document...", Toast.LENGTH_SHORT).show();
+        
+        // Use ID document specific verification
+        ImageVerification.verifyIdDocument(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Set the image as selected
+                    ivUploadB.setImageURI(imageUri); // show image
+                    idBackPath = imageUri.toString(); // save URI path
+                    
+                    // Convert URI to Bitmap
+                    try {
+                        Log.d("Registration2", "Back URI: " + imageUri.toString());
+                        ContentResolver resolver = getContentResolver();
+                        backBitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+                        if (backBitmap == null) {
+                            Log.e("Registration2", "Failed to decode back image from URI");
+                            Toast.makeText(Registration2Activity.this, "Failed to load back image", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d("Registration2", "Back image loaded successfully, size: " + backBitmap.getWidth() + "x" + backBitmap.getHeight());
+                            Toast.makeText(Registration2Activity.this, "✅ Back ID document verified", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Log.e("Registration2", "Error loading back image", e);
+                        Toast.makeText(Registration2Activity.this, "Error loading back image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(Registration2Activity.this, "❌ Back ID document rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(Registration2Activity.this, "Back ID document verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
         });
     }
 }

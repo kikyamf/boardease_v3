@@ -308,7 +308,7 @@
                         android:hint="Size"
                         android:textColor="#212529"
                         android:textColorHint="#6C757D"
-                        android:inputType="number"
+                        android:inputType="numberDecimal"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="12dp"
                         android:fontFamily="@font/poppins_regular"

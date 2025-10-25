@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +17,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
+
+import java.util.Calendar;
+import java.util.regex.Pattern;
 
 import java.util.ArrayList;
 
@@ -158,38 +162,71 @@ public class AddingBhFragment extends Fragment {
                         Uri uri = data.getClipData().getItemAt(i).getUri();
                         requireActivity().getContentResolver().takePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                        if (!imageUris.contains(uri)) imageUris.add(uri);
+                        
+                        // Verify image before adding
+                        verifyAndAddImage(uri);
                     }
                 } else if (data.getData() != null) {
                     Uri uri = data.getData();
                     requireActivity().getContentResolver().takePersistableUriPermission(uri,
                             Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                    if (!imageUris.contains(uri)) imageUris.add(uri);
+                    
+                    // Verify image before adding
+                    verifyAndAddImage(uri);
                 }
-                imageAdapter.notifyDataSetChanged();
-
-                if (!imageUris.isEmpty()) {
-                    ivPlaceholder.setVisibility(View.GONE);
-                    viewPagerImages.setVisibility(View.VISIBLE);
-                }
-
-                Toast.makeText(getActivity(), "Image(s) added", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(getActivity(), "Failed to add images", Toast.LENGTH_SHORT).show();
             }
         }
     }
+    
+    private void verifyAndAddImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(getActivity(), "Verifying image...", Toast.LENGTH_SHORT).show();
+        
+        // Use smart verification (API if available, local if not)
+        ImageVerification.verifyImage(getActivity(), imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Add image to list
+                    if (!imageUris.contains(imageUri)) {
+                        imageUris.add(imageUri);
+                        imageAdapter.notifyDataSetChanged();
+                        
+                        if (!imageUris.isEmpty()) {
+                            ivPlaceholder.setVisibility(View.GONE);
+                            viewPagerImages.setVisibility(View.VISIBLE);
+                        }
+                        
+                        Toast.makeText(getActivity(), "✅ Image approved and added", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(getActivity(), "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(getActivity(), "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
     private void goToAddingRooms() {
+        // Validate all fields
+        String validationError = validateAllFields();
+        if (validationError != null) {
+            showValidationDialog(validationError);
+            return;
+        }
+
+        // Get validated data
         String name = etBhName.getText().toString().trim();
         String address = etBhAddress.getText().toString().trim();
         String bathrooms = etBathrooms.getText().toString().trim();
-
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(address) || TextUtils.isEmpty(bathrooms)) {
-            Toast.makeText(getActivity(), "Please fill all required fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Save current data to static variables for persistence
         saveCurrentData();
@@ -212,6 +249,133 @@ public class AddingBhFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private String validateAllFields() {
+        // Validate required fields
+        String name = etBhName.getText().toString().trim();
+        String address = etBhAddress.getText().toString().trim();
+        String bathrooms = etBathrooms.getText().toString().trim();
+        String area = etArea.getText().toString().trim();
+        String buildYear = etBuildYear.getText().toString().trim();
+        String description = etBhDescription.getText().toString().trim();
+        String rules = etBhRules.getText().toString().trim();
+
+        // Check required fields
+        if (TextUtils.isEmpty(name)) {
+            return "Boarding House Name is required";
+        }
+        if (TextUtils.isEmpty(address)) {
+            return "Address is required";
+        }
+        if (TextUtils.isEmpty(bathrooms)) {
+            return "Number of Bathrooms is required";
+        }
+
+        // Validate name (2-50 characters, letters, numbers, spaces, hyphens, and apostrophes)
+        if (name.length() < 2 || name.length() > 50) {
+            return "Boarding House Name must be 2-50 characters long";
+        }
+        if (!Pattern.matches("^[a-zA-Z0-9\\s\\-']+$", name)) {
+            return "Boarding House Name can only contain letters, numbers, spaces, hyphens, and apostrophes";
+        }
+
+        // Validate address (minimum 10 characters)
+        if (address.length() < 10) {
+            return "Address must be at least 10 characters";
+        }
+
+        // Validate bathrooms (must be a positive number 1-10)
+        try {
+            int bathroomCount = Integer.parseInt(bathrooms);
+            if (bathroomCount < 1 || bathroomCount > 10) {
+                return "Number of Bathrooms must be between 1 and 10";
+            }
+        } catch (NumberFormatException e) {
+            return "Number of Bathrooms must be a valid number";
+        }
+
+        // Validate area if provided (must be positive number)
+        if (!TextUtils.isEmpty(area)) {
+            try {
+                double areaValue = Double.parseDouble(area);
+                if (areaValue <= 0) {
+                    return "Area must be a positive number";
+                }
+                if (areaValue > 10000) {
+                    return "Area cannot exceed 10,000 square meters";
+                }
+            } catch (NumberFormatException e) {
+                return "Area must be a valid number";
+            }
+        }
+
+        // Validate build year if provided (1900 to current year)
+        if (!TextUtils.isEmpty(buildYear)) {
+            try {
+                int year = Integer.parseInt(buildYear);
+                int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                if (year < 1900 || year > currentYear) {
+                    return "Build Year must be between 1900 and " + currentYear;
+                }
+            } catch (NumberFormatException e) {
+                return "Build Year must be a valid year";
+            }
+        }
+
+        // Validate description length if provided (max 500 characters)
+        if (!TextUtils.isEmpty(description) && description.length() > 500) {
+            return "Description cannot exceed 500 characters";
+        }
+
+        // Validate rules length if provided (max 300 characters)
+        if (!TextUtils.isEmpty(rules) && rules.length() > 300) {
+            return "Rules cannot exceed 300 characters";
+        }
+
+        // Validate images (at least 1 image required)
+        if (imageUris.isEmpty()) {
+            return "At least 1 image is required";
+        }
+
+        return null; // All validations passed
+    }
+
+    private void showValidationDialog(String errorMessage) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Validation Error")
+                .setMessage(errorMessage)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    dialog.dismiss();
+                    // Focus on the problematic field if possible
+                    focusOnProblematicField(errorMessage);
+                })
+                .setCancelable(false);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void focusOnProblematicField(String errorMessage) {
+        // Focus on the field that has the error
+        if (errorMessage.contains("Boarding House Name")) {
+            etBhName.requestFocus();
+        } else if (errorMessage.contains("Address")) {
+            etBhAddress.requestFocus();
+        } else if (errorMessage.contains("Bathrooms")) {
+            etBathrooms.requestFocus();
+        } else if (errorMessage.contains("Area")) {
+            etArea.requestFocus();
+        } else if (errorMessage.contains("Build Year")) {
+            etBuildYear.requestFocus();
+        } else if (errorMessage.contains("Description")) {
+            etBhDescription.requestFocus();
+        } else if (errorMessage.contains("Rules")) {
+            etBhRules.requestFocus();
+        } else if (errorMessage.contains("image")) {
+            // Focus on image placeholder
+            ivPlaceholder.requestFocus();
+        }
     }
     
     private void saveCurrentData() {

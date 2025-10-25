@@ -9,39 +9,39 @@
     <!-- Status Bar -->
 
     <!-- Fixed Header -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
         android:background="@android:color/white"
-        android:elevation="2dp">
+            android:elevation="2dp">
 
         <ImageButton
-            android:id="@+id/ivBack"
-            android:layout_width="wrap_content"
+                android:id="@+id/ivBack"
+                android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:background="@android:color/transparent"
             android:contentDescription="Back"
             android:src="@drawable/arrowleft" />
 
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Edit Room"
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Edit Room"
             android:textSize="20sp"
             android:fontFamily="@font/poppins_medium"
             android:gravity="center"
             android:textColor="#000000" />
 
-        <View
+            <View
             android:layout_width="36dp"
             android:layout_height="36dp" />
 
-    </LinearLayout>
+        </LinearLayout>
 
     <!-- Scrollable Content -->
     <ScrollView
@@ -150,8 +150,8 @@
                         android:layout_marginBottom="8dp" />
 
                     <EditText
-                        android:id="@+id/etTitle"
-                        android:layout_width="match_parent"
+                            android:id="@+id/etTitle"
+                            android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="16dp"
@@ -174,15 +174,15 @@
                         android:layout_marginBottom="8dp" />
 
                     <EditText
-                        android:id="@+id/etDescription"
-                        android:layout_width="match_parent"
+                            android:id="@+id/etDescription"
+                            android:layout_width="match_parent"
                         android:layout_height="70dp"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="16dp"
                         android:hint="Enter room description"
                         android:textColor="#212529"
                         android:textColorHint="#6C757D"
-                        android:inputType="textMultiLine"
+                            android:inputType="textMultiLine"
                         android:gravity="top|start"
                         android:fontFamily="@font/poppins_regular"
                         android:textSize="16sp"
@@ -271,8 +271,8 @@
                         android:layout_marginBottom="8dp" />
 
                     <EditText
-                        android:id="@+id/etTotalRooms"
-                        android:layout_width="match_parent"
+                            android:id="@+id/etTotalRooms"
+                            android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="16dp"
@@ -305,4 +305,4 @@
 
     </ScrollView>
 
-</LinearLayout>
+    </LinearLayout>

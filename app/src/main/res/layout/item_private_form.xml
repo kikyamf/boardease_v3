@@ -183,7 +183,7 @@
                         android:textColor="#212529"
                         android:textColorHint="#6C757D"
                         android:fontFamily="@font/poppins_regular"
-                        android:inputType="number"
+                        android:inputType="numberDecimal"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="16dp"/>
                 </LinearLayout>

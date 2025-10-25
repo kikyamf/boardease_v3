@@ -437,14 +437,45 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             selectedImageUri = data.getData();
             if (selectedImageUri != null) {
-                imageChanged = true;
-                // Use Glide to load the selected image with proper circular clipping
-                Glide.with(this)
-                    .load(selectedImageUri)
-                    .centerCrop()
-                    .into(ivProfilePic);
+                verifyAndSetProfileImage(selectedImageUri);
             }
         }
+    }
+
+    /**
+     * Verifies and sets profile image if approved
+     */
+    private void verifyAndSetProfileImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying profile image...", Toast.LENGTH_SHORT).show();
+        
+        // Use smart verification (API if available, local if not)
+        ImageVerification.verifyImage(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Set the image as selected
+                    selectedImageUri = imageUri;
+                    imageChanged = true;
+                    
+                    // Use Glide to load the selected image with proper circular clipping
+                    Glide.with(EditOwnerProfileActivity.this)
+                        .load(imageUri)
+                        .centerCrop()
+                        .into(ivProfilePic);
+                    
+                    Toast.makeText(EditOwnerProfileActivity.this, "✅ Profile image approved", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(EditOwnerProfileActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(EditOwnerProfileActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }
 

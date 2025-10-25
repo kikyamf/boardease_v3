@@ -125,20 +125,29 @@ public class OwnerProfileFragment extends Fragment {
             new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
+                    // Check if fragment is still attached before processing response
+                    if (!isAdded() || getContext() == null) {
+                        return;
+                    }
+                    
                     try {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
                             populateProfileData(jsonResponse);
                         } else {
                             // Set default data if profile not found
-                            tvOwnerName.setText("Owner " + userId);
-                            tvOwnerEmail.setText("owner" + userId + "@example.com");
+                            if (isAdded() && tvOwnerName != null && tvOwnerEmail != null) {
+                                tvOwnerName.setText("Owner " + userId);
+                                tvOwnerEmail.setText("owner" + userId + "@example.com");
+                            }
                         }
                     } catch (JSONException e) {
                         Log.e("OwnerProfile", "Error parsing profile response", e);
                         // Set default data on error
-                        tvOwnerName.setText("Owner " + userId);
-                        tvOwnerEmail.setText("owner" + userId + "@example.com");
+                        if (isAdded() && tvOwnerName != null && tvOwnerEmail != null) {
+                            tvOwnerName.setText("Owner " + userId);
+                            tvOwnerEmail.setText("owner" + userId + "@example.com");
+                        }
                     }
                 }
             },
@@ -146,9 +155,11 @@ public class OwnerProfileFragment extends Fragment {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     Log.e("OwnerProfile", "Error loading profile", error);
-                    // Set default data on error
-                    tvOwnerName.setText("Owner " + userId);
-                    tvOwnerEmail.setText("owner" + userId + "@example.com");
+                    // Set default data on error only if fragment is still attached
+                    if (isAdded() && tvOwnerName != null && tvOwnerEmail != null) {
+                        tvOwnerName.setText("Owner " + userId);
+                        tvOwnerEmail.setText("owner" + userId + "@example.com");
+                    }
                 }
             }
         ) {
@@ -170,25 +181,34 @@ public class OwnerProfileFragment extends Fragment {
             String firstName = profileData.optString("f_name", "");
             String lastName = profileData.optString("l_name", "");
             String fullName = firstName + " " + lastName;
-            tvOwnerName.setText(fullName.trim());
+            if (isAdded() && tvOwnerName != null) {
+                tvOwnerName.setText(fullName.trim());
+            }
             
             // Set email
             String email = profileData.optString("email", "");
-            tvOwnerEmail.setText(email);
+            if (isAdded() && tvOwnerEmail != null) {
+                tvOwnerEmail.setText(email);
+            }
             
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
                 String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + profilePicPath;
-                Glide.with(this)
-                    .load(fullImageUrl)
-                    .placeholder(R.drawable.btn_profile)
-                    .error(R.drawable.btn_profile)
-                    .centerCrop()
-                    .into(ivProfilePic);
+                // Check if fragment is still attached before loading image
+                if (isAdded() && getContext() != null) {
+                    Glide.with(requireContext())
+                        .load(fullImageUrl)
+                        .placeholder(R.drawable.btn_profile)
+                        .error(R.drawable.btn_profile)
+                        .centerCrop()
+                        .into(ivProfilePic);
+                }
             } else {
                 // Set default profile picture
-                ivProfilePic.setImageResource(R.drawable.btn_profile);
+                if (isAdded() && ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
             }
             
         } catch (Exception e) {

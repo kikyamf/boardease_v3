@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,6 +21,9 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Calendar;
+import java.util.regex.Pattern;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -308,29 +312,60 @@ public class AddingRoomsFragment extends Fragment {
                     try {
                         requireActivity().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     } catch (Exception ignored) {}
-                    currentRoomImageList.add(uri);
+                    
+                    // Verify image before adding
+                    verifyAndAddRoomImage(uri);
                 }
             } else if (data.getData() != null) {
                 Uri uri = data.getData();
                 try {
                     requireActivity().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 } catch (Exception ignored) {}
-                currentRoomImageList.add(uri);
+                
+                // Verify image before adding
+                verifyAndAddRoomImage(uri);
             }
-
-            // notify and update UI
-            currentRoomAdapter.notifyDataSetChanged();
-            currentRoomViewPager.setVisibility(View.VISIBLE);
-            currentRoomPlaceholder.setVisibility(View.GONE);
 
             // reset current room pointers (optional, to avoid accidental reuse)
             currentRoomImageList = null;
             currentRoomAdapter = null;
             currentRoomViewPager = null;
             currentRoomPlaceholder = null;
-
-            Toast.makeText(getActivity(), "Images added", Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    private void verifyAndAddRoomImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(getActivity(), "Verifying image...", Toast.LENGTH_SHORT).show();
+        
+        // Use smart verification (API if available, local if not)
+        ImageVerification.verifyImage(getActivity(), imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Add image to list
+                    if (!currentRoomImageList.contains(imageUri)) {
+                        currentRoomImageList.add(imageUri);
+                        currentRoomAdapter.notifyDataSetChanged();
+                        
+                        if (!currentRoomImageList.isEmpty()) {
+                            currentRoomViewPager.setVisibility(View.VISIBLE);
+                            currentRoomPlaceholder.setVisibility(View.GONE);
+                        }
+                        
+                        Toast.makeText(getActivity(), "✅ Image approved and added", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(getActivity(), "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(getActivity(), "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
 
@@ -342,6 +377,13 @@ public class AddingRoomsFragment extends Fragment {
 
 
     private void showSaveConfirmationDialog() {
+        // Validate all room forms first
+        String validationError = validateAllRoomForms();
+        if (validationError != null) {
+            showValidationDialog(validationError);
+            return;
+        }
+
         // Count total rooms
         int privateRooms = containerPrivateRooms.getChildCount();
         int bedSpacers = containerBedSpacers.getChildCount();
@@ -954,6 +996,228 @@ public class AddingRoomsFragment extends Fragment {
             this.capacity = capacity;
             this.totalRooms = totalRooms;
             this.imageUris = imageUris;
+        }
+    }
+
+    // ========== VALIDATION METHODS ==========
+    
+    private String validateAllRoomForms() {
+        // Check if at least one room is added
+        int privateRoomCount = containerPrivateRooms.getChildCount();
+        int bedSpacerCount = containerBedSpacers.getChildCount();
+        
+        if (privateRoomCount == 0 && bedSpacerCount == 0) {
+            return "At least one room must be added";
+        }
+        
+        // Validate all private rooms
+        for (int i = 0; i < privateRoomCount; i++) {
+            View roomForm = containerPrivateRooms.getChildAt(i);
+            String error = validatePrivateRoomForm(roomForm, i + 1);
+            if (error != null) {
+                return error;
+            }
+        }
+        
+        // Validate all bed spacers
+        for (int i = 0; i < bedSpacerCount; i++) {
+            View bedForm = containerBedSpacers.getChildAt(i);
+            String error = validateBedSpacerForm(bedForm, i + 1);
+            if (error != null) {
+                return error;
+            }
+        }
+        
+        return null; // All validations passed
+    }
+    
+    private String validatePrivateRoomForm(View form, int roomNumber) {
+        EditText etTitle = form.findViewById(R.id.etTitle);
+        EditText etDesc = form.findViewById(R.id.etDesc);
+        EditText etPrice = form.findViewById(R.id.etPrice);
+        EditText etCapacity = form.findViewById(R.id.etCapacity);
+        EditText etTotalRooms = form.findViewById(R.id.etTotalRooms);
+        
+        String title = etTitle.getText().toString().trim();
+        String description = etDesc.getText().toString().trim();
+        String price = etPrice.getText().toString().trim();
+        String capacity = etCapacity.getText().toString().trim();
+        String totalRooms = etTotalRooms.getText().toString().trim();
+        
+        // Validate required fields
+        if (TextUtils.isEmpty(title)) {
+            return "Private Room #" + roomNumber + ": Title is required";
+        }
+        if (TextUtils.isEmpty(price)) {
+            return "Private Room #" + roomNumber + ": Price is required";
+        }
+        if (TextUtils.isEmpty(capacity)) {
+            return "Private Room #" + roomNumber + ": Capacity is required";
+        }
+        if (TextUtils.isEmpty(totalRooms)) {
+            return "Private Room #" + roomNumber + ": Total Units is required";
+        }
+        
+        // Validate title (2-50 characters, letters, numbers, spaces, hyphens, and apostrophes)
+        if (title.length() < 2 || title.length() > 50) {
+            return "Private Room #" + roomNumber + ": Title must be 2-50 characters long";
+        }
+        if (!Pattern.matches("^[a-zA-Z0-9\\s\\-']+$", title)) {
+            return "Private Room #" + roomNumber + ": Title can only contain letters, numbers, spaces, hyphens, and apostrophes";
+        }
+        
+        // Validate price (must be positive number)
+        try {
+            double priceValue = Double.parseDouble(price);
+            if (priceValue <= 0) {
+                return "Private Room #" + roomNumber + ": Price must be a positive number";
+            }
+            if (priceValue > 100000) {
+                return "Private Room #" + roomNumber + ": Price cannot exceed ₱100,000";
+            }
+        } catch (NumberFormatException e) {
+            return "Private Room #" + roomNumber + ": Price must be a valid number";
+        }
+        
+        // Validate capacity (1-10 persons)
+        try {
+            int capacityValue = Integer.parseInt(capacity);
+            if (capacityValue < 1 || capacityValue > 10) {
+                return "Private Room #" + roomNumber + ": Capacity must be between 1 and 10 persons";
+            }
+        } catch (NumberFormatException e) {
+            return "Private Room #" + roomNumber + ": Capacity must be a valid number";
+        }
+        
+        // Validate total rooms (1-50 units)
+        try {
+            int totalRoomsValue = Integer.parseInt(totalRooms);
+            if (totalRoomsValue < 1 || totalRoomsValue > 50) {
+                return "Private Room #" + roomNumber + ": Total Units must be between 1 and 50";
+            }
+        } catch (NumberFormatException e) {
+            return "Private Room #" + roomNumber + ": Total Units must be a valid number";
+        }
+        
+        // Validate description length if provided (max 300 characters)
+        if (!TextUtils.isEmpty(description) && description.length() > 300) {
+            return "Private Room #" + roomNumber + ": Description cannot exceed 300 characters";
+        }
+        
+        // Validate images (at least 1 image required)
+        ArrayList<Uri> imageUris = (ArrayList<Uri>) form.getTag(R.id.room_images);
+        if (imageUris == null || imageUris.isEmpty()) {
+            return "Private Room #" + roomNumber + ": At least 1 image is required";
+        }
+        
+        return null; // Validation passed
+    }
+    
+    private String validateBedSpacerForm(View form, int bedNumber) {
+        EditText etTitle = form.findViewById(R.id.etBedTitle);
+        EditText etDesc = form.findViewById(R.id.etBedDesc);
+        EditText etPrice = form.findViewById(R.id.etBedPrice);
+        EditText etCapacity = form.findViewById(R.id.etBedCapacity);
+        EditText etTotalRooms = form.findViewById(R.id.etBedTotalRooms);
+        
+        String title = etTitle.getText().toString().trim();
+        String description = etDesc.getText().toString().trim();
+        String price = etPrice.getText().toString().trim();
+        String capacity = etCapacity.getText().toString().trim();
+        String totalRooms = etTotalRooms.getText().toString().trim();
+        
+        // Validate required fields
+        if (TextUtils.isEmpty(title)) {
+            return "Bed Spacer #" + bedNumber + ": Title is required";
+        }
+        if (TextUtils.isEmpty(price)) {
+            return "Bed Spacer #" + bedNumber + ": Price is required";
+        }
+        if (TextUtils.isEmpty(capacity)) {
+            return "Bed Spacer #" + bedNumber + ": Capacity is required";
+        }
+        if (TextUtils.isEmpty(totalRooms)) {
+            return "Bed Spacer #" + bedNumber + ": Total Units is required";
+        }
+        
+        // Validate title (2-50 characters, letters, numbers, spaces, hyphens, and apostrophes)
+        if (title.length() < 2 || title.length() > 50) {
+            return "Bed Spacer #" + bedNumber + ": Title must be 2-50 characters long";
+        }
+        if (!Pattern.matches("^[a-zA-Z0-9\\s\\-']+$", title)) {
+            return "Bed Spacer #" + bedNumber + ": Title can only contain letters, numbers, spaces, hyphens, and apostrophes";
+        }
+        
+        // Validate price (must be positive number)
+        try {
+            double priceValue = Double.parseDouble(price);
+            if (priceValue <= 0) {
+                return "Bed Spacer #" + bedNumber + ": Price must be a positive number";
+            }
+            if (priceValue > 50000) {
+                return "Bed Spacer #" + bedNumber + ": Price cannot exceed ₱50,000";
+            }
+        } catch (NumberFormatException e) {
+            return "Bed Spacer #" + bedNumber + ": Price must be a valid number";
+        }
+        
+        // Validate capacity (1-6 persons for bed spacers)
+        try {
+            int capacityValue = Integer.parseInt(capacity);
+            if (capacityValue < 1 || capacityValue > 6) {
+                return "Bed Spacer #" + bedNumber + ": Capacity must be between 1 and 6 persons";
+            }
+        } catch (NumberFormatException e) {
+            return "Bed Spacer #" + bedNumber + ": Capacity must be a valid number";
+        }
+        
+        // Validate total rooms (1-30 units for bed spacers)
+        try {
+            int totalRoomsValue = Integer.parseInt(totalRooms);
+            if (totalRoomsValue < 1 || totalRoomsValue > 30) {
+                return "Bed Spacer #" + bedNumber + ": Total Units must be between 1 and 30";
+            }
+        } catch (NumberFormatException e) {
+            return "Bed Spacer #" + bedNumber + ": Total Units must be a valid number";
+        }
+        
+        // Validate description length if provided (max 300 characters)
+        if (!TextUtils.isEmpty(description) && description.length() > 300) {
+            return "Bed Spacer #" + bedNumber + ": Description cannot exceed 300 characters";
+        }
+        
+        // Validate images (at least 1 image required)
+        ArrayList<Uri> imageUris = (ArrayList<Uri>) form.getTag(R.id.room_images);
+        if (imageUris == null || imageUris.isEmpty()) {
+            return "Bed Spacer #" + bedNumber + ": At least 1 image is required";
+        }
+        
+        return null; // Validation passed
+    }
+    
+    private void showValidationDialog(String errorMessage) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Validation Error")
+                .setMessage(errorMessage)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    dialog.dismiss();
+                    // Focus on the problematic form if possible
+                    focusOnProblematicForm(errorMessage);
+                })
+                .setCancelable(false);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    private void focusOnProblematicForm(String errorMessage) {
+        // Try to focus on the problematic form
+        if (errorMessage.contains("Private Room")) {
+            // Scroll to private rooms section
+            containerPrivateRooms.requestFocus();
+        } else if (errorMessage.contains("Bed Spacer")) {
+            // Scroll to bed spacers section
+            containerBedSpacers.requestFocus();
         }
     }
 

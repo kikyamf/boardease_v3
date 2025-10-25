@@ -39,8 +39,7 @@ public class RegistrationActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.GetContent(),
                     uri -> {
                         if (uri != null) {
-                            selectedQrUri = uri;
-                            UploadQr.setImageURI(uri); // show the image in ImageView
+                            verifyAndSetQrImage(uri);
                         }
                     });
 
@@ -168,6 +167,35 @@ public class RegistrationActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent a = new Intent(RegistrationActivity.this, Login.class);
                 startActivity(a);
+            }
+        });
+    }
+
+    /**
+     * Verifies and sets QR image if approved
+     */
+    private void verifyAndSetQrImage(Uri imageUri) {
+        // Show loading message
+        Toast.makeText(this, "Verifying QR image...", Toast.LENGTH_SHORT).show();
+        
+        // Use QR code specific verification
+        ImageVerification.verifyQrCode(this, imageUri, new ImageVerification.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(boolean isApproved, String reason) {
+                if (isApproved) {
+                    // Set the image as selected
+                    selectedQrUri = imageUri;
+                    UploadQr.setImageURI(imageUri); // show the image in ImageView
+                    Toast.makeText(RegistrationActivity.this, "✅ QR image approved", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Show rejection reason
+                    Toast.makeText(RegistrationActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(RegistrationActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
             }
         });
     }
