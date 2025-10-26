@@ -233,6 +233,18 @@
                 android:padding="10dp"
                 android:textColor="@color/black" />
 
+            <!-- Email Validation Message -->
+            <TextView
+                android:id="@+id/tvEmailValidation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginStart="8dp"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:text=""
+                android:textColor="#FF0000" />
+
             <!-- Password -->
             <TextView
                 android:layout_width="wrap_content"

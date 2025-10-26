@@ -103,6 +103,14 @@ if ($result->num_rows === 0) {
             error_log("Login successful for user: " . $email);
             error_log("Response being sent: " . json_encode($response));
             echo json_encode($response);
+        } else if ($user['status'] === 'unverified') {
+            $response = array(
+                "success" => false,
+                "message" => "Please verify your email address before logging in. Check your email for the verification code.",
+                "requires_verification" => true
+            );
+            error_log("Login blocked - account unverified for: " . $email);
+            echo json_encode($response);
         } else if ($user['status'] === 'pending') {
             $response = array(
                 "success" => false,

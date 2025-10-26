@@ -274,8 +274,18 @@ public class Login extends AppCompatActivity {
                 navigateToDashboard(userRole);
                 
             } else {
-                // Login failed
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                // Check if verification is required
+                boolean requiresVerification = jsonObject.optBoolean("requires_verification", false);
+                
+                if (requiresVerification) {
+                    // Navigate to email verification
+                    Intent intent = new Intent(Login.this, EmailVerificationActivity.class);
+                    intent.putExtra("email", etEmail.getText().toString().trim());
+                    startActivity(intent);
+                } else {
+                    // Show error message
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                }
             }
             
         } catch (JSONException e) {

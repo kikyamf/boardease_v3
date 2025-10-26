@@ -1,6 +1,9 @@
 <?php
 // insert_registration.php
 
+// Include email configuration
+require_once 'email_config.php';
+
 // Disable error display to prevent HTML output
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -112,10 +115,10 @@ $gcashQRPath = saveFile("qrFile", $uploadDir);
 
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
 
-// Insert into DB with pending status for admin approval
+// Insert into DB with unverified status (requires email verification first)
 $sql = "INSERT INTO registrations
     (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr, status, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())";
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unverified', NOW())";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     error_log("SQL prepare error: " . $conn->error);
@@ -134,12 +137,44 @@ if (!$bindResult) {
     throw new Exception("Bind param error: " . $stmt->error);
 }
 if ($stmt->execute()) {
-    $response = array(
-        "success" => true,
-        "message" => "Registration submitted successfully! Your account is pending admin approval. You will be notified once approved."
-    );
-    error_log("Registration submitted for approval - user: " . $email);
-    error_log("Sending success response: " . json_encode($response));
+    $userId = $conn->insert_id;
+    
+    // Generate and send verification code
+    $verificationCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+    $expiryTime = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+    
+    // Insert verification record
+    $verificationSql = "INSERT INTO email_verifications (user_id, email, verification_code, expiry_time, created_at) 
+                       VALUES (?, ?, ?, ?, NOW())";
+    $verificationStmt = $conn->prepare($verificationSql);
+    $verificationStmt->bind_param("isss", $userId, $email, $verificationCode, $expiryTime);
+    
+    if ($verificationStmt->execute()) {
+        // Send verification email
+        $emailSent = sendVerificationEmail($email, $firstName, $verificationCode);
+        
+        if ($emailSent) {
+            $response = array(
+                "success" => true,
+                "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
+                "requires_verification" => true
+            );
+        } else {
+            $response = array(
+                "success" => false,
+                "message" => "Registration created but failed to send verification email. Please contact support."
+            );
+        }
+    } else {
+        $response = array(
+            "success" => false,
+            "message" => "Registration failed to create verification record."
+        );
+    }
+    
+    $verificationStmt->close();
+    error_log("Registration submitted for verification - user: " . $email);
+    error_log("Sending response: " . json_encode($response));
     echo json_encode($response);
     
     // Close resources after successful response
@@ -169,5 +204,59 @@ if ($stmt->execute()) {
         "message" => "Server error: " . $e->getMessage()
     );
     echo json_encode($response);
+}
+
+function sendVerificationEmail($email, $firstName, $verificationCode) {
+    $subject = "Email Verification - BoardEase";
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background-color: #f9f9f9; }
+            .verification-code { 
+                background-color: #4CAF50; 
+                color: white; 
+                font-size: 24px; 
+                font-weight: bold; 
+                padding: 15px; 
+                text-align: center; 
+                margin: 20px 0;
+                border-radius: 5px;
+                letter-spacing: 3px;
+            }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            .warning { background-color: #ffeb3b; padding: 10px; border-left: 4px solid #ff9800; margin: 15px 0; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>Email Verification</h1>
+            </div>
+            <div class='content'>
+                <h2>Hello " . htmlspecialchars($firstName) . "!</h2>
+                <p>Thank you for registering with BoardEase. To complete your registration, please verify your email address using the code below:</p>
+                
+                <div class='verification-code'>" . $verificationCode . "</div>
+                
+                <div class='warning'>
+                    <strong>Important:</strong> This verification code will expire in 30 minutes. If you don't verify your email within this time, your account will be automatically deleted.
+                </div>
+                
+                <p>If you didn't create an account with BoardEase, please ignore this email.</p>
+            </div>
+            <div class='footer'>
+                <p>This is an automated message from BoardEase. Please do not reply to this email.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    // Use the configured email system (Gmail SMTP)
+    return sendEmail($email, $subject, $message);
 }
 ?>

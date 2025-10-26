@@ -202,22 +202,32 @@ public class Registration2Activity extends AppCompatActivity {
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
                     response -> {
+                        Log.d("Registration2", "=== REGISTRATION RESPONSE RECEIVED ===");
+                        Log.d("Registration2", "Response data length: " + response.data.length);
+                        Log.d("Registration2", "Response headers: " + response.headers);
+                        
+                        String responseString = new String(response.data);
+                        Log.d("Registration2", "Raw server response: " + responseString);
+                        Log.d("Registration2", "Response string length: " + responseString.length());
+                        
                         try {
-                            String responseString = new String(response.data);
-                            Log.d("Registration2", "Server response: " + responseString);
-                            
                             // Check if response starts with HTML (error)
                             if (responseString.trim().startsWith("<")) {
+                                Log.e("Registration2", "ERROR: Server returned HTML instead of JSON");
+                                Log.e("Registration2", "HTML response: " + responseString);
                                 Toast.makeText(this, "Server error: Invalid response format", Toast.LENGTH_LONG).show();
-                                Log.e("Registration2", "Server returned HTML instead of JSON: " + responseString);
                                 return;
                             }
                             
+                            Log.d("Registration2", "Attempting to parse JSON...");
                             JSONObject obj = new JSONObject(responseString);
                             String message = obj.getString("message");
                             boolean success = obj.getBoolean("success");
                             
-                            Log.d("Registration2", "Response - Success: " + success + ", Message: " + message);
+                            Log.d("Registration2", "JSON parsing successful!");
+                            Log.d("Registration2", "Success: " + success);
+                            Log.d("Registration2", "Message: " + message);
+                            Log.d("Registration2", "Has requires_verification: " + obj.has("requires_verification"));
                             
                             // Re-enable button
                             isRegistering = false;
@@ -225,12 +235,28 @@ public class Registration2Activity extends AppCompatActivity {
                             btnReg.setText("REGISTER");
                             
                             if (success) {
-                                Log.d("Registration2", "Registration successful, navigating to login");
-                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                                // Registration successful, navigate to login
-                                Intent intent = new Intent(Registration2Activity.this, Login.class);
-                                startActivity(intent);
-                                finish();
+                                Log.d("Registration2", "Registration successful");
+                                
+                                // Check if verification is required
+                                boolean requiresVerification = obj.optBoolean("requires_verification", false);
+                                Log.d("Registration2", "Requires verification: " + requiresVerification);
+                                
+                                if (requiresVerification) {
+                                    // Navigate to email verification
+                                    Log.d("Registration2", "Navigating to EmailVerificationActivity");
+                                    Intent intent = new Intent(Registration2Activity.this, EmailVerificationActivity.class);
+                                    intent.putExtra("email", email);
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    // Navigate to login (old flow)
+                                    Log.d("Registration2", "Navigating to Login");
+                                    Intent intent = new Intent(Registration2Activity.this, Login.class);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                                
+                                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
                             } else {
                                 Log.d("Registration2", "Registration failed: " + message);
                                 // Handle specific error messages
@@ -241,14 +267,23 @@ public class Registration2Activity extends AppCompatActivity {
                                 }
                             }
                         } catch (JSONException e) {
-                            Log.e("Registration2", "JSON parsing error: " + e.getMessage());
+                            Log.e("Registration2", "=== JSON PARSING ERROR ===");
+                            Log.e("Registration2", "JSONException: " + e.getMessage());
+                            Log.e("Registration2", "Raw response that failed to parse: " + responseString);
+                            Log.e("Registration2", "Response length: " + responseString.length());
+                            Log.e("Registration2", "First 200 chars: " + responseString.substring(0, Math.min(200, responseString.length())));
+                            
                             // Re-enable button on error
                             isRegistering = false;
                             btnReg.setEnabled(true);
                             btnReg.setText("REGISTER");
                             Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_LONG).show();
                         } catch (Exception e) {
-                            Log.e("Registration2", "Unexpected error: " + e.getMessage());
+                            Log.e("Registration2", "=== UNEXPECTED ERROR ===");
+                            Log.e("Registration2", "Exception: " + e.getMessage());
+                            Log.e("Registration2", "Exception type: " + e.getClass().getSimpleName());
+                            e.printStackTrace();
+                            
                             // Re-enable button on error
                             isRegistering = false;
                             btnReg.setEnabled(true);
@@ -257,11 +292,24 @@ public class Registration2Activity extends AppCompatActivity {
                         }
                     },
                     error -> {
+                        Log.e("Registration2", "=== NETWORK ERROR ===");
+                        Log.e("Registration2", "VolleyError: " + error.getMessage());
+                        Log.e("Registration2", "Error type: " + error.getClass().getSimpleName());
+                        Log.e("Registration2", "Network response: " + (error.networkResponse != null ? error.networkResponse.toString() : "null"));
+                        if (error.networkResponse != null) {
+                            Log.e("Registration2", "Response code: " + error.networkResponse.statusCode);
+                            Log.e("Registration2", "Response data: " + new String(error.networkResponse.data));
+                        }
+                        
                         // Re-enable button on error
                         isRegistering = false;
                         btnReg.setEnabled(true);
                         btnReg.setText("REGISTER");
-                        Toast.makeText(this, "Upload failed: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        String errorMessage = error.getMessage();
+                        if (errorMessage == null || errorMessage.isEmpty()) {
+                            errorMessage = "Network error. Please check your connection.";
+                        }
+                        Toast.makeText(this, "Registration failed: " + errorMessage, Toast.LENGTH_LONG).show();
                     }
             ) {
                 @Override
@@ -292,6 +340,13 @@ public class Registration2Activity extends AppCompatActivity {
                     return params;
                 }
             };
+            // Configure request with longer timeout
+            request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                    30000, // 30 seconds timeout
+                    3, // 3 retries
+                    com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+            ));
+            
             Volley.newRequestQueue(this).add(request);
 
         });
