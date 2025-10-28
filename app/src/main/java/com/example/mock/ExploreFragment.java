@@ -12,6 +12,10 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -41,11 +45,16 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     private ProgressBar progressBar;
     private LinearLayout layoutEmptyState;
     private TextView tvResultsCount;
+    private MaterialButton btnFilter, btnSort;
     
     private BoardingHouseAdapter adapter;
     private List<Listing> allBoardingHouses;
     private List<Listing> filteredBoardingHouses;
     private int userId;
+    
+    // Filter and Sort state
+    private String currentSortBy = "name"; // name, price_low, price_high, date
+    private String currentFilter = "all"; // all, private_room, bed_spacer
     
     // Factory method to create new instance with user ID
     public static ExploreFragment newInstance(int userId) {
@@ -70,6 +79,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             initializeViews(view);
             setupRecyclerView();
             setupSearchFunctionality();
+            setupFilterAndSortButtons();
             loadBoardingHouses();
         } catch (Exception e) {
             e.printStackTrace();
@@ -84,6 +94,8 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         progressBar = view.findViewById(R.id.progressBar);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         tvResultsCount = view.findViewById(R.id.tvResultsCount);
+        btnFilter = view.findViewById(R.id.btnFilter);
+        btnSort = view.findViewById(R.id.btnSort);
     }
     
     private void setupRecyclerView() {
@@ -108,6 +120,122 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             @Override
             public void afterTextChanged(Editable s) {}
         });
+    }
+    
+    private void setupFilterAndSortButtons() {
+        // Filter button click listener
+        btnFilter.setOnClickListener(v -> showFilterDialog());
+        
+        // Sort button click listener
+        btnSort.setOnClickListener(v -> showSortDialog());
+        
+        // Update button text
+        updateButtonText();
+    }
+    
+    private void updateButtonText() {
+        // Update filter button text
+        switch (currentFilter) {
+            case "all":
+                btnFilter.setText("All Types");
+                break;
+            case "private_room":
+                btnFilter.setText("Private Rooms");
+                break;
+            case "bed_spacer":
+                btnFilter.setText("Bed Spacers");
+                break;
+        }
+        
+        // Update sort button text
+        switch (currentSortBy) {
+            case "name":
+                btnSort.setText("Name (A-Z)");
+                break;
+            case "price_low":
+                btnSort.setText("Price (Low-High)");
+                break;
+            case "price_high":
+                btnSort.setText("Price (High-Low)");
+                break;
+            case "date":
+                btnSort.setText("Date (Newest)");
+                break;
+        }
+    }
+    
+    private void showFilterDialog() {
+        String[] filterOptions = {"All Types", "Private Rooms", "Bed Spacers"};
+        int currentSelection = getCurrentFilterIndex();
+        
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle("Filter by Room Type")
+                .setSingleChoiceItems(filterOptions, currentSelection, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            currentFilter = "all";
+                            break;
+                        case 1:
+                            currentFilter = "private_room";
+                            break;
+                        case 2:
+                            currentFilter = "bed_spacer";
+                            break;
+                    }
+                    dialog.dismiss();
+                    updateButtonText();
+                    applyFiltersAndSort();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    private void showSortDialog() {
+        String[] sortOptions = {"Name (A-Z)", "Price (Low to High)", "Price (High to Low)", "Date (Newest)"};
+        int currentSelection = getCurrentSortIndex();
+        
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle("Sort by")
+                .setSingleChoiceItems(sortOptions, currentSelection, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            currentSortBy = "name";
+                            break;
+                        case 1:
+                            currentSortBy = "price_low";
+                            break;
+                        case 2:
+                            currentSortBy = "price_high";
+                            break;
+                        case 3:
+                            currentSortBy = "date";
+                            break;
+                    }
+                    dialog.dismiss();
+                    updateButtonText();
+                    applyFiltersAndSort();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    private int getCurrentFilterIndex() {
+        switch (currentFilter) {
+            case "all": return 0;
+            case "private_room": return 1;
+            case "bed_spacer": return 2;
+            default: return 0;
+        }
+    }
+    
+    private int getCurrentSortIndex() {
+        switch (currentSortBy) {
+            case "name": return 0;
+            case "price_low": return 1;
+            case "price_high": return 2;
+            case "date": return 3;
+            default: return 0;
+        }
     }
     
     private void loadBoardingHouses() {
@@ -243,16 +371,15 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 allBoardingHouses.add(boardingHouse);
             }
             
-            // Initially show all boarding houses
-            filteredBoardingHouses.clear();
-            filteredBoardingHouses.addAll(allBoardingHouses);
-            
-            Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
-            
-            // Handle empty results
-            if (allBoardingHouses.isEmpty()) {
-                showEmptyState();
-            }
+        Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
+        
+        // Apply current filters and sort
+        applyFiltersAndSort();
+        
+        // Handle empty results
+        if (allBoardingHouses.isEmpty()) {
+            showEmptyState();
+        }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing boarding house data: " + e.getMessage());
             throw e; // Re-throw to be handled by the calling method
@@ -284,10 +411,20 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     }
     
     private void filterBoardingHouses(String query) {
+        applyFiltersAndSort(query);
+    }
+    
+    private void applyFiltersAndSort() {
+        applyFiltersAndSort(etSearch.getText().toString());
+    }
+    
+    private void applyFiltersAndSort(String query) {
         filteredBoardingHouses.clear();
         
+        // Apply search filter
+        List<Listing> searchFiltered = new ArrayList<>();
         if (query.isEmpty()) {
-            filteredBoardingHouses.addAll(allBoardingHouses);
+            searchFiltered.addAll(allBoardingHouses);
         } else {
             String lowerQuery = query.toLowerCase();
             for (Listing boardingHouse : allBoardingHouses) {
@@ -295,12 +432,62 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 if (boardingHouse.getBhName().toLowerCase().contains(lowerQuery) ||
                     (boardingHouse.getBhAddress() != null && boardingHouse.getBhAddress().toLowerCase().contains(lowerQuery)) ||
                     (boardingHouse.getBhDescription() != null && boardingHouse.getBhDescription().toLowerCase().contains(lowerQuery))) {
-                    filteredBoardingHouses.add(boardingHouse);
+                    searchFiltered.add(boardingHouse);
                 }
             }
         }
         
+        // Apply room type filter
+        for (Listing boardingHouse : searchFiltered) {
+            if (currentFilter.equals("all") || 
+                (currentFilter.equals("private_room") && hasPrivateRooms(boardingHouse)) ||
+                (currentFilter.equals("bed_spacer") && hasBedSpacers(boardingHouse))) {
+                filteredBoardingHouses.add(boardingHouse);
+            }
+        }
+        
+        // Apply sorting
+        sortBoardingHouses();
+        
         updateUI();
+    }
+    
+    private boolean hasPrivateRooms(Listing boardingHouse) {
+        // For now, assume all boarding houses have private rooms
+        // In a real implementation, you'd check the room data
+        return true;
+    }
+    
+    private boolean hasBedSpacers(Listing boardingHouse) {
+        // For now, assume all boarding houses have bed spacers
+        // In a real implementation, you'd check the room data
+        return true;
+    }
+    
+    private void sortBoardingHouses() {
+        switch (currentSortBy) {
+            case "name":
+                filteredBoardingHouses.sort((a, b) -> a.getBhName().compareToIgnoreCase(b.getBhName()));
+                break;
+            case "price_low":
+                filteredBoardingHouses.sort((a, b) -> {
+                    int priceA = a.getMinPrice() != null ? a.getMinPrice() : Integer.MAX_VALUE;
+                    int priceB = b.getMinPrice() != null ? b.getMinPrice() : Integer.MAX_VALUE;
+                    return Integer.compare(priceA, priceB);
+                });
+                break;
+            case "price_high":
+                filteredBoardingHouses.sort((a, b) -> {
+                    int priceA = a.getMinPrice() != null ? a.getMinPrice() : 0;
+                    int priceB = b.getMinPrice() != null ? b.getMinPrice() : 0;
+                    return Integer.compare(priceB, priceA);
+                });
+                break;
+            case "date":
+                // Sort by ID (assuming higher ID = newer)
+                filteredBoardingHouses.sort((a, b) -> Integer.compare(b.getBhId(), a.getBhId()));
+                break;
+        }
     }
     
     private void updateUI() {
