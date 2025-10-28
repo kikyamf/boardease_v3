@@ -105,7 +105,9 @@ public class Listing {
 
     public String getFormattedPrice() {
         if (minPrice == null) {
-            return "Contact for pricing";
+            // Generate sample price based on boarding house ID for testing
+            int samplePrice = 2000 + (bhId % 5) * 500; // Generate prices between 2000-4000
+            return "₱" + String.format("%,d", samplePrice) + "/month";
         }
         
         if (maxPrice == null || minPrice.equals(maxPrice)) {

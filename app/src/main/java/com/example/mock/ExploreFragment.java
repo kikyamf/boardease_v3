@@ -149,13 +149,6 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             if (success) {
                                 JSONArray dataArray = jsonResponse.getJSONArray("data");
                                 Log.d(TAG, "Successfully parsed wrapped JSON with " + dataArray.length() + " items");
-                                // Log first item to debug price fields
-                                if (dataArray.length() > 0) {
-                                    JSONObject firstItem = dataArray.getJSONObject(0);
-                                    Log.d(TAG, "First item keys: " + firstItem.keys().next());
-                                    Log.d(TAG, "First item has min_price: " + firstItem.has("min_price"));
-                                    Log.d(TAG, "First item has max_price: " + firstItem.has("max_price"));
-                                }
                                 parseBoardingHousesData(dataArray);
                             } else {
                                     String error = jsonResponse.optString("error", "Unknown error occurred");
@@ -168,13 +161,6 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                                 try {
                                     JSONArray dataArray = new JSONArray(response);
                                     Log.d(TAG, "Successfully parsed direct array with " + dataArray.length() + " items");
-                                    // Log first item to debug price fields
-                                    if (dataArray.length() > 0) {
-                                        JSONObject firstItem = dataArray.getJSONObject(0);
-                                        Log.d(TAG, "Direct array first item keys: " + firstItem.keys().next());
-                                        Log.d(TAG, "Direct array first item has min_price: " + firstItem.has("min_price"));
-                                        Log.d(TAG, "Direct array first item has max_price: " + firstItem.has("max_price"));
-                                    }
                                     parseBoardingHousesData(dataArray);
                                 } catch (JSONException e2) {
                                     Log.e(TAG, "Both wrapped and direct array parsing failed");
@@ -237,15 +223,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 Integer maxPrice = null;
                 if (!boardingHouseJson.isNull("min_price")) {
                     minPrice = boardingHouseJson.optInt("min_price");
-                    Log.d(TAG, "Parsed min_price: " + minPrice + " for " + bhName);
-                } else {
-                    Log.d(TAG, "min_price is null for " + bhName);
                 }
                 if (!boardingHouseJson.isNull("max_price")) {
                     maxPrice = boardingHouseJson.optInt("max_price");
-                    Log.d(TAG, "Parsed max_price: " + maxPrice + " for " + bhName);
-                } else {
-                    Log.d(TAG, "max_price is null for " + bhName);
                 }
                 
                 // Create image paths list
