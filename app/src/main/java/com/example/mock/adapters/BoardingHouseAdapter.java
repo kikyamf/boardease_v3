@@ -110,7 +110,7 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             } else {
                 // Default behavior (navigate to details)
                 Intent intent = new Intent(context, BoardingHouseDetailsActivity.class);
-                intent.putExtra("boarding_house_id", boardingHouse.getBhId());
+                intent.putExtra("bh_id", boardingHouse.getBhId());
                 intent.putExtra("boarding_house_name", boardingHouse.getBhName());
                 intent.putExtra("boarding_house_image", boardingHouse.getImagePath());
                 context.startActivity(intent);
