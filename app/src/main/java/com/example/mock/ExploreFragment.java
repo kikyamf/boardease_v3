@@ -218,16 +218,26 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 String buildYear = boardingHouseJson.optString("build_year", "");
                 String imagePath = boardingHouseJson.optString("image_path", "");
                 
+                // Parse price data
+                Integer minPrice = null;
+                Integer maxPrice = null;
+                if (!boardingHouseJson.isNull("min_price")) {
+                    minPrice = boardingHouseJson.optInt("min_price");
+                }
+                if (!boardingHouseJson.isNull("max_price")) {
+                    maxPrice = boardingHouseJson.optInt("max_price");
+                }
+                
                 // Create image paths list
                 ArrayList<String> imagePaths = new ArrayList<>();
                 if (imagePath != null && !imagePath.isEmpty()) {
                     imagePaths.add(imagePath);
                 }
                 
-                // Create Listing object with full details
+                // Create Listing object with full details including prices
                 Listing boardingHouse = new Listing(
                     bhId, bhName, bhAddress, bhDescription, bhRules,
-                    bhBathrooms, area, buildYear, imagePath, imagePaths
+                    bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice
                 );
                 
                 allBoardingHouses.add(boardingHouse);

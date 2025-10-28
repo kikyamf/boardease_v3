@@ -13,6 +13,8 @@ public class Listing {
     private String bhBuildYear;
     private String imagePath;
     private ArrayList<String> imagePaths;
+    private Integer minPrice;
+    private Integer maxPrice;
 
     public Listing(int bhId, String bhName, String imagePath) {
         this.bhId = bhId;
@@ -34,6 +36,23 @@ public class Listing {
         this.bhBuildYear = bhBuildYear;
         this.imagePath = imagePath;
         this.imagePaths = imagePaths != null ? imagePaths : new ArrayList<>();
+    }
+
+    public Listing(int bhId, String bhName, String bhAddress, String bhDescription, 
+                   String bhRules, String bhBathrooms, String bhArea, String bhBuildYear, 
+                   String imagePath, ArrayList<String> imagePaths, Integer minPrice, Integer maxPrice) {
+        this.bhId = bhId;
+        this.bhName = bhName;
+        this.bhAddress = bhAddress;
+        this.bhDescription = bhDescription;
+        this.bhRules = bhRules;
+        this.bhBathrooms = bhBathrooms;
+        this.bhArea = bhArea;
+        this.bhBuildYear = bhBuildYear;
+        this.imagePath = imagePath;
+        this.imagePaths = imagePaths != null ? imagePaths : new ArrayList<>();
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
     }
 
     public int getBhId() {
@@ -74,5 +93,25 @@ public class Listing {
 
     public ArrayList<String> getImagePaths() {
         return imagePaths;
+    }
+
+    public Integer getMinPrice() {
+        return minPrice;
+    }
+
+    public Integer getMaxPrice() {
+        return maxPrice;
+    }
+
+    public String getFormattedPrice() {
+        if (minPrice == null) {
+            return "Contact for pricing";
+        }
+        
+        if (maxPrice == null || minPrice.equals(maxPrice)) {
+            return "₱" + String.format("%,d", minPrice) + "/month";
+        } else {
+            return "₱" + String.format("%,d", minPrice) + " - ₱" + String.format("%,d", maxPrice) + "/month";
+        }
     }
 }

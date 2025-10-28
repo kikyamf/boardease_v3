@@ -88,8 +88,8 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         // Set accommodation types (placeholder for now - could be enhanced with room data)
         holder.tvAccommodationTypes.setText("Private Rooms • Bed Spacer");
         
-        // Set price (placeholder for now - could be enhanced with room price data)
-        holder.tvPrice.setText("Contact for pricing");
+        // Set price using real data from database
+        holder.tvPrice.setText(boardingHouse.getFormattedPrice());
         
         // Load image with Glide
         if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {
