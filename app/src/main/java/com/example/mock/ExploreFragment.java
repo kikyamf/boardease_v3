@@ -127,6 +127,13 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                         try {
                             Log.d(TAG, "API Response: " + response);
                             
+                            // Check if response is HTML (ngrok warning page)
+                            if (response.trim().startsWith("<!DOCTYPE html>") || response.contains("ngrok")) {
+                                Log.e(TAG, "Received ngrok warning page instead of JSON");
+                                showError("Please visit the API URL in your browser first to bypass ngrok warning, then try again.");
+                                return;
+                            }
+                            
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
                             
