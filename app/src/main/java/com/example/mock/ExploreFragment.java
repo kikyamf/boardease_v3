@@ -53,7 +53,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     private int userId;
     
     // Filter and Sort state
-    private String currentSortBy = "name"; // name, price_low, price_high, date
+    private String currentSortBy = "sortby"; // sortby, name, price_low, price_high, date
     private String currentFilter = "all"; // all, private_room, bed_spacer
     
     // Factory method to create new instance with user ID
@@ -473,6 +473,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private void sortBoardingHouses() {
         switch (currentSortBy) {
+            case "sortby":
+                // Default: No sorting (keep original order)
+                break;
             case "name":
                 filteredBoardingHouses.sort((a, b) -> a.getBhName().compareToIgnoreCase(b.getBhName()));
                 break;
