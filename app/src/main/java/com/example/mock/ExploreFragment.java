@@ -119,13 +119,20 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         // Create request queue
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         
-        // Create string request
+        // Create string request with custom headers
         StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         try {
                             Log.d(TAG, "API Response: " + response);
+                            
+                            // Check if response is null or empty
+                            if (response == null || response.trim().isEmpty()) {
+                                Log.e(TAG, "Received null or empty response");
+                                showError("Server returned empty response");
+                                return;
+                            }
                             
                             // Check if response is HTML (ngrok warning page)
                             if (response.trim().startsWith("<!DOCTYPE html>") || response.contains("ngrok")) {
@@ -139,6 +146,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             
                             if (success) {
                                 JSONArray dataArray = jsonResponse.getJSONArray("data");
+                                Log.d(TAG, "Successfully parsed JSON with " + dataArray.length() + " items");
                                 parseBoardingHousesData(dataArray);
                             } else {
                                 String error = jsonResponse.optString("error", "Unknown error occurred");
@@ -147,7 +155,11 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "JSON parsing error: " + e.getMessage());
-                            showError("Error parsing server response");
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            showError("Error parsing server response: " + e.getMessage());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Unexpected error: " + e.getMessage());
+                            showError("Unexpected error: " + e.getMessage());
                         } finally {
                             // Hide loading indicator
                             progressBar.setVisibility(View.GONE);
@@ -162,7 +174,14 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                         progressBar.setVisibility(View.GONE);
                         showError("Network error: " + error.getMessage());
                     }
-                });
+                }) {
+            @Override
+            public java.util.Map<String, String> getHeaders() {
+                java.util.Map<String, String> headers = new java.util.HashMap<>();
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
         
         // Add request to queue
         requestQueue.add(stringRequest);
@@ -171,43 +190,51 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     private void parseBoardingHousesData(JSONArray dataArray) throws JSONException {
         allBoardingHouses.clear();
         
-        for (int i = 0; i < dataArray.length(); i++) {
-            JSONObject boardingHouseJson = dataArray.getJSONObject(i);
-            
-            int bhId = boardingHouseJson.getInt("bh_id");
-            String bhName = boardingHouseJson.getString("bh_name");
-            String bhAddress = boardingHouseJson.optString("bh_address", "");
-            String bhDescription = boardingHouseJson.optString("bh_description", "");
-            String bhRules = boardingHouseJson.optString("bh_rules", "");
-            String numberOfBathroom = boardingHouseJson.optString("number_of_bathroom", "");
-            String area = boardingHouseJson.optString("area", "");
-            String buildYear = boardingHouseJson.optString("build_year", "");
-            String imagePath = boardingHouseJson.optString("image_path", "");
-            
-            // Create image paths list
-            ArrayList<String> imagePaths = new ArrayList<>();
-            if (!imagePath.isEmpty()) {
-                imagePaths.add(imagePath);
+        try {
+            for (int i = 0; i < dataArray.length(); i++) {
+                JSONObject boardingHouseJson = dataArray.getJSONObject(i);
+                
+                int bhId = boardingHouseJson.getInt("bh_id");
+                String bhName = boardingHouseJson.getString("bh_name");
+                String bhAddress = boardingHouseJson.optString("bh_address", "");
+                String bhDescription = boardingHouseJson.optString("bh_description", "");
+                String bhRules = boardingHouseJson.optString("bh_rules", "");
+                String bhBathrooms = boardingHouseJson.optString("number_of_bathroom", "");
+                String area = boardingHouseJson.optString("area", "");
+                String buildYear = boardingHouseJson.optString("build_year", "");
+                String imagePath = boardingHouseJson.optString("image_path", "");
+                
+                // Create image paths list
+                ArrayList<String> imagePaths = new ArrayList<>();
+                if (imagePath != null && !imagePath.isEmpty()) {
+                    imagePaths.add(imagePath);
+                }
+                
+                // Create Listing object with full details
+                Listing boardingHouse = new Listing(
+                    bhId, bhName, bhAddress, bhDescription, bhRules,
+                    bhBathrooms, area, buildYear, imagePath, imagePaths
+                );
+                
+                allBoardingHouses.add(boardingHouse);
             }
             
-            // Create Listing object with full details
-            Listing boardingHouse = new Listing(
-                bhId, bhName, bhAddress, bhDescription, bhRules,
-                numberOfBathroom, area, buildYear, imagePath, imagePaths
-            );
+            // Initially show all boarding houses
+            filteredBoardingHouses.clear();
+            filteredBoardingHouses.addAll(allBoardingHouses);
             
-            allBoardingHouses.add(boardingHouse);
-        }
-        
-        // Initially show all boarding houses
-        filteredBoardingHouses.clear();
-        filteredBoardingHouses.addAll(allBoardingHouses);
-        
-        Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
-        
-        // Handle empty results
-        if (allBoardingHouses.isEmpty()) {
-            showEmptyState();
+            Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
+            
+            // Handle empty results
+            if (allBoardingHouses.isEmpty()) {
+                showEmptyState();
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing boarding house data: " + e.getMessage());
+            throw e; // Re-throw to be handled by the calling method
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error parsing boarding house data: " + e.getMessage());
+            throw new JSONException("Error parsing boarding house data: " + e.getMessage());
         }
     }
     
