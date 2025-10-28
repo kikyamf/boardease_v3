@@ -141,17 +141,31 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                                 return;
                             }
                             
-                            JSONObject jsonResponse = new JSONObject(response);
-                            boolean success = jsonResponse.getBoolean("success");
-                            
-                            if (success) {
-                                JSONArray dataArray = jsonResponse.getJSONArray("data");
-                                Log.d(TAG, "Successfully parsed JSON with " + dataArray.length() + " items");
-                                parseBoardingHousesData(dataArray);
-                            } else {
-                                String error = jsonResponse.optString("error", "Unknown error occurred");
-                                Log.e(TAG, "API Error: " + error);
-                                showError("Failed to load boarding houses: " + error);
+                            // Try to parse as wrapped JSON object first
+                            try {
+                                JSONObject jsonResponse = new JSONObject(response);
+                                boolean success = jsonResponse.getBoolean("success");
+                                
+                                if (success) {
+                                    JSONArray dataArray = jsonResponse.getJSONArray("data");
+                                    Log.d(TAG, "Successfully parsed wrapped JSON with " + dataArray.length() + " items");
+                                    parseBoardingHousesData(dataArray);
+                                } else {
+                                    String error = jsonResponse.optString("error", "Unknown error occurred");
+                                    Log.e(TAG, "API Error: " + error);
+                                    showError("Failed to load boarding houses: " + error);
+                                }
+                            } catch (JSONException e) {
+                                // If wrapped format fails, try parsing as direct array
+                                Log.d(TAG, "Wrapped format failed, trying direct array format");
+                                try {
+                                    JSONArray dataArray = new JSONArray(response);
+                                    Log.d(TAG, "Successfully parsed direct array with " + dataArray.length() + " items");
+                                    parseBoardingHousesData(dataArray);
+                                } catch (JSONException e2) {
+                                    Log.e(TAG, "Both wrapped and direct array parsing failed");
+                                    throw e; // Re-throw original exception
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "JSON parsing error: " + e.getMessage());
