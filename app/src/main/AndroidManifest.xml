@@ -126,6 +126,12 @@
         <activity
             android:name=".CreateGroupChat"
             android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivitySimple"
+            android:exported="false" />
     </application>
 
 </manifest>
