@@ -257,15 +257,22 @@ public class Login extends AppCompatActivity {
                 String userEmail = userObject.getString("email");
                 
                 // Get additional user details (if available)
+                String suffix = userObject.optString("suffix", "");
                 String middleName = userObject.optString("middleName", "");
                 String phone = userObject.optString("phone", "");
                 String birthDate = userObject.optString("birthDate", "");
                 String address = userObject.optString("address", "");
                 String gcashNumber = userObject.optString("gcashNumber", "");
                 
+                // Build full name with suffix
+                String fullName = firstName + " " + lastName;
+                if (suffix != null && !suffix.isEmpty() && !suffix.equals("None")) {
+                    fullName += " " + suffix;
+                }
+                
                 // Store user session in SharedPreferences
-                saveUserSession(userId, userRole, firstName + " " + lastName, userEmail, 
-                              middleName, phone, birthDate, address, gcashNumber);
+                saveUserSession(userId, userRole, fullName, userEmail, 
+                              middleName, phone, birthDate, address, gcashNumber, suffix);
                 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
@@ -295,7 +302,7 @@ public class Login extends AppCompatActivity {
     }
     
     private void saveUserSession(String userId, String userRole, String userName, String userEmail, 
-                                String middleName, String phone, String birthDate, String address, String gcashNumber) {
+                                String middleName, String phone, String birthDate, String address, String gcashNumber, String suffix) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_ROLE, userRole);
@@ -306,6 +313,7 @@ public class Login extends AppCompatActivity {
         editor.putString("user_birth_date", birthDate);
         editor.putString("user_address", address);
         editor.putString("user_gcash_number", gcashNumber);
+        editor.putString("user_suffix", suffix);
         editor.apply();
     }
     
@@ -387,5 +395,10 @@ public class Login extends AppCompatActivity {
     public static String getCurrentUserGcashNumber(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_gcash_number", "");
+    }
+    
+    public static String getCurrentUserSuffix(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_suffix", "");
     }
 }

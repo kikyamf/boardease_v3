@@ -210,8 +210,13 @@ public class PreBookingActivity extends AppCompatActivity {
             tvAccommodationDescription.setText(accommodationDescription);
         }
         
-        // TODO: Load user's full name from profile
-        tvFullName.setText("John Doe"); // Placeholder
+        // Load user's full name from profile
+        String fullName = Login.getCurrentUserName(this);
+        if (fullName != null && !fullName.isEmpty()) {
+            tvFullName.setText(fullName);
+        } else {
+            tvFullName.setText("User Name"); // Fallback
+        }
         
         // TODO: Load boarding house image
         imgBoardingHouse.setImageResource(R.drawable.sample_listing);

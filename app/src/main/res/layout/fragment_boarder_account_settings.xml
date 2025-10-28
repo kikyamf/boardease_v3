@@ -151,6 +151,33 @@
                         android:fontFamily="@font/poppins_regular" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Suffix Field -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:boxCornerRadiusTopStart="10dp"
+                    app:boxCornerRadiusTopEnd="10dp"
+                    app:boxCornerRadiusBottomStart="10dp"
+                    app:boxCornerRadiusBottomEnd="10dp"
+                    app:boxStrokeColor="#A18167"
+                    app:hintTextColor="#A18167"
+                    android:hint="Suffix"
+                    app:startIconDrawable="@drawable/ic_name"
+                    app:startIconTint="#A18167">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSuffix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Suffix (Jr., Sr., I, II, etc.)"
+                        android:textColor="@color/black"
+                        android:inputType="text"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"

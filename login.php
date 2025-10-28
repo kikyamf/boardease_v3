@@ -50,7 +50,7 @@ $email = trim($email);
 $password = trim($password);
 
 // Prepare SQL statement to prevent SQL injection
-$stmt = $conn->prepare("SELECT r.id, r.role, r.first_name, r.last_name, r.email, r.password, r.status, u.user_id 
+$stmt = $conn->prepare("SELECT r.id, r.role, r.first_name, r.last_name, r.suffix, r.email, r.password, r.status, u.user_id 
                         FROM registrations r 
                         LEFT JOIN users u ON r.id = u.reg_id 
                         WHERE r.email = ?");
@@ -97,6 +97,7 @@ if ($result->num_rows === 0) {
                     "role" => $user['role'],
                     "firstName" => $user['first_name'],
                     "lastName" => $user['last_name'],
+                    "suffix" => $user['suffix'],
                     "email" => $user['email']
                 )
             );

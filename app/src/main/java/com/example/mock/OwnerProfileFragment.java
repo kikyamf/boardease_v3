@@ -180,7 +180,11 @@ public class OwnerProfileFragment extends Fragment {
             // Set name
             String firstName = profileData.optString("f_name", "");
             String lastName = profileData.optString("l_name", "");
+            String suffix = profileData.optString("suffix", "");
             String fullName = firstName + " " + lastName;
+            if (suffix != null && !suffix.isEmpty() && !suffix.equals("None")) {
+                fullName += " " + suffix;
+            }
             if (isAdded() && tvOwnerName != null) {
                 tvOwnerName.setText(fullName.trim());
             }

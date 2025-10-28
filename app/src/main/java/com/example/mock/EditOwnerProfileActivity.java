@@ -11,10 +11,12 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -50,6 +52,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     
     private ImageView ivProfilePic, ivBack;
     private EditText etFirstName, etMiddleName, etLastName, etPhoneNumber, etAddress;
+    private Spinner spinnerSuffix;
     private Button btnBirthdate, btnSaveChanges;
     
     private Calendar calendar;
@@ -83,6 +86,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         etFirstName = findViewById(R.id.etFirstName);
         etMiddleName = findViewById(R.id.etMiddleName);
         etLastName = findViewById(R.id.etLastName);
+        spinnerSuffix = findViewById(R.id.spinnerSuffix);
         btnBirthdate = findViewById(R.id.btnBirthdate);
         etPhoneNumber = findViewById(R.id.etPhoneNumber);
         etAddress = findViewById(R.id.etAddress);
@@ -90,6 +94,16 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         
         calendar = Calendar.getInstance();
         dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        
+        // Setup suffix spinner
+        setupSuffixSpinner();
+    }
+    
+    private void setupSuffixSpinner() {
+        String[] suffixOptions = {"None", "Jr.", "Sr.", "I", "II", "III", "IV", "V"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, suffixOptions);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSuffix.setAdapter(adapter);
     }
     
     private void setupClickListeners() {
@@ -196,6 +210,17 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             etFirstName.setText(profileData.optString("f_name", ""));
             etMiddleName.setText(profileData.optString("m_name", ""));
             etLastName.setText(profileData.optString("l_name", ""));
+            
+            // Set suffix spinner
+            String suffix = profileData.optString("suffix", "None");
+            String[] suffixOptions = {"None", "Jr.", "Sr.", "I", "II", "III", "IV", "V"};
+            for (int i = 0; i < suffixOptions.length; i++) {
+                if (suffixOptions[i].equals(suffix)) {
+                    spinnerSuffix.setSelection(i);
+                    break;
+                }
+            }
+            
             etPhoneNumber.setText(profileData.optString("phone_number", ""));
             etAddress.setText(profileData.optString("p_address", ""));
             
@@ -385,6 +410,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
                 params.put("f_name", etFirstName.getText().toString().trim());
                 params.put("m_name", etMiddleName.getText().toString().trim());
                 params.put("l_name", etLastName.getText().toString().trim());
+                params.put("suffix", spinnerSuffix.getSelectedItem().toString());
                 params.put("birthdate", btnBirthdate.getText().toString());
                 params.put("phone_number", etPhoneNumber.getText().toString().trim());
                 params.put("p_address", etAddress.getText().toString().trim());

@@ -116,6 +116,28 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Suffix -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Suffix (Optional)"
+                    android:textSize="14sp"
+                    android:textColor="#000000"/>
+
+                <Spinner
+                    android:id="@+id/spinnerSuffix"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:padding="10dp"/>
+            </LinearLayout>
+
             <!-- Middle + Birthdate -->
             <LinearLayout
                 android:orientation="horizontal"
@@ -254,14 +276,34 @@
                 android:layout_marginTop="12dp"
                 android:textColor="#000000"/>
 
-            <EditText
-                android:id="@+id/etPassword"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edittext_background"
-                android:inputType="textPassword"
-                android:padding="10dp"
-                android:textColor="@color/black" />
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edittext_background"
+                    android:inputType="textPassword"
+                    android:padding="10dp"
+                    android:paddingEnd="50dp"
+                    android:textColor="@color/black" />
+
+                <ImageView
+                    android:id="@+id/ivTogglePassword"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="15dp"
+                    android:src="@drawable/ic_eye_closed"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </RelativeLayout>
 
             <!-- GCash -->
             <TextView

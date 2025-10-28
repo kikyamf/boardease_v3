@@ -46,6 +46,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private TextInputEditText etFirstName;
     private TextInputEditText etMiddleName;
     private TextInputEditText etLastName;
+    private TextInputEditText etSuffix;
     private TextInputEditText etEmail;
     private TextInputEditText etContactNumber;
     private TextInputEditText etBirthdate;
@@ -74,6 +75,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private static final String KEY_FIRST_NAME = "first_name";
     private static final String KEY_MIDDLE_NAME = "middle_name";
     private static final String KEY_LAST_NAME = "last_name";
+    private static final String KEY_SUFFIX = "suffix";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_CONTACT = "contact_number";
     private static final String KEY_BIRTHDATE = "birthdate";
@@ -122,6 +124,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etFirstName = view.findViewById(R.id.etFirstName);
             etMiddleName = view.findViewById(R.id.etMiddleName);
             etLastName = view.findViewById(R.id.etLastName);
+            etSuffix = view.findViewById(R.id.etSuffix);
             etEmail = view.findViewById(R.id.etEmail);
             etContactNumber = view.findViewById(R.id.etContactNumber);
             etBirthdate = view.findViewById(R.id.etBirthdate);
@@ -249,6 +252,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             // Load user data from Login SharedPreferences
             String fullName = Login.getCurrentUserName(getContext());
             String middleName = Login.getCurrentUserMiddleName(getContext());
+            String suffix = Login.getCurrentUserSuffix(getContext());
             String email = Login.getCurrentUserEmail(getContext());
             String contact = Login.getCurrentUserPhone(getContext());
             String birthdate = Login.getCurrentUserBirthDate(getContext());
@@ -281,6 +285,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (firstName == null || firstName.isEmpty()) firstName = "First Name";
             if (middleName == null) middleName = "";
             if (lastName == null || lastName.isEmpty()) lastName = "Last Name";
+            if (suffix == null) suffix = "";
             if (email == null || email.isEmpty()) email = "user@email.com";
             if (contact == null) contact = "";
             if (birthdate == null) birthdate = "";
@@ -289,6 +294,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (etFirstName != null) etFirstName.setText(firstName);
             if (etMiddleName != null) etMiddleName.setText(middleName);
             if (etLastName != null) etLastName.setText(lastName);
+            if (etSuffix != null) etSuffix.setText(suffix);
             if (etEmail != null) etEmail.setText(email);
             if (etContactNumber != null) etContactNumber.setText(contact);
             if (etBirthdate != null) etBirthdate.setText(birthdate);
@@ -299,6 +305,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (etFirstName != null) etFirstName.setText("First Name");
             if (etMiddleName != null) etMiddleName.setText("");
             if (etLastName != null) etLastName.setText("Last Name");
+            if (etSuffix != null) etSuffix.setText("");
             if (etEmail != null) etEmail.setText("user@email.com");
             if (etContactNumber != null) etContactNumber.setText("");
             if (etBirthdate != null) etBirthdate.setText("");
@@ -348,6 +355,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             String firstName = etFirstName.getText().toString().trim();
             String middleName = etMiddleName.getText().toString().trim();
             String lastName = etLastName.getText().toString().trim();
+            String suffix = etSuffix.getText().toString().trim();
             String email = etEmail.getText().toString().trim();
             String contact = etContactNumber.getText().toString().trim();
             String birthdate = etBirthdate.getText().toString().trim();
@@ -359,6 +367,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 editor.putString(KEY_FIRST_NAME, firstName);
                 editor.putString(KEY_MIDDLE_NAME, middleName);
                 editor.putString(KEY_LAST_NAME, lastName);
+                editor.putString(KEY_SUFFIX, suffix);
                 editor.putString(KEY_EMAIL, email);
                 editor.putString(KEY_CONTACT, contact);
                 editor.putString(KEY_BIRTHDATE, birthdate);

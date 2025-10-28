@@ -53,7 +53,7 @@ public class Registration2Activity extends AppCompatActivity {
     private String idBackPath = null;
 
     // Get data from first registration screen
-    String role, firstName, middleName, lastName, birthDate, phone, address, email, password, gcashNum, qrPath;
+    String role, firstName, middleName, lastName, suffix, birthDate, phone, address, email, password, gcashNum, qrPath;
 
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
@@ -81,6 +81,7 @@ public class Registration2Activity extends AppCompatActivity {
         firstName = getIntent().getStringExtra("firstName");
         middleName = getIntent().getStringExtra("middleName");
         lastName = getIntent().getStringExtra("lastName");
+        suffix = getIntent().getStringExtra("suffix");
         birthDate = getIntent().getStringExtra("birthDate");
         phone = getIntent().getStringExtra("phone");
         address = getIntent().getStringExtra("address");
@@ -262,6 +263,24 @@ public class Registration2Activity extends AppCompatActivity {
                                 // Handle specific error messages
                                 if (message.contains("Duplicate entry") && message.contains("email")) {
                                     Toast.makeText(this, "This email is already registered. Please use a different email or try logging in.", Toast.LENGTH_LONG).show();
+                                } else if (message.contains("GCash QR code validation failed")) {
+                                    // Handle QR code validation errors
+                                    String qrErrorMessage = message.replace("GCash QR code validation failed: ", "");
+                                    String helpfulMessage = qrErrorMessage;
+                                    
+                                    if (qrErrorMessage.contains("No QR code detected")) {
+                                        helpfulMessage = "No QR code found in your image. Please upload a clear photo of your GCash QR code.";
+                                    } else if (qrErrorMessage.contains("does not appear to be a GCash QR code")) {
+                                        helpfulMessage = "This doesn't look like a GCash QR code. Please upload your actual GCash QR code.";
+                                    } else if (qrErrorMessage.contains("too small")) {
+                                        helpfulMessage = "QR code image is too small. Please take a clearer photo.";
+                                    } else if (qrErrorMessage.contains("too large")) {
+                                        helpfulMessage = "QR code image is too large. Please compress or resize the image.";
+                                    } else if (qrErrorMessage.contains("Invalid image format")) {
+                                        helpfulMessage = "Invalid image format. Please upload a JPG, PNG, or GIF image.";
+                                    }
+                                    
+                                    Toast.makeText(this, "❌ " + helpfulMessage, Toast.LENGTH_LONG).show();
                                 } else {
                                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                                 }
@@ -319,6 +338,7 @@ public class Registration2Activity extends AppCompatActivity {
                     params.put("firstName", firstName);
                     params.put("middleName", middleName);
                     params.put("lastName", lastName);
+                    params.put("suffix", suffix != null ? suffix : "None");
                     params.put("birthDate", birthDate);
                     params.put("phone", phone);
                     params.put("address", address);

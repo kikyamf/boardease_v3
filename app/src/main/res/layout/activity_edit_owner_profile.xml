@@ -188,6 +188,24 @@
                     android:textSize="16sp"
                     android:layout_marginBottom="16dp" />
 
+                <!-- Suffix -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Suffix"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerSuffix"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp" />
+
                 <!-- Birthdate -->
                 <TextView
                     android:layout_width="wrap_content"

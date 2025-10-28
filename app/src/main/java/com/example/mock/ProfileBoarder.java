@@ -54,10 +54,18 @@ public class ProfileBoarder extends Fragment {
         tvFirstName = view.findViewById(R.id.tvFirstName);
         btnEditFirstName = view.findViewById(R.id.btnEditFirstName);
 
-        // Sample data
-        tvUserName.setText("John Doe");
+        // Load user data
+        String userName = Login.getCurrentUserName(getContext());
+        if (userName != null && !userName.isEmpty()) {
+            tvUserName.setText(userName);
+            // Extract first name for display
+            String firstName = userName.split(" ")[0];
+            tvFirstName.setText("First Name: " + firstName);
+        } else {
+            tvUserName.setText("User Name");
+            tvFirstName.setText("First Name: User");
+        }
         tvActiveBH.setText("Active Boarding House: Sunshine Dorm");
-        tvFirstName.setText("First Name: John");
 
         // Register ActivityResultLauncher for picking image
         imagePickerLauncher = registerForActivityResult(

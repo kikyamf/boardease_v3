@@ -38,7 +38,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class RegistrationActivity extends AppCompatActivity {
 
-    Spinner spinnerRole;
+    Spinner spinnerRole, spinnerSuffix;
 
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
@@ -67,6 +67,7 @@ public class RegistrationActivity extends AppCompatActivity {
         btnNext = findViewById(R.id.btnNext);
 
         spinnerRole = findViewById(R.id.spinnerRole);
+        spinnerSuffix = findViewById(R.id.spinnerSuffix);
 
         etBirthDate = findViewById(R.id.etBirthDate);
         etFirstName = findViewById(R.id.etFirstName);
@@ -83,6 +84,7 @@ public class RegistrationActivity extends AppCompatActivity {
         tvEmailValidation = findViewById(R.id.tvEmailValidation);
 
         UploadQr = findViewById(R.id.UploadQr);
+        ivTogglePassword = findViewById(R.id.ivTogglePassword);
 
         // Add real-time email validation
         etEmail.addTextChangedListener(new android.text.TextWatcher() {
@@ -134,6 +136,16 @@ public class RegistrationActivity extends AppCompatActivity {
         );
         spinnerRole.setAdapter(adapter);
 
+        // Setup suffix spinner
+        String[] suffixes = {"None", "Jr.", "Sr.", "I", "II", "III", "IV", "V"};
+
+        ArrayAdapter<String> suffixAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                suffixes
+        );
+        spinnerSuffix.setAdapter(suffixAdapter);
+
         //Set the calendar for the birthdate
         etBirthDate.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,6 +187,23 @@ public class RegistrationActivity extends AppCompatActivity {
         // When ImageView is clicked → open gallery
         UploadQr.setOnClickListener(v -> {
             pickImageLauncher.launch("image/*"); // open only image files
+        });
+
+        // Password toggle click listener
+        ivTogglePassword.setOnClickListener(v -> {
+            if (isPasswordVisible) {
+                // Hide password
+                etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                ivTogglePassword.setImageResource(R.drawable.ic_eye_closed);
+                isPasswordVisible = false;
+            } else {
+                // Show password
+                etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                ivTogglePassword.setImageResource(R.drawable.ic_eye_open);
+                isPasswordVisible = true;
+            }
+            // Move cursor to end of text
+            etPassword.setSelection(etPassword.getText().length());
         });
 
         //Button next for proceeding to the next Activity
@@ -389,6 +418,7 @@ public class RegistrationActivity extends AppCompatActivity {
         a.putExtra("firstName", etFirstName.getText().toString().trim());
         a.putExtra("middleName", etMiddleName.getText().toString().trim());
         a.putExtra("lastName", etLastName.getText().toString().trim());
+        a.putExtra("suffix", spinnerSuffix.getSelectedItem().toString());
         a.putExtra("birthDate", etBirthDate.getText().toString().trim());
         a.putExtra("phone", etPhone.getText().toString().trim());
         a.putExtra("address", etAddress.getText().toString().trim());
@@ -409,9 +439,9 @@ public class RegistrationActivity extends AppCompatActivity {
      */
     private void verifyAndSetQrImage(Uri imageUri) {
         // Show loading message
-        Toast.makeText(this, "Verifying QR image...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Scanning QR code with API...", Toast.LENGTH_SHORT).show();
         
-        // Use QR code specific verification
+        // Use API-based QR code verification
         ImageVerification.verifyQrCode(this, imageUri, new ImageVerification.VerificationCallback() {
             @Override
             public void onVerificationComplete(boolean isApproved, String reason) {
@@ -419,16 +449,27 @@ public class RegistrationActivity extends AppCompatActivity {
                     // Set the image as selected
                     selectedQrUri = imageUri;
                     UploadQr.setImageURI(imageUri); // show the image in ImageView
-                    Toast.makeText(RegistrationActivity.this, "✅ QR image approved", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegistrationActivity.this, "✅ Valid GCash QR code detected!", Toast.LENGTH_SHORT).show();
                 } else {
-                    // Show rejection reason
-                    Toast.makeText(RegistrationActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                    // Show rejection reason with more helpful message
+                    String helpfulMessage = reason;
+                    if (reason.contains("No QR code detected")) {
+                        helpfulMessage = "No QR code found in image. Please upload a clear photo of your GCash QR code.";
+                    } else if (reason.contains("does not appear to be a GCash QR code")) {
+                        helpfulMessage = "This doesn't look like a GCash QR code. Please upload your actual GCash QR code.";
+                    } else if (reason.contains("too small")) {
+                        helpfulMessage = "Image is too small. Please take a clearer photo of your GCash QR code.";
+                    } else if (reason.contains("too large")) {
+                        helpfulMessage = "Image is too large. Please compress or resize your GCash QR code image.";
+                    }
+                    
+                    Toast.makeText(RegistrationActivity.this, "❌ " + helpfulMessage, Toast.LENGTH_LONG).show();
                 }
             }
             
             @Override
             public void onVerificationError(String error) {
-                Toast.makeText(RegistrationActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(RegistrationActivity.this, "QR code verification failed: " + error, Toast.LENGTH_LONG).show();
             }
         });
     }
