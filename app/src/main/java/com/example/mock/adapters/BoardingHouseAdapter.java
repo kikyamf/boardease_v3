@@ -73,17 +73,23 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         // Set boarding house name
         holder.tvBoardingHouseName.setText(boardingHouse.getBhName());
         
-        // Set location (you might need to add location field to Listing model)
-        holder.tvLocation.setText("Quezon City, Metro Manila"); // Placeholder
+        // Set location using real address data
+        String location = boardingHouse.getBhAddress() != null && !boardingHouse.getBhAddress().isEmpty() 
+            ? boardingHouse.getBhAddress() 
+            : "Location not specified";
+        holder.tvLocation.setText(location);
         
-        // Set description (you might need to add description field to Listing model)
-        holder.tvDescription.setText("Cozy and affordable boarding house with modern amenities. Perfect for students and working professionals.");
+        // Set description using real description data
+        String description = boardingHouse.getBhDescription() != null && !boardingHouse.getBhDescription().isEmpty()
+            ? boardingHouse.getBhDescription()
+            : "No description available";
+        holder.tvDescription.setText(description);
         
-        // Set accommodation types (you might need to add accommodation types field to Listing model)
+        // Set accommodation types (placeholder for now - could be enhanced with room data)
         holder.tvAccommodationTypes.setText("Private Rooms • Bed Spacer");
         
-        // Set price (you might need to add price field to Listing model)
-        holder.tvPrice.setText("₱3,500/month");
+        // Set price (placeholder for now - could be enhanced with room price data)
+        holder.tvPrice.setText("Contact for pricing");
         
         // Load image with Glide
         if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {

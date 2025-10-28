@@ -3,6 +3,7 @@ package com.example.mock;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,12 +17,24 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.mock.adapters.BoardingHouseAdapter;
 import com.example.mock.adapters.BoardingHouseAdapter.OnFavoriteClickListener;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ExploreFragment extends Fragment implements OnFavoriteClickListener {
+    
+    private static final String TAG = "ExploreFragment";
+    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
     
     private EditText etSearch;
     private RecyclerView rvBoardingHouses;
@@ -103,37 +116,113 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         rvBoardingHouses.setVisibility(View.GONE);
         layoutEmptyState.setVisibility(View.GONE);
         
-        // Simulate loading data (replace with actual API call)
-        // For now, creating sample data
-        createSampleData();
+        // Create request queue
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         
-        // Hide loading indicator and show results
-        progressBar.setVisibility(View.GONE);
-        updateUI();
+        // Create string request
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            Log.d(TAG, "API Response: " + response);
+                            
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONArray dataArray = jsonResponse.getJSONArray("data");
+                                parseBoardingHousesData(dataArray);
+                            } else {
+                                String error = jsonResponse.optString("error", "Unknown error occurred");
+                                Log.e(TAG, "API Error: " + error);
+                                showError("Failed to load boarding houses: " + error);
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            showError("Error parsing server response");
+                        } finally {
+                            // Hide loading indicator
+                            progressBar.setVisibility(View.GONE);
+                            updateUI();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        progressBar.setVisibility(View.GONE);
+                        showError("Network error: " + error.getMessage());
+                    }
+                });
+        
+        // Add request to queue
+        requestQueue.add(stringRequest);
     }
     
-    private void createSampleData() {
+    private void parseBoardingHousesData(JSONArray dataArray) throws JSONException {
         allBoardingHouses.clear();
         
-        // Sample boarding houses using the correct constructor
-        Listing bh1 = new Listing(1, "Sunshine Boarding House", "sample_listing");
-        allBoardingHouses.add(bh1);
-        
-        Listing bh2 = new Listing(2, "Green Valley Dormitory", "sample_listing");
-        allBoardingHouses.add(bh2);
-        
-        Listing bh3 = new Listing(3, "Metro Student Housing", "sample_listing");
-        allBoardingHouses.add(bh3);
-        
-        Listing bh4 = new Listing(4, "Quezon City Boarding", "sample_listing");
-        allBoardingHouses.add(bh4);
-        
-        Listing bh5 = new Listing(5, "Manila Central Dorm", "sample_listing");
-        allBoardingHouses.add(bh5);
+        for (int i = 0; i < dataArray.length(); i++) {
+            JSONObject boardingHouseJson = dataArray.getJSONObject(i);
+            
+            int bhId = boardingHouseJson.getInt("bh_id");
+            String bhName = boardingHouseJson.getString("bh_name");
+            String bhAddress = boardingHouseJson.optString("bh_address", "");
+            String bhDescription = boardingHouseJson.optString("bh_description", "");
+            String bhRules = boardingHouseJson.optString("bh_rules", "");
+            String numberOfBathroom = boardingHouseJson.optString("number_of_bathroom", "");
+            String area = boardingHouseJson.optString("area", "");
+            String buildYear = boardingHouseJson.optString("build_year", "");
+            String imagePath = boardingHouseJson.optString("image_path", "");
+            
+            // Create image paths list
+            ArrayList<String> imagePaths = new ArrayList<>();
+            if (!imagePath.isEmpty()) {
+                imagePaths.add(imagePath);
+            }
+            
+            // Create Listing object with full details
+            Listing boardingHouse = new Listing(
+                bhId, bhName, bhAddress, bhDescription, bhRules,
+                numberOfBathroom, area, buildYear, imagePath, imagePaths
+            );
+            
+            allBoardingHouses.add(boardingHouse);
+        }
         
         // Initially show all boarding houses
         filteredBoardingHouses.clear();
         filteredBoardingHouses.addAll(allBoardingHouses);
+        
+        Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
+        
+        // Handle empty results
+        if (allBoardingHouses.isEmpty()) {
+            showEmptyState();
+        }
+    }
+    
+    private void showError(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+        // Show empty state
+        rvBoardingHouses.setVisibility(View.GONE);
+        layoutEmptyState.setVisibility(View.VISIBLE);
+        
+        // Update results count to show error state
+        tvResultsCount.setText("Failed to load boarding houses");
+    }
+    
+    private void showEmptyState() {
+        rvBoardingHouses.setVisibility(View.GONE);
+        layoutEmptyState.setVisibility(View.VISIBLE);
+        tvResultsCount.setText("No boarding houses found");
+    }
+    
+    // Public method to refresh data (can be called from parent activity)
+    public void refreshData() {
+        loadBoardingHouses();
     }
     
     private void filterBoardingHouses(String query) {
@@ -144,7 +233,10 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         } else {
             String lowerQuery = query.toLowerCase();
             for (Listing boardingHouse : allBoardingHouses) {
-                if (boardingHouse.getBhName().toLowerCase().contains(lowerQuery)) {
+                // Search by name, address, and description
+                if (boardingHouse.getBhName().toLowerCase().contains(lowerQuery) ||
+                    (boardingHouse.getBhAddress() != null && boardingHouse.getBhAddress().toLowerCase().contains(lowerQuery)) ||
+                    (boardingHouse.getBhDescription() != null && boardingHouse.getBhDescription().toLowerCase().contains(lowerQuery))) {
                     filteredBoardingHouses.add(boardingHouse);
                 }
             }
