@@ -89,7 +89,9 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         holder.tvAccommodationTypes.setText("Private Rooms • Bed Spacer");
         
         // Set price using real data from database
-        holder.tvPrice.setText(boardingHouse.getFormattedPrice());
+        String formattedPrice = boardingHouse.getFormattedPrice();
+        android.util.Log.d("BoardingHouseAdapter", "Setting price for " + boardingHouse.getBhName() + ": " + formattedPrice);
+        holder.tvPrice.setText(formattedPrice);
         
         // Load image with Glide
         if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {
