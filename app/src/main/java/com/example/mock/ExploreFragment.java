@@ -149,6 +149,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         
         // Update sort button text
         switch (currentSortBy) {
+            case "sortby":
+                btnSort.setText("Sort by");
+                break;
             case "name":
                 btnSort.setText("Name (A-Z)");
                 break;
@@ -191,7 +194,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     }
     
     private void showSortDialog() {
-        String[] sortOptions = {"Name (A-Z)", "Price (Low to High)", "Price (High to Low)", "Date (Newest)"};
+        String[] sortOptions = {"Sort by","Name (A-Z)", "Price (Low to High)", "Price (High to Low)", "Date (Newest)"};
         int currentSelection = getCurrentSortIndex();
         
         new MaterialAlertDialogBuilder(getContext())
@@ -199,15 +202,18 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 .setSingleChoiceItems(sortOptions, currentSelection, (dialog, which) -> {
                     switch (which) {
                         case 0:
-                            currentSortBy = "name";
+                            currentSortBy = "sortby";
                             break;
                         case 1:
-                            currentSortBy = "price_low";
+                            currentSortBy = "name";
                             break;
                         case 2:
-                            currentSortBy = "price_high";
+                            currentSortBy = "price_low";
                             break;
                         case 3:
+                            currentSortBy = "price_high";
+                            break;
+                        case 4:
                             currentSortBy = "date";
                             break;
                     }
@@ -230,10 +236,11 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private int getCurrentSortIndex() {
         switch (currentSortBy) {
-            case "name": return 0;
-            case "price_low": return 1;
-            case "price_high": return 2;
-            case "date": return 3;
+            case "sortby": return 0;
+            case "name": return 1;
+            case "price_low": return 2;
+            case "price_high": return 3;
+            case "date": return 4;
             default: return 0;
         }
     }
