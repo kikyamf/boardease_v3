@@ -157,22 +157,120 @@
                 android:layout_marginTop="16dp"
                 android:lineSpacingExtra="4dp" />
 
-            <!-- Accommodations Section -->
+            <!-- Additional Details -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp">
+
+                <!-- Rules -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rules & Policies"
+                        android:textSize="16sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                    <TextView
+                        android:id="@+id/tvRules"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No specific rules"
+                        android:textSize="14sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+
+                <!-- Property Details -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvBathrooms"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Bathroom info not available"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_regular" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvArea"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Area info not available"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_regular" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvYear"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Year built not available"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_regular" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Rooms Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Available Accommodations"
+                android:text="Available Rooms"
                 android:textSize="18sp"
                 android:textColor="#000000"
                 android:fontFamily="@font/poppins_semibold"
                 android:layout_marginTop="24dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvRooms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false" />
 
             <LinearLayout
                 android:id="@+id/layoutAccommodations"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="12dp"
+                android:visibility="gone">
 
                 <!-- Private Room -->
                 <com.google.android.material.card.MaterialCardView
