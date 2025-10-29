@@ -33,8 +33,8 @@ public class ImageCarouselAdapter extends RecyclerView.Adapter<ImageCarouselAdap
         // Load image with Glide
         Glide.with(holder.itemView.getContext())
             .load(imageUrl)
-            .placeholder(R.drawable.sample_listing)
-            .error(R.drawable.sample_listing)
+            .placeholder(R.drawable.image_loading_placeholder)
+            .error(R.drawable.image_loading_placeholder)
             .centerCrop()
             .into(holder.imageView);
     }
