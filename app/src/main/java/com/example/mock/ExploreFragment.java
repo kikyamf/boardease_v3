@@ -276,7 +276,8 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             if (response.trim().startsWith("<!DOCTYPE html>") || response.contains("ngrok")) {
                                 Log.e(TAG, "Received ngrok warning page instead of JSON");
                                 Log.e(TAG, "Full response: " + response);
-                                showError("Please visit the API URL in your browser first to bypass ngrok warning, then try again.");
+                                Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php in your browser first");
+                                showError("Ngrok warning! Visit API URL in browser first.");
                                 return;
                             }
                             
