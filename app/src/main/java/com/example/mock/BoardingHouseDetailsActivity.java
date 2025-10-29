@@ -150,6 +150,13 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                         // Debug: Log the first 200 characters of response
                         Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
                         
+                        // Debug: Check if response contains bh_rules
+                        if (response.contains("bh_rules")) {
+                            Log.d(TAG, "Response contains 'bh_rules' field");
+                        } else {
+                            Log.d(TAG, "Response does NOT contain 'bh_rules' field");
+                        }
+                        
                         // Check if response is HTML (ngrok warning page)
                         if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                             Log.e(TAG, "Received ngrok warning page instead of JSON");
@@ -232,7 +239,15 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         boardingHouseDetails.setBhName(data.getString("bh_name"));
         boardingHouseDetails.setBhAddress(data.getString("bh_address"));
         boardingHouseDetails.setBhDescription(data.getString("bh_description"));
-        boardingHouseDetails.setBhRules(data.optString("bh_rules", "No specific rules"));
+        
+        // Debug bh_rules data
+        String bhRules = data.optString("bh_rules", "No specific rules");
+        Log.d(TAG, "Raw bh_rules from API: '" + bhRules + "'");
+        Log.d(TAG, "bh_rules length: " + bhRules.length());
+        Log.d(TAG, "bh_rules is empty: " + bhRules.isEmpty());
+        Log.d(TAG, "bh_rules equals 'No specific rules': " + bhRules.equals("No specific rules"));
+        
+        boardingHouseDetails.setBhRules(bhRules);
         boardingHouseDetails.setNumberOfBathroom(data.optInt("number_of_bathroom", 1));
         boardingHouseDetails.setArea(data.optDouble("area", 100.0));
         boardingHouseDetails.setBuildYear(data.optInt("build_year", 2020));
@@ -328,7 +343,13 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         tvLocation.setText(boardingHouseDetails.getBhAddress());
         tvPrice.setText(boardingHouseDetails.getFormattedPriceRange());
         tvDescription.setText(boardingHouseDetails.getBhDescription());
-        tvRules.setText(boardingHouseDetails.getBhRules());
+        
+        // Debug rules display
+        String rulesToDisplay = boardingHouseDetails.getBhRules();
+        Log.d(TAG, "Setting rules text to: '" + rulesToDisplay + "'");
+        Log.d(TAG, "Rules text length: " + rulesToDisplay.length());
+        tvRules.setText(rulesToDisplay);
+        
         tvBathrooms.setText(String.valueOf(boardingHouseDetails.getNumberOfBathroom()));
         tvArea.setText(String.format("%.1f sqm", boardingHouseDetails.getArea()));
         tvYear.setText(String.valueOf(boardingHouseDetails.getBuildYear()));
