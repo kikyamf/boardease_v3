@@ -102,7 +102,7 @@
                     android:layout_height="wrap_content"
                     android:text="Private Rooms • Bed Spacer"
                     android:textSize="11sp"
-                    android:textColor="#333333"
+                    android:textColor="#A18167"
                     android:fontFamily="@font/poppins_medium"
                     android:background="@drawable/rounded_rectangle_bg"
                     android:paddingHorizontal="12dp"
