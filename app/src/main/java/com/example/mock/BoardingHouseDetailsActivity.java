@@ -310,27 +310,15 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         }
         
         // Owner info from registrations table
-        if (data.has("owner")) {
-            JSONObject ownerJson = data.getJSONObject("owner");
-            BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
-            owner.setFirstName(ownerJson.optString("first_name", "John"));
-            owner.setMiddleName(ownerJson.optString("middle_name", ""));
-            owner.setLastName(ownerJson.optString("last_name", "Doe"));
-            owner.setPhone(ownerJson.optString("phone", "+63 912 345 6789"));
-            owner.setEmail(ownerJson.optString("email", "owner@example.com"));
-            owner.setRole(ownerJson.optString("role", "BH Owner"));
-            boardingHouseDetails.setOwner(owner);
-        } else {
-            // Fallback owner info
-            BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
-            owner.setFirstName("John");
-            owner.setMiddleName("");
-            owner.setLastName("Doe");
-            owner.setPhone("+63 912 345 6789");
-            owner.setEmail("owner@example.com");
-            owner.setRole("BH Owner");
-            boardingHouseDetails.setOwner(owner);
-        }
+        JSONObject ownerJson = data.getJSONObject("owner");
+        BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
+        owner.setFirstName(ownerJson.optString("first_name", ""));
+        owner.setMiddleName(ownerJson.optString("middle_name", ""));
+        owner.setLastName(ownerJson.optString("last_name", ""));
+        owner.setPhone(ownerJson.optString("phone", ""));
+        owner.setEmail(ownerJson.optString("email", ""));
+        owner.setRole(ownerJson.optString("role", ""));
+        boardingHouseDetails.setOwner(owner);
     }
     
     private void displayBoardingHouseDetails() {
