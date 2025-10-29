@@ -104,9 +104,9 @@
                     android:textSize="11sp"
                     android:textColor="#333333"
                     android:fontFamily="@font/poppins_medium"
-                    android:background="@drawable/circle_bg"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp" />
+                    android:background="@drawable/rounded_rectangle_bg"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp" />
             </LinearLayout>
 
             <!-- Price and Rating Row -->
