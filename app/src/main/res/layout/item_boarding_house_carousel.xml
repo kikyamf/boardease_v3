@@ -6,6 +6,8 @@
     android:layout_marginEnd="8dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="6dp"
+    app:strokeColor="#A18167"
+    app:strokeWidth="1dp"
     android:backgroundTint="#FFFFFF"
     android:clickable="true"
     android:focusable="true"
