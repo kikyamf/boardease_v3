@@ -269,9 +269,13 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                                 return;
                             }
                             
+                            // Debug: Log the first 200 characters of response
+                            Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
+                            
                             // Check if response is HTML (ngrok warning page)
                             if (response.trim().startsWith("<!DOCTYPE html>") || response.contains("ngrok")) {
                                 Log.e(TAG, "Received ngrok warning page instead of JSON");
+                                Log.e(TAG, "Full response: " + response);
                                 showError("Please visit the API URL in your browser first to bypass ngrok warning, then try again.");
                                 return;
                             }
@@ -327,7 +331,10 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             @Override
             public java.util.Map<String, String> getHeaders() {
                 java.util.Map<String, String> headers = new java.util.HashMap<>();
-                headers.put("ngrok-skip-browser-warning", "true");
+                headers.put("ngrok-skip-browser-warning", "any");
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                Log.d(TAG, "Sending headers: " + headers.toString());
                 return headers;
             }
         };
