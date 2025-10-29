@@ -43,7 +43,6 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private TextView tvBoardingHouseName, tvLocation, tvPrice, tvDescription, tvRules, 
                      tvBathrooms, tvArea, tvYear, tvOwnerName, tvOwnerPhone, tvOwnerEmail;
-    private LinearLayout layoutAccommodations;
     private RecyclerView rvRoomCategories;
     private ProgressBar progressBar;
     
@@ -109,7 +108,6 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         tvOwnerEmail = findViewById(R.id.tvOwnerEmail);
         
         // Other views
-        layoutAccommodations = findViewById(R.id.layoutAccommodations);
         rvRoomCategories = findViewById(R.id.rvRoomCategories);
         progressBar = findViewById(R.id.progressBar);
         
