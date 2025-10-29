@@ -63,7 +63,7 @@
             android:textSize="14sp"
             android:fontFamily="@font/poppins_medium"
             app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
+            app:strokeColor="#A18167"
             app:strokeWidth="1dp"
             android:backgroundTint="#FFFFFF"
             app:icon="@drawable/ic_arrow_down"
@@ -82,7 +82,7 @@
             android:textSize="14sp"
             android:fontFamily="@font/poppins_medium"
             app:cornerRadius="20dp"
-            app:strokeColor="#E0E0E0"
+            app:strokeColor="#A18167"
             app:strokeWidth="1dp"
             android:backgroundTint="#FFFFFF"
             app:icon="@drawable/ic_arrow_down"
@@ -119,7 +119,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginVertical="24dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:indeterminateTint="#A18167" />
 
     <!-- Empty State -->
     <LinearLayout
