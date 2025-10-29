@@ -273,7 +273,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
                             
                             // Check if response is HTML (ngrok warning page)
-                            if (response.trim().startsWith("<!DOCTYPE html>") || response.contains("ngrok")) {
+                            if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                                 Log.e(TAG, "Received ngrok warning page instead of JSON");
                                 Log.e(TAG, "Full response: " + response);
                                 Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php in your browser first");
