@@ -133,28 +133,30 @@ try {
     $response = array(
         'success' => true,
         'data' => array(
-            'bh_id' => (int)$boardingHouse['bh_id'],
-            'bh_name' => $boardingHouse['bh_name'],
-            'bh_address' => $boardingHouse['bh_address'],
-            'bh_description' => $boardingHouse['bh_description'],
-            'bh_rules' => isset($boardingHouse['bh_rules']) && !empty($boardingHouse['bh_rules']) ? $boardingHouse['bh_rules'] : 'No specific rules',
-            'number_of_bathroom' => (int)$boardingHouse['number_of_bathroom'],
-            'area' => (float)$boardingHouse['area'],
-            'build_year' => (int)$boardingHouse['build_year'],
-            'status' => $boardingHouse['status'],
-            'bh_created_at' => $boardingHouse['bh_created_at'],
-            'images' => $formattedImages,
-            'room_categories' => $roomCategories,
-            'room_details' => $roomDetails,
-            'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
-            'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
-            'owner' => array(
-                'first_name' => $boardingHouse['first_name'],
-                'middle_name' => $boardingHouse['middle_name'],
-                'last_name' => $boardingHouse['last_name'],
-                'phone' => $boardingHouse['phone'],
-                'email' => $boardingHouse['email'],
-                'role' => $boardingHouse['role']
+            'boarding_house' => array(
+                'bh_id' => (int)$boardingHouse['bh_id'],
+                'bh_name' => $boardingHouse['bh_name'],
+                'bh_address' => $boardingHouse['bh_address'],
+                'bh_description' => $boardingHouse['bh_description'],
+                'bh_rules' => isset($boardingHouse['bh_rules']) && !empty($boardingHouse['bh_rules']) ? $boardingHouse['bh_rules'] : 'No specific rules',
+                'number_of_bathroom' => (int)$boardingHouse['number_of_bathroom'],
+                'area' => (float)$boardingHouse['area'],
+                'build_year' => (int)$boardingHouse['build_year'],
+                'status' => $boardingHouse['status'],
+                'bh_created_at' => $boardingHouse['bh_created_at'],
+                'images' => $formattedImages,
+                'room_categories' => $roomCategories,
+                'room_details' => $roomDetails,
+                'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
+                'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
+                'owner' => array(
+                    'first_name' => $boardingHouse['first_name'],
+                    'middle_name' => $boardingHouse['middle_name'],
+                    'last_name' => $boardingHouse['last_name'],
+                    'phone' => $boardingHouse['phone'],
+                    'email' => $boardingHouse['email'],
+                    'role' => $boardingHouse['role']
+                )
             )
         )
     );
