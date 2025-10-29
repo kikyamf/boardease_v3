@@ -357,7 +357,8 @@
             android:background="@drawable/circle_bg_brown"
             android:src="@drawable/ic_phone"
             android:contentDescription="Call Owner"
-            android:padding="12dp" />
+            android:padding="12dp"
+            android:tint="#000000" />
 
     </LinearLayout>
 
