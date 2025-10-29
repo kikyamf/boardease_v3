@@ -47,6 +47,17 @@ try {
         exit();
     }
 
+    // Debug: Log database and table info
+    error_log("DEBUG: Connected to database: " . $dbname);
+    error_log("DEBUG: Querying boarding_houses table for bh_id: " . $bhId);
+    error_log("DEBUG: Found boarding house: " . $boardingHouse['bh_name']);
+    error_log("DEBUG: bh_rules value: '" . $boardingHouse['bh_rules'] . "'");
+    error_log("DEBUG: bh_rules is null: " . (is_null($boardingHouse['bh_rules']) ? 'true' : 'false'));
+    error_log("DEBUG: bh_rules is empty: " . (empty($boardingHouse['bh_rules']) ? 'true' : 'false'));
+    
+    // Debug: Show all fields from the query
+    error_log("DEBUG: All boarding house fields: " . json_encode($boardingHouse));
+
     // Fetch images for this boarding house
     $imagesSql = "
         SELECT image_path
@@ -121,7 +132,7 @@ try {
             'bh_name' => $boardingHouse['bh_name'],
             'bh_address' => $boardingHouse['bh_address'],
             'bh_description' => $boardingHouse['bh_description'],
-            'bh_rules' => $boardingHouse['bh_rules'],
+            'bh_rules' => $boardingHouse['bh_rules'] ?: 'No specific rules',
             'number_of_bathroom' => (int)$boardingHouse['number_of_bathroom'],
             'area' => (float)$boardingHouse['area'],
             'build_year' => (int)$boardingHouse['build_year'],
