@@ -309,15 +309,14 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             boardingHouseDetails.setMaxPrice(maxPrice);
         }
         
-        // Owner info from registrations table
-        JSONObject ownerJson = data.getJSONObject("owner");
+        // Owner info from registrations table - owner data is in the main data object
         BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
-        owner.setFirstName(ownerJson.optString("first_name", ""));
-        owner.setMiddleName(ownerJson.optString("middle_name", ""));
-        owner.setLastName(ownerJson.optString("last_name", ""));
-        owner.setPhone(ownerJson.optString("phone", ""));
-        owner.setEmail(ownerJson.optString("email", ""));
-        owner.setRole(ownerJson.optString("role", ""));
+        owner.setFirstName(data.optString("first_name", ""));
+        owner.setMiddleName(data.optString("middle_name", ""));
+        owner.setLastName(data.optString("last_name", ""));
+        owner.setPhone(data.optString("phone", ""));
+        owner.setEmail(data.optString("email", ""));
+        owner.setRole(data.optString("role", ""));
         boardingHouseDetails.setOwner(owner);
     }
     
@@ -404,7 +403,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             Intent callIntent = new Intent(Intent.ACTION_DIAL);
             callIntent.setData(Uri.parse("tel:" + boardingHouseDetails.getOwner().getPhone()));
             startActivity(callIntent);
-        } else {
+                } else {
             Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show();
         }
     }
