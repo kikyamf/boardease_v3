@@ -137,6 +137,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         
         String url = API_URL + "?bh_id=" + boardingHouseId;
+        Log.d(TAG, "Loading boarding house details for ID: " + boardingHouseId);
+        Log.d(TAG, "API URL: " + url);
         
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -144,6 +146,20 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         progressBar.setVisibility(View.GONE);
+                        
+                        // Debug: Log the first 200 characters of response
+                        Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
+                        
+                        // Check if response is HTML (ngrok warning page)
+                        if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
+                            Log.e(TAG, "Received ngrok warning page instead of JSON");
+                            Log.e(TAG, "Full response: " + response);
+                            Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php in your browser first");
+                            Toast.makeText(BoardingHouseDetailsActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
+                            // Show fallback data for mock listings
+                            showFallbackData();
+                            return;
+                        }
                         
                         try {
                             JSONObject jsonResponse = new JSONObject(response);
@@ -156,11 +172,18 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                             } else {
                                 String error = jsonResponse.optString("error", "Unknown error occurred");
                                 Log.e(TAG, "API Error: " + error);
-                                Toast.makeText(BoardingHouseDetailsActivity.this, "Failed to load details: " + error, Toast.LENGTH_LONG).show();
+                                // If boarding house not found, show fallback data
+                                if (error.contains("not found")) {
+                                    showFallbackData();
+                                } else {
+                                    Toast.makeText(BoardingHouseDetailsActivity.this, "Failed to load details: " + error, Toast.LENGTH_LONG).show();
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "JSON parsing error: " + e.getMessage());
-                            Toast.makeText(BoardingHouseDetailsActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            // Show fallback data for mock listings
+                            showFallbackData();
                         }
                     }
                 },
@@ -285,19 +308,19 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             // Add placeholder image if no images
             imageUrls.add("https://via.placeholder.com/400x300?text=No+Image");
         }
-        
-        imageAdapter = new ImageCarouselAdapter(imageUrls);
-        viewPagerImages.setAdapter(imageAdapter);
-        
+            
+            imageAdapter = new ImageCarouselAdapter(imageUrls);
+            viewPagerImages.setAdapter(imageAdapter);
+            
         // Setup indicators
         setupIndicators();
     }
     
     private void setupIndicators() {
-        layoutIndicators.removeAllViews();
-        
-        for (int i = 0; i < imageUrls.size(); i++) {
-            ImageView indicator = new ImageView(this);
+            layoutIndicators.removeAllViews();
+            
+            for (int i = 0; i < imageUrls.size(); i++) {
+                ImageView indicator = new ImageView(this);
             indicator.setImageResource(R.drawable.ic_dot);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -305,7 +328,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             );
             params.setMargins(8, 0, 8, 0);
             indicator.setLayoutParams(params);
-            layoutIndicators.addView(indicator);
+                layoutIndicators.addView(indicator);
         }
     }
     
@@ -326,7 +349,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     }
     
     private void toggleFavorite() {
-        // TODO: Implement favorite functionality
+            // TODO: Implement favorite functionality
         Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
     }
     
@@ -361,5 +384,79 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+    
+    private void showFallbackData() {
+        Log.d(TAG, "Showing fallback data for mock listing");
+        
+        // Create fallback boarding house details
+        boardingHouseDetails = new BoardingHouseDetails();
+        
+        // Basic info with random data
+        boardingHouseDetails.setBhId(boardingHouseId);
+        boardingHouseDetails.setBhName("Sample Boarding House " + boardingHouseId);
+        boardingHouseDetails.setBhAddress("Sample Address, City");
+        boardingHouseDetails.setBhDescription("This is a sample boarding house with modern amenities. Perfect for students and young professionals looking for affordable accommodation.");
+        boardingHouseDetails.setBhRules("No smoking, No pets, Quiet hours 10PM-6AM");
+        boardingHouseDetails.setNumberOfBathroom(2 + (boardingHouseId % 3));
+        boardingHouseDetails.setArea(100.0 + (boardingHouseId % 5) * 50);
+        boardingHouseDetails.setBuildYear(2018 + (boardingHouseId % 5));
+        boardingHouseDetails.setStatus("active");
+        boardingHouseDetails.setBhCreatedAt("2024-01-01");
+        
+        // Sample images
+        List<String> sampleImages = new ArrayList<>();
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+1");
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+2");
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+3");
+        boardingHouseDetails.setImages(sampleImages);
+        
+        // Sample room categories
+        List<String> sampleCategories = new ArrayList<>();
+        sampleCategories.add("Private Room");
+        sampleCategories.add("Bed Spacer");
+        boardingHouseDetails.setRoomCategories(sampleCategories);
+        
+        // Sample room details
+        List<BoardingHouseDetails.RoomDetail> sampleRoomDetails = new ArrayList<>();
+        
+        BoardingHouseDetails.RoomDetail privateRoom = new BoardingHouseDetails.RoomDetail();
+        privateRoom.setRoomCategory("Private Room");
+        privateRoom.setRoomName("Single Private Room");
+        privateRoom.setPrice(2500 + (boardingHouseId % 5) * 500);
+        privateRoom.setCapacity(1);
+        privateRoom.setRoomDescription("Comfortable private room with basic amenities");
+        privateRoom.setTotalRooms(3);
+        sampleRoomDetails.add(privateRoom);
+        
+        BoardingHouseDetails.RoomDetail bedSpacer = new BoardingHouseDetails.RoomDetail();
+        bedSpacer.setRoomCategory("Bed Spacer");
+        bedSpacer.setRoomName("Shared Room");
+        bedSpacer.setPrice(1500 + (boardingHouseId % 3) * 300);
+        bedSpacer.setCapacity(4);
+        bedSpacer.setRoomDescription("Shared room with bunk beds");
+        bedSpacer.setTotalRooms(2);
+        sampleRoomDetails.add(bedSpacer);
+        
+        boardingHouseDetails.setRoomDetails(sampleRoomDetails);
+        
+        // Price range
+        boardingHouseDetails.setMinPrice(1500 + (boardingHouseId % 3) * 300);
+        boardingHouseDetails.setMaxPrice(2500 + (boardingHouseId % 5) * 500);
+        
+        // Sample owner info
+        BoardingHouseDetails.OwnerInfo sampleOwner = new BoardingHouseDetails.OwnerInfo();
+        sampleOwner.setFirstName("John");
+        sampleOwner.setMiddleName("M");
+        sampleOwner.setLastName("Doe");
+        sampleOwner.setPhone("+63 912 345 6789");
+        sampleOwner.setEmail("john.doe@example.com");
+        sampleOwner.setRole("owner");
+        boardingHouseDetails.setOwner(sampleOwner);
+        
+        // Display the fallback data
+        displayBoardingHouseDetails();
+        
+        Toast.makeText(this, "Showing sample data (real data unavailable)", Toast.LENGTH_LONG).show();
     }
 }
