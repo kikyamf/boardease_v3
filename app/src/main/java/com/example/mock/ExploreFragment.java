@@ -388,11 +388,23 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             
         Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
         
+        // Debug: Log first boarding house details
+        if (!allBoardingHouses.isEmpty()) {
+            Listing first = allBoardingHouses.get(0);
+            Log.d(TAG, "First boarding house: " + first.getBhName() + " - " + first.getBhAddress());
+        }
+        
         // Apply current filters and sort
         applyFiltersAndSort();
         
+        Log.d(TAG, "After filtering: " + filteredBoardingHouses.size() + " boarding houses");
+        
         // Handle empty results
         if (allBoardingHouses.isEmpty()) {
+            Log.d(TAG, "No boarding houses loaded from API");
+            showEmptyState();
+        } else if (filteredBoardingHouses.isEmpty()) {
+            Log.d(TAG, "Boarding houses loaded but filtered out");
             showEmptyState();
         }
         } catch (JSONException e) {
@@ -509,13 +521,16 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     }
     
     private void updateUI() {
+        Log.d(TAG, "updateUI called - filteredBoardingHouses size: " + filteredBoardingHouses.size());
         adapter.notifyDataSetChanged();
         updateResultsCount();
         
         if (filteredBoardingHouses.isEmpty()) {
+            Log.d(TAG, "Showing empty state");
             rvBoardingHouses.setVisibility(View.GONE);
             layoutEmptyState.setVisibility(View.VISIBLE);
         } else {
+            Log.d(TAG, "Showing boarding houses list");
             rvBoardingHouses.setVisibility(View.VISIBLE);
             layoutEmptyState.setVisibility(View.GONE);
         }
