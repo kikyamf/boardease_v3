@@ -6,529 +6,367 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
-<ScrollView
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="1">
-
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <!-- Image Carousel Section -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="300dp">
-
-            <!-- ViewPager2 for Image Carousel -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPagerImages"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-            <!-- Image Indicators -->
-            <LinearLayout
-                android:id="@+id/layoutIndicators"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal" />
-
-            <!-- Back Button -->
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentStart="true"
-                android:layout_margin="16dp"
-                android:background="@drawable/circle_bg"
-                android:src="@drawable/ic_arrow_back4"
-                android:contentDescription="Back"
-                android:padding="12dp" />
-
-            <!-- Share Button -->
-            <ImageButton
-                android:id="@+id/btnShare"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:layout_margin="16dp"
-                android:background="@drawable/circle_bg"
-                android:src="@drawable/share"
-                android:contentDescription="Share"
-                android:padding="12dp" />
-
-            <!-- Favorite Button -->
-            <ImageButton
-                android:id="@+id/btnFavorite"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="72dp"
-                android:background="@drawable/circle_bg"
-                android:src="@drawable/favorite"
-                android:contentDescription="Add to favorites"
-                android:padding="12dp" />
-
-        </RelativeLayout>
-
-        <!-- Content Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:orientation="vertical">
 
-            <!-- BH Name and Price -->
+            <!-- Image Carousel Section -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="300dp">
+
+                <!-- ViewPager2 for Image Carousel -->
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/viewPagerImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <!-- Image Indicators -->
+                <LinearLayout
+                    android:id="@+id/layoutIndicators"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="16dp"
+                    android:orientation="horizontal" />
+
+                <!-- Back Button -->
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_margin="16dp"
+                    android:background="@drawable/circle_bg"
+                    android:src="@drawable/ic_arrow_back4"
+                    android:contentDescription="Back"
+                    android:padding="12dp" />
+
+                <!-- Share Button -->
+                <ImageButton
+                    android:id="@+id/btnShare"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_margin="16dp"
+                    android:background="@drawable/circle_bg"
+                    android:src="@drawable/share"
+                    android:contentDescription="Share"
+                    android:padding="12dp" />
+
+                <!-- Favorite Button -->
+                <ImageButton
+                    android:id="@+id/btnFavorite"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="72dp"
+                    android:background="@drawable/circle_bg"
+                    android:src="@drawable/favorite"
+                    android:contentDescription="Add to favorites"
+                    android:padding="12dp" />
+
+            </RelativeLayout>
+
+            <!-- Basic Information Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_margin="16dp"
+                android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/tvBoardingHouseName"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:text="Loading..."
+                    android:textColor="#1A1A1A"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvBoardingHouseName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Sunshine Boarding House"
-                        android:textSize="24sp"
-                        android:textColor="#000000"
-                        android:fontFamily="@font/poppins_bold" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/location"
-                            android:contentDescription="Location"
-                            android:tint="#666666" />
-
-                        <TextView
-                            android:id="@+id/tvLocation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Quezon City, Metro Manila"
-                            android:textSize="14sp"
-                            android:textColor="#666666"
-                            android:fontFamily="@font/poppins_regular"
-                            android:layout_marginStart="6dp" />
-                    </LinearLayout>
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/tvLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Loading..."
+                    android:textColor="#666666"
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tvPrice"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="₱3,500"
-                    android:textSize="28sp"
+                    android:layout_marginTop="8dp"
+                    android:text="Loading..."
                     android:textColor="#2E7D32"
-                    android:fontFamily="@font/poppins_bold" />
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Loading..."
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="4dp" />
 
             </LinearLayout>
 
-            <!-- Description -->
-            <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="A modern and comfortable boarding house located in the heart of Quezon City. Perfect for students and working professionals who value convenience and affordability. Our facility offers clean, well-maintained rooms with essential amenities."
-                android:textSize="16sp"
-                android:textColor="#333333"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginTop="16dp"
-                android:lineSpacingExtra="4dp" />
-
-            <!-- Accommodations Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Available Accommodations"
-                android:textSize="18sp"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_semibold"
-                android:layout_marginTop="24dp" />
-
-            <LinearLayout
-                android:id="@+id/layoutAccommodations"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="12dp">
-
-                <!-- Private Room -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    android:backgroundTint="#F8F9FA">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Private Room"
-                                android:textSize="16sp"
-                                android:textColor="#000000"
-                                android:fontFamily="@font/poppins_semibold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Single occupancy with private bathroom"
-                                android:textSize="14sp"
-                                android:textColor="#666666"
-                                android:fontFamily="@font/poppins_regular"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="end">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="₱5,000/month"
-                                android:textSize="16sp"
-                                android:textColor="#2E7D32"
-                                android:fontFamily="@font/poppins_bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="3 available"
-                                android:textSize="12sp"
-                                android:textColor="#666666"
-                                android:fontFamily="@font/poppins_regular" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Bed Spacer -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    android:backgroundTint="#F8F9FA">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="16dp"
-                        android:gravity="center_vertical">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Bed Spacer"
-                                android:textSize="16sp"
-                                android:textColor="#000000"
-                                android:fontFamily="@font/poppins_semibold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Shared room with common bathroom"
-                                android:textSize="14sp"
-                                android:textColor="#666666"
-                                android:fontFamily="@font/poppins_regular"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="end">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="₱3,500/month"
-                                android:textSize="16sp"
-                                android:textColor="#2E7D32"
-                                android:fontFamily="@font/poppins_bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="8 available"
-                                android:textSize="12sp"
-                                android:textColor="#666666"
-                                android:fontFamily="@font/poppins_regular" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
-
-            <!-- Special Features -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Special Features"
-                android:textSize="18sp"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_semibold"
-                android:layout_marginTop="24dp" />
-
+            <!-- Additional Details Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="12dp">
+                android:layout_margin="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Additional Details"
+                    android:textColor="#1A1A1A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_wifi"
-                        android:contentDescription="WiFi"
-                        android:tint="#2E7D32" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Free WiFi"
-                        android:textSize="14sp"
+                        android:text="Rules &amp; Policies"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvRules"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Loading..."
                         android:textColor="#333333"
-                        android:fontFamily="@font/poppins_regular"
-                        android:layout_marginStart="12dp" />
+                        android:textSize="14sp" />
+
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_parking"
-                        android:contentDescription="Parking"
-                        android:tint="#2E7D32" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Parking Available"
-                        android:textSize="14sp"
-                        android:textColor="#333333"
-                        android:fontFamily="@font/poppins_regular"
-                        android:layout_marginStart="12dp" />
-                </LinearLayout>
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Bathrooms"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_security"
-                        android:contentDescription="Security"
-                        android:tint="#2E7D32" />
+                        <TextView
+                            android:id="@+id/tvBathrooms"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Loading..."
+                            android:textColor="#333333"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="24/7 Security"
-                        android:textSize="14sp"
-                        android:textColor="#333333"
-                        android:fontFamily="@font/poppins_regular"
-                        android:layout_marginStart="12dp" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Area"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvArea"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Loading..."
+                            android:textColor="#333333"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Build Year"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvYear"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Loading..."
+                            android:textColor="#333333"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </LinearLayout>
 
-            <!-- Contact Information -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Contact Information"
-                android:textSize="18sp"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_semibold"
-                android:layout_marginTop="24dp" />
-
-            <com.google.android.material.card.MaterialCardView
+            <!-- Room Categories Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:backgroundTint="#F8F9FA">
+                android:layout_margin="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Available Accommodations"
+                    android:textColor="#1A1A1A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvRoomCategories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:nestedScrollingEnabled="false" />
+
+            </LinearLayout>
+
+            <!-- Owner Contact Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Contact Information"
+                    android:textColor="#1A1A1A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/tvOwnerName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                        android:text="Loading..."
+                        android:textColor="#333333"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_person1"
-                            android:contentDescription="Owner"
-                            android:tint="#666666" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Maria Santos"
-                            android:textSize="16sp"
-                            android:textColor="#000000"
-                            android:fontFamily="@font/poppins_semibold"
-                            android:layout_marginStart="12dp" />
-                    </LinearLayout>
-
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/tvOwnerPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginTop="4dp"
+                        android:text="Loading..."
+                        android:textColor="#666666"
+                        android:textSize="14sp" />
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/call"
-                            android:contentDescription="Phone"
-                            android:tint="#666666" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="+63 912 345 6789"
-                            android:textSize="14sp"
-                            android:textColor="#333333"
-                            android:fontFamily="@font/poppins_regular"
-                            android:layout_marginStart="12dp" />
-                    </LinearLayout>
-
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/tvOwnerEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:layout_marginTop="2dp"
+                        android:text="Loading..."
+                        android:textColor="#666666"
+                        android:textSize="14sp" />
 
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/email"
-                            android:contentDescription="Email"
-                            android:tint="#666666" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="maria.santos@email.com"
-                            android:textSize="14sp"
-                            android:textColor="#333333"
-                            android:fontFamily="@font/poppins_regular"
-                            android:layout_marginStart="12dp" />
-                    </LinearLayout>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
-</ScrollView>
-
-<!-- Bottom Action Bar -->
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:background="#FFFFFF"
-    android:elevation="8dp"
-    android:padding="16dp"
-    android:gravity="center_vertical">
+    <!-- Bottom Action Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="8dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnChooseAccommodation"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Choose Type of Accommodation"
+            android:layout_marginEnd="8dp"
+            android:text="Choose Accommodation"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:fontFamily="@font/poppins_semibold"
-            app:cornerRadius="25dp"
-            android:backgroundTint="#A18167"
-            android:layout_marginEnd="8dp" />
+            app:backgroundTint="@color/primary" />
 
-    <ImageButton
-        android:id="@+id/btnCall"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:background="@drawable/circle_bg"
-        android:src="@drawable/call"
-        android:contentDescription="Call"
-        android:padding="16dp"
-        android:layout_marginStart="8dp" />
+        <ImageButton
+            android:id="@+id/btnCall"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/circle_bg"
+            android:src="@drawable/ic_phone"
+            android:contentDescription="Call Owner"
+            android:padding="12dp" />
 
-</LinearLayout>
+    </LinearLayout>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
 
 </LinearLayout>
