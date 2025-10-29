@@ -83,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:text="₱3,500/month"
                 android:textSize="14sp"
-                android:textColor="#2E7D32"
+                android:textColor="#A18167"
                 android:fontFamily="@font/poppins_bold"
                 android:layout_marginTop="6dp" />
 
