@@ -52,7 +52,7 @@ try {
         SELECT image_path
         FROM boarding_house_images
         WHERE bh_id = ?
-        ORDER BY id ASC
+        ORDER BY image_id ASC
     ";
     $imagesStmt = $pdo->prepare($imagesSql);
     $imagesStmt->execute([$bhId]);
@@ -64,6 +64,11 @@ try {
         if (!empty($imagePath)) {
             $formattedImages[] = 'https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/' . $imagePath;
         }
+    }
+
+    // If no images, add placeholder
+    if (empty($formattedImages)) {
+        $formattedImages[] = 'https://via.placeholder.com/400x300?text=No+Image+Available';
     }
 
     // Fetch room categories for this boarding house
@@ -80,12 +85,14 @@ try {
     // Fetch detailed room information
     $roomDetailsSql = "
         SELECT
+            bhr_id,
             room_category,
             room_name,
             price,
             capacity,
             room_description,
-            total_rooms
+            total_rooms,
+            created_at
         FROM boarding_house_rooms
         WHERE bh_id = ?
         ORDER BY room_category, price ASC

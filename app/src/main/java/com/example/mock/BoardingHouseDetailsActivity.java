@@ -227,7 +227,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     private void parseBoardingHouseDetails(JSONObject data) throws JSONException {
         boardingHouseDetails = new BoardingHouseDetails();
         
-        // Basic info
+        // Basic info from boarding_houses table
         boardingHouseDetails.setBhId(data.getInt("bh_id"));
         boardingHouseDetails.setBhName(data.getString("bh_name"));
         boardingHouseDetails.setBhAddress(data.getString("bh_address"));
@@ -239,23 +239,30 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         boardingHouseDetails.setStatus(data.getString("status"));
         boardingHouseDetails.setBhCreatedAt(data.getString("bh_created_at"));
         
-        // Images - create sample images for now since API doesn't return them
+        // Images from boarding_house_images table
         List<String> images = new ArrayList<>();
-        images.add("https://via.placeholder.com/400x300?text=Boarding+House+Image");
-        images.add("https://via.placeholder.com/400x300?text=Room+View");
-        images.add("https://via.placeholder.com/400x300?text=Common+Area");
+        if (data.has("images")) {
+            JSONArray imagesArray = data.getJSONArray("images");
+            for (int i = 0; i < imagesArray.length(); i++) {
+                images.add(imagesArray.getString(i));
+            }
+        }
+        // If no images, add placeholder
+        if (images.isEmpty()) {
+            images.add("https://via.placeholder.com/400x300?text=No+Image+Available");
+        }
         boardingHouseDetails.setImages(images);
         
-        // Room details from "rooms" array
+        // Room details from boarding_house_rooms table
         List<String> categories = new ArrayList<>();
         List<BoardingHouseDetails.RoomDetail> roomDetails = new ArrayList<>();
         int minPrice = Integer.MAX_VALUE;
         int maxPrice = 0;
         
-        if (data.has("rooms")) {
-            JSONArray roomsArray = data.getJSONArray("rooms");
-            for (int i = 0; i < roomsArray.length(); i++) {
-                JSONObject roomJson = roomsArray.getJSONObject(i);
+        if (data.has("room_details")) {
+            JSONArray roomDetailsArray = data.getJSONArray("room_details");
+            for (int i = 0; i < roomDetailsArray.length(); i++) {
+                JSONObject roomJson = roomDetailsArray.getJSONObject(i);
                 
                 // Add to categories if not already present
                 String category = roomJson.getString("room_category");
@@ -289,23 +296,41 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         boardingHouseDetails.setRoomCategories(categories);
         boardingHouseDetails.setRoomDetails(roomDetails);
         
-        // Set price range
-        if (minPrice != Integer.MAX_VALUE) {
+        // Set price range from API or calculated values
+        if (data.has("min_price") && !data.isNull("min_price")) {
+            boardingHouseDetails.setMinPrice(data.getInt("min_price"));
+        } else if (minPrice != Integer.MAX_VALUE) {
             boardingHouseDetails.setMinPrice(minPrice);
         }
-        if (maxPrice > 0) {
+        
+        if (data.has("max_price") && !data.isNull("max_price")) {
+            boardingHouseDetails.setMaxPrice(data.getInt("max_price"));
+        } else if (maxPrice > 0) {
             boardingHouseDetails.setMaxPrice(maxPrice);
         }
         
-        // Owner info - extract from boarding_house data
-        BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
-        owner.setFirstName(data.optString("first_name", "John"));
-        owner.setMiddleName(data.optString("middle_name", ""));
-        owner.setLastName(data.optString("last_name", "Doe"));
-        owner.setPhone(data.optString("phone", "+63 912 345 6789"));
-        owner.setEmail(data.optString("email", "owner@example.com"));
-        owner.setRole(data.optString("role", "BH Owner"));
-        boardingHouseDetails.setOwner(owner);
+        // Owner info from registrations table
+        if (data.has("owner")) {
+            JSONObject ownerJson = data.getJSONObject("owner");
+            BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
+            owner.setFirstName(ownerJson.optString("first_name", "John"));
+            owner.setMiddleName(ownerJson.optString("middle_name", ""));
+            owner.setLastName(ownerJson.optString("last_name", "Doe"));
+            owner.setPhone(ownerJson.optString("phone", "+63 912 345 6789"));
+            owner.setEmail(ownerJson.optString("email", "owner@example.com"));
+            owner.setRole(ownerJson.optString("role", "BH Owner"));
+            boardingHouseDetails.setOwner(owner);
+        } else {
+            // Fallback owner info
+            BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
+            owner.setFirstName("John");
+            owner.setMiddleName("");
+            owner.setLastName("Doe");
+            owner.setPhone("+63 912 345 6789");
+            owner.setEmail("owner@example.com");
+            owner.setRole("BH Owner");
+            boardingHouseDetails.setOwner(owner);
+        }
     }
     
     private void displayBoardingHouseDetails() {
