@@ -57,6 +57,11 @@ try {
     
     // Debug: Show all fields from the query
     error_log("DEBUG: All boarding house fields: " . json_encode($boardingHouse));
+    
+    // Debug: Check bh_rules specifically
+    $bhRulesValue = $boardingHouse['bh_rules'];
+    $finalBhRules = isset($bhRulesValue) && !empty($bhRulesValue) ? $bhRulesValue : 'No specific rules';
+    error_log("DEBUG: Final bh_rules value being sent: '" . $finalBhRules . "'");
 
     // Fetch images for this boarding house
     $imagesSql = "
@@ -132,7 +137,7 @@ try {
             'bh_name' => $boardingHouse['bh_name'],
             'bh_address' => $boardingHouse['bh_address'],
             'bh_description' => $boardingHouse['bh_description'],
-            'bh_rules' => $boardingHouse['bh_rules'] ?: 'No specific rules',
+            'bh_rules' => isset($boardingHouse['bh_rules']) && !empty($boardingHouse['bh_rules']) ? $boardingHouse['bh_rules'] : 'No specific rules',
             'number_of_bathroom' => (int)$boardingHouse['number_of_bathroom'],
             'area' => (float)$boardingHouse['area'],
             'build_year' => (int)$boardingHouse['build_year'],
