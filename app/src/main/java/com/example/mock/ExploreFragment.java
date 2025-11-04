@@ -38,7 +38,8 @@ import java.util.List;
 public class ExploreFragment extends Fragment implements OnFavoriteClickListener {
     
     private static final String TAG = "ExploreFragment";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
+    // Try without /BoardEase2/ prefix - adjust path based on your ngrok configuration
+    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/get_boarding_houses.php";
     
     private EditText etSearch;
     private RecyclerView rvBoardingHouses;
@@ -276,7 +277,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                                 Log.e(TAG, "Received ngrok warning page instead of JSON");
                                 Log.e(TAG, "Full response: " + response);
-                                Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php in your browser first");
+                                Log.e(TAG, "SOLUTION: Visit " + API_URL + " in your browser first");
                                 showError("Ngrok warning! Visit API URL in browser first.");
                                 return;
                             }
