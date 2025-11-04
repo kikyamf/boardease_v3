@@ -1,8 +1,19 @@
 <?php
+// Enable error logging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Handle OPTIONS request for CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // Database configuration
 $host = 'localhost';
@@ -11,9 +22,15 @@ $username = 'boardease';
 $password = 'boardease';
 
 try {
-    // Create PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Create PDO connection with timeout
+    $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8";
+    $options = array(
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5, // 5 second timeout
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    );
+    
+    $pdo = new PDO($dsn, $username, $password, $options);
     
     // SQL query to get boarding houses with their main image and room prices
     $sql = "
@@ -78,13 +95,31 @@ try {
     ));
     
 } catch (PDOException $e) {
-    // Handle database errors
+    // Handle database connection errors
+    error_log("Database connection error: " . $e->getMessage());
+    
+    $errorCode = $e->getCode();
+    $errorMessage = $e->getMessage();
+    
+    // Provide more specific error messages
+    if ($errorCode == 2002) {
+        $errorMessage = "Cannot connect to MySQL server. Please ensure XAMPP MySQL is running.";
+    } elseif ($errorCode == 1045) {
+        $errorMessage = "Database authentication failed. Check username/password.";
+    } elseif ($errorCode == 1049) {
+        $errorMessage = "Database 'boardease2' does not exist.";
+    }
+    
+    http_response_code(500);
     echo json_encode(array(
         'success' => false,
-        'error' => 'Database error: ' . $e->getMessage()
+        'error' => 'Database error: ' . $errorMessage,
+        'error_code' => $errorCode
     ));
 } catch (Exception $e) {
     // Handle other errors
+    error_log("Server error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(array(
         'success' => false,
         'error' => 'Server error: ' . $e->getMessage()
