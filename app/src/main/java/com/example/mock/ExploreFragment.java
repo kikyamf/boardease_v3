@@ -38,8 +38,7 @@ import java.util.List;
 public class ExploreFragment extends Fragment implements OnFavoriteClickListener {
     
     private static final String TAG = "ExploreFragment";
-    // Try without /BoardEase2/ prefix - adjust path based on your ngrok configuration
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/get_boarding_houses.php";
+    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
     
     private EditText etSearch;
     private RecyclerView rvBoardingHouses;
@@ -277,7 +276,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                                 Log.e(TAG, "Received ngrok warning page instead of JSON");
                                 Log.e(TAG, "Full response: " + response);
-                                Log.e(TAG, "SOLUTION: Visit " + API_URL + " in your browser first");
+                                Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php in your browser first");
                                 showError("Ngrok warning! Visit API URL in browser first.");
                                 return;
                             }
@@ -325,50 +324,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Volley error: " + error.getMessage());
                         progressBar.setVisibility(View.GONE);
-                        
-                        // Enhanced error logging and diagnostics
-                        String errorMessage = "Network error: ";
-                        String detailedError = "";
-                        
-                        if (error.getMessage() != null) {
-                            errorMessage += error.getMessage();
-                            detailedError = error.getMessage();
-                        } else {
-                            // If getMessage() is null, check networkResponse
-                            if (error.networkResponse != null) {
-                                int statusCode = error.networkResponse.statusCode;
-                                errorMessage += "HTTP " + statusCode;
-                                detailedError = "HTTP Status Code: " + statusCode;
-                                
-                                if (error.networkResponse.data != null) {
-                                    String responseBody = new String(error.networkResponse.data);
-                                    detailedError += "\nResponse: " + responseBody;
-                                    Log.e(TAG, "Error response body: " + responseBody);
-                                }
-                            } else {
-                                // No network response means connection failed completely
-                                errorMessage += "Connection failed - Check:\n";
-                                errorMessage += "1. Is ngrok tunnel running?\n";
-                                errorMessage += "2. Is XAMPP MySQL running?\n";
-                                errorMessage += "3. Check internet connection";
-                                detailedError = "Connection failed - Could not reach server. " +
-                                        "Possible causes: ngrok tunnel down, MySQL server not running, or network issues.";
-                            }
-                        }
-                        
-                        // Log detailed error information
-                        Log.e(TAG, "Volley error details:");
-                        Log.e(TAG, "  Message: " + (error.getMessage() != null ? error.getMessage() : "null"));
-                        Log.e(TAG, "  Network response: " + (error.networkResponse != null ? "exists" : "null"));
-                        if (error.networkResponse != null) {
-                            Log.e(TAG, "  Status code: " + error.networkResponse.statusCode);
-                        }
-                        Log.e(TAG, "  Error class: " + error.getClass().getSimpleName());
-                        Log.e(TAG, "  Cause: " + (error.getCause() != null ? error.getCause().getMessage() : "null"));
-                        Log.e(TAG, "  Full error: " + detailedError);
-                        
-                        showError(errorMessage);
+                        showError("Network error: " + error.getMessage());
                     }
                 }) {
             @Override
