@@ -92,7 +92,26 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private static final String KEY_ADDRESS = "address";
     
     // API URL
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    // ============================================================================
+    // LOCAL DEVELOPMENT (Testing on local network with local database)
+    // ============================================================================
+    // Use this when testing with your local database on this PC
+    // Current detected IP: 192.168.137.1 (your PC's local IP)
+    // If this doesn't work, check your IP with: ipconfig (Windows)
+    // Common options:
+    //   - http://192.168.137.1/boardease_v3/get_boarder_info.php (current IP)
+    //   - http://192.168.1.3/boardease_v3/get_boarder_info.php (common local IP)
+    //   - http://localhost/boardease_v3/get_boarder_info.php (if using emulator)
+    //   - http://10.0.2.2/boardease_v3/get_boarder_info.php (Android emulator localhost)
+    private static final String API_URL = "http://192.168.137.1/boardease_v3/get_boarder_info.php";
+    
+    // ============================================================================
+    // PRODUCTION (For final deployment with ngrok)
+    // ============================================================================
+    // Uncomment the line below and comment out the local URL above when deploying
+    // private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    // ============================================================================
+    
     private static final String TAG = "BoarderAccountSettings";
 
     public BoarderAccountSettingsFragment() {
