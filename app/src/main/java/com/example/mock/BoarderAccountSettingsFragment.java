@@ -63,10 +63,10 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private TextInputEditText etAddress;
     private MaterialButton btnSaveChanges;
 
-    // Password Change Fields
-    private TextInputEditText etCurrentPassword;
-    private TextInputEditText etNewPassword;
-    private TextInputEditText etConfirmPassword;
+    // Password Change Fields (using EditText to match layout)
+    private android.widget.EditText etCurrentPassword;
+    private android.widget.EditText etNewPassword;
+    private android.widget.EditText etConfirmPassword;
     private MaterialButton btnUpdatePassword;
     
     // Password Toggle Icons
