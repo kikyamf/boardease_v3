@@ -23,8 +23,18 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * BoarderAccountSettingsFragment - Account settings and profile management
@@ -80,6 +90,10 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private static final String KEY_CONTACT = "contact_number";
     private static final String KEY_BIRTHDATE = "birthdate";
     private static final String KEY_ADDRESS = "address";
+    
+    // API URL
+    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    private static final String TAG = "BoarderAccountSettings";
 
     public BoarderAccountSettingsFragment() {
         // Required empty public constructor
@@ -248,8 +262,141 @@ public class BoarderAccountSettingsFragment extends Fragment {
     }
 
     private void loadUserData() {
+        // Show loading indicator
+        setLoading(true);
+        
+        // Get current user ID
+        String userId = Login.getCurrentUserId(getContext());
+        
+        if (userId == null || userId.isEmpty()) {
+            Log.e(TAG, "User ID not found");
+            setLoading(false);
+            Toast.makeText(getContext(), "User ID not found. Please login again.", Toast.LENGTH_LONG).show();
+            // Set fallback values
+            setFallbackValues();
+            return;
+        }
+        
+        // Create request queue
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        
+        // Create string request with POST method
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, API_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            Log.d(TAG, "API Response: " + response);
+                            
+                            // Check if response is null or empty
+                            if (response == null || response.trim().isEmpty()) {
+                                Log.e(TAG, "Received null or empty response");
+                                showError("Server returned empty response");
+                                return;
+                            }
+                            
+                            // Check if response is HTML (ngrok warning page)
+                            if (response.trim().startsWith("<!DOCTYPE html>") || 
+                                (response.contains("ngrok") && response.contains("<html"))) {
+                                Log.e(TAG, "Received ngrok warning page instead of JSON");
+                                showError("Ngrok warning! Please try again.");
+                                return;
+                            }
+                            
+                            // Parse JSON response
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONObject data = jsonResponse.getJSONObject("data");
+                                
+                                // Extract all fields from JSON
+                                String firstName = data.optString("first_name", "");
+                                String middleName = data.optString("middle_name", "");
+                                String lastName = data.optString("last_name", "");
+                                String suffix = data.optString("suffix", "");
+                                String email = data.optString("email", "");
+                                String contact = data.optString("contact", "");
+                                String birthdate = data.optString("birthdate", "");
+                                String address = data.optString("address", "");
+                                
+                                // Handle suffix - if null or "null", display "none"
+                                if (suffix == null || suffix.isEmpty() || suffix.equalsIgnoreCase("null")) {
+                                    suffix = "none";
+                                }
+                                 
+                                // Update UI with fetched data
+                                if (etFirstName != null) etFirstName.setText(firstName);
+                                if (etMiddleName != null) etMiddleName.setText(middleName);
+                                if (etLastName != null) etLastName.setText(lastName);
+                                if (etSuffix != null) etSuffix.setText(suffix);
+                                if (etEmail != null) etEmail.setText(email);
+                                if (etContactNumber != null) etContactNumber.setText(contact);
+                                if (etBirthdate != null) etBirthdate.setText(birthdate);
+                                if (etAddress != null) etAddress.setText(address);
+                                
+                                Log.d(TAG, "Successfully loaded boarder profile data");
+                            } else {
+                                String error = jsonResponse.optString("error", "Unknown error occurred");
+                                Log.e(TAG, "API Error: " + error);
+                                showError("Failed to load profile: " + error);
+                                setFallbackValues();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            showError("Error parsing server response: " + e.getMessage());
+                            setFallbackValues();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Unexpected error: " + e.getMessage());
+                            showError("Unexpected error: " + e.getMessage());
+                            setFallbackValues();
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        setLoading(false);
+                        String errorMessage = "Network error: ";
+                        if (error.getMessage() != null) {
+                            errorMessage += error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage += "HTTP " + error.networkResponse.statusCode;
+                        } else {
+                            errorMessage += "Unknown network error";
+                        }
+                        showError(errorMessage);
+                        setFallbackValues();
+                    }
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("user_id", userId);
+                return params;
+            }
+            
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("ngrok-skip-browser-warning", "any");
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        // Add request to queue
+        requestQueue.add(stringRequest);
+    }
+    
+    private void setFallbackValues() {
         try {
-            // Load user data from Login SharedPreferences
+            // Set fallback values from SharedPreferences if available
             String fullName = Login.getCurrentUserName(getContext());
             String middleName = Login.getCurrentUserMiddleName(getContext());
             String suffix = Login.getCurrentUserSuffix(getContext());
@@ -267,26 +414,20 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 if (nameParts.length >= 2) {
                     firstName = nameParts[0];
                     lastName = nameParts[nameParts.length - 1];
-                    // If we have more than 2 parts, the middle name is everything in between
-                    if (nameParts.length > 2 && (middleName == null || middleName.isEmpty())) {
-                        StringBuilder middleNameBuilder = new StringBuilder();
-                        for (int i = 1; i < nameParts.length - 1; i++) {
-                            if (i > 1) middleNameBuilder.append(" ");
-                            middleNameBuilder.append(nameParts[i]);
-                        }
-                        middleName = middleNameBuilder.toString();
-                    }
                 } else if (nameParts.length == 1) {
                     firstName = nameParts[0];
                 }
             }
 
             // Set default values if data is null or empty
-            if (firstName == null || firstName.isEmpty()) firstName = "First Name";
+            if (firstName == null || firstName.isEmpty()) firstName = "";
             if (middleName == null) middleName = "";
-            if (lastName == null || lastName.isEmpty()) lastName = "Last Name";
-            if (suffix == null) suffix = "";
-            if (email == null || email.isEmpty()) email = "user@email.com";
+            if (lastName == null || lastName.isEmpty()) lastName = "";
+            // Handle suffix - if null or "none", display "none"
+            if (suffix == null || suffix.isEmpty() || suffix.equalsIgnoreCase("null")) {
+                suffix = "none";
+            }
+            if (email == null) email = "";
             if (contact == null) contact = "";
             if (birthdate == null) birthdate = "";
             if (address == null) address = "";
@@ -301,16 +442,11 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (etAddress != null) etAddress.setText(address);
         } catch (Exception e) {
             e.printStackTrace();
-            // Set fallback values
-            if (etFirstName != null) etFirstName.setText("First Name");
-            if (etMiddleName != null) etMiddleName.setText("");
-            if (etLastName != null) etLastName.setText("Last Name");
-            if (etSuffix != null) etSuffix.setText("");
-            if (etEmail != null) etEmail.setText("user@email.com");
-            if (etContactNumber != null) etContactNumber.setText("");
-            if (etBirthdate != null) etBirthdate.setText("");
-            if (etAddress != null) etAddress.setText("");
         }
+    }
+    
+    private void showError(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
     }
 
     private void showDatePickerDialog() {
