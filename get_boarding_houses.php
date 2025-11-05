@@ -1,8 +1,18 @@
 <?php
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning');
+    header('Access-Control-Max-Age: 86400');
+    http_response_code(200);
+    exit;
+}
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning');
 
 // Database configuration
 $host = 'localhost';
@@ -16,6 +26,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // SQL query to get boarding houses with their main image and room prices
+    // Using a subquery to get the first image for each boarding house
     $sql = "
         SELECT 
             bh.bh_id,
@@ -29,15 +40,18 @@ try {
             bh.build_year,
             bh.status,
             bh.bh_created_at,
-            bhi.image_path,
+            (SELECT bhi.image_path 
+             FROM boarding_house_images AS bhi 
+             WHERE bhi.bh_id = bh.bh_id 
+             ORDER BY bhi.image_id ASC 
+             LIMIT 1) as image_path,
             MIN(bhr.price) as min_price,
             MAX(bhr.price) as max_price,
-            COUNT(bhr.bhr_id) as total_rooms,
+            COUNT(DISTINCT bhr.bhr_id) as total_rooms,
             GROUP_CONCAT(DISTINCT bhr.room_category) as room_categories
         FROM boarding_houses AS bh
-        LEFT JOIN boarding_house_images AS bhi ON bh.bh_id = bhi.bh_id
         LEFT JOIN boarding_house_rooms AS bhr ON bh.bh_id = bhr.bh_id
-        WHERE bh.status = 'active'
+        WHERE bh.status = 'Active'
         GROUP BY bh.bh_id
         ORDER BY bh.bh_created_at DESC
     ";
@@ -45,6 +59,16 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Log for debugging
+    error_log("Found " . count($results) . " active boarding houses");
+    if (count($results) == 0) {
+        // Check if there are any boarding houses at all
+        $checkSql = "SELECT COUNT(*) as total, COUNT(CASE WHEN status = 'Active' THEN 1 END) as active_count FROM boarding_houses";
+        $checkStmt = $pdo->query($checkSql);
+        $checkResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Total boarding houses: " . $checkResult['total'] . ", Active: " . $checkResult['active_count']);
+    }
     
     // Format the response
     $response = array();
