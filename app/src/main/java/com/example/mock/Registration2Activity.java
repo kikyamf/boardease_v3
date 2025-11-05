@@ -107,6 +107,13 @@ public class Registration2Activity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
+                        // Validate ID type selection before verifying
+                        String selectedIdType = spinnerVId.getSelectedItem().toString();
+                        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                            spinnerVId.requestFocus();
+                            return;
+                        }
                         verifyAndSetFrontImage(uri);
                     }
                 }
@@ -116,14 +123,48 @@ public class Registration2Activity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
+                        // Validate ID type selection before verifying
+                        String selectedIdType = spinnerVId.getSelectedItem().toString();
+                        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                            spinnerVId.requestFocus();
+                            return;
+                        }
                         verifyAndSetBackImage(uri);
                     }
                 }
         );
 
-        // Open gallery when clicking the ImageViews
-        ivUploadF.setOnClickListener(v -> pickFrontImageLauncher.launch("image/*"));
-        ivUploadB.setOnClickListener(v -> pickBackImageLauncher.launch("image/*"));
+        // Open ID capture when clicking the ImageViews
+        ivUploadF.setOnClickListener(v -> {
+            // Validate ID type selection first
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                spinnerVId.requestFocus();
+                return;
+            }
+            
+            Log.d("ID_CAPTURE", "Starting front ID capture");
+            Intent intent = new Intent(this, IdCaptureActivity.class);
+            intent.putExtra("id_type", "front");
+            startActivityForResult(intent, 1001);
+        });
+        
+        ivUploadB.setOnClickListener(v -> {
+            // Validate ID type selection first
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                spinnerVId.requestFocus();
+                return;
+            }
+            
+            Log.d("ID_CAPTURE", "Starting back ID capture");
+            Intent intent = new Intent(this, IdCaptureActivity.class);
+            intent.putExtra("id_type", "back");
+            startActivityForResult(intent, 1002);
+        });
 
         // Spinner choices
         String[] roles = {
@@ -149,8 +190,11 @@ public class Registration2Activity extends AppCompatActivity {
 
         // Register button click
         btnReg.setOnClickListener(v -> {
+            Log.d("REGISTRATION", "=== REGISTER BUTTON CLICKED ===");
+            
             // Prevent multiple clicks
             if (isRegistering) {
+                Log.d("REGISTRATION", "Registration already in progress, blocking duplicate click");
                 Toast.makeText(this, "Registration in progress, please wait...", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -159,53 +203,76 @@ public class Registration2Activity extends AppCompatActivity {
             String idNumber = etIdNumber.getText().toString().trim();
             boolean isAgreed = cbAgree.isChecked();
 
+            Log.d("REGISTRATION", "Form validation - ID Type: " + selectedIdType + ", ID Number: " + idNumber + ", Agreed: " + isAgreed);
+
             if (selectedIdType.equals("Select --")) {
+                Log.d("REGISTRATION", "❌ Validation failed: No ID type selected");
                 Toast.makeText(this, "Please select a valid ID type", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (idNumber.isEmpty()) {
+                Log.d("REGISTRATION", "❌ Validation failed: No ID number entered");
                 Toast.makeText(this, "Please enter your ID number", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (!isAgreed) {
+                Log.d("REGISTRATION", "❌ Validation failed: Terms not agreed");
                 Toast.makeText(this, "You must agree to continue", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (idFrontPath == null || idBackPath == null) {
+                Log.d("REGISTRATION", "❌ Validation failed: Missing ID images - Front: " + (idFrontPath != null) + ", Back: " + (idBackPath != null));
                 Toast.makeText(this, "Please upload front and back ID images", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            // Check role - QR code is only required for BH Owner
+            boolean isBoarder = "Boarder".equals(role);
+            
             // Check if Bitmaps are null and initialize them if needed
-            if (frontBitmap == null || backBitmap == null || qrBitmap == null) {
+            Log.d("REGISTRATION", "Checking bitmap status - Front: " + (frontBitmap != null) + ", Back: " + (backBitmap != null) + ", QR: " + (qrBitmap != null) + ", Role: " + role + ", isBoarder: " + isBoarder);
+            
+            if (frontBitmap == null || backBitmap == null) {
                 String errorMsg = "Error loading images: ";
                 if (frontBitmap == null) errorMsg += "Front image null. ";
                 if (backBitmap == null) errorMsg += "Back image null. ";
-                if (qrBitmap == null) errorMsg += "QR image null. ";
+                Log.d("REGISTRATION", "❌ Bitmap validation failed: " + errorMsg);
                 Toast.makeText(this, errorMsg + "Please try uploading again.", Toast.LENGTH_LONG).show();
                 return;
             }
+            
+            // QR code is only required for BH Owner
+            if (!isBoarder && qrBitmap == null) {
+                Log.d("REGISTRATION", "❌ Bitmap validation failed: QR image null (required for BH Owner)");
+                Toast.makeText(this, "GCash QR code is required for BH Owner. Please upload your GCash QR code.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            
+            Log.d("REGISTRATION", "✅ All required bitmaps loaded successfully");
 
             // Set registering flag and disable button
             isRegistering = true;
             btnReg.setEnabled(false);
             btnReg.setText("Registering...");
+            Log.d("REGISTRATION", "Registration process started - button disabled");
 
             // Debug info - remove toast message
-            Log.d("Registration2", "Front: " + idFrontPath + ", Back: " + idBackPath);
-            Log.d("Registration2", "BirthDate being sent: '" + birthDate + "'");
+            Log.d("REGISTRATION", "File paths - Front: " + idFrontPath + ", Back: " + idBackPath);
+            Log.d("REGISTRATION", "BirthDate being sent: '" + birthDate + "'");
 
             String UPLOAD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/insert_registration.php";
+            Log.d("REGISTRATION", "Upload URL: " + UPLOAD_URL);
+            Log.d("REGISTRATION", "Creating VolleyMultipartRequest...");
 
             // Inside btnReg.setOnClickListener
             VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
                     response -> {
-                        Log.d("Registration2", "=== REGISTRATION RESPONSE RECEIVED ===");
-                        Log.d("Registration2", "Response data length: " + response.data.length);
-                        Log.d("Registration2", "Response headers: " + response.headers);
+                        Log.d("REGISTRATION", "=== REGISTRATION RESPONSE RECEIVED ===");
+                        Log.d("REGISTRATION", "Response data length: " + response.data.length);
+                        Log.d("REGISTRATION", "Response headers: " + response.headers);
                         
                         String responseString = new String(response.data);
                         Log.d("Registration2", "Raw server response: " + responseString);
@@ -315,25 +382,81 @@ public class Registration2Activity extends AppCompatActivity {
                         Log.e("Registration2", "VolleyError: " + error.getMessage());
                         Log.e("Registration2", "Error type: " + error.getClass().getSimpleName());
                         Log.e("Registration2", "Network response: " + (error.networkResponse != null ? error.networkResponse.toString() : "null"));
+                        
+                        String detailedErrorMessage = "Network error. Please check your connection.";
+                        
                         if (error.networkResponse != null) {
-                            Log.e("Registration2", "Response code: " + error.networkResponse.statusCode);
-                            Log.e("Registration2", "Response data: " + new String(error.networkResponse.data));
+                            int statusCode = error.networkResponse.statusCode;
+                            String responseData = new String(error.networkResponse.data);
+                            Log.e("Registration2", "Response code: " + statusCode);
+                            Log.e("Registration2", "Response data: " + responseData);
+                            
+                            // Provide specific error messages based on status code
+                            switch (statusCode) {
+                                case 404:
+                                    detailedErrorMessage = "Server not found (404). Please check if the server is running.";
+                                    break;
+                                case 500:
+                                    detailedErrorMessage = "Server error (500). Please try again later.";
+                                    break;
+                                case 403:
+                                    detailedErrorMessage = "Access forbidden (403). Please check server permissions.";
+                                    break;
+                                case 400:
+                                    detailedErrorMessage = "Bad request (400). Please check your data.";
+                                    break;
+                                case 0:
+                                    detailedErrorMessage = "No response from server. Check your internet connection.";
+                                    break;
+                                default:
+                                    detailedErrorMessage = "Server error (" + statusCode + "). Response: " + responseData;
+                                    break;
+                            }
+                        } else {
+                            // No network response - likely connection issues
+                            String errorMsg = error.getMessage();
+                            if (errorMsg != null) {
+                                if (errorMsg.contains("UnknownHostException")) {
+                                    detailedErrorMessage = "Cannot reach server. Check your internet connection.";
+                                } else if (errorMsg.contains("ConnectException")) {
+                                    detailedErrorMessage = "Connection failed. Server may be down.";
+                                } else if (errorMsg.contains("SocketTimeoutException")) {
+                                    detailedErrorMessage = "Request timed out. Server is slow or unreachable.";
+                                } else if (errorMsg.contains("NoConnectionError")) {
+                                    detailedErrorMessage = "No internet connection. Please check your network.";
+                                } else {
+                                    detailedErrorMessage = "Connection error: " + errorMsg;
+                                }
+                            } else {
+                                detailedErrorMessage = "Unknown network error. Please check your connection.";
+                            }
                         }
+                        
+                        Log.e("Registration2", "Final error message: " + detailedErrorMessage);
                         
                         // Re-enable button on error
                         isRegistering = false;
                         btnReg.setEnabled(true);
                         btnReg.setText("REGISTER");
-                        String errorMessage = error.getMessage();
-                        if (errorMessage == null || errorMessage.isEmpty()) {
-                            errorMessage = "Network error. Please check your connection.";
-                        }
-                        Toast.makeText(this, "Registration failed: " + errorMessage, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Registration failed: " + detailedErrorMessage, Toast.LENGTH_LONG).show();
                     }
             ) {
                 @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<>();
+                    Log.d("REGISTRATION", "=== BUILDING PARAMETERS ===");
+                    Log.d("REGISTRATION", "Role: " + role);
+                    Log.d("REGISTRATION", "First Name: " + firstName);
+                    Log.d("REGISTRATION", "Last Name: " + lastName);
+                    Log.d("REGISTRATION", "Email: " + email);
+                    Log.d("REGISTRATION", "Password: " + password);
+                    Log.d("REGISTRATION", "Birth Date: " + birthDate);
+                    Log.d("REGISTRATION", "ID Type: " + selectedIdType);
+                    Log.d("REGISTRATION", "ID Number: " + idNumber);
+                    
+                    // Check role - GCash is only required for BH Owner
+                    boolean isBoarder = "Boarder".equals(role);
+                    
                     params.put("role", role);
                     params.put("firstName", firstName);
                     params.put("middleName", middleName);
@@ -344,19 +467,60 @@ public class Registration2Activity extends AppCompatActivity {
                     params.put("address", address);
                     params.put("email", email);
                     params.put("password", password);
-                    params.put("gcashNum", gcashNum);
+                    
+                    // Only include GCash number if not Boarder (BH Owner required, Boarder optional)
+                    if (!isBoarder) {
+                        params.put("gcashNum", gcashNum != null ? gcashNum : "");
+                    } else {
+                        params.put("gcashNum", ""); // Empty for Boarder
+                    }
+                    
                     params.put("idType", selectedIdType);
                     params.put("idNumber", idNumber);
                     params.put("isAgreed", String.valueOf(isAgreed));
+                    
+                    Log.d("REGISTRATION", "=== FINAL PARAMETERS ===");
+                    for (Map.Entry<String, String> entry : params.entrySet()) {
+                        Log.d("REGISTRATION", entry.getKey() + " = " + entry.getValue());
+                    }
+                    Log.d("REGISTRATION", "Total parameters: " + params.size());
+                    
                     return params;
                 }
 
                 @Override
                 protected Map<String, DataPart> getByteData() {
                     Map<String, DataPart> params = new HashMap<>();
-                    params.put("qrFile", new DataPart("qr.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), qrBitmap)));
-                    params.put("idFrontFile", new DataPart("front.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), frontBitmap)));
-                    params.put("idBackFile", new DataPart("back.jpg", AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap)));
+                    Log.d("REGISTRATION", "=== BUILDING FILE DATA ===");
+                    Log.d("REGISTRATION", "Role: " + role + ", isBoarder: " + "Boarder".equals(role));
+                    
+                    try {
+                        byte[] frontData = AppHelper.getFileDataFromDrawable(getBaseContext(), frontBitmap);
+                        byte[] backData = AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap);
+                        
+                        Log.d("REGISTRATION", "Front file data size: " + (frontData != null ? frontData.length : "null"));
+                        Log.d("REGISTRATION", "Back file data size: " + (backData != null ? backData.length : "null"));
+                        
+                        // Only include QR code for BH Owner
+                        boolean isBoarder = "Boarder".equals(role);
+                        if (!isBoarder && qrBitmap != null) {
+                            byte[] qrData = AppHelper.getFileDataFromDrawable(getBaseContext(), qrBitmap);
+                            Log.d("REGISTRATION", "QR file data size: " + (qrData != null ? qrData.length : "null"));
+                            params.put("qrFile", new DataPart("qr.jpg", qrData));
+                            Log.d("REGISTRATION", "QR file data added (BH Owner)");
+                        } else {
+                            Log.d("REGISTRATION", "QR file data skipped - Role: " + role + ", qrBitmap: " + (qrBitmap != null));
+                        }
+                        
+                        params.put("idFrontFile", new DataPart("front.jpg", frontData));
+                        params.put("idBackFile", new DataPart("back.jpg", backData));
+                        
+                        Log.d("REGISTRATION", "File data added successfully");
+                    } catch (Exception e) {
+                        Log.e("REGISTRATION", "Error creating file data: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    
                     return params;
                 }
             };
@@ -367,7 +531,12 @@ public class Registration2Activity extends AppCompatActivity {
                     com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
             ));
             
+            Log.d("REGISTRATION", "Request timeout set to 30 seconds with 3 retries");
+            Log.d("REGISTRATION", "Adding request to Volley queue...");
+            
             Volley.newRequestQueue(this).add(request);
+            
+            Log.d("REGISTRATION", "Request added to queue successfully");
 
         });
 
@@ -398,6 +567,7 @@ public class Registration2Activity extends AppCompatActivity {
                 if (isApproved) {
                     // Set the image as selected
                     ivUploadF.setImageURI(imageUri); // show image
+                    ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
                     idFrontPath = imageUri.toString(); // save URI path
                     
                     // Convert URI to Bitmap
@@ -443,6 +613,7 @@ public class Registration2Activity extends AppCompatActivity {
                 if (isApproved) {
                     // Set the image as selected
                     ivUploadB.setImageURI(imageUri); // show image
+                    ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
                     idBackPath = imageUri.toString(); // save URI path
                     
                     // Convert URI to Bitmap
@@ -472,5 +643,92 @@ public class Registration2Activity extends AppCompatActivity {
                 Toast.makeText(Registration2Activity.this, "Back ID document verification failed: " + error, Toast.LENGTH_LONG).show();
             }
         });
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (resultCode == RESULT_OK && data != null) {
+            String imagePath = data.getStringExtra("image_path");
+            String idNumber = data.getStringExtra("id_number");
+            String idType = data.getStringExtra("id_type");
+            
+            Log.d("ID_CAPTURE", "Received result - Type: " + idType + ", Path: " + imagePath + ", ID Number: " + idNumber);
+            
+            if (requestCode == 1001) { // Front ID
+                handleFrontIdResult(imagePath, idNumber);
+            } else if (requestCode == 1002) { // Back ID
+                handleBackIdResult(imagePath, idNumber);
+            }
+        } else {
+            Log.d("ID_CAPTURE", "ID capture cancelled or failed");
+            Toast.makeText(this, "ID capture cancelled", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void handleFrontIdResult(String imagePath, String idNumber) {
+        try {
+            Log.d("ID_CAPTURE", "=== HANDLING FRONT ID RESULT ===");
+            Log.d("ID_CAPTURE", "Image path: " + imagePath);
+            Log.d("ID_CAPTURE", "ID number received: '" + idNumber + "'");
+            Log.d("ID_CAPTURE", "ID number is null: " + (idNumber == null));
+            Log.d("ID_CAPTURE", "ID number is empty: " + (idNumber != null && idNumber.isEmpty()));
+            
+            // Load the captured image
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            if (bitmap != null) {
+                frontBitmap = bitmap;
+                idFrontPath = imagePath;
+                
+                // Update UI
+                ivUploadF.setImageBitmap(bitmap);
+                ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
+                
+                // Auto-fill ID number if extracted
+                if (idNumber != null && !idNumber.isEmpty()) {
+                    etIdNumber.setText(idNumber);
+                    Log.d("ID_CAPTURE", "✅ Auto-filled ID number: " + idNumber);
+                    Toast.makeText(this, "✅ Front ID captured! ID number: " + idNumber, Toast.LENGTH_LONG).show();
+                } else {
+                    Log.d("ID_CAPTURE", "⚠️ No ID number extracted, user needs to enter manually");
+                    Toast.makeText(this, "✅ Front ID captured! Please enter ID number manually", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Log.e("ID_CAPTURE", "❌ Failed to load front ID image");
+                Toast.makeText(this, "Failed to load front ID image", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("ID_CAPTURE", "❌ Error handling front ID result: " + e.getMessage());
+            Toast.makeText(this, "Error processing front ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void handleBackIdResult(String imagePath, String idNumber) {
+        try {
+            // Load the captured image
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            if (bitmap != null) {
+                backBitmap = bitmap;
+                idBackPath = imagePath;
+                
+                // Update UI
+                ivUploadB.setImageBitmap(bitmap);
+                ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
+                
+                // Show success message
+                if (idNumber != null && !idNumber.isEmpty()) {
+                    Log.d("ID_CAPTURE", "Back ID captured with ID number: " + idNumber);
+                    Toast.makeText(this, "✅ Back ID captured! ID number: " + idNumber, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "✅ Back ID captured!", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(this, "Failed to load back ID image", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("ID_CAPTURE", "Error handling back ID result: " + e.getMessage());
+            Toast.makeText(this, "Error processing back ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }

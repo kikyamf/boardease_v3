@@ -36,7 +36,7 @@ public class ImageVerification {
     private static final String SIGHTENGINE_API_SECRET = "your_sightengine_api_secret";
     
     // Enable/disable API verification (set to true to use API, false for local verification)
-    private static final boolean USE_API_VERIFICATION = false;
+    private static final boolean USE_API_VERIFICATION = true;
     
     // Verification result callback interface
     public interface VerificationCallback {
@@ -103,20 +103,29 @@ public class ImageVerification {
      * @param callback Callback for verification results
      */
     public static void verifyQrCode(Context context, Uri imageUri, VerificationCallback callback) {
+        Log.d("QR_VALIDATION", "=== ImageVerification.verifyQrCode STARTED ===");
+        Log.d("QR_VALIDATION", "Image URI: " + imageUri.toString());
+        Log.d("QR_VALIDATION", "USE_API_VERIFICATION: " + USE_API_VERIFICATION);
+        
         try {
             if (USE_API_VERIFICATION) {
+                Log.d("QR_VALIDATION", "Using API-based verification");
                 // Use API-based verification (more accurate but requires internet)
                 String base64Image = convertImageToBase64(context, imageUri);
                 if (base64Image == null) {
+                    Log.d("QR_VALIDATION", "❌ Failed to convert image to base64");
                     callback.onVerificationError("Failed to process image");
                     return;
                 }
+                Log.d("QR_VALIDATION", "✅ Image converted to base64 successfully");
                 performQrCodeVerification(context, base64Image, callback);
             } else {
+                Log.d("QR_VALIDATION", "Using local QR code verification");
                 // Use local QR code verification (faster but less accurate)
                 verifyQrCodeLocally(context, imageUri, callback);
             }
         } catch (Exception e) {
+            Log.e("QR_VALIDATION", "❌ Exception in verifyQrCode: " + e.getMessage());
             Log.e(TAG, "Error verifying QR code: " + e.getMessage());
             callback.onVerificationError("QR code verification failed: " + e.getMessage());
         }
@@ -976,51 +985,73 @@ public class ImageVerification {
      * Performs QR code verification using API
      */
     private static void performQrCodeVerification(Context context, String base64Image, VerificationCallback callback) {
+        Log.d("QR_VALIDATION", "=== performQrCodeVerification STARTED ===");
+        Log.d("QR_VALIDATION", "Using server-side QR code validation");
+        
         RequestQueue queue = Volley.newRequestQueue(context);
         
-        // Build request parameters for QR code verification
+        // Use our own server-side QR validation endpoint
+        String validationUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/validate_qr_code_standalone.php";
+        
+        // Build request parameters
         JSONObject params = new JSONObject();
         try {
-            params.put("api_user", SIGHTENGINE_API_KEY);
-            params.put("api_secret", SIGHTENGINE_API_SECRET);
-            params.put("media", base64Image);
-            params.put("models", "nudity-2.0,wad,offensive,celebrities,scam,text-content,face-attributes");
-            params.put("callback", "https://your-callback-url.com");
+            params.put("image_data", base64Image);
+            Log.d("QR_VALIDATION", "Sending base64 image data to server");
         } catch (JSONException e) {
+            Log.e("QR_VALIDATION", "❌ Failed to build QR verification request parameters: " + e.getMessage());
             callback.onVerificationError("Failed to build QR verification request parameters");
             return;
         }
         
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, CONTENT_MODERATION_API, params,
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, validationUrl, params,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
+                        Log.d("QR_VALIDATION", "=== SERVER QR VALIDATION RESPONSE ===");
+                        Log.d("QR_VALIDATION", "Response: " + response.toString());
+                        
                         try {
-                            Log.d(TAG, "QR verification response: " + response.toString());
+                            boolean isValid = response.getBoolean("isValid");
+                            String reason = response.optString("reason", "Unknown reason");
                             
-                            // Parse QR code verification results
-                            VerificationResult result = parseQrCodeResponse(response);
+                            Log.d("QR_VALIDATION", "Server validation result - isValid: " + isValid);
+                            Log.d("QR_VALIDATION", "Server validation reason: " + reason);
                             
-                            if (result.isApproved) {
-                                callback.onVerificationComplete(true, "QR code verified");
+                            if (isValid) {
+                                Log.d("QR_VALIDATION", "✅ SERVER QR VALIDATION PASSED");
+                                callback.onVerificationComplete(true, "Valid QR code detected by server");
                             } else {
-                                callback.onVerificationComplete(false, result.reason);
+                                Log.d("QR_VALIDATION", "❌ SERVER QR VALIDATION FAILED: " + reason);
+                                callback.onVerificationComplete(false, reason);
                             }
                             
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing QR verification response: " + e.getMessage());
-                            callback.onVerificationError("Failed to parse QR verification results");
+                        } catch (JSONException e) {
+                            Log.e("QR_VALIDATION", "❌ Error parsing server QR validation response: " + e.getMessage());
+                            callback.onVerificationError("Failed to parse server QR validation results");
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "QR verification API error: " + error.getMessage());
-                        callback.onVerificationError("QR code verification service unavailable");
+                        Log.e("QR_VALIDATION", "❌ Server QR validation API error: " + error.getMessage());
+                        Log.e("QR_VALIDATION", "Error details: " + error.toString());
+                        
+                        // Fallback to local validation if server fails
+                        Log.d("QR_VALIDATION", "Falling back to local validation due to server error");
+                        callback.onVerificationError("QR code verification service unavailable - please try again");
                     }
                 });
         
+        // Set timeout and retry policy
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                30000, // 30 seconds timeout
+                2, // 2 retries
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        
+        Log.d("QR_VALIDATION", "Sending request to server: " + validationUrl);
         queue.add(request);
     }
 
@@ -1100,64 +1131,93 @@ public class ImageVerification {
      * Local QR code verification with specific checks for QR codes
      */
     public static void verifyQrCodeLocally(Context context, Uri imageUri, VerificationCallback callback) {
+        Log.d("QR_VALIDATION", "=== verifyQrCodeLocally STARTED ===");
+        Log.d("QR_VALIDATION", "Image URI: " + imageUri.toString());
+        
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(imageUri);
             if (inputStream == null) {
+                Log.d("QR_VALIDATION", "❌ Cannot read QR code file");
                 callback.onVerificationError("Cannot read QR code file");
                 return;
             }
+            Log.d("QR_VALIDATION", "✅ Successfully opened input stream");
             
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
             if (bitmap == null) {
+                Log.d("QR_VALIDATION", "❌ Invalid QR code format");
                 callback.onVerificationError("Invalid QR code format");
                 return;
             }
+            Log.d("QR_VALIDATION", "✅ Successfully decoded bitmap");
+            Log.d("QR_VALIDATION", "Bitmap dimensions: " + bitmap.getWidth() + "x" + bitmap.getHeight());
             
             // More lenient size requirements - accept any reasonable size
             if (bitmap.getWidth() < 50 || bitmap.getHeight() < 50) {
+                Log.d("QR_VALIDATION", "❌ Image too small: " + bitmap.getWidth() + "x" + bitmap.getHeight());
                 callback.onVerificationComplete(false, "Image too small (minimum 50x50 pixels)");
                 return;
             }
             
             if (bitmap.getWidth() > 10000 || bitmap.getHeight() > 10000) {
+                Log.d("QR_VALIDATION", "❌ Image too large: " + bitmap.getWidth() + "x" + bitmap.getHeight());
                 callback.onVerificationComplete(false, "Image too large (maximum 10000x10000 pixels)");
                 return;
             }
             
+            Log.d("QR_VALIDATION", "✅ Image size validation passed");
+            
             // More lenient aspect ratio - QR codes can be square or rectangular
             double aspectRatio = (double) bitmap.getWidth() / bitmap.getHeight();
+            Log.d("QR_VALIDATION", "Aspect ratio: " + aspectRatio);
             if (aspectRatio < 0.3 || aspectRatio > 3.0) {
+                Log.d("QR_VALIDATION", "❌ Aspect ratio unusual for QR code: " + aspectRatio);
                 callback.onVerificationComplete(false, "Image dimensions seem unusual for a QR code");
                 return;
             }
+            Log.d("QR_VALIDATION", "✅ Aspect ratio validation passed");
             
             // STRICT QR code detection - must have ALL indicators
+            Log.d("QR_VALIDATION", "Starting QR code detection...");
             QrCodeDetectionResult qrDetection = detectQrCodeInImage(bitmap);
+            Log.d("QR_VALIDATION", "QR detection result - hasQrCode: " + qrDetection.hasQrCode);
             if (!qrDetection.hasQrCode) {
+                Log.d("QR_VALIDATION", "❌ No QR code detected in image");
                 callback.onVerificationComplete(false, "No QR code detected in image. Please upload a clear photo of your GCash QR code.");
                 return;
             }
+            Log.d("QR_VALIDATION", "✅ QR code detected in image");
             
             // More lenient payment QR validation
+            Log.d("QR_VALIDATION", "Starting QR code content analysis...");
             QrCodeAnalysisResult analysis = analyzeQrCodeContent(bitmap);
+            Log.d("QR_VALIDATION", "Content analysis result - isLegitimateQrCode: " + analysis.isLegitimateQrCode);
             
             if (!analysis.isLegitimateQrCode) {
+                Log.d("QR_VALIDATION", "❌ QR code content analysis failed: " + analysis.reason);
                 callback.onVerificationComplete(false, analysis.reason);
                 return;
             }
+            Log.d("QR_VALIDATION", "✅ QR code content analysis passed");
             
             // Validate QR code content (if detected)
             if (qrDetection.qrCodeContent != null && !qrDetection.qrCodeContent.isEmpty()) {
+                Log.d("QR_VALIDATION", "Validating QR code content: " + qrDetection.qrCodeContent);
                 QrCodeValidationResult validation = validateQrCodeContent(qrDetection.qrCodeContent);
+                Log.d("QR_VALIDATION", "Content validation result - isValidGcashQr: " + validation.isValidGcashQr);
                 if (!validation.isValidGcashQr) {
+                    Log.d("QR_VALIDATION", "❌ QR code content validation failed: " + validation.reason);
                     callback.onVerificationComplete(false, validation.reason);
                     return;
                 }
+                Log.d("QR_VALIDATION", "✅ QR code content validation passed");
             }
             
+            Log.d("QR_VALIDATION", "✅ ALL QR CODE VALIDATIONS PASSED");
             callback.onVerificationComplete(true, "Valid QR code detected");
             
         } catch (Exception e) {
+            Log.e("QR_VALIDATION", "❌ Exception in verifyQrCodeLocally: " + e.getMessage());
             Log.e(TAG, "QR code verification error: " + e.getMessage());
             callback.onVerificationError("QR code verification failed");
         }
