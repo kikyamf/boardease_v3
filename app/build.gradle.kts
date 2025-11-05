@@ -53,4 +53,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging")
+    
+    // Google Vision API for OCR
+    implementation("com.google.android.gms:play-services-vision:20.1.3")
 }

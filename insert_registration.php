@@ -242,6 +242,12 @@ function sendVerificationEmail($email, $firstName, $verificationCode) {
                 
                 <div class='verification-code'>" . $verificationCode . "</div>
                 
+                <div class='verification-link'>
+                    <p><strong>Quick Access:</strong> Click the link below to open the verification screen directly in the BoardEase app:</p>
+                    <p><a href='https://boardease.app/verify?email=" . urlencode($email) . "' style='color: #007bff; text-decoration: underline; font-weight: bold; font-size: 16px; display: block; margin: 10px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #007bff; border-radius: 5px;'>Open Verification Screen in BoardEase App</a></p>
+                    <p style='font-size: 12px; color: #666;'>If the link doesn't work, make sure you have the BoardEase app installed on your device.</p>
+                </div>
+                
                 <div class='warning'>
                     <strong>Important:</strong> This verification code will expire in 30 minutes. If you don't verify your email within this time, your account will be automatically deleted.
                 </div>

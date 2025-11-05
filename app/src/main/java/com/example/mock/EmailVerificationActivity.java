@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -9,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -42,17 +44,204 @@ public class EmailVerificationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_email_verification);
         
-        // Get email from intent
-        email = getIntent().getStringExtra("email");
+        // Handle both regular intents and deep link intents
+        email = getEmailFromIntent();
         if (email == null) {
             Toast.makeText(this, "Email not provided", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
         
-        initializeViews();
-        setupClickListeners();
-        startTimer();
+        Log.d("EmailVerification", "EmailVerificationActivity opened with email: " + email);
+        
+        // Check verification status before showing verification screen
+        checkVerificationStatus();
+    }
+    
+    /**
+     * Check if email is already verified before showing verification screen
+     */
+    private void checkVerificationStatus() {
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/email_verification.php";
+        
+        RequestQueue queue = Volley.newRequestQueue(this);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try {
+                        Log.d("EmailVerification", "Check status response: " + response);
+                        JSONObject jsonResponse = new JSONObject(response);
+                        boolean success = jsonResponse.getBoolean("success");
+                        
+                        if (success && jsonResponse.has("isVerified") && jsonResponse.getBoolean("isVerified")) {
+                            // Email is already verified - close activity and show message
+                            String message = jsonResponse.getString("message");
+                            String status = jsonResponse.optString("status", "pending");
+                            
+                            Log.d("EmailVerification", "Email already verified. Status: " + status);
+                            
+                            // Customize message based on status
+                            String dialogTitle;
+                            String dialogMessage;
+                            
+                            if ("approved".equals(status)) {
+                                dialogTitle = "Email Already Verified";
+                                dialogMessage = message + "\n\nYour account has been approved. You can now log in.";
+                            } else if ("pending".equals(status)) {
+                                dialogTitle = "Email Already Verified";
+                                dialogMessage = "Your email has already been verified.\n\nYour account is currently pending admin approval. Please wait for the admin to approve your account before you can log in.";
+                            } else if ("rejected".equals(status)) {
+                                dialogTitle = "Account Rejected";
+                                dialogMessage = "Your account has been rejected by the admin. Please contact support for assistance.";
+                            } else {
+                                dialogTitle = "Email Already Verified";
+                                dialogMessage = message + "\n\nPlease wait for admin approval before logging in.";
+                            }
+                            
+                            // Show modal dialog
+                            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(EmailVerificationActivity.this)
+                                .setTitle(dialogTitle)
+                                .setMessage(dialogMessage)
+                                .setCancelable(false);
+                            
+                            // Only redirect to login if approved
+                            if ("approved".equals(status)) {
+                                dialogBuilder.setPositiveButton("OK", (dialog, which) -> {
+                                    dialog.dismiss();
+                                    // Redirect to login if approved
+                                    Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    startActivity(intent);
+                                    finish();
+                                });
+                            } else {
+                                // For pending/rejected/other statuses, just close the activity
+                                dialogBuilder.setPositiveButton("OK", (dialog, which) -> {
+                                    dialog.dismiss();
+                                    finish();
+                                });
+                            }
+                            
+                            dialogBuilder.show();
+                            
+                            return;
+                        }
+                        
+                        // Email not verified or expired - check if code is still valid
+                        if (success && jsonResponse.has("hasValidCode")) {
+                            boolean hasValidCode = jsonResponse.getBoolean("hasValidCode");
+                            if (!hasValidCode) {
+                                // Code expired or not found
+                                String message = jsonResponse.getString("message");
+                                
+                                // Show modal dialog
+                                new AlertDialog.Builder(EmailVerificationActivity.this)
+                                    .setTitle("Verification Code Expired")
+                                    .setMessage(message)
+                                    .setPositiveButton("OK", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        // Navigate back to registration
+                                        Intent intent = new Intent(EmailVerificationActivity.this, RegistrationActivity.class);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(intent);
+                                        finish();
+                                    })
+                                    .setCancelable(false)
+                                    .show();
+                                
+                                return;
+                            }
+                        }
+                        
+                        // Email not verified yet - proceed with verification screen
+                        if (tvEmail == null) {
+                            // Activity not initialized yet - initialize it
+                            initializeViews();
+                            setupClickListeners();
+                            startTimer();
+                        } else {
+                            // Activity already initialized - just update email display and restart timer
+                            tvEmail.setText("Verification code sent to: " + email);
+                            clearCodeFields();
+                            if (countDownTimer != null) {
+                                countDownTimer.cancel();
+                            }
+                            startTimer();
+                            Toast.makeText(EmailVerificationActivity.this, 
+                                "Verification screen updated for: " + email, 
+                                Toast.LENGTH_SHORT).show();
+                        }
+                        
+                    } catch (JSONException e) {
+                        Log.e("EmailVerification", "Error parsing check status response", e);
+                        // If error, proceed with verification screen anyway
+                        initializeViews();
+                        setupClickListeners();
+                        startTimer();
+                    }
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("EmailVerification", "Error checking verification status", error);
+                    // If error, proceed with verification screen anyway
+                    initializeViews();
+                    setupClickListeners();
+                    startTimer();
+                }
+            }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("action", "check_verification_status");
+                params.put("email", email);
+                return params;
+            }
+        };
+        
+        queue.add(stringRequest);
+    }
+    
+    /**
+     * Extracts email from either regular intent extra or deep link intent
+     */
+    private String getEmailFromIntent() {
+        Intent intent = getIntent();
+        
+        // First try to get email from regular intent extra
+        String emailFromExtra = intent.getStringExtra("email");
+        if (emailFromExtra != null) {
+            Log.d("EmailVerification", "Email from regular intent extra: " + emailFromExtra);
+            return emailFromExtra;
+        }
+        
+        // If not found, try to get from deep link intent
+        Uri data = intent.getData();
+        if (data != null) {
+            Log.d("EmailVerification", "Deep link data: " + data.toString());
+            
+            // Handle both custom scheme and https scheme
+            if ("boardease".equals(data.getScheme()) && "verify".equals(data.getHost())) {
+                String emailFromQuery = data.getQueryParameter("email");
+                if (emailFromQuery != null) {
+                    Log.d("EmailVerification", "Email from custom scheme deep link: " + emailFromQuery);
+                    return emailFromQuery;
+                }
+            } else if ("https".equals(data.getScheme()) && "boardease.app".equals(data.getHost()) && 
+                     data.getPath() != null && data.getPath().startsWith("/verify")) {
+                String emailFromQuery = data.getQueryParameter("email");
+                if (emailFromQuery != null) {
+                    Log.d("EmailVerification", "Email from https deep link: " + emailFromQuery);
+                    return emailFromQuery;
+                }
+            }
+        }
+        
+        Log.w("EmailVerification", "No email found in intent");
+        return null;
     }
     
     private void initializeViews() {
@@ -531,6 +720,25 @@ public class EmailVerificationActivity extends AppCompatActivity {
             if (approvalRunnable != null) {
                 approvalHandler.removeCallbacks(approvalRunnable);
             }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        
+        // Handle new deep link intents
+        String newEmail = getEmailFromIntent();
+        if (newEmail != null && !newEmail.equals(email)) {
+            Log.d("EmailVerification", "New email from deep link: " + newEmail);
+            email = newEmail;
+            
+            // Check verification status for new email
+            checkVerificationStatus();
+        } else if (newEmail != null && newEmail.equals(email)) {
+            // Same email - check verification status again
+            checkVerificationStatus();
         }
     }
 

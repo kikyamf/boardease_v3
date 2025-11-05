@@ -316,18 +316,28 @@ public class Conversation extends AppCompatActivity {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     try {
+                        android.util.Log.d("LoadMessages", "=== API RESPONSE RECEIVED ===");
+                        android.util.Log.d("LoadMessages", "Full response: " + response.toString());
+                        
                         if (response.getBoolean("success")) {
                             JSONObject data = response.getJSONObject("data");
                             JSONArray messagesArray = data.getJSONArray("messages");
+                            
+                            android.util.Log.d("LoadMessages", "Messages array length: " + messagesArray.length());
+                            android.util.Log.d("LoadMessages", "Messages array content: " + messagesArray.toString());
+                            
                             messageList.clear();
                             
                             for (int i = 0; i < messagesArray.length(); i++) {
                                 JSONObject messageObj = messagesArray.getJSONObject(i);
+                                android.util.Log.d("LoadMessages", "Processing message " + i + ": " + messageObj.toString());
+                                
                                 MessageModel message;
                                 
                                 if (chatType.equals("individual")) {
                                     // Apply profanity filter to loaded message
                                     String messageText = ProfanityFilter.filterMessage(messageObj.getString("message"));
+                                    android.util.Log.d("LoadMessages", "Message text: " + messageText);
                                     
                                     message = new MessageModel(
                                         messageObj.getInt("message_id"),
@@ -340,6 +350,8 @@ public class Conversation extends AppCompatActivity {
                                         messageObj.getString("sender_name"),
                                         messageObj.getString("receiver_name")
                                     );
+                                    
+                                    android.util.Log.d("LoadMessages", "Created message model: " + message.toString());
                                 } else {
                                     // Group message - apply profanity filter
                                     String messageText = ProfanityFilter.filterMessage(messageObj.getString("message_text"));
@@ -356,8 +368,10 @@ public class Conversation extends AppCompatActivity {
                                 }
                                 
                                 messageList.add(message);
+                                android.util.Log.d("LoadMessages", "Added message to list. Total messages now: " + messageList.size());
                             }
                             
+                            android.util.Log.d("LoadMessages", "Final message list size: " + messageList.size());
                             messageAdapter.notifyDataSetChanged();
                             updateMessagesEmptyState();
                             if (!messageList.isEmpty()) {
@@ -371,14 +385,23 @@ public class Conversation extends AppCompatActivity {
                                 }, 1000); // 1 second delay after loading messages
                             }
                         } else {
-                            Toast.makeText(this, "Error loading messages: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                            android.util.Log.e("LoadMessages", "API returned success=false");
+                            android.util.Log.e("LoadMessages", "Error message: " + response.optString("message", "Unknown error"));
+                            Toast.makeText(this, "Error loading messages: " + response.optString("message", "Unknown error"), Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
+                        android.util.Log.e("LoadMessages", "JSON parsing error", e);
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing messages data", Toast.LENGTH_SHORT).show();
                     }
                 },
                 error -> {
+                    android.util.Log.e("LoadMessages", "Network error", error);
+                    android.util.Log.e("LoadMessages", "Error details: " + error.getMessage());
+                    if (error.networkResponse != null) {
+                        android.util.Log.e("LoadMessages", "Network response code: " + error.networkResponse.statusCode);
+                        android.util.Log.e("LoadMessages", "Network response data: " + new String(error.networkResponse.data));
+                    }
                     Toast.makeText(this, "Error loading messages: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 });
 
