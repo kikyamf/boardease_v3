@@ -280,8 +280,11 @@ public class BoarderAccountSettingsFragment extends Fragment {
         // Create request queue
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         
-        // Create string request with POST method
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, API_URL,
+        // Build URL with user_id parameter for GET request
+        String urlWithParams = API_URL + "?user_id=" + userId;
+        
+        // Create string request with GET method (same as other working endpoints)
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlWithParams,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -373,13 +376,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
                         setFallbackValues();
                     }
                 }) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("user_id", userId);
-                return params;
-            }
-            
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
