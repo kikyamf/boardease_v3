@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
         android:allowBackup="true"
@@ -49,7 +50,24 @@
             android:exported="false" />
         <activity
             android:name=".EmailVerificationActivity"
-            android:exported="false" />
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                      android:host="boardease.app"
+                      android:pathPrefix="/verify" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="boardease"
+                      android:host="verify" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".BoarderDashboard"
             android:exported="false" />
@@ -125,6 +143,9 @@
             android:exported="false" />
         <activity
             android:name=".CreateGroupChat"
+            android:exported="false" />
+        <activity
+            android:name=".IdCaptureActivity"
             android:exported="false" />
     </application>
 

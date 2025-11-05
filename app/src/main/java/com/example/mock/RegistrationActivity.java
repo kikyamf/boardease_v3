@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 
 import android.app.DatePickerDialog;
@@ -28,19 +29,22 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 public class RegistrationActivity extends AppCompatActivity {
 
-    Spinner spinnerRole, spinnerSuffix;
+    Spinner spinnerRole, spinnerSuffix, spinnerProvince, spinnerMunicipality;
 
-    EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etEmail, etPassword, etGcashNum;
+    EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etBarangay, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
     ImageView UploadQr, ivTogglePassword;
     Button btnNext;
@@ -48,6 +52,12 @@ public class RegistrationActivity extends AppCompatActivity {
 
     private Uri selectedQrUri; // store the selected image URI
     private Runnable validationRunnable; // for real-time email validation
+    
+    // Address picker data
+    private String selectedProvince = "";
+    private String selectedMunicipality = "";
+    private String selectedBarangay = "";
+    private String selectedDetailedAddress = "";
 
     // Launcher to pick image from gallery
     private final ActivityResultLauncher<String> pickImageLauncher =
@@ -68,6 +78,8 @@ public class RegistrationActivity extends AppCompatActivity {
 
         spinnerRole = findViewById(R.id.spinnerRole);
         spinnerSuffix = findViewById(R.id.spinnerSuffix);
+        spinnerProvince = findViewById(R.id.spinnerProvince);
+        spinnerMunicipality = findViewById(R.id.spinnerMunicipality);
 
         etBirthDate = findViewById(R.id.etBirthDate);
         etFirstName = findViewById(R.id.etFirstName);
@@ -76,6 +88,8 @@ public class RegistrationActivity extends AppCompatActivity {
         etBirthDate = findViewById(R.id.etBirthDate);
         etPhone = findViewById(R.id.etPhone);
         etAddress = findViewById(R.id.etAddress);
+        etDetailedAddress = findViewById(R.id.etDetailedAddress);
+        etBarangay = findViewById(R.id.etBarangay);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etGcashNum = findViewById(R.id.etGcashNum);
@@ -136,6 +150,30 @@ public class RegistrationActivity extends AppCompatActivity {
         );
         spinnerRole.setAdapter(adapter);
 
+        // Setup role spinner listener to show/hide GCash fields
+        spinnerRole.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                String selectedRole = parent.getItemAtPosition(position).toString();
+                android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
+                
+                if ("Boarder".equals(selectedRole)) {
+                    // Hide GCash fields for Boarder
+                    llGcash.setVisibility(android.view.View.GONE);
+                } else {
+                    // Show GCash fields for BH Owner or other roles
+                    llGcash.setVisibility(android.view.View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                // Show GCash fields by default if nothing selected
+                android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
+                llGcash.setVisibility(android.view.View.VISIBLE);
+            }
+        });
+
         // Setup suffix spinner
         String[] suffixes = {"None", "Jr.", "Sr.", "I", "II", "III", "IV", "V"};
 
@@ -145,6 +183,12 @@ public class RegistrationActivity extends AppCompatActivity {
                 suffixes
         );
         spinnerSuffix.setAdapter(suffixAdapter);
+
+        // Initialize address picker
+        initializeAddressPicker();
+        
+        // Setup phone number field with fixed +63 prefix and formatting
+        setupPhoneNumberField();
 
         //Set the calendar for the birthdate
         etBirthDate.setOnClickListener(new View.OnClickListener() {
@@ -210,46 +254,40 @@ public class RegistrationActivity extends AppCompatActivity {
         btnNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Validate all fields
+                String validationError = validateAllFields();
+                if (validationError != null && !validationError.isEmpty()) {
+                    showValidationErrorModal(validationError);
+                    return;
+                }
 
-                if(etFirstName.getText().toString().isEmpty() || etLastName.getText().toString().isEmpty() ||
-                        etBirthDate.getText().toString().isEmpty() || etPhone.getText().toString().isEmpty() ||
-                        etAddress.getText().toString().isEmpty() || etEmail.getText().toString().isEmpty() ||
-                        etPassword.getText().toString().isEmpty() || etGcashNum.getText().toString().isEmpty()) {
-
-                    Toast.makeText(RegistrationActivity.this, "Please input all fields.", Toast.LENGTH_SHORT).show();
-
-                } else if (UploadQr.getDrawable() == null) {
-                    Toast.makeText(RegistrationActivity.this, "No image chosen for QR", Toast.LENGTH_SHORT).show();
-
-                } else {
-                    // Check if email is already validated
-                    String email = etEmail.getText().toString().trim();
-                    Log.d("RegistrationActivity", "=== NEXT BUTTON CLICKED ===");
-                    Log.d("RegistrationActivity", "Email: " + email);
-                    Log.d("RegistrationActivity", "Validation visibility: " + (tvEmailValidation.getVisibility() == View.VISIBLE ? "VISIBLE" : "GONE"));
+                // If validation passed, check email validation status
+                String email = etEmail.getText().toString().trim();
+                Log.d("RegistrationActivity", "=== NEXT BUTTON CLICKED ===");
+                Log.d("RegistrationActivity", "Email: " + email);
+                Log.d("RegistrationActivity", "Validation visibility: " + (tvEmailValidation.getVisibility() == View.VISIBLE ? "VISIBLE" : "GONE"));
+                
+                if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+                    String validationText = tvEmailValidation.getText().toString();
+                    Log.d("RegistrationActivity", "Validation text: " + validationText);
                     
-                    if (tvEmailValidation.getVisibility() == View.VISIBLE) {
-                        String validationText = tvEmailValidation.getText().toString();
-                        Log.d("RegistrationActivity", "Validation text: " + validationText);
-                        
-                        if (validationText.startsWith("✓")) {
-                            // Email is already validated, proceed directly
-                            Log.d("RegistrationActivity", "Email validation PASSED - proceeding to next activity");
-                            proceedToNextActivity();
-                        } else if (validationText.startsWith("✗")) {
-                            // Email validation failed, show error
-                            Log.d("RegistrationActivity", "Email validation FAILED - blocking user");
-                            Toast.makeText(RegistrationActivity.this, "Please fix the email issue before proceeding.", Toast.LENGTH_LONG).show();
-                        } else {
-                            // Still validating, wait
-                            Log.d("RegistrationActivity", "Email validation IN PROGRESS - waiting");
-                            Toast.makeText(RegistrationActivity.this, "Please wait for email validation to complete.", Toast.LENGTH_SHORT).show();
-                        }
+                    if (validationText.startsWith("✓")) {
+                        // Email is already validated, proceed directly
+                        Log.d("RegistrationActivity", "Email validation PASSED - proceeding to next activity");
+                        proceedToNextActivity();
+                    } else if (validationText.startsWith("✗")) {
+                        // Email validation failed, show error
+                        Log.d("RegistrationActivity", "Email validation FAILED - blocking user");
+                        showValidationErrorModal("Please fix the email issue before proceeding. The email address you entered is invalid or already in use.");
                     } else {
-                        // No validation yet, validate email first
-                        Log.d("RegistrationActivity", "No validation yet - starting email validation");
-                        validateEmailAndProceed();
+                        // Still validating, wait
+                        Log.d("RegistrationActivity", "Email validation IN PROGRESS - waiting");
+                        showValidationErrorModal("Please wait for email validation to complete.");
                     }
+                } else {
+                    // No validation yet, validate email first
+                    Log.d("RegistrationActivity", "No validation yet - starting email validation");
+                    validateEmailAndProceed();
                 }
             }
         });
@@ -408,49 +446,446 @@ public class RegistrationActivity extends AppCompatActivity {
         // Check if email validation was successful
         if (tvEmailValidation.getVisibility() != View.VISIBLE || 
             !tvEmailValidation.getText().toString().startsWith("✓")) {
-            Toast.makeText(this, "Please wait for email validation to complete.", Toast.LENGTH_SHORT).show();
+            showValidationErrorModal("Please wait for email validation to complete.");
             return;
         }
         
-        Intent a = new Intent(RegistrationActivity.this, Registration2Activity.class);
+                    Intent a = new Intent(RegistrationActivity.this, Registration2Activity.class);
 
-        a.putExtra("role", spinnerRole.getSelectedItem().toString());
-        a.putExtra("firstName", etFirstName.getText().toString().trim());
-        a.putExtra("middleName", etMiddleName.getText().toString().trim());
-        a.putExtra("lastName", etLastName.getText().toString().trim());
-        a.putExtra("suffix", spinnerSuffix.getSelectedItem().toString());
-        a.putExtra("birthDate", etBirthDate.getText().toString().trim());
-        a.putExtra("phone", etPhone.getText().toString().trim());
-        a.putExtra("address", etAddress.getText().toString().trim());
-        a.putExtra("email", etEmail.getText().toString().trim());
-        a.putExtra("password", etPassword.getText().toString().trim());
-        a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
+                    String selectedRole = spinnerRole.getSelectedItem().toString();
+                    boolean isBoarder = "Boarder".equals(selectedRole);
+                    
+                    a.putExtra("role", selectedRole);
+                    a.putExtra("firstName", etFirstName.getText().toString().trim());
+                    a.putExtra("middleName", etMiddleName.getText().toString().trim());
+                    a.putExtra("lastName", etLastName.getText().toString().trim());
+                    a.putExtra("suffix", spinnerSuffix.getSelectedItem().toString());
+                    a.putExtra("birthDate", etBirthDate.getText().toString().trim());
+                    // Convert phone format: +63 992 531 1409 -> 09925311409 (start with 0, no +63)
+                    String phoneFormatted = etPhone.getText().toString().trim();
+                    // Extract digits after +63 (skip "+63 ", get the 10 digits after)
+                    String digitsAfterPlus63 = phoneFormatted.substring(4).replaceAll("[^0-9]", "");
+                    // Add 0 at the start: 09925311409 (11 digits starting with 0)
+                    String phoneNumber = "0" + digitsAfterPlus63;
+                    a.putExtra("phone", phoneNumber);
+                    a.putExtra("address", etAddress.getText().toString().trim());
+                    a.putExtra("email", etEmail.getText().toString().trim());
+                    a.putExtra("password", etPassword.getText().toString().trim());
+                    
+                    // Only add GCash data if not Boarder
+                    if (!isBoarder) {
+                        a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
+                        
+                        // if you want to send QR URI
+                        if (selectedQrUri != null) {
+                            a.putExtra("qrUri", selectedQrUri.toString());
+                        }
+                    } else {
+                        // Boarder doesn't need GCash
+                        a.putExtra("gcashNum", "");
+                        a.putExtra("qrUri", "");
+                    }
 
-        // if you want to send QR URI
-        if (selectedQrUri != null) {
-            a.putExtra("qrUri", selectedQrUri.toString());
-        }
-
-        startActivity(a);
+                    startActivity(a);
     }
 
+    /**
+     * Shows validation error in a modal dialog
+     * @param errorMessage The error message to display
+     */
+    private void showValidationErrorModal(String errorMessage) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Validation Error");
+        builder.setMessage(errorMessage);
+        builder.setIcon(android.R.drawable.ic_dialog_alert);
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        builder.setCancelable(true);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Style the dialog
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF6200EE); // Primary color
+    }
+    
+    /**
+     * Validates all input fields based on role and field type
+     * @return Error message if validation fails, null if all fields are valid
+     */
+    private String validateAllFields() {
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
+        // 1. Validate Role
+        if (selectedRole.equals("Select --")) {
+            return "Please select a role (Boarder or BH Owner)";
+        }
+        
+        // 2. Validate First Name
+        String firstName = etFirstName.getText().toString().trim();
+        if (firstName.isEmpty()) {
+            return "First Name is required";
+        }
+        if (firstName.length() < 2 || firstName.length() > 50) {
+            return "First Name must be 2-50 characters long";
+        }
+        if (!firstName.matches("^[a-zA-Z\\s\\-']+$")) {
+            return "First Name can only contain letters, spaces, hyphens, and apostrophes";
+        }
+        
+        // 3. Validate Last Name
+        String lastName = etLastName.getText().toString().trim();
+        if (lastName.isEmpty()) {
+            return "Last Name is required";
+        }
+        if (lastName.length() < 2 || lastName.length() > 50) {
+            return "Last Name must be 2-50 characters long";
+        }
+        if (!lastName.matches("^[a-zA-Z\\s\\-']+$")) {
+            return "Last Name can only contain letters, spaces, hyphens, and apostrophes";
+        }
+        
+        // 4. Validate Middle Name (optional but if provided, should be valid)
+        String middleName = etMiddleName.getText().toString().trim();
+        if (!middleName.isEmpty()) {
+            if (middleName.length() < 1 || middleName.length() > 50) {
+                return "Middle Name must be 1-50 characters long if provided";
+            }
+            if (!middleName.matches("^[a-zA-Z\\s\\-']+$")) {
+                return "Middle Name can only contain letters, spaces, hyphens, and apostrophes";
+            }
+        }
+        
+        // 5. Validate Birth Date
+        String birthDate = etBirthDate.getText().toString().trim();
+        if (birthDate.isEmpty()) {
+            return "Birth Date is required";
+        }
+        // Validate date format (MM/DD/YYYY)
+        if (!birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
+            return "Birth Date must be in MM/DD/YYYY format";
+        }
+        // Check if user is at least 18 years old
+        try {
+            String[] dateParts = birthDate.split("/");
+            int month = Integer.parseInt(dateParts[0]);
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+            
+            if (month < 1 || month > 12) {
+                return "Birth Date: Month must be 1-12";
+            }
+            if (day < 1 || day > 31) {
+                return "Birth Date: Day must be 1-31";
+            }
+            if (year < 1900 || year > java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) {
+                return "Birth Date: Year must be between 1900 and current year";
+            }
+            
+            // Calculate age
+            java.util.Calendar birthCalendar = java.util.Calendar.getInstance();
+            birthCalendar.set(year, month - 1, day);
+            java.util.Calendar now = java.util.Calendar.getInstance();
+            int age = now.get(java.util.Calendar.YEAR) - birthCalendar.get(java.util.Calendar.YEAR);
+            if (now.get(java.util.Calendar.DAY_OF_YEAR) < birthCalendar.get(java.util.Calendar.DAY_OF_YEAR)) {
+                age--;
+            }
+            
+            if (age < 18) {
+                return "You must be at least 18 years old to register";
+            }
+            if (age > 120) {
+                return "Please enter a valid birth date";
+            }
+        } catch (Exception e) {
+            return "Birth Date: Invalid date format";
+        }
+        
+        // 6. Validate Phone Number
+        String phone = etPhone.getText().toString().trim();
+        if (phone.isEmpty() || phone.equals("+63")) {
+            return "Phone Number is required";
+        }
+        // Extract digits only (+63 represents 0, so +63 992 531 1409 = 09925311409)
+        if (!phone.startsWith("+63")) {
+            return "Phone Number must start with +63";
+        }
+        String digitsAfterPlus63 = phone.substring(4).replaceAll("[^0-9]", "");
+        if (digitsAfterPlus63.length() != 10) {
+            return "Phone Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
+        }
+        // First digit after +63 should be 9 (Philippine mobile format)
+        if (!digitsAfterPlus63.startsWith("9")) {
+            return "Phone Number must start with 9 after +63 (Philippine mobile format)";
+        }
+        
+        // 7. Validate Address
+        String province = spinnerProvince.getSelectedItem().toString();
+        String municipality = spinnerMunicipality.getSelectedItem().toString();
+        String barangay = etBarangay.getText().toString().trim();
+        String detailedAddress = etDetailedAddress.getText().toString().trim();
+        
+        if (province.equals("Select Province") || province.isEmpty()) {
+            return "Please select a Province";
+        }
+        if (municipality.equals("Select Municipality") || municipality.isEmpty()) {
+            return "Please select a Municipality/City";
+        }
+        if (barangay.isEmpty()) {
+            return "Barangay is required";
+        }
+        if (barangay.length() < 2 || barangay.length() > 100) {
+            return "Barangay must be 2-100 characters long";
+        }
+        if (detailedAddress.isEmpty()) {
+            return "Detailed Address (Street, House No., etc.) is required";
+        }
+        if (detailedAddress.length() < 5 || detailedAddress.length() > 200) {
+            return "Detailed Address must be 5-200 characters long";
+        }
+        
+        // 8. Validate Email (already has real-time validation, just check if it exists)
+        String email = etEmail.getText().toString().trim();
+        if (email.isEmpty()) {
+            return "Email is required";
+        }
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            return "Email format is invalid";
+        }
+        // Check if email validation was successful
+        if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+            String validationText = tvEmailValidation.getText().toString();
+            if (validationText.startsWith("✗")) {
+                return "Email validation failed. Please use a valid email address";
+            }
+            if (!validationText.startsWith("✓")) {
+                return "Please wait for email validation to complete";
+            }
+        }
+        
+        // 9. Validate Password
+        String password = etPassword.getText().toString();
+        if (password.isEmpty()) {
+            return "Password is required";
+        }
+        if (password.length() < 8) {
+            return "Password must be at least 8 characters long";
+        }
+        if (password.length() > 50) {
+            return "Password must be maximum 50 characters long";
+        }
+        // Password must contain at least one letter and one number
+        if (!password.matches(".*[a-zA-Z].*")) {
+            return "Password must contain at least one letter";
+        }
+        if (!password.matches(".*[0-9].*")) {
+            return "Password must contain at least one number";
+        }
+        
+        // 10. Validate GCash Number (only for BH Owner)
+        if (!isBoarder) {
+            String gcashNum = etGcashNum.getText().toString().trim();
+            if (gcashNum.isEmpty()) {
+                return "GCash Number is required for BH Owner";
+            }
+            // GCash format: 09xxxxxxxxx (11 digits starting with 09)
+            String gcashDigits = gcashNum.replaceAll("[^0-9]", "");
+            if (gcashDigits.length() != 11) {
+                return "GCash Number must be 11 digits (09xxxxxxxxx)";
+            }
+            if (!gcashDigits.matches("^09\\d{9}$")) {
+                return "GCash Number must start with 09 (Philippine mobile format)";
+            }
+            
+            // 11. Validate GCash QR Code (only for BH Owner)
+            if (UploadQr.getDrawable() == null) {
+                return "GCash QR Code image is required for BH Owner";
+            }
+        }
+        
+        // All validations passed
+        return null;
+    }
+    
+    /**
+     * Sets up phone number field with fixed +63 prefix and formatting
+     * Format: +63 9XX XXX YYYY
+     */
+    private void setupPhoneNumberField() {
+        // Set initial value to +63
+        etPhone.setText("+63 ");
+        etPhone.setSelection(etPhone.getText().length());
+        
+        etPhone.addTextChangedListener(new android.text.TextWatcher() {
+            private boolean isFormatting = false;
+            private String previousText = "+63 ";
+            
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                previousText = s.toString();
+            }
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Do nothing here
+            }
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (isFormatting) {
+                    return;
+                }
+                
+                isFormatting = true;
+                String currentText = s.toString();
+                
+                // Always ensure +63 is at the start
+                if (!currentText.startsWith("+63")) {
+                    // If user tries to delete +63, restore it
+                    etPhone.removeTextChangedListener(this);
+                    etPhone.setText("+63 ");
+                    etPhone.setSelection(etPhone.getText().length());
+                    etPhone.addTextChangedListener(this);
+                    isFormatting = false;
+                    return;
+                }
+                
+                // Extract only numbers after +63 (skip "+63 " = 4 characters)
+                String digitsOnly = currentText.substring(4).replaceAll("[^0-9]", "");
+                
+                // Limit to 10 digits (since +63 represents 0, total should be 11 digits: 0 + 10 digits = 11)
+                if (digitsOnly.length() > 10) {
+                    digitsOnly = digitsOnly.substring(0, 10);
+                }
+                
+                // Format as: +63 9XX XXX XXXX
+                // Example: +63 992 531 1409
+                StringBuilder formatted = new StringBuilder("+63 ");
+                
+                if (digitsOnly.length() > 0) {
+                    // First 3 digits (e.g., 992)
+                    if (digitsOnly.length() <= 3) {
+                        formatted.append(digitsOnly);
+                    } else {
+                        formatted.append(digitsOnly.substring(0, 3));
+                        formatted.append(" ");
+                        
+                        // Next 3 digits (e.g., 531)
+                        if (digitsOnly.length() <= 6) {
+                            formatted.append(digitsOnly.substring(3));
+                        } else {
+                            formatted.append(digitsOnly.substring(3, 6));
+                            formatted.append(" ");
+                            
+                            // Last 4 digits (e.g., 1409)
+                            if (digitsOnly.length() <= 10) {
+                                formatted.append(digitsOnly.substring(6));
+                            } else {
+                                formatted.append(digitsOnly.substring(6, 10));
+                            }
+                        }
+                    }
+                }
+                
+                // Update the text
+                etPhone.removeTextChangedListener(this);
+                etPhone.setText(formatted.toString());
+                
+                // Set cursor position - place it at the end of what was typed
+                // Format: +63 XXX XXX XXXX (10 digits)
+                int digitCount = digitsOnly.length();
+                int cursorPosition;
+                
+                if (digitCount == 0) {
+                    cursorPosition = 4; // After "+63 "
+                } else if (digitCount <= 3) {
+                    cursorPosition = 4 + digitCount; // After "+63 " + digits
+                } else if (digitCount <= 6) {
+                    cursorPosition = 5 + digitCount; // After "+63 " + first 3 + space + remaining
+                } else {
+                    cursorPosition = 6 + digitCount; // After "+63 " + first 3 + space + next 3 + space + remaining
+                }
+                
+                etPhone.setSelection(Math.min(cursorPosition, formatted.length()));
+                
+                etPhone.addTextChangedListener(this);
+                isFormatting = false;
+            }
+        });
+        
+        // Prevent selection/deletion of +63 prefix
+        etPhone.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == android.view.KeyEvent.KEYCODE_DEL) {
+                EditText editText = (EditText) v;
+                int cursorPosition = editText.getSelectionStart();
+                
+                // Prevent deleting +63
+                if (cursorPosition <= 4) { // +63 = 4 characters
+                    return true; // Consume the event
+                }
+            }
+            return false;
+        });
+    }
+    
     /**
      * Verifies and sets QR image if approved
      */
     private void verifyAndSetQrImage(Uri imageUri) {
-        // Show loading message
-        Toast.makeText(this, "Scanning QR code with API...", Toast.LENGTH_SHORT).show();
+        Log.d("QR_VALIDATION", "=== QR CODE VALIDATION STARTED ===");
+        Log.d("QR_VALIDATION", "Image URI: " + imageUri.toString());
+        
+        // Create and show modal dialog
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_qr_verification, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create();
+        
+        // Get dialog views
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        ImageView ivQrPhoto = dialogView.findViewById(R.id.ivQrPhoto);
+        ProgressBar progressBarVerifying = dialogView.findViewById(R.id.progressBarVerifying);
+        TextView tvResultMessage = dialogView.findViewById(R.id.tvResultMessage);
+        Button btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+        
+        // Set the selected photo
+        ivQrPhoto.setImageURI(imageUri);
+        
+        // Show dialog
+        dialog.show();
         
         // Use API-based QR code verification
         ImageVerification.verifyQrCode(this, imageUri, new ImageVerification.VerificationCallback() {
             @Override
             public void onVerificationComplete(boolean isApproved, String reason) {
+                Log.d("QR_VALIDATION", "=== QR CODE VALIDATION COMPLETED ===");
+                Log.d("QR_VALIDATION", "Is Approved: " + isApproved);
+                Log.d("QR_VALIDATION", "Reason: " + reason);
+                
+                // Hide progress bar
+                progressBarVerifying.setVisibility(View.GONE);
+                
                 if (isApproved) {
+                    Log.d("QR_VALIDATION", "✅ QR CODE VALIDATION PASSED");
                     // Set the image as selected
                     selectedQrUri = imageUri;
                     UploadQr.setImageURI(imageUri); // show the image in ImageView
-                    Toast.makeText(RegistrationActivity.this, "✅ Valid GCash QR code detected!", Toast.LENGTH_SHORT).show();
+                    UploadQr.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
+                    Log.d("QR_VALIDATION", "QR image set successfully");
+                    
+                    // Show success result
+                    tvDialogTitle.setText("Verification Successful");
+                    tvResultMessage.setText("✅ Valid GCash QR code detected!");
+                    tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_green_dark));
+                    tvResultMessage.setVisibility(View.VISIBLE);
+                    btnCloseDialog.setVisibility(View.VISIBLE);
                 } else {
+                    Log.d("QR_VALIDATION", "❌ QR CODE VALIDATION FAILED");
+                    Log.d("QR_VALIDATION", "Failure reason: " + reason);
+                    
                     // Show rejection reason with more helpful message
                     String helpfulMessage = reason;
                     if (reason.contains("No QR code detected")) {
@@ -463,14 +898,306 @@ public class RegistrationActivity extends AppCompatActivity {
                         helpfulMessage = "Image is too large. Please compress or resize your GCash QR code image.";
                     }
                     
-                    Toast.makeText(RegistrationActivity.this, "❌ " + helpfulMessage, Toast.LENGTH_LONG).show();
+                    Log.d("QR_VALIDATION", "Showing helpful message to user: " + helpfulMessage);
+                    
+                    // Show failure result
+                    tvDialogTitle.setText("Verification Failed");
+                    tvResultMessage.setText("❌ " + helpfulMessage);
+                    tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_red_dark));
+                    tvResultMessage.setVisibility(View.VISIBLE);
+                    btnCloseDialog.setVisibility(View.VISIBLE);
                 }
+                
+                // Set close button listener
+                btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
             }
             
             @Override
             public void onVerificationError(String error) {
-                Toast.makeText(RegistrationActivity.this, "QR code verification failed: " + error, Toast.LENGTH_LONG).show();
+                Log.e("QR_VALIDATION", "Verification error: " + error);
+                
+                // Hide progress bar
+                progressBarVerifying.setVisibility(View.GONE);
+                
+                // Show error result
+                tvDialogTitle.setText("Verification Error");
+                tvResultMessage.setText("QR code verification failed: " + error);
+                tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_red_dark));
+                tvResultMessage.setVisibility(View.VISIBLE);
+                btnCloseDialog.setVisibility(View.VISIBLE);
+                
+                // Set close button listener
+                btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
             }
         });
+    }
+    
+    private void initializeAddressPicker() {
+        // Load provinces first
+        loadProvinces();
+        
+        // Set up province selection listener
+        spinnerProvince.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (position > 0) { // Skip "Select Province" option
+                    String newProvince = parent.getItemAtPosition(position).toString();
+                    
+                    // If province changed, reset municipality and barangay
+                    if (!newProvince.equals(selectedProvince)) {
+                        // Reset municipality and barangay spinners first
+                        clearMunicipalityAndBarangay();
+                        selectedMunicipality = "";
+                        selectedBarangay = "";
+                        
+                        // Set new province and load municipalities
+                        selectedProvince = newProvince;
+                        loadMunicipalities(selectedProvince);
+                    } else {
+                        // Same province selected, just update
+                        selectedProvince = newProvince;
+                    }
+                } else {
+                    // "Select Province" selected
+                    selectedProvince = "";
+                    clearMunicipalityAndBarangay();
+                    selectedMunicipality = "";
+                    selectedBarangay = "";
+                }
+                updateCompleteAddress();
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Set up municipality selection listener
+        spinnerMunicipality.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (position > 0) { // Skip "Select Municipality" option
+                    selectedMunicipality = parent.getItemAtPosition(position).toString();
+                } else {
+                    selectedMunicipality = "";
+                }
+                updateCompleteAddress();
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Set up barangay input listener
+        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                selectedBarangay = s.toString().trim();
+                updateCompleteAddress();
+            }
+        });
+        
+        // Set up detailed address listener
+        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                selectedDetailedAddress = s.toString().trim();
+                updateCompleteAddress();
+            }
+        });
+    }
+    
+    private void loadProvinces() {
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=provinces";
+        
+        Log.d("AddressPicker", "Loading provinces from: " + url);
+        
+        com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+            com.android.volley.Request.Method.GET, url, null,
+            response -> {
+                try {
+                    Log.d("AddressPicker", "Provinces response received: " + response.toString());
+                    
+                    if (response.getBoolean("success")) {
+                        org.json.JSONArray provincesArray = response.getJSONArray("data");
+                        Log.d("AddressPicker", "Found " + provincesArray.length() + " provinces");
+                        
+                        String[] provinceNames = new String[provincesArray.length() + 1];
+                        provinceNames[0] = "Select Province";
+                        
+                        for (int i = 0; i < provincesArray.length(); i++) {
+                            org.json.JSONObject province = provincesArray.getJSONObject(i);
+                            provinceNames[i + 1] = province.getString("name");
+                        }
+                        
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                            this, android.R.layout.simple_spinner_dropdown_item, provinceNames);
+                        spinnerProvince.setAdapter(adapter);
+                        
+                        Log.d("AddressPicker", "Provinces loaded successfully");
+                    } else {
+                        Log.e("AddressPicker", "API returned success=false");
+                        loadProvincesFallback();
+                    }
+                } catch (org.json.JSONException e) {
+                    Log.e("AddressPicker", "JSON parsing error: " + e.getMessage());
+                    Log.e("AddressPicker", "Response was: " + response.toString());
+                    e.printStackTrace();
+                    loadProvincesFallback();
+                }
+            },
+            error -> {
+                Log.e("AddressPicker", "Network error loading provinces: " + error.getMessage());
+                Log.e("AddressPicker", "Error type: " + error.getClass().getSimpleName());
+                if (error.networkResponse != null) {
+                    Log.e("AddressPicker", "Response code: " + error.networkResponse.statusCode);
+                    Log.e("AddressPicker", "Response data: " + new String(error.networkResponse.data));
+                }
+                loadProvincesFallback();
+            }
+        );
+        
+        com.android.volley.RequestQueue queue = com.android.volley.toolbox.Volley.newRequestQueue(this);
+        queue.add(request);
+    }
+    
+    private void loadProvincesFallback() {
+        Log.d("AddressPicker", "Using fallback provinces data");
+        
+        // Fallback provinces data - Major Philippine provinces
+        String[] fallbackProvinces = {
+            "Select Province",
+            "Abra", "Agusan del Norte", "Agusan del Sur", "Aklan", "Albay", "Antique", "Apayao", "Aurora",
+            "Basilan", "Bataan", "Batanes", "Batangas", "Benguet", "Biliran", "Bohol", "Bukidnon", "Bulacan",
+            "Cagayan", "Camarines Norte", "Camarines Sur", "Camiguin", "Capiz", "Catanduanes", "Cavite", "Cebu",
+            "Cotabato", "Davao del Norte", "Davao del Sur", "Davao Oriental", "Davao de Oro", "Davao Occidental",
+            "Dinagat Islands", "Eastern Samar", "Guimaras", "Ifugao", "Ilocos Norte", "Ilocos Sur", "Iloilo",
+            "Isabela", "Kalinga", "Laguna", "Lanao del Norte", "Lanao del Sur", "La Union", "Leyte", "Maguindanao",
+            "Marinduque", "Masbate", "Metro Manila", "Misamis Occidental", "Misamis Oriental", "Mountain Province",
+            "Negros Occidental", "Negros Oriental", "Northern Samar", "Nueva Ecija", "Nueva Vizcaya",
+            "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Pampanga", "Pangasinan", "Quezon", "Quirino",
+            "Rizal", "Romblon", "Samar", "Sarangani", "Siquijor", "Sorsogon", "South Cotabato", "Southern Leyte",
+            "Sultan Kudarat", "Sulu", "Surigao del Norte", "Surigao del Sur", "Tarlac", "Tawi-Tawi", "Zambales",
+            "Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"
+        };
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+            this, android.R.layout.simple_spinner_dropdown_item, fallbackProvinces);
+        spinnerProvince.setAdapter(adapter);
+        
+        Log.d("AddressPicker", "Fallback provinces loaded successfully");
+        Toast.makeText(this, "Using offline provinces data", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void loadMunicipalities(String province) {
+        try {
+            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=municipalities&province_name=" + URLEncoder.encode(province, "UTF-8");
+        
+        com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+            com.android.volley.Request.Method.GET, url, null,
+            response -> {
+                try {
+                    if (response.getBoolean("success")) {
+                        org.json.JSONArray municipalitiesArray = response.getJSONArray("data");
+                        
+                        if (municipalitiesArray.length() > 0) {
+                            String[] municipalityNames = new String[municipalitiesArray.length() + 1];
+                            municipalityNames[0] = "Select Municipality";
+                            
+                            for (int i = 0; i < municipalitiesArray.length(); i++) {
+                                org.json.JSONObject municipality = municipalitiesArray.getJSONObject(i);
+                                municipalityNames[i + 1] = municipality.getString("name");
+                            }
+                            
+                            ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                this, android.R.layout.simple_spinner_dropdown_item, municipalityNames);
+                            spinnerMunicipality.setAdapter(adapter);
+                        } else {
+                            // No municipalities found
+                            Log.w("AddressPicker", "No municipalities found for province: " + province);
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "No municipalities available for this province. Please type your complete address manually in the detailed address field below.", Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    }
+                } catch (org.json.JSONException e) {
+                    Log.e("AddressPicker", "JSON parsing error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                Log.e("AddressPicker", "Error loading municipalities: " + error.getMessage());
+                // Show user-friendly message
+                if (error.networkResponse != null) {
+                    String data = new String(error.networkResponse.data);
+                    Log.e("AddressPicker", "Response data: " + data);
+                }
+                
+                // Check if it's due to no data (empty response)
+                if (error.getMessage().contains("org.json.JSONException: No value for data")) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "No municipalities available for this province. Please type your address manually below.", Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        );
+        
+        com.android.volley.RequestQueue queue = com.android.volley.toolbox.Volley.newRequestQueue(this);
+        queue.add(request);
+        } catch (Exception e) {
+            Log.e("AddressPicker", "Error encoding province name: " + e.getMessage());
+            Toast.makeText(this, "Error loading municipalities", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void clearMunicipalityAndBarangay() {
+        String[] emptyArray = {"Select Municipality"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, emptyArray);
+        spinnerMunicipality.setAdapter(adapter);
+        clearBarangay();
+    }
+    
+    private void clearBarangay() {
+        // Clear barangay EditText
+        if (etBarangay != null) {
+            etBarangay.setText("");
+        }
+        selectedBarangay = "";
+    }
+    
+    private void updateCompleteAddress() {
+        StringBuilder completeAddress = new StringBuilder();
+        
+        if (!selectedDetailedAddress.isEmpty()) {
+            completeAddress.append(selectedDetailedAddress);
+        }
+        
+        if (!selectedBarangay.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedBarangay);
+        }
+        
+        if (!selectedMunicipality.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedMunicipality);
+        }
+        
+        if (!selectedProvince.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedProvince);
+        }
+        
+        etAddress.setText(completeAddress.toString());
     }
 }

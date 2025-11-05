@@ -14,10 +14,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -54,6 +57,7 @@ public class GcashInfoActivity extends AppCompatActivity {
 
     // Data
     private String currentGcashNumber, currentGcashQr;
+    private Uri pendingQrUri; // Store pending QR code URI after verification (not uploaded yet)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +170,26 @@ public class GcashInfoActivity extends AppCompatActivity {
 
         showProgressDialog("Saving GCash information...");
 
+        // First upload QR code if there's a pending one
+        if (pendingQrUri != null) {
+            uploadGcashQrImage(pendingQrUri, new QRUploadCallback() {
+                @Override
+                public void onUploadComplete(boolean success) {
+                    // After QR upload (if any), update GCash number
+                    // Continue with update even if QR upload failed (but log it)
+                    if (!success) {
+                        Log.w(TAG, "QR code upload failed, but continuing with GCash number update");
+                    }
+                    updateGcashNumber(gcashNumber);
+                }
+            });
+        } else {
+            // No QR code to upload, just update GCash number
+            updateGcashNumber(gcashNumber);
+        }
+    }
+    
+    private void updateGcashNumber(String gcashNumber) {
         StringRequest request = new StringRequest(Request.Method.POST, UPDATE_GCASH_INFO_URL,
             new Response.Listener<String>() {
                 @Override
@@ -208,6 +232,11 @@ public class GcashInfoActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
         queue.add(request);
     }
+    
+    // Interface for QR upload callback
+    private interface QRUploadCallback {
+        void onUploadComplete(boolean success);
+    }
 
     private void selectGcashQrImage() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -227,6 +256,10 @@ public class GcashInfoActivity extends AppCompatActivity {
     }
 
     private void uploadGcashQrImage(Uri imageUri) {
+        uploadGcashQrImage(imageUri, null);
+    }
+    
+    private void uploadGcashQrImage(Uri imageUri, QRUploadCallback callback) {
         try {
             Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
             
@@ -239,18 +272,18 @@ public class GcashInfoActivity extends AppCompatActivity {
             byte[] imageBytes = baos.toByteArray();
             String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
 
-            showProgressDialog("Uploading GCash QR code...");
+            // Progress dialog is already showing from saveGcashChanges
 
             StringRequest request = new StringRequest(Request.Method.POST, UPLOAD_GCASH_QR_URL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        hideProgressDialog();
                         try {
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
                                 String newQrPath = jsonResponse.optString("gcash_qr_path", "");
                                 currentGcashQr = newQrPath;
+                                pendingQrUri = null; // Clear pending QR after successful upload
                                 
                                 // Update the image view
                                 String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + newQrPath;
@@ -260,23 +293,32 @@ public class GcashInfoActivity extends AppCompatActivity {
                                     .error(R.drawable.placeholder)
                                     .into(ivGcashQr);
                                 
-                                Toast.makeText(GcashInfoActivity.this, "GCash QR code updated successfully", Toast.LENGTH_SHORT).show();
+                                Log.d(TAG, "QR code uploaded successfully");
+                                if (callback != null) {
+                                    callback.onUploadComplete(true);
+                                }
                             } else {
                                 String error = jsonResponse.optString("error", "Failed to upload QR code");
-                                Toast.makeText(GcashInfoActivity.this, error, Toast.LENGTH_SHORT).show();
+                                Log.e(TAG, "QR upload failed: " + error);
+                                if (callback != null) {
+                                    callback.onUploadComplete(false);
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing upload response", e);
-                            Toast.makeText(GcashInfoActivity.this, "Error uploading QR code", Toast.LENGTH_SHORT).show();
+                            if (callback != null) {
+                                callback.onUploadComplete(false);
+                            }
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        hideProgressDialog();
                         Log.e(TAG, "Error uploading QR code", error);
-                        Toast.makeText(GcashInfoActivity.this, "Error uploading QR code", Toast.LENGTH_SHORT).show();
+                        if (callback != null) {
+                            callback.onUploadComplete(false);
+                        }
                     }
                 }
             ) {
@@ -294,7 +336,11 @@ public class GcashInfoActivity extends AppCompatActivity {
 
         } catch (IOException e) {
             Log.e(TAG, "Error processing image", e);
+            hideProgressDialog();
             Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
+            if (callback != null) {
+                callback.onUploadComplete(false);
+            }
         }
     }
 
@@ -323,29 +369,113 @@ public class GcashInfoActivity extends AppCompatActivity {
     }
 
     /**
-     * Verifies and uploads GCash QR image if approved
+     * Verifies GCash QR image and displays it if approved (does not upload yet)
      */
     private void verifyAndUploadGcashQr(Uri imageUri) {
-        // Show loading message
-        Toast.makeText(this, "Verifying GCash QR image...", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "=== QR CODE VALIDATION STARTED ===");
+        Log.d(TAG, "Image URI: " + imageUri.toString());
+        
+        // Create and show modal dialog
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_qr_verification, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create();
+        
+        // Get dialog views
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        ImageView ivQrPhoto = dialogView.findViewById(R.id.ivQrPhoto);
+        android.widget.ProgressBar progressBarVerifying = dialogView.findViewById(R.id.progressBarVerifying);
+        TextView tvResultMessage = dialogView.findViewById(R.id.tvResultMessage);
+        Button btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+        
+        // Set the selected photo
+        ivQrPhoto.setImageURI(imageUri);
+        
+        // Show dialog
+        dialog.show();
         
         // Use QR code specific verification
         ImageVerification.verifyQrCode(this, imageUri, new ImageVerification.VerificationCallback() {
             @Override
             public void onVerificationComplete(boolean isApproved, String reason) {
+                Log.d(TAG, "=== QR CODE VALIDATION COMPLETED ===");
+                Log.d(TAG, "Is Approved: " + isApproved);
+                Log.d(TAG, "Reason: " + reason);
+                
+                // Hide progress bar
+                progressBarVerifying.setVisibility(View.GONE);
+                
                 if (isApproved) {
-                    // Upload the approved image
-                    uploadGcashQrImage(imageUri);
-                    Toast.makeText(GcashInfoActivity.this, "✅ GCash QR image approved", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "✅ QR CODE VALIDATION PASSED");
+                    
+                    // Store the verified QR code URI (pending upload)
+                    pendingQrUri = imageUri;
+                    
+                    // Display the image in the ImageView
+                    ivGcashQr.setImageURI(imageUri);
+                    
+                    // Show success result
+                    tvDialogTitle.setText("Verification Successful");
+                    tvResultMessage.setText("✅ Valid GCash QR code detected! Click 'Save Changes' to update.");
+                    tvResultMessage.setTextColor(ContextCompat.getColor(GcashInfoActivity.this, android.R.color.holo_green_dark));
+                    tvResultMessage.setVisibility(View.VISIBLE);
+                    btnCloseDialog.setVisibility(View.VISIBLE);
+                    
+                    // Set close button listener
+                    btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
                 } else {
-                    // Show rejection reason
-                    Toast.makeText(GcashInfoActivity.this, "❌ Image rejected: " + reason, Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "❌ QR CODE VALIDATION FAILED");
+                    Log.d(TAG, "Failure reason: " + reason);
+                    
+                    // Clear pending QR if verification failed
+                    pendingQrUri = null;
+                    
+                    // Show rejection reason with more helpful message
+                    String helpfulMessage = reason;
+                    if (reason.contains("No QR code detected")) {
+                        helpfulMessage = "No QR code found in image. Please upload a clear photo of your GCash QR code.";
+                    } else if (reason.contains("does not appear to be a GCash QR code")) {
+                        helpfulMessage = "This doesn't look like a GCash QR code. Please upload your actual GCash QR code.";
+                    } else if (reason.contains("too small")) {
+                        helpfulMessage = "Image is too small. Please take a clearer photo of your GCash QR code.";
+                    } else if (reason.contains("too large")) {
+                        helpfulMessage = "Image is too large. Please compress or resize your GCash QR code image.";
+                    }
+                    
+                    Log.d(TAG, "Showing helpful message to user: " + helpfulMessage);
+                    
+                    // Show failure result
+                    tvDialogTitle.setText("Verification Failed");
+                    tvResultMessage.setText("❌ " + helpfulMessage);
+                    tvResultMessage.setTextColor(ContextCompat.getColor(GcashInfoActivity.this, android.R.color.holo_red_dark));
+                    tvResultMessage.setVisibility(View.VISIBLE);
+                    btnCloseDialog.setVisibility(View.VISIBLE);
+                    
+                    // Set close button listener
+                    btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
                 }
             }
             
             @Override
             public void onVerificationError(String error) {
-                Toast.makeText(GcashInfoActivity.this, "Image verification failed: " + error, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Verification error: " + error);
+                
+                // Clear pending QR on error
+                pendingQrUri = null;
+                
+                // Hide progress bar
+                progressBarVerifying.setVisibility(View.GONE);
+                
+                // Show error result
+                tvDialogTitle.setText("Verification Error");
+                tvResultMessage.setText("QR code verification failed: " + error);
+                tvResultMessage.setTextColor(ContextCompat.getColor(GcashInfoActivity.this, android.R.color.holo_red_dark));
+                tvResultMessage.setVisibility(View.VISIBLE);
+                btnCloseDialog.setVisibility(View.VISIBLE);
+                
+                // Set close button listener
+                btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
             }
         });
     }

@@ -72,11 +72,12 @@
             <ImageView
                 android:id="@+id/ivUploadF"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="200dp"
                 android:src="@drawable/upload"
-                android:scaleType="fitCenter"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"
                 android:background="@drawable/edittext_background"
-                android:contentDescription="Upload QR" />
+                android:contentDescription="Upload Front ID" />
         </LinearLayout>
 
         <!-- Upload ID -->
@@ -99,11 +100,12 @@
             <ImageView
                 android:id="@+id/ivUploadB"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="200dp"
                 android:src="@drawable/upload"
-                android:scaleType="fitCenter"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"
                 android:background="@drawable/edittext_background"
-                android:contentDescription="Upload QR" />
+                android:contentDescription="Upload Back ID" />
         </LinearLayout>
 
         <!-- ID Number -->

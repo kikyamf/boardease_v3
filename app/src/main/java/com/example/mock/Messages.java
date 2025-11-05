@@ -135,9 +135,6 @@ public class Messages extends AppCompatActivity {
         // Setup RecyclerViews
         setupRecyclerViews();
         
-        // Load dummy data immediately for testing
-        loadDummyProfileData();
-        
         // Load real data from database
         loadUsersForMessaging();
         loadChatList();
@@ -282,8 +279,6 @@ public class Messages extends AppCompatActivity {
                             } else {
                                 // Show empty state - no users found
                                 Log.d("Messages", "No users found for messaging");
-                                // Load dummy data as fallback
-                                loadDummyProfileData();
                             }
                             
                             profileAdapter.notifyDataSetChanged();
@@ -291,42 +286,21 @@ public class Messages extends AppCompatActivity {
                         } else {
                             Log.e("Messages", "API Error: " + response.getString("message"));
                             Toast.makeText(this, "Error loading users: " + response.getString("message"), Toast.LENGTH_SHORT).show();
-                            // Load dummy data as fallback
-                            loadDummyProfileData();
                         }
                     } catch (JSONException e) {
                         Log.e("Messages", "Error parsing users data", e);
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing users data", Toast.LENGTH_SHORT).show();
-                        // Load dummy data as fallback
-                        loadDummyProfileData();
                     }
                 },
                 error -> {
                     Log.e("Messages", "Network error loading users", error);
                     Toast.makeText(this, "Error loading users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    // Load dummy data as fallback
-                    loadDummyProfileData();
                 });
 
         requestQueue.add(request);
     }
     
-    private void loadDummyProfileData() {
-        Log.d("Messages", "Loading dummy profile data");
-        profileList.clear();
-        
-        // Add some dummy profiles for testing
-        profileList.add(new ProfileModel(1, "John Doe", "Boarder", "john@example.com", "123-456-7890", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(2, "Jane Smith", "Boarder", "jane@example.com", "123-456-7891", R.drawable.ic_profile, false, "Offline"));
-        profileList.add(new ProfileModel(3, "Mike Johnson", "Boarder", "mike@example.com", "123-456-7892", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(4, "Sarah Wilson", "Boarder", "sarah@example.com", "123-456-7893", R.drawable.ic_profile, false, "Offline"));
-        
-        Log.d("Messages", "Added " + profileList.size() + " dummy profiles to list");
-        profileAdapter.notifyDataSetChanged();
-        updateProfileEmptyState();
-        Log.d("Messages", "Dummy profile data loaded: " + profileList.size() + " profiles");
-    }
 
     private void loadChatList() {
         loadChatList(isFirstLoad);
@@ -444,99 +418,7 @@ public class Messages extends AppCompatActivity {
         requestQueue.add(request);
     }
 
-    private void loadDummyUsers() {
-        // Create dummy users for testing (both boarders and owners)
-        profileList.clear();
-        
-        // Add some dummy boarders
-        profileList.add(new ProfileModel(2, "John Doe", "boarder", "john@example.com", "123-456-7890", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(3, "Jane Smith", "boarder", "jane@example.com", "123-456-7891", R.drawable.ic_profile, false, "2 hours ago"));
-        profileList.add(new ProfileModel(5, "Sarah Wilson", "boarder", "sarah@example.com", "123-456-7893", R.drawable.ic_profile, false, "1 day ago"));
-        profileList.add(new ProfileModel(7, "Lisa Garcia", "boarder", "lisa@example.com", "123-456-7895", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(8, "Tom Anderson", "boarder", "tom@example.com", "123-456-7896", R.drawable.ic_profile, false, "3 hours ago"));
-        
-        // Add some dummy owners
-        profileList.add(new ProfileModel(4, "Mike Johnson", "owner", "mike@example.com", "123-456-7892", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(6, "David Brown", "owner", "david@example.com", "123-456-7894", R.drawable.ic_profile, true, "Online"));
-        profileList.add(new ProfileModel(9, "Maria Rodriguez", "owner", "maria@example.com", "123-456-7897", R.drawable.ic_profile, false, "2 days ago"));
-        profileList.add(new ProfileModel(10, "Robert Taylor", "owner", "robert@example.com", "123-456-7898", R.drawable.ic_profile, true, "Online"));
-        
-        profileAdapter.notifyDataSetChanged();
-    }
 
-    private void loadDummyChatList() {
-        // Create dummy chat list for testing
-        chatList.clear();
-        
-        // Individual chats
-        chatList.add(new ChatModel(
-            "John Doe",
-            "Hey, how are you?",
-            "2m ago",
-            R.drawable.ic_profile,
-            1,
-            "individual",
-            2,
-            "Delivered",
-            2,
-            "John Doe"
-        ));
-        
-        chatList.add(new ChatModel(
-            "Jane Smith",
-            "Thanks for the help!",
-            "1h ago",
-            R.drawable.ic_profile,
-            2,
-            "individual",
-            0,
-            "Read",
-            3,
-            "Jane Smith"
-        ));
-        
-        chatList.add(new ChatModel(
-            "Mike Johnson",
-            "The room looks great!",
-            "3h ago",
-            R.drawable.ic_profile,
-            3,
-            "individual",
-            1,
-            "Sent",
-            4,
-            "Mike Johnson"
-        ));
-        
-        // Group chats
-        chatList.add(new ChatModel(
-            "Study Group",
-            "Sarah: Let's meet tomorrow at 2pm",
-            "30m ago",
-            R.drawable.ic_profile,
-            4,
-            "group",
-            3,
-            "Delivered",
-            "Study Group",
-            1
-        ));
-        
-        chatList.add(new ChatModel(
-            "Boarding House Updates",
-            "David: New maintenance schedule posted",
-            "2h ago",
-            R.drawable.ic_profile,
-            5,
-            "group",
-            0,
-            "Read",
-            "Boarding House Updates",
-            2
-        ));
-        
-        chatListAdapter.notifyDataSetChanged();
-    }
 
     private void addNewGroupChatToList(String groupName) {
         // Create a new group chat and add it to the top of the list
