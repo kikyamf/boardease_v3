@@ -176,6 +176,7 @@ public class BoardingHouseDetails {
         private String phone;
         private String email;
         private String role;
+        private String profilePicture;
 
         public OwnerInfo() {}
 
@@ -207,5 +208,8 @@ public class BoardingHouseDetails {
 
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
+
+        public String getProfilePicture() { return profilePicture; }
+        public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
     }
 }

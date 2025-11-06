@@ -1,10 +1,21 @@
 package com.example.mock;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -24,6 +35,9 @@ import com.android.volley.toolbox.Volley;
 import com.example.mock.adapters.ImageCarouselAdapter;
 import com.example.mock.adapters.RoomCategoryAdapter;
 import com.google.android.material.button.MaterialButton;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestOptions;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,23 +48,37 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private static final String TAG = "BoardingHouseDetails";
     // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
-    private static final String API_URL = BASE_URL + "get_boarding_house_details.php";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String API_URL = BASE_URL + "get_boarding_house_details1.php";
     
     private ViewPager2 viewPagerImages;
-    private LinearLayout layoutIndicators;
-    private ImageButton btnBack, btnShare, btnFavorite, btnCall;
+    private LinearLayout layoutIndicators, layoutThumbnails;
+    private ImageView ivBack;
+    private ImageButton btnShare, btnFavorite, btnCall, btnEmail;
     private MaterialButton btnChooseAccommodation;
     
-    private TextView tvBoardingHouseName, tvLocation, tvPrice, tvDescription, tvRules, 
-                     tvBathrooms, tvArea, tvYear, tvOwnerName, tvOwnerPhone, tvOwnerEmail;
-    private RecyclerView rvRoomCategories;
+    private TextView tvBoardingHouseName, tvLocation, tvPrice, tvDescription, tvRules, tvReadMore,
+                     tvBathrooms, tvArea, tvYear, tvStatus,
+                     tvOwnerName, tvOwnerRole, tvOwnerPhone, tvOwnerEmail,
+                     tvReviewCount, tvNoReviews, tvSeeAllReviews;
+    private ImageView ivOwnerProfile;
+    private RecyclerView rvRoomCategories, rvReviews;
+    private HorizontalScrollView scrollViewThumbnails;
     private ProgressBar progressBar;
+    private WebView webViewMap;
+    private AlertDialog loadingDialog;
+    private boolean isDescriptionExpanded = false;
     
     private ImageCarouselAdapter imageAdapter;
     private RoomCategoryAdapter roomCategoryAdapter;
+    private ReviewsAdapter reviewsAdapter;
     private List<String> imageUrls;
     private List<String> roomCategories;
+    private List<Review> reviews;
+    private List<ImageView> thumbnailViews = new ArrayList<>();
+    private List<android.widget.FrameLayout> thumbnailWrappers = new ArrayList<>();
+    private List<ImageView> indicatorViews = new ArrayList<>();
+    private int currentImagePosition = 0;
     
     private int boardingHouseId;
     private BoardingHouseDetails boardingHouseDetails;
@@ -87,12 +115,15 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         // Image carousel
         viewPagerImages = findViewById(R.id.viewPagerImages);
         layoutIndicators = findViewById(R.id.layoutIndicators);
+        layoutThumbnails = findViewById(R.id.layoutThumbnails);
+        scrollViewThumbnails = findViewById(R.id.scrollViewThumbnails);
         
         // Buttons
-        btnBack = findViewById(R.id.btnBack);
+        ivBack = findViewById(R.id.ivBack);
         btnShare = findViewById(R.id.btnShare);
         btnFavorite = findViewById(R.id.btnFavorite);
         btnCall = findViewById(R.id.btnCall);
+        btnEmail = findViewById(R.id.btnEmail);
         btnChooseAccommodation = findViewById(R.id.btnChooseAccommodation);
         
         // Text views
@@ -100,30 +131,180 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         tvLocation = findViewById(R.id.tvLocation);
         tvPrice = findViewById(R.id.tvPrice);
         tvDescription = findViewById(R.id.tvDescription);
+        tvReadMore = findViewById(R.id.tvReadMore);
         tvRules = findViewById(R.id.tvRules);
         tvBathrooms = findViewById(R.id.tvBathrooms);
         tvArea = findViewById(R.id.tvArea);
         tvYear = findViewById(R.id.tvYear);
+        tvStatus = findViewById(R.id.tvStatus);
         tvOwnerName = findViewById(R.id.tvOwnerName);
+        tvOwnerRole = findViewById(R.id.tvOwnerRole);
         tvOwnerPhone = findViewById(R.id.tvOwnerPhone);
         tvOwnerEmail = findViewById(R.id.tvOwnerEmail);
+        tvReviewCount = findViewById(R.id.tvReviewCount);
+        tvNoReviews = findViewById(R.id.tvNoReviews);
+        tvSeeAllReviews = findViewById(R.id.tvSeeAllReviews);
+        
+        // Image views
+        ivOwnerProfile = findViewById(R.id.ivOwnerProfile);
         
         // Other views
         rvRoomCategories = findViewById(R.id.rvRoomCategories);
+        rvReviews = findViewById(R.id.rvReviews);
         progressBar = findViewById(R.id.progressBar);
+        webViewMap = findViewById(R.id.webViewMap);
+        
+        // Hide progress bar (we'll use dialog instead)
+        progressBar.setVisibility(View.GONE);
         
         // Initialize lists
         imageUrls = new ArrayList<>();
         roomCategories = new ArrayList<>();
+        reviews = new ArrayList<>();
         
         // Setup room categories recycler view
         roomCategoryAdapter = new RoomCategoryAdapter(roomCategories);
         rvRoomCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvRoomCategories.setAdapter(roomCategoryAdapter);
+        
+        // Setup reviews recycler view - horizontal scrolling
+        reviewsAdapter = new ReviewsAdapter((ArrayList<Review>) reviews, this);
+        rvReviews.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvReviews.setAdapter(reviewsAdapter);
+        
+        // Setup read more click listener
+        tvReadMore.setOnClickListener(v -> toggleDescription());
+        
+        // Configure WebView for map
+        setupMapWebView();
+    }
+    
+    private void setupMapWebView() {
+        webViewMap.getSettings().setJavaScriptEnabled(true);
+        webViewMap.getSettings().setBuiltInZoomControls(false);
+        webViewMap.getSettings().setDisplayZoomControls(false);
+        webViewMap.getSettings().setSupportZoom(false);
+        webViewMap.getSettings().setUseWideViewPort(true);
+        webViewMap.getSettings().setLoadWithOverviewMode(true);
+        webViewMap.getSettings().setLayoutAlgorithm(android.webkit.WebSettings.LayoutAlgorithm.NORMAL);
+        webViewMap.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        webViewMap.setHorizontalScrollBarEnabled(false);
+        webViewMap.setVerticalScrollBarEnabled(false);
+        webViewMap.setBackgroundColor(0xFFF5F5F5);
+        
+        // Ensure WebView fits exactly in its container - remove any padding
+        webViewMap.setPadding(0, 0, 0, 0);
+        
+        // Enable clipping to rounded corners
+        webViewMap.setClipToOutline(true);
+        
+        // Set outline for rounded corners to match CardView
+        float cornerRadius = getResources().getDisplayMetrics().density * 12; // 12dp radius
+        webViewMap.post(() -> {
+            webViewMap.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadius);
+                }
+            });
+            webViewMap.setClipToOutline(true);
+        });
+        
+        // Set WebViewClient to intercept clicks and handle page loading
+        webViewMap.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                Log.d(TAG, "Google Maps iframe page finished loading");
+            }
+            
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e(TAG, "Error loading map: " + description + " (Code: " + errorCode + ")");
+            }
+            
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                // Intercept ALL navigation attempts - if it's trying to navigate away from embed, open Maps app
+                String url = request.getUrl().toString();
+                Log.d(TAG, "Intercepted URL in preview: " + url);
+                
+                if (url != null && (url.contains("google.com/maps") || url.contains("maps.google.com"))) {
+                    // Check if it's NOT the embed URL - if it's a regular Google Maps URL, open in app
+                    // Embed URLs typically have: output=embed or mapclient=embed
+                    boolean isEmbedUrl = url.contains("output=embed") || url.contains("mapclient=embed");
+                    
+                    if (!isEmbedUrl) {
+                        // This is "View larger map" or similar - open in Google Maps app
+                        Log.d(TAG, "Non-embed URL detected - opening Google Maps app");
+                        if (boardingHouseDetails != null) {
+                            openMapForAddress(boardingHouseDetails.getBhAddress());
+                        }
+                        return true; // Block the default navigation
+                    } else {
+                        // Check if URL changed significantly (different coordinates or removed embed params)
+                        // This might indicate "View larger map" was clicked
+                        String currentUrl = view.getUrl();
+                        if (currentUrl != null && !url.equals(currentUrl) && url.contains("google.com/maps")) {
+                            Log.d(TAG, "URL changed significantly - might be View larger map, opening app");
+                            if (boardingHouseDetails != null) {
+                                openMapForAddress(boardingHouseDetails.getBhAddress());
+                            }
+                            return true;
+                        }
+                        // It's still an embed URL, allow it to load
+                        Log.d(TAG, "Embed URL detected, allowing navigation within iframe");
+                        return false;
+                    }
+                }
+                return false;
+            }
+            
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                // Intercept ALL navigation attempts - if it's trying to navigate away from embed, open Maps app
+                Log.d(TAG, "Intercepted URL in preview (legacy): " + url);
+                
+                if (url != null && (url.contains("google.com/maps") || url.contains("maps.google.com"))) {
+                    // Check if it's NOT the embed URL - if it's a regular Google Maps URL, open in app
+                    boolean isEmbedUrl = url.contains("output=embed") || url.contains("mapclient=embed");
+                    
+                    if (!isEmbedUrl) {
+                        // This is "View larger map" or similar - open in Google Maps app
+                        Log.d(TAG, "Non-embed URL detected (legacy) - opening Google Maps app");
+                        if (boardingHouseDetails != null) {
+                            openMapForAddress(boardingHouseDetails.getBhAddress());
+                        }
+                        return true; // Block the default navigation
+                    } else {
+                        // Check if URL changed significantly (different coordinates or removed embed params)
+                        String currentUrl = view.getUrl();
+                        if (currentUrl != null && !url.equals(currentUrl) && url.contains("google.com/maps")) {
+                            Log.d(TAG, "URL changed significantly (legacy) - might be View larger map, opening app");
+                            if (boardingHouseDetails != null) {
+                                openMapForAddress(boardingHouseDetails.getBhAddress());
+                            }
+                            return true;
+                        }
+                        // It's still an embed URL, allow it to load
+                        Log.d(TAG, "Embed URL detected (legacy), allowing navigation within iframe");
+                        return false;
+                    }
+                }
+                return false;
+            }
+        });
+        
+        // Make map preview clickable to open Google Maps app
+        webViewMap.setOnClickListener(v -> {
+            Log.d(TAG, "Map preview clicked - opening Google Maps app");
+            if (boardingHouseDetails != null) {
+                openMapForAddress(boardingHouseDetails.getBhAddress());
+            }
+        });
     }
     
     private void setupClickListeners() {
-        btnBack.setOnClickListener(v -> finish());
+        ivBack.setOnClickListener(v -> finish());
         
         btnShare.setOnClickListener(v -> shareBoardingHouse());
         
@@ -131,11 +312,15 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         btnCall.setOnClickListener(v -> contactOwner());
         
+        btnEmail.setOnClickListener(v -> emailOwner());
+        
         btnChooseAccommodation.setOnClickListener(v -> openChooseAccommodationActivity());
+        
+        tvSeeAllReviews.setOnClickListener(v -> openAllReviewsActivity());
     }
     
     private void loadBoardingHouseDetails() {
-        progressBar.setVisibility(View.VISIBLE);
+        showLoadingDialog();
         
         String url = API_URL + "?bh_id=" + boardingHouseId;
         Log.d(TAG, "Loading boarding house details for ID: " + boardingHouseId);
@@ -146,7 +331,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        progressBar.setVisibility(View.GONE);
+                        hideLoadingDialog();
                         
                         // Debug: Log the first 200 characters of response
                         Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
@@ -162,7 +347,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                         if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                             Log.e(TAG, "Received ngrok warning page instead of JSON");
                             Log.e(TAG, "Full response: " + response);
-                            Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php in your browser first");
+                            Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details1.php in your browser first");
                             Toast.makeText(BoardingHouseDetailsActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
                             // Show fallback data for mock listings
                             showFallbackData();
@@ -180,6 +365,19 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                                 JSONObject boardingHouseData;
                                 if (data.has("boarding_house")) {
                                     boardingHouseData = data.getJSONObject("boarding_house");
+                                    
+                                    // Debug: Check if owner object exists
+                                    if (boardingHouseData.has("owner")) {
+                                        JSONObject ownerObj = boardingHouseData.getJSONObject("owner");
+                                        Log.d(TAG, "Owner object found in response: " + ownerObj.toString());
+                                        Log.d(TAG, "Owner first_name: " + ownerObj.optString("first_name", "null"));
+                                        Log.d(TAG, "Owner phone: " + ownerObj.optString("phone", "null"));
+                                        Log.d(TAG, "Owner email: " + ownerObj.optString("email", "null"));
+                                    } else {
+                                        Log.e(TAG, "WARNING: Owner object NOT found in boarding_house data!");
+                                        Log.d(TAG, "Available keys in boarding_house: " + boardingHouseData.keys().toString());
+                                    }
+                                    
                                     // Also get rooms and statistics if available
                                     if (data.has("rooms")) {
                                         boardingHouseData.put("rooms", data.getJSONArray("rooms"));
@@ -214,7 +412,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        progressBar.setVisibility(View.GONE);
+                        hideLoadingDialog();
                         Log.e(TAG, "Volley error: " + error.getMessage());
                         Toast.makeText(BoardingHouseDetailsActivity.this, "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -336,6 +534,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             owner.setPhone(ownerObj.optString("phone", ""));
             owner.setEmail(ownerObj.optString("email", ""));
             owner.setRole(ownerObj.optString("role", ""));
+            owner.setProfilePicture(ownerObj.optString("profile_picture", ""));
         } else {
             // Fallback: try to get from main data object (for backward compatibility)
             owner.setFirstName(data.optString("first_name", ""));
@@ -344,6 +543,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             owner.setPhone(data.optString("phone", ""));
             owner.setEmail(data.optString("email", ""));
             owner.setRole(data.optString("role", ""));
+            owner.setProfilePicture(data.optString("profile_picture", ""));
         }
         
         boardingHouseDetails.setOwner(owner);
@@ -358,30 +558,331 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         // Basic info
         tvBoardingHouseName.setText(boardingHouseDetails.getBhName());
+        tvBoardingHouseName.setAlpha(1.0f);
         tvLocation.setText(boardingHouseDetails.getBhAddress());
-        tvPrice.setText(boardingHouseDetails.getFormattedPriceRange());
-        tvDescription.setText(boardingHouseDetails.getBhDescription());
+        tvLocation.setAlpha(1.0f);
         
-        // Debug rules display
-        String rulesToDisplay = boardingHouseDetails.getBhRules();
-        Log.d(TAG, "Setting rules text to: '" + rulesToDisplay + "'");
-        Log.d(TAG, "Rules text length: " + rulesToDisplay.length());
-        tvRules.setText(rulesToDisplay);
+        // Set price with brown color only for the amount, not "/month"
+        String priceText = boardingHouseDetails.getFormattedPriceRange();
+        SpannableString spannablePrice = new SpannableString(priceText);
+        int brownColor = Color.parseColor("#A18167");
+        int grayColor = Color.parseColor("#666666");
         
+        // Find the position of "/month" and color everything before it brown, "/month" gray
+        int monthIndex = priceText.indexOf("/month");
+        if (monthIndex != -1) {
+            // Color the amount part (before "/month") brown and make it bigger
+            spannablePrice.setSpan(new ForegroundColorSpan(brownColor), 0, monthIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannablePrice.setSpan(new RelativeSizeSpan(1.2f), 0, monthIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            // Color "/month" gray and keep it normal size
+            spannablePrice.setSpan(new ForegroundColorSpan(grayColor), monthIndex, priceText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        } else {
+            // If no "/month" found, color entire text brown and make it bigger
+            spannablePrice.setSpan(new ForegroundColorSpan(brownColor), 0, priceText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannablePrice.setSpan(new RelativeSizeSpan(1.2f), 0, priceText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        
+        tvPrice.setText(spannablePrice);
+        tvPrice.setAlpha(1.0f);
+        
+        // Description with read more
+        String description = boardingHouseDetails.getBhDescription();
+        tvDescription.setText(description);
+        tvDescription.setAlpha(1.0f);
+        // Set justification mode programmatically (API 26+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            tvDescription.setJustificationMode(android.text.Layout.JUSTIFICATION_MODE_INTER_WORD);
+        }
+        if (description.length() > 100) {
+            tvDescription.setMaxLines(3);
+            tvReadMore.setVisibility(View.VISIBLE);
+        } else {
+            tvReadMore.setVisibility(View.GONE);
+        }
+        
+        // Rules (hide if empty or default)
+        String rules = boardingHouseDetails.getBhRules();
+        if (rules != null && !rules.isEmpty() && !rules.equals("No specific rules")) {
+            findViewById(R.id.layoutRules).setVisibility(View.VISIBLE);
+            tvRules.setText(rules);
+            // Set justification mode programmatically (API 26+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                tvRules.setJustificationMode(android.text.Layout.JUSTIFICATION_MODE_INTER_WORD);
+            }
+        } else {
+            findViewById(R.id.layoutRules).setVisibility(View.GONE);
+        }
+        
+        // BH Details
         tvBathrooms.setText(String.valueOf(boardingHouseDetails.getNumberOfBathroom()));
-        tvArea.setText(String.format("%.1f sqm", boardingHouseDetails.getArea()));
+        tvBathrooms.setAlpha(1.0f);
+        tvArea.setText(String.format("%.1f sqft", boardingHouseDetails.getArea()));
+        tvArea.setAlpha(1.0f);
         tvYear.setText(String.valueOf(boardingHouseDetails.getBuildYear()));
+        tvYear.setAlpha(1.0f);
+        
+        // Set status - if "active" show "For Rent"
+        String status = boardingHouseDetails.getStatus();
+        if (status != null && status.equalsIgnoreCase("active")) {
+            tvStatus.setText("For Rent");
+        } else {
+            tvStatus.setText(status != null && !status.isEmpty() ? status : "For Rent");
+        }
+        tvStatus.setAlpha(1.0f);
         
         // Owner info
-        tvOwnerName.setText(boardingHouseDetails.getOwnerFullName());
-        tvOwnerPhone.setText(boardingHouseDetails.getOwner().getPhone());
-        tvOwnerEmail.setText(boardingHouseDetails.getOwner().getEmail());
+        String ownerName = boardingHouseDetails.getOwnerFullName();
+        tvOwnerName.setText(ownerName != null && !ownerName.trim().isEmpty() ? ownerName : "Owner");
+        tvOwnerName.setAlpha(1.0f);
+        
+        String ownerRole = boardingHouseDetails.getOwner().getRole();
+        tvOwnerRole.setText(ownerRole != null && !ownerRole.isEmpty() ? 
+                           capitalizeFirst(ownerRole) : "Property Owner");
+        tvOwnerRole.setAlpha(1.0f);
+        
+        // Owner contact info
+        String ownerPhone = boardingHouseDetails.getOwner().getPhone();
+        tvOwnerPhone.setText(ownerPhone != null && !ownerPhone.isEmpty() ? ownerPhone : "N/A");
+        tvOwnerPhone.setAlpha(1.0f);
+        
+        String ownerEmail = boardingHouseDetails.getOwner().getEmail();
+        tvOwnerEmail.setText(ownerEmail != null && !ownerEmail.isEmpty() ? ownerEmail : "N/A");
+        tvOwnerEmail.setAlpha(1.0f);
+        
+        // Load owner profile picture if available
+        loadOwnerProfilePicture();
         
         // Setup image carousel
         setupImageCarousel();
         
+        // Setup thumbnails (show even if only one image)
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            setupThumbnails();
+            scrollViewThumbnails.setVisibility(View.VISIBLE);
+        } else {
+            scrollViewThumbnails.setVisibility(View.GONE);
+        }
+        
         // Setup room categories
         setupRoomCategories();
+        
+        // Setup reviews (for now, show no reviews)
+        setupReviews();
+        
+        // Load map
+        loadMap();
+    }
+    
+    private String capitalizeFirst(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+    
+    private void toggleDescription() {
+        if (isDescriptionExpanded) {
+            tvDescription.setMaxLines(3);
+            tvReadMore.setText("Read more");
+            isDescriptionExpanded = false;
+        } else {
+            tvDescription.setMaxLines(Integer.MAX_VALUE);
+            tvReadMore.setText("Read less");
+            isDescriptionExpanded = true;
+        }
+    }
+    
+    private void setupThumbnails() {
+        layoutThumbnails.removeAllViews();
+        thumbnailViews.clear();
+        thumbnailWrappers.clear();
+        
+        if (imageUrls == null || imageUrls.isEmpty()) return;
+        
+        // Show first 4 images as thumbnails
+        int maxThumbnails = Math.min(4, imageUrls.size());
+        for (int i = 0; i < maxThumbnails; i++) {
+            // Create FrameLayout wrapper for border
+            android.widget.FrameLayout wrapper = new android.widget.FrameLayout(this);
+            LinearLayout.LayoutParams wrapperParams = new LinearLayout.LayoutParams(
+                (int) (getResources().getDisplayMetrics().density * 80),
+                (int) (getResources().getDisplayMetrics().density * 80)
+            );
+            wrapperParams.setMargins(0, 0, 12, 0);
+            wrapper.setLayoutParams(wrapperParams);
+            
+            // Set border background
+            if (i == 0) {
+                wrapper.setBackgroundResource(R.drawable.thumbnail_border_active);
+            } else {
+                wrapper.setBackgroundResource(R.drawable.thumbnail_border_inactive);
+            }
+            
+            // Create ImageView for the actual image
+            ImageView thumbnail = new ImageView(this);
+            android.widget.FrameLayout.LayoutParams imageParams = new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            );
+            imageParams.setMargins(4, 4, 4, 4); // Padding inside border
+            thumbnail.setLayoutParams(imageParams);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            
+            // Create rounded shape for clipping the image
+            float cornerRadiusPx = getResources().getDisplayMetrics().density * 6; // 6dp radius
+            android.graphics.drawable.GradientDrawable roundedShape = new android.graphics.drawable.GradientDrawable();
+            roundedShape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            roundedShape.setCornerRadius(cornerRadiusPx);
+            thumbnail.setBackground(roundedShape);
+            
+            // Set outline for proper clipping - need to do this after layout
+            thumbnail.post(() -> {
+                thumbnail.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                        outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadiusPx);
+                    }
+                });
+                thumbnail.setClipToOutline(true);
+            });
+            
+            // Load actual image using Glide with rounded corners
+            String imageUrl = imageUrls.get(i);
+            int cornerRadius = (int) cornerRadiusPx; // 6dp rounded corners
+            Glide.with(this)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_profile_placeholder)
+                .error(R.drawable.ic_profile_placeholder)
+                .apply(RequestOptions.bitmapTransform(new RoundedCorners(cornerRadius)))
+                .centerCrop()
+                .into(thumbnail);
+            
+            // Add elevation for raised effect
+            thumbnail.setElevation(2f);
+            
+            // Add image to wrapper
+            wrapper.addView(thumbnail);
+            
+            final int position = i;
+            wrapper.setOnClickListener(v -> {
+                viewPagerImages.setCurrentItem(position, true);
+            });
+            
+            thumbnailViews.add(thumbnail);
+            thumbnailWrappers.add(wrapper);
+            layoutThumbnails.addView(wrapper);
+        }
+    }
+    
+    private void updateThumbnailSelection(int position) {
+        // Only update if position is within thumbnail range (first 4)
+        int maxThumbnails = Math.min(4, thumbnailWrappers.size());
+        if (position < maxThumbnails) {
+            for (int i = 0; i < maxThumbnails; i++) {
+                android.widget.FrameLayout wrapper = thumbnailWrappers.get(i);
+                if (i == position) {
+                    // Active thumbnail - brown border
+                    wrapper.setBackgroundResource(R.drawable.thumbnail_border_active);
+                } else {
+                    // Inactive thumbnail - gray border
+                    wrapper.setBackgroundResource(R.drawable.thumbnail_border_inactive);
+                }
+            }
+        }
+    }
+    
+    private void loadOwnerProfilePicture() {
+        if (boardingHouseDetails == null || boardingHouseDetails.getOwner() == null) {
+            ivOwnerProfile.setImageResource(R.drawable.ic_profile_placeholder);
+            return;
+        }
+        
+        String profilePicturePath = boardingHouseDetails.getOwner().getProfilePicture();
+        
+        if (profilePicturePath != null && !profilePicturePath.isEmpty()) {
+            // Construct full URL
+            String fullImageUrl;
+            if (profilePicturePath.startsWith("http://") || profilePicturePath.startsWith("https://")) {
+                // Already a full URL
+                fullImageUrl = profilePicturePath;
+            } else {
+                // Relative path, prepend BASE_URL
+                fullImageUrl = BASE_URL + profilePicturePath;
+            }
+            
+            Log.d(TAG, "Loading owner profile picture from: " + fullImageUrl);
+            
+            // Load image using Glide
+            Glide.with(this)
+                .load(fullImageUrl)
+                .placeholder(R.drawable.ic_profile_placeholder)
+                .error(R.drawable.ic_profile_placeholder)
+                .circleCrop() // Make it circular
+                .into(ivOwnerProfile);
+        } else {
+            // No profile picture, use placeholder
+            ivOwnerProfile.setImageResource(R.drawable.ic_profile_placeholder);
+        }
+    }
+    
+    private void setupReviews() {
+        // Add sample reviews for preview (show first 3 for horizontal scroll)
+        reviews.clear();
+        
+        // Sample Review 1
+        Review review1 = new Review();
+        review1.setBoarderName("Maria Santos");
+        review1.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
+        review1.setRoomNumber("101");
+        review1.setRating(5);
+        review1.setComment("Excellent boarding house! The facilities are very clean and well-maintained. The owner is very responsive and helpful. Highly recommended!");
+        review1.setReviewDate("Nov 15, 2024");
+        review1.setProfilePicture("");
+        reviews.add(review1);
+        
+        // Sample Review 2
+        Review review2 = new Review();
+        review2.setBoarderName("John Dela Cruz");
+        review2.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
+        review2.setRoomNumber("205");
+        review2.setRating(4);
+        review2.setComment("Good value for money. The location is convenient and the room is spacious. The only minor issue is the WiFi can be slow during peak hours.");
+        review2.setReviewDate("Nov 10, 2024");
+        review2.setProfilePicture("");
+        reviews.add(review2);
+        
+        // Sample Review 3
+        Review review3 = new Review();
+        review3.setBoarderName("Sarah Garcia");
+        review3.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
+        review3.setRoomNumber("302");
+        review3.setRating(5);
+        review3.setComment("Amazing experience! The place is peaceful and safe. The owner is very accommodating and the other boarders are friendly. Will definitely stay here again!");
+        review3.setReviewDate("Nov 5, 2024");
+        review3.setProfilePicture("");
+        reviews.add(review3);
+        
+        // Update adapter
+        reviewsAdapter.notifyDataSetChanged();
+        
+        // Show reviews if available
+        if (reviews.isEmpty()) {
+            rvReviews.setVisibility(View.GONE);
+            tvNoReviews.setVisibility(View.VISIBLE);
+            tvSeeAllReviews.setVisibility(View.GONE);
+            tvReviewCount.setText("0");
+        } else {
+            rvReviews.setVisibility(View.VISIBLE);
+            tvNoReviews.setVisibility(View.GONE);
+            tvSeeAllReviews.setVisibility(View.VISIBLE);
+            // Show total count (for now using sample count, later from API)
+            tvReviewCount.setText(String.valueOf(reviews.size()));
+        }
+    }
+    
+    private void openAllReviewsActivity() {
+        Intent intent = new Intent(this, AllReviewsActivity.class);
+        intent.putExtra("bh_id", boardingHouseId);
+        intent.putExtra("bh_name", boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
+        startActivity(intent);
     }
     
     private void setupImageCarousel() {
@@ -393,26 +894,63 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             imageUrls.add("https://via.placeholder.com/400x300?text=No+Image");
         }
             
-            imageAdapter = new ImageCarouselAdapter(imageUrls);
-            viewPagerImages.setAdapter(imageAdapter);
-            
+        imageAdapter = new ImageCarouselAdapter(imageUrls);
+        viewPagerImages.setAdapter(imageAdapter);
+        
         // Setup indicators
         setupIndicators();
+        
+        // Setup page change listener to update thumbnails and indicators
+        viewPagerImages.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                currentImagePosition = position;
+                updateThumbnailSelection(position);
+                updateIndicatorSelection(position);
+            }
+        });
+        
+        // Set initial selection
+        updateThumbnailSelection(0);
+        updateIndicatorSelection(0);
     }
     
     private void setupIndicators() {
-            layoutIndicators.removeAllViews();
-            
-            for (int i = 0; i < imageUrls.size(); i++) {
-                ImageView indicator = new ImageView(this);
-            indicator.setImageResource(R.drawable.ic_dot);
+        layoutIndicators.removeAllViews();
+        indicatorViews.clear();
+        
+        for (int i = 0; i < imageUrls.size(); i++) {
+            ImageView indicator = new ImageView(this);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
             params.setMargins(8, 0, 8, 0);
             indicator.setLayoutParams(params);
-                layoutIndicators.addView(indicator);
+            
+            // Set initial state (first one active)
+            if (i == 0) {
+                indicator.setImageResource(R.drawable.dot_active);
+            } else {
+                indicator.setImageResource(R.drawable.dot_inactive);
+            }
+            
+            indicatorViews.add(indicator);
+            layoutIndicators.addView(indicator);
+        }
+    }
+    
+    private void updateIndicatorSelection(int position) {
+        for (int i = 0; i < indicatorViews.size(); i++) {
+            ImageView indicator = indicatorViews.get(i);
+            if (i == position) {
+                // Active indicator - bold and colored (brown)
+                indicator.setImageResource(R.drawable.dot_active);
+            } else {
+                // Inactive indicator - faded
+                indicator.setImageResource(R.drawable.dot_inactive);
+            }
         }
     }
     
@@ -447,10 +985,390 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         }
     }
     
+    private void emailOwner() {
+        if (boardingHouseDetails.getOwner().getEmail() != null && !boardingHouseDetails.getOwner().getEmail().isEmpty()) {
+            String email = boardingHouseDetails.getOwner().getEmail();
+            String subject = "Inquiry about " + boardingHouseDetails.getBhName();
+            
+            // Try to open Gmail specifically first
+            Intent gmailIntent = new Intent(Intent.ACTION_SEND);
+            gmailIntent.setType("message/rfc822");
+            gmailIntent.setPackage("com.google.android.gm");
+            gmailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{email});
+            gmailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+            
+            // If Gmail is available, use it
+            if (gmailIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(gmailIntent);
+            } else {
+                // Fallback to generic email intent
+                Intent emailIntent = new Intent(Intent.ACTION_SEND);
+                emailIntent.setType("message/rfc822");
+                emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{email});
+                emailIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+                
+                // Try ACTION_SENDTO as another fallback
+                if (emailIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(Intent.createChooser(emailIntent, "Send email"));
+                } else {
+                    // Last resort: use mailto URI
+                    Intent mailtoIntent = new Intent(Intent.ACTION_SENDTO);
+                    mailtoIntent.setData(Uri.parse("mailto:" + email + "?subject=" + Uri.encode(subject)));
+                    if (mailtoIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(mailtoIntent);
+                    } else {
+                        Toast.makeText(this, "No email app available. Please install Gmail or another email app.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        } else {
+            Toast.makeText(this, "Email address not available", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
     private void openChooseAccommodationActivity() {
         Intent intent = new Intent(this, ChooseAccommodationActivity.class);
         intent.putExtra("bh_id", boardingHouseId);
         startActivity(intent);
+    }
+    
+    private void loadMap() {
+        if (boardingHouseDetails == null || boardingHouseDetails.getBhAddress() == null) {
+            return;
+        }
+        
+        String address = boardingHouseDetails.getBhAddress();
+        String mapEmbedUrl = generateMapEmbedUrl(address);
+        Log.d(TAG, "Loading Google Maps Embed API for address: " + address + ", URL: " + mapEmbedUrl);
+        
+        // Create HTML with iframe to properly embed Google Maps
+        if (mapEmbedUrl != null && !mapEmbedUrl.isEmpty()) {
+            String htmlContent = generateMapIframeHtml(mapEmbedUrl);
+            webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+        }
+    }
+    
+    private String generateMapEmbedUrl(String address) {
+        try {
+            // Generate Google Maps Embed API URL format
+            String encodedAddress = Uri.encode(address);
+            Log.d(TAG, "Generating Google Maps Embed API URL for address: " + address);
+            
+            // Google Maps Embed API format
+            // Note: For production, you'll need to add your Google Maps API key
+            // Get your API key from: https://console.cloud.google.com/google/maps-apis
+            String apiKey = ""; // Add your Google Maps API key here if needed
+            
+            // Google Maps Embed API URL format
+            // Format: https://www.google.com/maps/embed/v1/place?key=API_KEY&q=ADDRESS&zoom=ZOOM
+            String embedUrl;
+            if (apiKey != null && !apiKey.isEmpty()) {
+                // With API key (recommended for production)
+                embedUrl = "https://www.google.com/maps/embed/v1/place?key=" + apiKey + 
+                          "&q=" + encodedAddress + 
+                          "&zoom=15";
+            } else {
+                // Use the standard Google Maps embed format (works without API key)
+                embedUrl = "https://www.google.com/maps?q=" + encodedAddress + 
+                          "&output=embed&zoom=15";
+            }
+            
+            Log.d(TAG, "Generated Google Maps Embed API URL: " + embedUrl);
+            return embedUrl;
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating map embed URL: " + e.getMessage(), e);
+            return null;
+        }
+    }
+    
+    private String generateMapIframeHtml(String embedUrl) {
+        // Generate HTML with iframe to properly embed Google Maps
+        // This satisfies Google Maps Embed API requirement for iframe usage
+        // Ensure exact fit with no margins or padding
+        return "<!DOCTYPE html>" +
+               "<html>" +
+               "<head>" +
+               "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
+               "<style>" +
+               "* { margin: 0; padding: 0; box-sizing: border-box; } " +
+               "html, body { width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0; } " +
+               "iframe { width: 100%; height: 100%; border: 0; margin: 0; padding: 0; display: block; } " +
+               "</style>" +
+               "</head>" +
+               "<body style=\"margin:0; padding:0; overflow:hidden;\">" +
+               "<iframe src=\"" + embedUrl + "\" " +
+               "width=\"100%\" " +
+               "height=\"100%\" " +
+               "frameborder=\"0\" " +
+               "style=\"border:0; margin:0; padding:0; width:100%; height:100%;\" " +
+               "allowfullscreen>" +
+               "</iframe>" +
+               "</body>" +
+               "</html>";
+    }
+    
+    private void openFullScreenMap(String address) {
+        try {
+            Log.d(TAG, "Opening full screen map for address: " + address);
+            
+            // Create a full-screen dialog that covers the ENTIRE screen
+            android.app.Dialog fullScreenDialog = new android.app.Dialog(this);
+            fullScreenDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+            
+            // Set full screen window flags - ensure it takes WHOLE screen
+            android.view.Window window = fullScreenDialog.getWindow();
+            if (window != null) {
+                // Clear any existing flags and set full screen
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                window.setFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR,
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                );
+                
+                // Get screen dimensions to ensure full coverage
+                android.view.Display display = getWindowManager().getDefaultDisplay();
+                android.graphics.Point size = new android.graphics.Point();
+                display.getSize(size);
+                
+                // Force full screen dimensions - must cover entire screen
+                android.view.WindowManager.LayoutParams params = window.getAttributes();
+                params.width = size.x; // Full screen width
+                params.height = size.y; // Full screen height
+                params.x = 0;
+                params.y = 0;
+                params.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+                params.format = android.graphics.PixelFormat.TRANSLUCENT;
+                params.type = android.view.WindowManager.LayoutParams.TYPE_APPLICATION;
+                window.setAttributes(params);
+                
+                // Ensure window covers entire screen
+                window.setLayout(size.x, size.y);
+                
+                // Hide status and navigation bars completely
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.setStatusBarColor(0xFF000000);
+                    window.setNavigationBarColor(0xFF000000);
+                }
+                
+                // Set immersive fullscreen mode - hide ALL system UI
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+                    window.getDecorView().setSystemUiVisibility(flags);
+                }
+            }
+            
+            // Create WebView for full screen map - load non-embed version directly
+            // WebView must fill ENTIRE screen with NO padding or margins
+            WebView fullScreenWebView = new WebView(this);
+            
+            // Configure WebView
+            fullScreenWebView.getSettings().setJavaScriptEnabled(true);
+            fullScreenWebView.getSettings().setBuiltInZoomControls(true);
+            fullScreenWebView.getSettings().setDisplayZoomControls(true);
+            fullScreenWebView.getSettings().setUseWideViewPort(true);
+            fullScreenWebView.getSettings().setLoadWithOverviewMode(true);
+            fullScreenWebView.getSettings().setDomStorageEnabled(true);
+            fullScreenWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+            
+            // Set WebViewClient
+            fullScreenWebView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    Log.d(TAG, "Full screen map loaded: " + url);
+                }
+                
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                    // Allow all navigation within the WebView in full screen
+                    return false;
+                }
+                
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    // Allow all navigation within the WebView in full screen
+                    return false;
+                }
+            });
+            
+            // Load the non-embed version of Google Maps directly (full screen map)
+            String encodedAddress = Uri.encode(address);
+            String fullScreenMapUrl = "https://www.google.com/maps?q=" + encodedAddress + "&z=15";
+            Log.d(TAG, "Loading full screen map (non-embed) with URL: " + fullScreenMapUrl);
+            fullScreenWebView.loadUrl(fullScreenMapUrl);
+            
+            // Create container with close button - NO PADDING, NO MARGINS
+            android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+            android.widget.FrameLayout.LayoutParams containerParams = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            );
+            containerParams.setMargins(0, 0, 0, 0);
+            container.setLayoutParams(containerParams);
+            container.setPadding(0, 0, 0, 0);
+            container.setBackgroundColor(0xFF000000);
+            
+            // WebView must fill entire container with NO margins
+            fullScreenWebView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            
+            // Close button with rounded background - positioned absolutely
+            ImageView closeButton = new ImageView(this);
+            closeButton.setImageResource(R.drawable.ic_close);
+            closeButton.setColorFilter(0xFFFFFFFF);
+            
+            // Create rounded background for close button
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+                bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                bg.setColor(0xCC000000); // More opaque black for better visibility
+                closeButton.setBackground(bg);
+            } else {
+                closeButton.setBackgroundColor(0xCC000000);
+            }
+            
+            int buttonSize = (int)(getResources().getDisplayMetrics().density * 48);
+            android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(
+                buttonSize,
+                buttonSize
+            );
+            closeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            closeParams.setMargins(0, (int)(getResources().getDisplayMetrics().density * 16), 
+                                  (int)(getResources().getDisplayMetrics().density * 16), 0);
+            closeButton.setLayoutParams(closeParams);
+            closeButton.setPadding(
+                (int)(getResources().getDisplayMetrics().density * 12),
+                (int)(getResources().getDisplayMetrics().density * 12),
+                (int)(getResources().getDisplayMetrics().density * 12),
+                (int)(getResources().getDisplayMetrics().density * 12)
+            );
+            closeButton.setClickable(true);
+            closeButton.setFocusable(true);
+            closeButton.setElevation(16f); // High elevation to ensure it's above map
+            closeButton.setOnClickListener(v -> {
+                fullScreenDialog.dismiss();
+            });
+            
+            container.addView(fullScreenWebView);
+            container.addView(closeButton);
+            
+            // Set content view with NO padding
+            fullScreenDialog.setContentView(container);
+            fullScreenDialog.setCancelable(true);
+            fullScreenDialog.setCanceledOnTouchOutside(false);
+            
+            // Show dialog
+            fullScreenDialog.show();
+            
+            // Ensure window is still full screen after show - get actual screen size
+            if (window != null) {
+                android.view.Display display = getWindowManager().getDefaultDisplay();
+                android.graphics.Point size = new android.graphics.Point();
+                display.getSize(size);
+                
+                // Force full screen dimensions again after show
+                window.setLayout(size.x, size.y);
+                
+                // Re-apply window attributes to ensure full coverage
+                android.view.WindowManager.LayoutParams params = window.getAttributes();
+                params.width = size.x;
+                params.height = size.y;
+                params.x = 0;
+                params.y = 0;
+                window.setAttributes(params);
+                
+                // Re-apply immersive flags
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+                    window.getDecorView().setSystemUiVisibility(flags);
+                }
+            }
+            
+            Log.d(TAG, "Full screen map dialog opened - covering entire screen");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening full screen map: " + e.getMessage(), e);
+            // Fallback to opening in Google Maps app
+            openMapForAddress(address);
+        }
+    }
+    
+    private void openMapForAddress(String address) {
+        try {
+            Log.d(TAG, "Attempting to open Google Maps app for address: " + address);
+            String encodedAddress = Uri.encode(address);
+            
+            // Method 1: Try to open Google Maps app directly using package name
+            try {
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW);
+                mapIntent.setData(Uri.parse("geo:0,0?q=" + encodedAddress));
+                mapIntent.setPackage("com.google.android.apps.maps"); // Force Google Maps app
+                
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    Log.d(TAG, "Opening Google Maps app directly");
+                    startActivity(mapIntent);
+                    return;
+                } else {
+                    Log.d(TAG, "Google Maps app not found, trying alternative methods");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error opening Google Maps app: " + e.getMessage());
+            }
+            
+            // Method 2: Try generic geo URI
+            try {
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW);
+                mapIntent.setData(Uri.parse("geo:0,0?q=" + encodedAddress));
+                
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    Log.d(TAG, "Opening map app via geo URI");
+                    startActivity(mapIntent);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error opening map via geo URI: " + e.getMessage());
+            }
+            
+            // Method 3: Try Google Maps URL scheme
+            try {
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW);
+                mapIntent.setData(Uri.parse("https://www.google.com/maps/search/?api=1&query=" + encodedAddress));
+                
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    Log.d(TAG, "Opening map via Google Maps URL");
+                    startActivity(mapIntent);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error opening map via URL: " + e.getMessage());
+            }
+            
+            // Method 4: Fallback to browser
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+            browserIntent.setData(Uri.parse("https://www.google.com/maps/search/?api=1&query=" + encodedAddress));
+            startActivity(browserIntent);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening map: " + e.getMessage(), e);
+            Toast.makeText(this, "Unable to open map", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void showFallbackData() {
@@ -525,5 +1443,36 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         displayBoardingHouseDetails();
         
         Toast.makeText(this, "Showing sample data (real data unavailable)", Toast.LENGTH_LONG).show();
+    }
+    
+    private void showLoadingDialog() {
+        if (loadingDialog == null || !loadingDialog.isShowing()) {
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_loading, null);
+            loadingDialog = new AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    .setCancelable(false)
+                    .create();
+            loadingDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
+            // Set dialog window attributes to prevent expansion
+            android.view.WindowManager.LayoutParams params = loadingDialog.getWindow().getAttributes();
+            params.width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+            params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+            loadingDialog.getWindow().setAttributes(params);
+            
+            loadingDialog.show();
+        }
+    }
+    
+    private void hideLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+        }
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        hideLoadingDialog();
     }
 }

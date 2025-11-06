@@ -392,7 +392,10 @@
                         android:gravity="top|start"
                         android:padding="16dp"
                         android:background="@drawable/modern_edittext_focused"
-                        android:inputType="textMultiLine"/>
+                        android:inputType="textMultiLine"
+                        android:scrollbars="vertical"
+                        android:scrollbarStyle="insideOverlay"
+                        android:fadeScrollbars="false"/>
 
                 </LinearLayout>
 
@@ -435,7 +438,10 @@
                         android:gravity="top|start"
                         android:padding="16dp"
                         android:background="@drawable/modern_edittext_focused"
-                        android:inputType="textMultiLine"/>
+                        android:inputType="textMultiLine"
+                        android:scrollbars="vertical"
+                        android:scrollbarStyle="insideOverlay"
+                        android:fadeScrollbars="false"/>
 
                 </LinearLayout>
 

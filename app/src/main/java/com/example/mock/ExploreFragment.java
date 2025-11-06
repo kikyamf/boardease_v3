@@ -39,8 +39,8 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private static final String TAG = "ExploreFragment";
     // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
-    private static final String API_URL = BASE_URL + "get_boarding_houses.php";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String API_URL = BASE_URL + "get_boarding_houses1.php";
     
     private EditText etSearch;
     private RecyclerView rvBoardingHouses;
