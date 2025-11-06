@@ -454,20 +454,28 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                 Log.d(TAG, "Data object: " + data.toString());
                                 Log.d(TAG, "Data object keys: " + java.util.Arrays.toString(data.names().toString().split(",")));
                                 
-                                // Try to get room_details from different possible locations
+                                // Try to get rooms from different possible locations
                                 JSONArray roomDetailsArray = null;
                                 
-                                // First, try data.boarding_house.room_details (standard structure)
-                                JSONObject boardingHouse = data.optJSONObject("boarding_house");
-                                if (boardingHouse != null) {
-                                    Log.d(TAG, "Found boarding_house object");
-                                    roomDetailsArray = boardingHouse.optJSONArray("room_details");
-                                    if (roomDetailsArray != null) {
-                                        Log.d(TAG, "Found room_details in data.boarding_house.room_details");
+                                // First, try data.rooms (actual structure from API)
+                                roomDetailsArray = data.optJSONArray("rooms");
+                                if (roomDetailsArray != null) {
+                                    Log.d(TAG, "Found rooms in data.rooms");
+                                }
+                                
+                                // If not found, try data.boarding_house.room_details (alternative structure)
+                                if (roomDetailsArray == null) {
+                                    JSONObject boardingHouse = data.optJSONObject("boarding_house");
+                                    if (boardingHouse != null) {
+                                        Log.d(TAG, "Found boarding_house object");
+                                        roomDetailsArray = boardingHouse.optJSONArray("room_details");
+                                        if (roomDetailsArray != null) {
+                                            Log.d(TAG, "Found room_details in data.boarding_house.room_details");
+                                        }
                                     }
                                 }
                                 
-                                // If not found, try data.room_details (alternative structure)
+                                // If not found, try data.room_details (another alternative structure)
                                 if (roomDetailsArray == null) {
                                     roomDetailsArray = data.optJSONArray("room_details");
                                     if (roomDetailsArray != null) {
