@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Map/Grid icon -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M20.5,3l-16,0c-1.38,0 -2.5,1.12 -2.5,2.5v13c0,1.38 1.12,2.5 2.5,2.5l16,0c1.38,0 2.5,-1.12 2.5,-2.5v-13c0,-1.38 -1.12,-2.5 -2.5,-2.5zM19,19l-14,0v-8l14,0v8zM19,8l-14,0l0,-3l14,0v3z"/>
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M9,13h2v2h-2zM9,10h2v2h-2zM12,13h2v2h-2zM12,10h2v2h-2zM15,13h2v2h-2zM15,10h2v2h-2z"/>
+</vector>
+
