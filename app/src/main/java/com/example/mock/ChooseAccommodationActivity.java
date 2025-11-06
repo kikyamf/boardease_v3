@@ -441,6 +441,9 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                         }
                         
                         try {
+                            // Log the full response first
+                            Log.d(TAG, "Fallback response (first 500 chars): " + (response.length() > 500 ? response.substring(0, 500) + "..." : response));
+                            
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
                             
@@ -448,7 +451,8 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                             
                             if (success) {
                                 JSONObject data = jsonResponse.getJSONObject("data");
-                                Log.d(TAG, "Data object keys: " + data.toString());
+                                Log.d(TAG, "Data object: " + data.toString());
+                                Log.d(TAG, "Data object keys: " + java.util.Arrays.toString(data.names().toString().split(",")));
                                 
                                 // Try to get room_details from different possible locations
                                 JSONArray roomDetailsArray = null;

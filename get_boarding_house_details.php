@@ -119,6 +119,22 @@ try {
     $roomDetailsStmt = $pdo->prepare($roomDetailsSql);
     $roomDetailsStmt->execute([$bhId]);
     $roomDetails = $roomDetailsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug: Log room details query results
+    error_log("DEBUG: get_boarding_house_details.php - Querying rooms for bh_id: " . $bhId);
+    error_log("DEBUG: get_boarding_house_details.php - Found " . count($roomDetails) . " rooms");
+    if (count($roomDetails) > 0) {
+        error_log("DEBUG: get_boarding_house_details.php - First room: " . json_encode($roomDetails[0]));
+        error_log("DEBUG: get_boarding_house_details.php - All rooms: " . json_encode($roomDetails));
+    } else {
+        error_log("DEBUG: get_boarding_house_details.php - WARNING: No rooms found for bh_id: " . $bhId);
+        // Double-check by querying directly
+        $checkSql = "SELECT COUNT(*) as count FROM boarding_house_rooms WHERE bh_id = ?";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->execute([$bhId]);
+        $checkResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        error_log("DEBUG: get_boarding_house_details.php - Direct count query result: " . $checkResult['count']);
+    }
 
     // Calculate price range
     $priceRangeSql = "
