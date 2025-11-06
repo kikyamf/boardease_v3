@@ -36,7 +36,20 @@ public class ImageVerification {
     private static final String SIGHTENGINE_API_SECRET = "your_sightengine_api_secret";
     
     // Enable/disable API verification (set to true to use API, false for local verification)
+    // Will automatically disable if API keys are not set
     private static final boolean USE_API_VERIFICATION = true;
+    
+    /**
+     * Checks if API keys are valid (not placeholders)
+     */
+    private static boolean areApiKeysValid() {
+        return SIGHTENGINE_API_KEY != null && 
+               !SIGHTENGINE_API_KEY.equals("your_sightengine_api_key") &&
+               !SIGHTENGINE_API_KEY.isEmpty() &&
+               SIGHTENGINE_API_SECRET != null &&
+               !SIGHTENGINE_API_SECRET.equals("your_sightengine_api_secret") &&
+               !SIGHTENGINE_API_SECRET.isEmpty();
+    }
     
     // Verification result callback interface
     public interface VerificationCallback {
@@ -52,7 +65,7 @@ public class ImageVerification {
      */
     public static void verifyImage(Context context, Uri imageUri, VerificationCallback callback) {
         try {
-            if (USE_API_VERIFICATION) {
+            if (USE_API_VERIFICATION && areApiKeysValid()) {
                 // Use API-based verification (more accurate but requires internet)
                 String base64Image = convertImageToBase64(context, imageUri);
                 if (base64Image == null) {
@@ -62,6 +75,9 @@ public class ImageVerification {
                 performComprehensiveVerification(context, base64Image, callback);
             } else {
                 // Use local verification (faster but less accurate)
+                if (USE_API_VERIFICATION && !areApiKeysValid()) {
+                    Log.w(TAG, "API keys not configured, using local verification instead");
+                }
                 verifyImageStrictly(context, imageUri, callback);
             }
         } catch (Exception e) {
@@ -78,7 +94,7 @@ public class ImageVerification {
      */
     public static void verifyIdDocument(Context context, Uri imageUri, VerificationCallback callback) {
         try {
-            if (USE_API_VERIFICATION) {
+            if (USE_API_VERIFICATION && areApiKeysValid()) {
                 // Use API-based verification (more accurate but requires internet)
                 String base64Image = convertImageToBase64(context, imageUri);
                 if (base64Image == null) {
@@ -88,6 +104,9 @@ public class ImageVerification {
                 performIdDocumentVerification(context, base64Image, callback);
             } else {
                 // Use local ID document verification (faster but less accurate)
+                if (USE_API_VERIFICATION && !areApiKeysValid()) {
+                    Log.w(TAG, "API keys not configured, using local ID verification instead");
+                }
                 verifyIdDocumentLocally(context, imageUri, callback);
             }
         } catch (Exception e) {
@@ -108,7 +127,7 @@ public class ImageVerification {
         Log.d("QR_VALIDATION", "USE_API_VERIFICATION: " + USE_API_VERIFICATION);
         
         try {
-            if (USE_API_VERIFICATION) {
+            if (USE_API_VERIFICATION && areApiKeysValid()) {
                 Log.d("QR_VALIDATION", "Using API-based verification");
                 // Use API-based verification (more accurate but requires internet)
                 String base64Image = convertImageToBase64(context, imageUri);
@@ -120,6 +139,9 @@ public class ImageVerification {
                 Log.d("QR_VALIDATION", "✅ Image converted to base64 successfully");
                 performQrCodeVerification(context, base64Image, callback);
             } else {
+                if (USE_API_VERIFICATION && !areApiKeysValid()) {
+                    Log.w("QR_VALIDATION", "API keys not configured, using local QR verification instead");
+                }
                 Log.d("QR_VALIDATION", "Using local QR code verification");
                 // Use local QR code verification (faster but less accurate)
                 verifyQrCodeLocally(context, imageUri, callback);
@@ -159,17 +181,26 @@ public class ImageVerification {
      * Performs comprehensive image verification
      */
     private static void performComprehensiveVerification(Context context, String base64Image, VerificationCallback callback) {
+        // Check if API keys are valid before making request
+        if (!areApiKeysValid()) {
+            Log.w(TAG, "API keys not configured, cannot perform API verification");
+            callback.onVerificationError("API verification not configured. Please set valid API keys.");
+            return;
+        }
+        
         RequestQueue queue = Volley.newRequestQueue(context);
         
         // Build request parameters
+        // Note: Sightengine API expects form data, but we're using JSON for simplicity
+        // If this doesn't work, you may need to implement multipart form data upload
         JSONObject params = new JSONObject();
         try {
             params.put("api_user", SIGHTENGINE_API_KEY);
             params.put("api_secret", SIGHTENGINE_API_SECRET);
             params.put("media", base64Image);
             params.put("models", "nudity-2.0,wad,offensive,celebrities,scam,text-content,face-attributes");
-            params.put("callback", "https://your-callback-url.com");
         } catch (JSONException e) {
+            Log.e(TAG, "Failed to build request parameters: " + e.getMessage());
             callback.onVerificationError("Failed to build request parameters");
             return;
         }
@@ -199,8 +230,18 @@ public class ImageVerification {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "Verification API error: " + error.getMessage());
-                        callback.onVerificationError("Image verification service unavailable");
+                        String errorMessage = error.getMessage();
+                        int statusCode = error.networkResponse != null ? error.networkResponse.statusCode : 0;
+                        Log.e(TAG, "Verification API error: " + errorMessage + ", Status: " + statusCode);
+                        
+                        // If 400 error, likely due to invalid API keys or request format
+                        if (statusCode == 400) {
+                            Log.w(TAG, "API returned 400 error - likely invalid API keys or request format.");
+                            Log.w(TAG, "Please check your Sightengine API credentials or use local verification instead.");
+                            callback.onVerificationError("API verification failed. Please check API credentials or use local verification.");
+                        } else {
+                            callback.onVerificationError("Image verification service unavailable");
+                        }
                     }
                 });
         

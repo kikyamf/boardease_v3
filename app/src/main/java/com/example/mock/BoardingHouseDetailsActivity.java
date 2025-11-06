@@ -697,9 +697,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         if (imageUrls == null || imageUrls.isEmpty()) return;
         
-        // Show first 4 images as thumbnails
-        int maxThumbnails = Math.min(4, imageUrls.size());
-        for (int i = 0; i < maxThumbnails; i++) {
+        // Show all images as thumbnails (scrollable)
+        for (int i = 0; i < imageUrls.size(); i++) {
             // Create FrameLayout wrapper for border
             android.widget.FrameLayout wrapper = new android.widget.FrameLayout(this);
             LinearLayout.LayoutParams wrapperParams = new LinearLayout.LayoutParams(
@@ -773,18 +772,20 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     }
     
     private void updateThumbnailSelection(int position) {
-        // Only update if position is within thumbnail range (first 4)
-        int maxThumbnails = Math.min(4, thumbnailWrappers.size());
-        if (position < maxThumbnails) {
-            for (int i = 0; i < maxThumbnails; i++) {
-                android.widget.FrameLayout wrapper = thumbnailWrappers.get(i);
-                if (i == position) {
-                    // Active thumbnail - brown border
-                    wrapper.setBackgroundResource(R.drawable.thumbnail_border_active);
-                } else {
-                    // Inactive thumbnail - gray border
-                    wrapper.setBackgroundResource(R.drawable.thumbnail_border_inactive);
-                }
+        // Update all thumbnails based on current position
+        for (int i = 0; i < thumbnailWrappers.size(); i++) {
+            android.widget.FrameLayout wrapper = thumbnailWrappers.get(i);
+            if (i == position) {
+                // Active thumbnail - brown border
+                wrapper.setBackgroundResource(R.drawable.thumbnail_border_active);
+                // Scroll to make the active thumbnail visible
+                scrollViewThumbnails.post(() -> {
+                    int scrollX = wrapper.getLeft() - (scrollViewThumbnails.getWidth() / 2) + (wrapper.getWidth() / 2);
+                    scrollViewThumbnails.smoothScrollTo(Math.max(0, scrollX), 0);
+                });
+            } else {
+                // Inactive thumbnail - gray border
+                wrapper.setBackgroundResource(R.drawable.thumbnail_border_inactive);
             }
         }
     }

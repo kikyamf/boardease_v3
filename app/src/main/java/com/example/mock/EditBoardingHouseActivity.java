@@ -478,7 +478,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
     
     private void deleteRemovedImagesFromDatabase() {
-        String url = "http://192.168.101.6/BoardEase2/delete_bh_images.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/delete_bh_images.php";
         
         System.out.println("DEBUG: Starting database deletion...");
         System.out.println("DEBUG: BH ID: " + bhId);
@@ -609,7 +609,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void uploadSingleImage(Uri imageUri, int index) {
-        String url = "http://192.168.101.6/BoardEase2/upload_bh_image.php";
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/upload_bh_image.php";
         
         // Optimized upload - removed debug logs for faster performance
         
