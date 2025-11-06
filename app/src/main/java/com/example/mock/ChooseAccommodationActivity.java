@@ -195,6 +195,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
                 return headers;
+                //changes
             }
         };
         
