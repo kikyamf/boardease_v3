@@ -33,6 +33,9 @@ try {
         exit();
     }
 
+    // Debug: Log the bh_id being queried
+    error_log("DEBUG: get_boarding_house_rooms.php - Querying for bh_id: " . $bhId);
+
     // Fetch room information grouped by category
     $roomDetailsSql = "
         SELECT
@@ -51,6 +54,12 @@ try {
     $roomDetailsStmt = $pdo->prepare($roomDetailsSql);
     $roomDetailsStmt->execute([$bhId]);
     $roomDetails = $roomDetailsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug: Log the number of rooms found
+    error_log("DEBUG: get_boarding_house_rooms.php - Found " . count($roomDetails) . " rooms for bh_id: " . $bhId);
+    if (count($roomDetails) > 0) {
+        error_log("DEBUG: First room: " . json_encode($roomDetails[0]));
+    }
 
     // Group rooms by category
     $groupedRooms = array();
@@ -72,6 +81,9 @@ try {
             'total_rooms' => count($roomDetails)
         )
     );
+
+    // Debug: Log the response structure
+    error_log("DEBUG: get_boarding_house_rooms.php - Response: " . json_encode($response));
 
     echo json_encode($response);
 

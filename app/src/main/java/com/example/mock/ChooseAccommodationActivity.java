@@ -112,11 +112,22 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
                             
+                            Log.d(TAG, "Primary endpoint response success: " + success);
+                            
                             if (success) {
                                 JSONObject data = jsonResponse.getJSONObject("data");
-                                JSONObject roomsByCategory = data.getJSONObject("rooms_by_category");
+                                Log.d(TAG, "Data object: " + data.toString());
                                 
-                                displayAccommodations(roomsByCategory);
+                                JSONObject roomsByCategory = data.optJSONObject("rooms_by_category");
+                                if (roomsByCategory != null) {
+                                    Log.d(TAG, "Found rooms_by_category with " + roomsByCategory.length() + " categories");
+                                    displayAccommodations(roomsByCategory);
+                                } else {
+                                    Log.e(TAG, "rooms_by_category not found in response. Data keys: " + data.toString());
+                                    // Try fallback if primary endpoint structure is wrong
+                                    Log.d(TAG, "Primary endpoint structure mismatch, trying fallback");
+                                    loadAccommodationsFromFallback();
+                                }
                             } else {
                                 String error = jsonResponse.optString("error", "Unknown error occurred");
                                 Log.e(TAG, "API Error: " + error);
@@ -126,7 +137,10 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                         } catch (JSONException e) {
                             Log.e(TAG, "JSON parsing error: " + e.getMessage());
                             Log.e(TAG, "Response that failed to parse: " + response);
-                            showNoAccommodations();
+                            e.printStackTrace();
+                            // Try fallback on parsing error
+                            Log.d(TAG, "Primary endpoint parsing failed, trying fallback");
+                            loadAccommodationsFromFallback();
                         }
                     }
                 },
@@ -430,21 +444,32 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
                             
+                            Log.d(TAG, "Fallback response success: " + success);
+                            
                             if (success) {
                                 JSONObject data = jsonResponse.getJSONObject("data");
+                                Log.d(TAG, "Data object keys: " + data.toString());
+                                
                                 JSONObject boardingHouse = data.optJSONObject("boarding_house");
                                 if (boardingHouse == null) {
+                                    Log.d(TAG, "boarding_house not found, using data directly");
                                     boardingHouse = data;
+                                } else {
+                                    Log.d(TAG, "Found boarding_house object");
                                 }
                                 
                                 // Extract room_details from the boarding house data
                                 JSONArray roomDetailsArray = boardingHouse.optJSONArray("room_details");
+                                Log.d(TAG, "room_details array: " + (roomDetailsArray != null ? roomDetailsArray.length() + " items" : "null"));
+                                
                                 if (roomDetailsArray != null && roomDetailsArray.length() > 0) {
+                                    Log.d(TAG, "Processing " + roomDetailsArray.length() + " room details");
                                     // Group rooms by category
                                     JSONObject roomsByCategory = new JSONObject();
                                     for (int i = 0; i < roomDetailsArray.length(); i++) {
                                         JSONObject room = roomDetailsArray.getJSONObject(i);
                                         String category = room.getString("room_category");
+                                        Log.d(TAG, "Room " + i + ": " + room.optString("room_name") + " - Category: " + category);
                                         
                                         if (!roomsByCategory.has(category)) {
                                             roomsByCategory.put(category, new JSONArray());
@@ -452,8 +477,10 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                         roomsByCategory.getJSONArray(category).put(room);
                                     }
                                     
+                                    Log.d(TAG, "Grouped rooms into " + roomsByCategory.length() + " categories");
                                     displayAccommodations(roomsByCategory);
                                 } else {
+                                    Log.e(TAG, "No room details found in response. boardingHouse keys: " + boardingHouse.toString());
                                     showNoAccommodations();
                                 }
                             } else {
@@ -465,6 +492,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                         } catch (JSONException e) {
                             Log.e(TAG, "JSON parsing error: " + e.getMessage());
                             Log.e(TAG, "Response that failed to parse: " + response);
+                            e.printStackTrace();
                             showNoAccommodations();
                         }
                     }
