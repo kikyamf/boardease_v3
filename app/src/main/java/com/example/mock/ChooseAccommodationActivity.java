@@ -33,6 +33,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     
     private static final String TAG = "ChooseAccommodation";
     private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_rooms.php";
+    private static final String FALLBACK_API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php";
     
     private ImageButton btnBack;
     private ProgressBar progressBar;
@@ -132,13 +133,29 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        // Check if 404 error and try fallback endpoint
+                        int statusCode = -1;
+                        if (error.networkResponse != null) {
+                            statusCode = error.networkResponse.statusCode;
+                        }
+                        
+                        Log.d(TAG, "Error response received. Status code: " + statusCode);
+                        
+                        // If 404, try fallback endpoint
+                        if (statusCode == 404) {
+                            Log.d(TAG, "Primary endpoint returned 404, trying fallback endpoint");
+                            // Don't hide progress bar yet, fallback will handle it
+                            loadAccommodationsFromFallback();
+                            return;
+                        }
+                        
                         progressBar.setVisibility(View.GONE);
                         
                         String errorMessage = "Network error occurred";
                         if (error.getMessage() != null) {
                             errorMessage = error.getMessage();
-                        } else if (error.networkResponse != null) {
-                            errorMessage = "Server error: " + error.networkResponse.statusCode;
+                        } else if (statusCode != -1) {
+                            errorMessage = "Server error: " + statusCode;
                         } else if (error.getCause() != null) {
                             errorMessage = error.getCause().getMessage();
                         }
@@ -385,6 +402,99 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Add card to layout
         layoutAccommodations.addView(cardView);
+    }
+    
+    private void loadAccommodationsFromFallback() {
+        progressBar.setVisibility(View.VISIBLE);
+        layoutAccommodations.setVisibility(View.GONE);
+        tvNoAccommodations.setVisibility(View.GONE);
+        
+        String url = FALLBACK_API_URL + "?bh_id=" + boardingHouseId;
+        Log.d(TAG, "Using fallback endpoint: " + url);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressBar.setVisibility(View.GONE);
+                        
+                        // Check if response is HTML (ngrok warning page)
+                        if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
+                            Log.e(TAG, "Received ngrok warning page instead of JSON");
+                            Toast.makeText(ChooseAccommodationActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
+                            showNoAccommodations();
+                            return;
+                        }
+                        
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONObject data = jsonResponse.getJSONObject("data");
+                                JSONObject boardingHouse = data.optJSONObject("boarding_house");
+                                if (boardingHouse == null) {
+                                    boardingHouse = data;
+                                }
+                                
+                                // Extract room_details from the boarding house data
+                                JSONArray roomDetailsArray = boardingHouse.optJSONArray("room_details");
+                                if (roomDetailsArray != null && roomDetailsArray.length() > 0) {
+                                    // Group rooms by category
+                                    JSONObject roomsByCategory = new JSONObject();
+                                    for (int i = 0; i < roomDetailsArray.length(); i++) {
+                                        JSONObject room = roomDetailsArray.getJSONObject(i);
+                                        String category = room.getString("room_category");
+                                        
+                                        if (!roomsByCategory.has(category)) {
+                                            roomsByCategory.put(category, new JSONArray());
+                                        }
+                                        roomsByCategory.getJSONArray(category).put(room);
+                                    }
+                                    
+                                    displayAccommodations(roomsByCategory);
+                                } else {
+                                    showNoAccommodations();
+                                }
+                            } else {
+                                String error = jsonResponse.optString("error", "Unknown error occurred");
+                                Log.e(TAG, "Fallback API Error: " + error);
+                                Toast.makeText(ChooseAccommodationActivity.this, "Failed to load accommodations: " + error, Toast.LENGTH_LONG).show();
+                                showNoAccommodations();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            showNoAccommodations();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressBar.setVisibility(View.GONE);
+                        String errorMessage = "Network error occurred";
+                        if (error.getMessage() != null) {
+                            errorMessage = error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage = "Server error: " + error.networkResponse.statusCode;
+                        }
+                        Log.e(TAG, "Fallback endpoint error: " + errorMessage);
+                        Toast.makeText(ChooseAccommodationActivity.this, "Failed to load accommodations", Toast.LENGTH_LONG).show();
+                        showNoAccommodations();
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("ngrok-skip-browser-warning", "any");
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
     }
     
     private void showNoAccommodations() {
