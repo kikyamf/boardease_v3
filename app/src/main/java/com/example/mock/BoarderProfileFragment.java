@@ -355,19 +355,24 @@ public class BoarderProfileFragment extends Fragment {
         try {
             // Load user data from SharedPreferences
             String userName = Login.getCurrentUserName(getContext());
+            String middleName = Login.getCurrentUserMiddleName(getContext());
+            String suffix = Login.getCurrentUserSuffix(getContext());
             String userEmail = Login.getCurrentUserEmail(getContext());
             String userPhone = Login.getCurrentUserPhone(getContext());
             String userAddress = Login.getCurrentUserAddress(getContext());
             String userBirthDate = Login.getCurrentUserBirthDate(getContext());
             String userGcashNumber = Login.getCurrentUserGcashNumber(getContext());
             
+            // Build full name properly, handling null/empty middle name
             if (tvBoarderName != null) {
-                if (userName != null && !userName.isEmpty()) {
-                    tvBoarderName.setText(userName);
+                String fullName = buildFullName(userName, middleName, suffix);
+                if (fullName != null && !fullName.isEmpty()) {
+                    tvBoarderName.setText(fullName);
                 } else {
                     tvBoarderName.setText("User Name"); // Fallback
                 }
             }
+            
             if (tvBoarderEmail != null) {
                 if (userEmail != null && !userEmail.isEmpty()) {
                     tvBoarderEmail.setText(userEmail);
@@ -390,6 +395,57 @@ public class BoarderProfileFragment extends Fragment {
             if (tvBoarderEmail != null) {
                 tvBoarderEmail.setText("user@email.com");
             }
+        }
+    }
+    
+    /**
+     * Builds the full name from components, properly handling null/empty middle name
+     * Removes "null" text from the name display and handles middle name properly
+     * @param fullName The full name string (may contain "null" for middle name)
+     * @param middleName The middle name separately (to check if it's null/empty)
+     * @param suffix The suffix (Jr., Sr., etc.)
+     * @return Properly formatted full name without "null" text
+     */
+    private String buildFullName(String fullName, String middleName, String suffix) {
+        try {
+            // If fullName is null or empty, return null
+            if (fullName == null || fullName.trim().isEmpty()) {
+                return null;
+            }
+            
+            // Remove "null" (in any case) from the fullName string if it exists
+            String cleanedName = fullName
+                .replace(" null ", " ")  // Remove " null " with spaces
+                .replace(" null", "")     // Remove " null" at end
+                .replace("null ", "")     // Remove "null " at start
+                .replace("null", "")      // Remove standalone "null"
+                .replace("Null", "")      // Remove "Null"
+                .replace("NULL", "");     // Remove "NULL"
+            
+            // Clean up any double spaces that might result from removing "null"
+            cleanedName = cleanedName.replaceAll("\\s+", " ").trim();
+            
+            // If middleName is provided separately and is null/empty, ensure it's not in the name
+            if (middleName == null || middleName.trim().isEmpty() || 
+                middleName.equalsIgnoreCase("null") || middleName.equalsIgnoreCase("none")) {
+                // Already handled above, but ensure no middle name appears
+                cleanedName = cleanedName.replaceAll("\\s+", " ").trim();
+            }
+            
+            // Add suffix if it exists and is not null/empty/none
+            if (suffix != null && !suffix.trim().isEmpty() && 
+                !suffix.equalsIgnoreCase("null") && !suffix.equalsIgnoreCase("none")) {
+                cleanedName = cleanedName + " " + suffix.trim();
+            }
+            
+            return cleanedName.trim();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Return cleaned version if possible, otherwise original
+            if (fullName != null) {
+                return fullName.replace("null", "").replace("Null", "").replace("NULL", "").trim();
+            }
+            return fullName;
         }
     }
 

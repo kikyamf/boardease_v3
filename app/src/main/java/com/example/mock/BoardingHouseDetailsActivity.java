@@ -1,36 +1,59 @@
 package com.example.mock;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.mock.adapters.ImageCarouselAdapter;
+import com.example.mock.adapters.RoomCategoryAdapter;
 import com.google.android.material.button.MaterialButton;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BoardingHouseDetailsActivity extends AppCompatActivity {
+    
+    private static final String TAG = "BoardingHouseDetails";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String API_URL = BASE_URL + "get_boarding_house_details.php";
     
     private ViewPager2 viewPagerImages;
     private LinearLayout layoutIndicators;
     private ImageButton btnBack, btnShare, btnFavorite, btnCall;
     private MaterialButton btnChooseAccommodation;
     
-    private TextView tvBoardingHouseName, tvLocation, tvPrice, tvDescription;
-    private LinearLayout layoutAccommodations;
+    private TextView tvBoardingHouseName, tvLocation, tvPrice, tvDescription, tvRules, 
+                     tvBathrooms, tvArea, tvYear, tvOwnerName, tvOwnerPhone, tvOwnerEmail;
+    private RecyclerView rvRoomCategories;
+    private ProgressBar progressBar;
     
     private ImageCarouselAdapter imageAdapter;
+    private RoomCategoryAdapter roomCategoryAdapter;
     private List<String> imageUrls;
+    private List<String> roomCategories;
     
     private int boardingHouseId;
-    private String boardingHouseName;
-    private String boardingHouseImage;
+    private BoardingHouseDetails boardingHouseDetails;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,9 +66,6 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         // Initialize views
         initializeViews();
         
-        // Setup image carousel
-        setupImageCarousel();
-        
         // Setup click listeners
         setupClickListeners();
         
@@ -55,142 +75,455 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private void getIntentData() {
         Intent intent = getIntent();
-        boardingHouseId = intent.getIntExtra("boarding_house_id", 0);
-        boardingHouseName = intent.getStringExtra("boarding_house_name");
-        boardingHouseImage = intent.getStringExtra("boarding_house_image");
+        boardingHouseId = intent.getIntExtra("bh_id", 0);
+        
+        if (boardingHouseId == 0) {
+            Toast.makeText(this, "Invalid boarding house ID", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
     
     private void initializeViews() {
+        // Image carousel
         viewPagerImages = findViewById(R.id.viewPagerImages);
         layoutIndicators = findViewById(R.id.layoutIndicators);
+        
+        // Buttons
         btnBack = findViewById(R.id.btnBack);
         btnShare = findViewById(R.id.btnShare);
         btnFavorite = findViewById(R.id.btnFavorite);
         btnCall = findViewById(R.id.btnCall);
         btnChooseAccommodation = findViewById(R.id.btnChooseAccommodation);
         
+        // Text views
         tvBoardingHouseName = findViewById(R.id.tvBoardingHouseName);
         tvLocation = findViewById(R.id.tvLocation);
         tvPrice = findViewById(R.id.tvPrice);
         tvDescription = findViewById(R.id.tvDescription);
-        layoutAccommodations = findViewById(R.id.layoutAccommodations);
-    }
-    
-    private void setupImageCarousel() {
-        try {
-            // Create sample image URLs (replace with actual data)
-            imageUrls = new ArrayList<>();
-            imageUrls.add("sample_listing");
-            imageUrls.add("carousel1");
-            imageUrls.add("carousel2");
-            imageUrls.add("carousel3");
-            
-            imageAdapter = new ImageCarouselAdapter(imageUrls);
-            viewPagerImages.setAdapter(imageAdapter);
-            
-            // Setup page change listener for indicators
-            viewPagerImages.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-                @Override
-                public void onPageSelected(int position) {
-                    updateIndicators(position);
-                }
-            });
-            
-            // Create indicators
-            createIndicators();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void createIndicators() {
-        try {
-            layoutIndicators.removeAllViews();
-            
-            for (int i = 0; i < imageUrls.size(); i++) {
-                ImageView indicator = new ImageView(this);
-                indicator.setImageResource(R.drawable.dot_inactive);
-                indicator.setPadding(8, 0, 8, 0);
-                layoutIndicators.addView(indicator);
-            }
-            
-            // Set first indicator as active
-            if (imageUrls.size() > 0) {
-                updateIndicators(0);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void updateIndicators(int position) {
-        try {
-            for (int i = 0; i < layoutIndicators.getChildCount(); i++) {
-                ImageView indicator = (ImageView) layoutIndicators.getChildAt(i);
-                if (i == position) {
-                    indicator.setImageResource(R.drawable.dot_active);
-                } else {
-                    indicator.setImageResource(R.drawable.dot_inactive);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        tvRules = findViewById(R.id.tvRules);
+        tvBathrooms = findViewById(R.id.tvBathrooms);
+        tvArea = findViewById(R.id.tvArea);
+        tvYear = findViewById(R.id.tvYear);
+        tvOwnerName = findViewById(R.id.tvOwnerName);
+        tvOwnerPhone = findViewById(R.id.tvOwnerPhone);
+        tvOwnerEmail = findViewById(R.id.tvOwnerEmail);
+        
+        // Other views
+        rvRoomCategories = findViewById(R.id.rvRoomCategories);
+        progressBar = findViewById(R.id.progressBar);
+        
+        // Initialize lists
+        imageUrls = new ArrayList<>();
+        roomCategories = new ArrayList<>();
+        
+        // Setup room categories recycler view
+        roomCategoryAdapter = new RoomCategoryAdapter(roomCategories);
+        rvRoomCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvRoomCategories.setAdapter(roomCategoryAdapter);
     }
     
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> finish());
         
-        btnShare.setOnClickListener(v -> {
-            // TODO: Implement share functionality
-            // This could involve:
-            // 1. Creating a share intent with boarding house details
-            // 2. Generating a shareable link
-            // 3. Opening share dialog
-        });
+        btnShare.setOnClickListener(v -> shareBoardingHouse());
         
-        btnFavorite.setOnClickListener(v -> {
-            // TODO: Implement favorite functionality
-            // This could involve:
-            // 1. Toggling favorite state
-            // 2. Updating UI to show favorite state
-            // 3. Saving to local database or sending to server
-        });
+        btnFavorite.setOnClickListener(v -> toggleFavorite());
         
-        btnCall.setOnClickListener(v -> {
-            // TODO: Implement call functionality
-            // This could involve:
-            // 1. Opening phone dialer with owner's number
-            // 2. Making a direct call
-        });
+        btnCall.setOnClickListener(v -> contactOwner());
         
-        btnChooseAccommodation.setOnClickListener(v -> {
-            // Navigate to Pre-Booking Phase 1
-            Intent intent = new Intent(this, PreBookingPhase1Activity.class);
-            intent.putExtra("boarding_house_id", boardingHouseId);
-            intent.putExtra("boarding_house_name", boardingHouseName);
-            intent.putExtra("boarding_house_image", boardingHouseImage);
-            startActivity(intent);
-        });
+        btnChooseAccommodation.setOnClickListener(v -> openChooseAccommodationActivity());
     }
     
     private void loadBoardingHouseDetails() {
-        // Set basic information
-        if (boardingHouseName != null) {
-            tvBoardingHouseName.setText(boardingHouseName);
+        progressBar.setVisibility(View.VISIBLE);
+        
+        String url = API_URL + "?bh_id=" + boardingHouseId;
+        Log.d(TAG, "Loading boarding house details for ID: " + boardingHouseId);
+        Log.d(TAG, "API URL: " + url);
+        
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressBar.setVisibility(View.GONE);
+                        
+                        // Debug: Log the first 200 characters of response
+                        Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
+                        
+                        // Debug: Check if response contains bh_rules
+                        if (response.contains("bh_rules")) {
+                            Log.d(TAG, "Response contains 'bh_rules' field");
+                        } else {
+                            Log.d(TAG, "Response does NOT contain 'bh_rules' field");
+                        }
+                        
+                        // Check if response is HTML (ngrok warning page)
+                        if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
+                            Log.e(TAG, "Received ngrok warning page instead of JSON");
+                            Log.e(TAG, "Full response: " + response);
+                            Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php in your browser first");
+                            Toast.makeText(BoardingHouseDetailsActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
+                            // Show fallback data for mock listings
+                            showFallbackData();
+                            return;
+                        }
+                        
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONObject data = jsonResponse.getJSONObject("data");
+                                
+                                // Check if data is wrapped in "boarding_house" object
+                                JSONObject boardingHouseData;
+                                if (data.has("boarding_house")) {
+                                    boardingHouseData = data.getJSONObject("boarding_house");
+                                    // Also get rooms and statistics if available
+                                    if (data.has("rooms")) {
+                                        boardingHouseData.put("rooms", data.getJSONArray("rooms"));
+                                    }
+                                    if (data.has("statistics")) {
+                                        boardingHouseData.put("statistics", data.getJSONObject("statistics"));
+                                    }
+                                } else {
+                                    boardingHouseData = data;
+                                }
+                                
+                                parseBoardingHouseDetails(boardingHouseData);
+                                displayBoardingHouseDetails();
+                            } else {
+                                String error = jsonResponse.optString("error", "Unknown error occurred");
+                                Log.e(TAG, "API Error: " + error);
+                                // If boarding house not found, show fallback data
+                                if (error.contains("not found")) {
+                                    showFallbackData();
+                                } else {
+                                    Toast.makeText(BoardingHouseDetailsActivity.this, "Failed to load details: " + error, Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            // Show fallback data for mock listings
+                            showFallbackData();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressBar.setVisibility(View.GONE);
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        Toast.makeText(BoardingHouseDetailsActivity.this, "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }) {
+            @Override
+            public java.util.Map<String, String> getHeaders() {
+                java.util.Map<String, String> headers = new java.util.HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    private void parseBoardingHouseDetails(JSONObject data) throws JSONException {
+        boardingHouseDetails = new BoardingHouseDetails();
+        
+        // Basic info from boarding_houses table
+        boardingHouseDetails.setBhId(data.getInt("bh_id"));
+        boardingHouseDetails.setBhName(data.getString("bh_name"));
+        boardingHouseDetails.setBhAddress(data.getString("bh_address"));
+        boardingHouseDetails.setBhDescription(data.getString("bh_description"));
+        
+        // Debug bh_rules data
+        String bhRules = data.optString("bh_rules", "No specific rules");
+        Log.d(TAG, "Raw bh_rules from API: '" + bhRules + "'");
+        Log.d(TAG, "bh_rules length: " + bhRules.length());
+        Log.d(TAG, "bh_rules is empty: " + bhRules.isEmpty());
+        Log.d(TAG, "bh_rules equals 'No specific rules': " + bhRules.equals("No specific rules"));
+        
+        boardingHouseDetails.setBhRules(bhRules);
+        boardingHouseDetails.setNumberOfBathroom(data.optInt("number_of_bathroom", 1));
+        boardingHouseDetails.setArea(data.optDouble("area", 100.0));
+        boardingHouseDetails.setBuildYear(data.optInt("build_year", 2020));
+        boardingHouseDetails.setStatus(data.getString("status"));
+        boardingHouseDetails.setBhCreatedAt(data.getString("bh_created_at"));
+        
+        // Images from boarding_house_images table
+        List<String> images = new ArrayList<>();
+        if (data.has("images")) {
+            JSONArray imagesArray = data.getJSONArray("images");
+            for (int i = 0; i < imagesArray.length(); i++) {
+                images.add(imagesArray.getString(i));
+            }
+        }
+        // If no images, add placeholder
+        if (images.isEmpty()) {
+            images.add("https://via.placeholder.com/400x300?text=No+Image+Available");
+        }
+        boardingHouseDetails.setImages(images);
+        
+        // Room details from boarding_house_rooms table
+        List<String> categories = new ArrayList<>();
+        List<BoardingHouseDetails.RoomDetail> roomDetails = new ArrayList<>();
+        int minPrice = Integer.MAX_VALUE;
+        int maxPrice = 0;
+        
+        if (data.has("room_details")) {
+            JSONArray roomDetailsArray = data.getJSONArray("room_details");
+            for (int i = 0; i < roomDetailsArray.length(); i++) {
+                JSONObject roomJson = roomDetailsArray.getJSONObject(i);
+                
+                // Add to categories if not already present
+                String category = roomJson.getString("room_category");
+                if (!categories.contains(category)) {
+                    categories.add(category);
+                }
+                
+                // Create room detail
+                BoardingHouseDetails.RoomDetail room = new BoardingHouseDetails.RoomDetail();
+                room.setRoomCategory(category);
+                room.setRoomName(roomJson.getString("room_name"));
+                room.setPrice(roomJson.getInt("price"));
+                room.setCapacity(roomJson.getInt("capacity"));
+                room.setRoomDescription(roomJson.getString("room_description"));
+                room.setTotalRooms(roomJson.getInt("total_rooms"));
+                roomDetails.add(room);
+                
+                // Track price range
+                int price = roomJson.getInt("price");
+                if (price < minPrice) minPrice = price;
+                if (price > maxPrice) maxPrice = price;
+            }
         }
         
-        // Set sample data (replace with actual API call)
-        tvLocation.setText("Quezon City, Metro Manila");
-        tvPrice.setText("₱3,500");
-        tvDescription.setText("A modern and comfortable boarding house located in the heart of Quezon City. Perfect for students and working professionals who value convenience and affordability. Our facility offers clean, well-maintained rooms with essential amenities.");
+        // If no rooms, add default categories
+        if (categories.isEmpty()) {
+            categories.add("Private Room");
+            categories.add("Bed Spacer");
+        }
         
-        // TODO: Load actual boarding house details from API
-        // This could involve:
-        // 1. Making API call with boardingHouseId
-        // 2. Parsing response and updating UI
-        // 3. Loading images for carousel
-        // 4. Loading accommodation types and availability
-        // 5. Loading contact information
+        boardingHouseDetails.setRoomCategories(categories);
+        boardingHouseDetails.setRoomDetails(roomDetails);
+        
+        // Set price range from API or calculated values
+        if (data.has("min_price") && !data.isNull("min_price")) {
+            boardingHouseDetails.setMinPrice(data.getInt("min_price"));
+        } else if (minPrice != Integer.MAX_VALUE) {
+            boardingHouseDetails.setMinPrice(minPrice);
+        }
+        
+        if (data.has("max_price") && !data.isNull("max_price")) {
+            boardingHouseDetails.setMaxPrice(data.getInt("max_price"));
+        } else if (maxPrice > 0) {
+            boardingHouseDetails.setMaxPrice(maxPrice);
+        }
+        
+        // Owner info from registrations table - owner data is nested in "owner" object
+        BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
+        
+        // Try to get owner info from nested "owner" object first
+        if (data.has("owner")) {
+            JSONObject ownerObj = data.getJSONObject("owner");
+            owner.setFirstName(ownerObj.optString("first_name", ""));
+            owner.setMiddleName(ownerObj.optString("middle_name", ""));
+            owner.setLastName(ownerObj.optString("last_name", ""));
+            owner.setPhone(ownerObj.optString("phone", ""));
+            owner.setEmail(ownerObj.optString("email", ""));
+            owner.setRole(ownerObj.optString("role", ""));
+        } else {
+            // Fallback: try to get from main data object (for backward compatibility)
+            owner.setFirstName(data.optString("first_name", ""));
+            owner.setMiddleName(data.optString("middle_name", ""));
+            owner.setLastName(data.optString("last_name", ""));
+            owner.setPhone(data.optString("phone", ""));
+            owner.setEmail(data.optString("email", ""));
+            owner.setRole(data.optString("role", ""));
+        }
+        
+        boardingHouseDetails.setOwner(owner);
+        
+        // Debug: Log owner information
+        Log.d(TAG, "Owner info - Name: " + owner.getFirstName() + " " + owner.getLastName() + 
+                   ", Phone: " + owner.getPhone() + ", Email: " + owner.getEmail());
+    }
+    
+    private void displayBoardingHouseDetails() {
+        if (boardingHouseDetails == null) return;
+        
+        // Basic info
+        tvBoardingHouseName.setText(boardingHouseDetails.getBhName());
+        tvLocation.setText(boardingHouseDetails.getBhAddress());
+        tvPrice.setText(boardingHouseDetails.getFormattedPriceRange());
+        tvDescription.setText(boardingHouseDetails.getBhDescription());
+        
+        // Debug rules display
+        String rulesToDisplay = boardingHouseDetails.getBhRules();
+        Log.d(TAG, "Setting rules text to: '" + rulesToDisplay + "'");
+        Log.d(TAG, "Rules text length: " + rulesToDisplay.length());
+        tvRules.setText(rulesToDisplay);
+        
+        tvBathrooms.setText(String.valueOf(boardingHouseDetails.getNumberOfBathroom()));
+        tvArea.setText(String.format("%.1f sqm", boardingHouseDetails.getArea()));
+        tvYear.setText(String.valueOf(boardingHouseDetails.getBuildYear()));
+        
+        // Owner info
+        tvOwnerName.setText(boardingHouseDetails.getOwnerFullName());
+        tvOwnerPhone.setText(boardingHouseDetails.getOwner().getPhone());
+        tvOwnerEmail.setText(boardingHouseDetails.getOwner().getEmail());
+        
+        // Setup image carousel
+        setupImageCarousel();
+        
+        // Setup room categories
+        setupRoomCategories();
+    }
+    
+    private void setupImageCarousel() {
+        imageUrls.clear();
+        imageUrls.addAll(boardingHouseDetails.getImages());
+        
+        if (imageUrls.isEmpty()) {
+            // Add placeholder image if no images
+            imageUrls.add("https://via.placeholder.com/400x300?text=No+Image");
+        }
+            
+            imageAdapter = new ImageCarouselAdapter(imageUrls);
+            viewPagerImages.setAdapter(imageAdapter);
+            
+        // Setup indicators
+        setupIndicators();
+    }
+    
+    private void setupIndicators() {
+            layoutIndicators.removeAllViews();
+            
+            for (int i = 0; i < imageUrls.size(); i++) {
+                ImageView indicator = new ImageView(this);
+            indicator.setImageResource(R.drawable.ic_dot);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(8, 0, 8, 0);
+            indicator.setLayoutParams(params);
+                layoutIndicators.addView(indicator);
+        }
+    }
+    
+    private void setupRoomCategories() {
+        roomCategories.clear();
+        roomCategories.addAll(boardingHouseDetails.getRoomCategories());
+        roomCategoryAdapter.notifyDataSetChanged();
+    }
+    
+    private void shareBoardingHouse() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        String shareText = "Check out this boarding house: " + boardingHouseDetails.getBhName() + 
+                          "\nLocation: " + boardingHouseDetails.getBhAddress() + 
+                          "\nPrice: " + boardingHouseDetails.getFormattedPriceRange();
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+        startActivity(Intent.createChooser(shareIntent, "Share Boarding House"));
+    }
+    
+    private void toggleFavorite() {
+            // TODO: Implement favorite functionality
+        Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void contactOwner() {
+        if (boardingHouseDetails.getOwner().getPhone() != null && !boardingHouseDetails.getOwner().getPhone().isEmpty()) {
+            Intent callIntent = new Intent(Intent.ACTION_DIAL);
+            callIntent.setData(Uri.parse("tel:" + boardingHouseDetails.getOwner().getPhone()));
+            startActivity(callIntent);
+                } else {
+            Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void openChooseAccommodationActivity() {
+        Intent intent = new Intent(this, ChooseAccommodationActivity.class);
+        intent.putExtra("bh_id", boardingHouseId);
+        startActivity(intent);
+    }
+    
+    private void showFallbackData() {
+        Log.d(TAG, "Showing fallback data for mock listing");
+        
+        // Create fallback boarding house details
+        boardingHouseDetails = new BoardingHouseDetails();
+        
+        // Basic info with random data
+        boardingHouseDetails.setBhId(boardingHouseId);
+        boardingHouseDetails.setBhName("Sample Boarding House " + boardingHouseId);
+        boardingHouseDetails.setBhAddress("Sample Address, City");
+        boardingHouseDetails.setBhDescription("This is a sample boarding house with modern amenities. Perfect for students and young professionals looking for affordable accommodation.");
+        boardingHouseDetails.setBhRules("No smoking, No pets, Quiet hours 10PM-6AM");
+        boardingHouseDetails.setNumberOfBathroom(2 + (boardingHouseId % 3));
+        boardingHouseDetails.setArea(100.0 + (boardingHouseId % 5) * 50);
+        boardingHouseDetails.setBuildYear(2018 + (boardingHouseId % 5));
+        boardingHouseDetails.setStatus("active");
+        boardingHouseDetails.setBhCreatedAt("2024-01-01");
+        
+        // Sample images
+        List<String> sampleImages = new ArrayList<>();
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+1");
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+2");
+        sampleImages.add("https://via.placeholder.com/400x300?text=Sample+Image+3");
+        boardingHouseDetails.setImages(sampleImages);
+        
+        // Sample room categories
+        List<String> sampleCategories = new ArrayList<>();
+        sampleCategories.add("Private Room");
+        sampleCategories.add("Bed Spacer");
+        boardingHouseDetails.setRoomCategories(sampleCategories);
+        
+        // Sample room details
+        List<BoardingHouseDetails.RoomDetail> sampleRoomDetails = new ArrayList<>();
+        
+        BoardingHouseDetails.RoomDetail privateRoom = new BoardingHouseDetails.RoomDetail();
+        privateRoom.setRoomCategory("Private Room");
+        privateRoom.setRoomName("Single Private Room");
+        privateRoom.setPrice(2500 + (boardingHouseId % 5) * 500);
+        privateRoom.setCapacity(1);
+        privateRoom.setRoomDescription("Comfortable private room with basic amenities");
+        privateRoom.setTotalRooms(3);
+        sampleRoomDetails.add(privateRoom);
+        
+        BoardingHouseDetails.RoomDetail bedSpacer = new BoardingHouseDetails.RoomDetail();
+        bedSpacer.setRoomCategory("Bed Spacer");
+        bedSpacer.setRoomName("Shared Room");
+        bedSpacer.setPrice(1500 + (boardingHouseId % 3) * 300);
+        bedSpacer.setCapacity(4);
+        bedSpacer.setRoomDescription("Shared room with bunk beds");
+        bedSpacer.setTotalRooms(2);
+        sampleRoomDetails.add(bedSpacer);
+        
+        boardingHouseDetails.setRoomDetails(sampleRoomDetails);
+        
+        // Price range
+        boardingHouseDetails.setMinPrice(1500 + (boardingHouseId % 3) * 300);
+        boardingHouseDetails.setMaxPrice(2500 + (boardingHouseId % 5) * 500);
+        
+        // Sample owner info
+        BoardingHouseDetails.OwnerInfo sampleOwner = new BoardingHouseDetails.OwnerInfo();
+        sampleOwner.setFirstName("John");
+        sampleOwner.setMiddleName("M");
+        sampleOwner.setLastName("Doe");
+        sampleOwner.setPhone("+63 912 345 6789");
+        sampleOwner.setEmail("john.doe@example.com");
+        sampleOwner.setRole("owner");
+        boardingHouseDetails.setOwner(sampleOwner);
+        
+        // Display the fallback data
+        displayBoardingHouseDetails();
+        
+        Toast.makeText(this, "Showing sample data (real data unavailable)", Toast.LENGTH_LONG).show();
     }
 }

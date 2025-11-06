@@ -1,0 +1,224 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Database configuration
+$host = 'localhost';
+$dbname = 'boardease2';
+$username = 'boardease';
+$password = 'boardease';
+
+try {
+    // Create PDO connection
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Get boarding house ID from request
+    $bhId = isset($_GET['bh_id']) ? (int)$_GET['bh_id'] : 0;
+
+    if ($bhId === 0) {
+        echo json_encode(array('success' => false, 'error' => 'Boarding house ID is required.'));
+        exit();
+    }
+
+    // SQL query to get boarding house details with owner info
+    $sql = "
+        SELECT
+            bh.*,
+            r.first_name,
+            r.middle_name,
+            r.last_name,
+            r.phone,
+            r.email,
+            r.role
+        FROM boarding_houses AS bh
+        LEFT JOIN registrations AS r ON bh.user_id = r.id
+        WHERE bh.bh_id = ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$bhId]);
+    $boardingHouse = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$boardingHouse) {
+        echo json_encode(array('success' => false, 'error' => 'Boarding house not found.'));
+        exit();
+    }
+
+    // Debug: Log database and table info
+    error_log("DEBUG: Connected to database: " . $dbname);
+    error_log("DEBUG: Querying boarding_houses table for bh_id: " . $bhId);
+    error_log("DEBUG: Found boarding house: " . $boardingHouse['bh_name']);
+    error_log("DEBUG: bh_rules value: '" . $boardingHouse['bh_rules'] . "'");
+    error_log("DEBUG: bh_rules is null: " . (is_null($boardingHouse['bh_rules']) ? 'true' : 'false'));
+    error_log("DEBUG: bh_rules is empty: " . (empty($boardingHouse['bh_rules']) ? 'true' : 'false'));
+    
+    // Debug: Show all fields from the query
+    error_log("DEBUG: All boarding house fields: " . json_encode($boardingHouse));
+    
+    // Debug: Check bh_rules specifically
+    $bhRulesValue = $boardingHouse['bh_rules'];
+    $finalBhRules = !empty($bhRulesValue) ? $bhRulesValue : 'No specific rules';
+    error_log("DEBUG: Raw bh_rules from DB: '" . $bhRulesValue . "'");
+    error_log("DEBUG: Final bh_rules value being sent: '" . $finalBhRules . "'");
+    error_log("DEBUG: bh_rules is null: " . (is_null($bhRulesValue) ? 'true' : 'false'));
+    error_log("DEBUG: bh_rules is empty: " . (empty($bhRulesValue) ? 'true' : 'false'));
+
+    // Fetch images for this boarding house
+    $imagesSql = "
+        SELECT image_path
+        FROM boarding_house_images
+        WHERE bh_id = ?
+        ORDER BY image_id ASC
+    ";
+    $imagesStmt = $pdo->prepare($imagesSql);
+    $imagesStmt->execute([$bhId]);
+    $images = $imagesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // Get base URL for images (use local IP for local development)
+    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+
+    // Format image URLs
+    $formattedImages = array();
+    foreach ($images as $imagePath) {
+        if (!empty($imagePath)) {
+            $formattedImages[] = $baseUrl . $imagePath;
+        }
+    }
+
+    // If no images, add placeholder
+    if (empty($formattedImages)) {
+        $formattedImages[] = 'https://via.placeholder.com/400x300?text=No+Image+Available';
+    }
+
+    // Fetch room categories for this boarding house
+    $roomsSql = "
+        SELECT DISTINCT room_category
+        FROM boarding_house_rooms
+        WHERE bh_id = ?
+        ORDER BY room_category ASC
+    ";
+    $roomsStmt = $pdo->prepare($roomsSql);
+    $roomsStmt->execute([$bhId]);
+    $roomCategories = $roomsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    // Fetch detailed room information
+    $roomDetailsSql = "
+        SELECT
+            bhr_id,
+            room_category,
+            room_name,
+            price,
+            capacity,
+            room_description,
+            total_rooms,
+            created_at
+        FROM boarding_house_rooms
+        WHERE bh_id = ?
+        ORDER BY room_category, price ASC
+    ";
+    $roomDetailsStmt = $pdo->prepare($roomDetailsSql);
+    $roomDetailsStmt->execute([$bhId]);
+    $roomDetails = $roomDetailsStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Debug: Log room details query results
+    error_log("DEBUG: get_boarding_house_details.php - Querying rooms for bh_id: " . $bhId);
+    error_log("DEBUG: get_boarding_house_details.php - Found " . count($roomDetails) . " rooms");
+    if (count($roomDetails) > 0) {
+        error_log("DEBUG: get_boarding_house_details.php - First room: " . json_encode($roomDetails[0]));
+        error_log("DEBUG: get_boarding_house_details.php - All rooms: " . json_encode($roomDetails));
+    } else {
+        error_log("DEBUG: get_boarding_house_details.php - WARNING: No rooms found for bh_id: " . $bhId);
+        // Double-check by querying directly
+        $checkSql = "SELECT COUNT(*) as count FROM boarding_house_rooms WHERE bh_id = ?";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->execute([$bhId]);
+        $checkResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        error_log("DEBUG: get_boarding_house_details.php - Direct count query result: " . $checkResult['count']);
+    }
+
+    // Calculate price range
+    $priceRangeSql = "
+        SELECT
+            MIN(price) as min_price,
+            MAX(price) as max_price
+        FROM boarding_house_rooms
+        WHERE bh_id = ?
+    ";
+    $priceRangeStmt = $pdo->prepare($priceRangeSql);
+    $priceRangeStmt->execute([$bhId]);
+    $priceRange = $priceRangeStmt->fetch(PDO::FETCH_ASSOC);
+
+    // Format the response
+    $response = array(
+        'success' => true,
+        'data' => array(
+            'boarding_house' => array(
+                'bh_id' => (int)$boardingHouse['bh_id'],
+                'bh_name' => $boardingHouse['bh_name'],
+                'bh_address' => $boardingHouse['bh_address'],
+                'bh_description' => $boardingHouse['bh_description'],
+                'bh_rules' => $boardingHouse['bh_rules'] ?? 'No specific rules',
+                'number_of_bathroom' => (int)$boardingHouse['number_of_bathroom'],
+                'area' => (float)$boardingHouse['area'],
+                'build_year' => (int)$boardingHouse['build_year'],
+                'status' => $boardingHouse['status'],
+                'bh_created_at' => $boardingHouse['bh_created_at'],
+                'images' => $formattedImages,
+                'room_categories' => $roomCategories,
+                'room_details' => $roomDetails,
+                'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
+                'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
+                'owner' => array(
+                    'first_name' => $boardingHouse['first_name'] ?? null,
+                    'middle_name' => $boardingHouse['middle_name'] ?? null,
+                    'last_name' => $boardingHouse['last_name'] ?? null,
+                    'phone' => $boardingHouse['phone'] ?? null,
+                    'email' => $boardingHouse['email'] ?? null,
+                    'role' => $boardingHouse['role'] ?? null,
+                    // Add full name for convenience
+                    'full_name' => trim(($boardingHouse['first_name'] ?? '') . ' ' . 
+                                       ($boardingHouse['middle_name'] ?? '') . ' ' . 
+                                       ($boardingHouse['last_name'] ?? ''))
+                )
+            )
+        )
+    );
+
+    // Debug: Log the final response
+    error_log("DEBUG: Final JSON response: " . json_encode($response));
+    
+    // Debug: Check if bh_rules is in the response
+    if (isset($response['data']['boarding_house']['bh_rules'])) {
+        error_log("DEBUG: bh_rules IS in the response: " . $response['data']['boarding_house']['bh_rules']);
+    } else {
+        error_log("DEBUG: bh_rules is NOT in the response!");
+    }
+    
+    // Debug: Check room_details
+    if (isset($response['data']['boarding_house']['room_details'])) {
+        $roomCount = count($response['data']['boarding_house']['room_details']);
+        error_log("DEBUG: room_details IS in the response with " . $roomCount . " rooms");
+        if ($roomCount > 0) {
+            error_log("DEBUG: First room: " . json_encode($response['data']['boarding_house']['room_details'][0]));
+        }
+    } else {
+        error_log("DEBUG: room_details is NOT in the response!");
+    }
+    
+    echo json_encode($response);
+
+} catch (PDOException $e) {
+    echo json_encode(array(
+        'success' => false,
+        'error' => 'Database error: ' . $e->getMessage()
+    ));
+} catch (Exception $e) {
+    echo json_encode(array(
+        'success' => false,
+        'error' => 'Server error: ' . $e->getMessage()
+    ));
+}
+?>

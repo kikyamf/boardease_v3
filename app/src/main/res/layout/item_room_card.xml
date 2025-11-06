@@ -33,7 +33,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tvTitle"
+                android:id="@+id/tvRoomName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Room Title"
@@ -42,7 +42,19 @@
                 android:textColor="@color/black" />
 
             <TextView
-                android:id="@+id/tvDescription"
+                android:id="@+id/tvRoomCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Private Room"
+                android:textSize="12sp"
+                android:textColor="@color/brown"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/circle_bg"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp" />
+
+            <TextView
+                android:id="@+id/tvRoomDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Room description"

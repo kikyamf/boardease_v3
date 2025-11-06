@@ -145,8 +145,16 @@
             android:name=".CreateGroupChat"
             android:exported="false" />
         <activity
-            android:name=".IdCaptureActivity"
+            android:name=".BoardingHouseDetailsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ChooseAccommodationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BoardingHouseDetailsActivitySimple"
+            android:exported="false" />
+        <activity android:name="IdCaptureActivity"
+            android:exported="false"/>
     </application>
 
 </manifest>

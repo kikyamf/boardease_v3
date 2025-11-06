@@ -50,8 +50,8 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
         // Set location (shortened for carousel)
         holder.tvLocation.setText("Quezon City");
         
-        // Set price
-        holder.tvPrice.setText("₱3,500/month");
+        // Set price using real data from database
+        holder.tvPrice.setText(boardingHouse.getFormattedPrice());
         
         // Load image with Glide
         if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {

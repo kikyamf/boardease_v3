@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.mock.R;
 import java.util.List;
 
@@ -29,16 +30,13 @@ public class ImageCarouselAdapter extends RecyclerView.Adapter<ImageCarouselAdap
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String imageUrl = imageUrls.get(position);
         
-        // For now, using placeholder image
-        // In a real implementation, you would load the image using Glide or Picasso
-        holder.imageView.setImageResource(R.drawable.sample_listing);
-        
-        // TODO: Implement image loading with Glide or Picasso
-        // Glide.with(holder.itemView.getContext())
-        //     .load(imageUrl)
-        //     .placeholder(R.drawable.placeholder)
-        //     .error(R.drawable.error)
-        //     .into(holder.imageView);
+        // Load image with Glide
+        Glide.with(holder.itemView.getContext())
+            .load(imageUrl)
+            .placeholder(R.drawable.sample_listing)
+            .error(R.drawable.sample_listing)
+            .centerCrop()
+            .into(holder.imageView);
     }
     
     @Override

@@ -6,6 +6,8 @@
     android:layout_marginEnd="8dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="6dp"
+    app:strokeColor="#A18167"
+    app:strokeWidth="1dp"
     android:backgroundTint="#FFFFFF"
     android:clickable="true"
     android:focusable="true"
@@ -83,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:text="₱3,500/month"
                 android:textSize="14sp"
-                android:textColor="#2E7D32"
+                android:textColor="#000000"
                 android:fontFamily="@font/poppins_bold"
                 android:layout_marginTop="6dp" />
 
