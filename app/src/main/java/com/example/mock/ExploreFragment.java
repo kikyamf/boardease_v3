@@ -38,7 +38,9 @@ import java.util.List;
 public class ExploreFragment extends Fragment implements OnFavoriteClickListener {
     
     private static final String TAG = "ExploreFragment";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String API_URL = BASE_URL + "get_boarding_houses.php";
     
     private EditText etSearch;
     private RecyclerView rvBoardingHouses;
@@ -272,12 +274,11 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                             // Debug: Log the first 200 characters of response
                             Log.d(TAG, "Response preview: " + response.substring(0, Math.min(200, response.length())));
                             
-                            // Check if response is HTML (ngrok warning page)
-                            if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
-                                Log.e(TAG, "Received ngrok warning page instead of JSON");
+                            // Check if response is HTML (error page)
+                            if (response.trim().startsWith("<!DOCTYPE html>") || response.trim().startsWith("<html")) {
+                                Log.e(TAG, "Received HTML page instead of JSON");
                                 Log.e(TAG, "Full response: " + response);
-                                Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php in your browser first");
-                                showError("Ngrok warning! Visit API URL in browser first.");
+                                showError("Server returned HTML instead of JSON. Please check the API endpoint.");
                                 return;
                             }
                             
@@ -332,7 +333,6 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             @Override
             public java.util.Map<String, String> getHeaders() {
                 java.util.Map<String, String> headers = new java.util.HashMap<>();
-                headers.put("ngrok-skip-browser-warning", "any");
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
                 Log.d(TAG, "Sending headers: " + headers.toString());
@@ -382,6 +382,36 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                     bhId, bhName, bhAddress, bhDescription, bhRules,
                     bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice
                 );
+                
+                // Parse and set owner contact information
+                String ownerName = boardingHouseJson.optString("owner_name", "");
+                String ownerPhone = boardingHouseJson.optString("owner_phone", "");
+                String ownerEmail = boardingHouseJson.optString("owner_email", "");
+                
+                // If owner_name is not directly available, build it from separate fields
+                if (ownerName.isEmpty()) {
+                    String firstName = boardingHouseJson.optString("owner_first_name", "");
+                    String middleName = boardingHouseJson.optString("owner_middle_name", "");
+                    String lastName = boardingHouseJson.optString("owner_last_name", "");
+                    
+                    StringBuilder nameBuilder = new StringBuilder();
+                    if (!firstName.isEmpty()) nameBuilder.append(firstName);
+                    if (!middleName.isEmpty()) {
+                        if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                        nameBuilder.append(middleName);
+                    }
+                    if (!lastName.isEmpty()) {
+                        if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                        nameBuilder.append(lastName);
+                    }
+                    ownerName = nameBuilder.toString();
+                }
+                
+                boardingHouse.setOwnerName(ownerName);
+                boardingHouse.setOwnerPhone(ownerPhone);
+                boardingHouse.setOwnerEmail(ownerEmail);
+                
+                Log.d(TAG, "Boarding House: " + bhName + " - Owner: " + ownerName + " - Phone: " + ownerPhone + " - Email: " + ownerEmail);
                 
                 allBoardingHouses.add(boardingHouse);
             }
