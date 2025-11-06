@@ -1,5 +1,7 @@
 package com.example.mock;
 
+import static android.content.Intent.getIntent;
+
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
