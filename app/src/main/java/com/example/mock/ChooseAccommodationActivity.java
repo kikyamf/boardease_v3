@@ -133,8 +133,26 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressBar.setVisibility(View.GONE);
-                        Log.e(TAG, "Volley error: " + error.getMessage());
-                        Toast.makeText(ChooseAccommodationActivity.this, "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        
+                        String errorMessage = "Network error occurred";
+                        if (error.getMessage() != null) {
+                            errorMessage = error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage = "Server error: " + error.networkResponse.statusCode;
+                        } else if (error.getCause() != null) {
+                            errorMessage = error.getCause().getMessage();
+                        }
+                        
+                        Log.e(TAG, "Volley error: " + errorMessage);
+                        Log.e(TAG, "Error details: " + error.toString());
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Network response code: " + error.networkResponse.statusCode);
+                            if (error.networkResponse.data != null) {
+                                Log.e(TAG, "Network response data: " + new String(error.networkResponse.data));
+                            }
+                        }
+                        
+                        Toast.makeText(ChooseAccommodationActivity.this, "Network error: " + errorMessage, Toast.LENGTH_LONG).show();
                         showNoAccommodations();
                     }
                 }) {
