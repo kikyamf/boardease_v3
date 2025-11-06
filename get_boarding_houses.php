@@ -53,8 +53,7 @@ try {
             r.middle_name,
             r.last_name,
             r.phone,
-            r.email,
-            r.profile_picture
+            r.email
         FROM boarding_houses AS bh
         LEFT JOIN boarding_house_rooms AS bhr ON bh.bh_id = bhr.bh_id
         LEFT JOIN registrations AS r ON bh.user_id = r.id
@@ -110,8 +109,7 @@ try {
             'owner_middle_name' => $row['middle_name'] ?? null,
             'owner_last_name' => $row['last_name'] ?? null,
             'owner_phone' => $row['phone'] ?? null,
-            'owner_email' => $row['email'] ?? null,
-            'owner_profile_picture' => $row['profile_picture'] ? $baseUrl . $row['profile_picture'] : null
+            'owner_email' => $row['email'] ?? null
         );
         $response[] = $boardingHouse;
     }
