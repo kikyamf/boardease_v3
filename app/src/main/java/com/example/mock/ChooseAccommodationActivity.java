@@ -1,0 +1,377 @@
+package com.example.mock;
+
+import android.content.Intent;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.android.material.button.MaterialButton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ChooseAccommodationActivity extends AppCompatActivity {
+    
+    private static final String TAG = "ChooseAccommodation";
+    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_rooms.php";
+    
+    private ImageButton btnBack;
+    private ProgressBar progressBar;
+    private android.widget.LinearLayout layoutAccommodations;
+    private TextView tvNoAccommodations;
+    
+    private int boardingHouseId;
+    private RequestQueue requestQueue;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_choose_accommodation);
+        
+        // Get data from intent
+        getIntentData();
+        
+        // Initialize views
+        initializeViews();
+        
+        // Setup click listeners
+        setupClickListeners();
+        
+        // Initialize request queue
+        requestQueue = Volley.newRequestQueue(this);
+        
+        // Load accommodations
+        loadAccommodations();
+    }
+    
+    private void getIntentData() {
+        Intent intent = getIntent();
+        boardingHouseId = intent.getIntExtra("bh_id", 0);
+        
+        if (boardingHouseId == 0) {
+            Toast.makeText(this, "Invalid boarding house ID", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+    }
+    
+    private void initializeViews() {
+        btnBack = findViewById(R.id.btnBack);
+        progressBar = findViewById(R.id.progressBar);
+        layoutAccommodations = findViewById(R.id.layoutAccommodations);
+        tvNoAccommodations = findViewById(R.id.tvNoAccommodations);
+    }
+    
+    private void setupClickListeners() {
+        btnBack.setOnClickListener(v -> finish());
+    }
+    
+    private void loadAccommodations() {
+        progressBar.setVisibility(View.VISIBLE);
+        layoutAccommodations.setVisibility(View.GONE);
+        tvNoAccommodations.setVisibility(View.GONE);
+        
+        String url = API_URL + "?bh_id=" + boardingHouseId;
+        Log.d(TAG, "Loading accommodations for bh_id: " + boardingHouseId);
+        Log.d(TAG, "API URL: " + url);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressBar.setVisibility(View.GONE);
+                        
+                        // Check if response is HTML (ngrok warning page)
+                        if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
+                            Log.e(TAG, "Received ngrok warning page instead of JSON");
+                            Toast.makeText(ChooseAccommodationActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
+                            showNoAccommodations();
+                            return;
+                        }
+                        
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONObject data = jsonResponse.getJSONObject("data");
+                                JSONObject roomsByCategory = data.getJSONObject("rooms_by_category");
+                                
+                                displayAccommodations(roomsByCategory);
+                            } else {
+                                String error = jsonResponse.optString("error", "Unknown error occurred");
+                                Log.e(TAG, "API Error: " + error);
+                                Toast.makeText(ChooseAccommodationActivity.this, "Failed to load accommodations: " + error, Toast.LENGTH_LONG).show();
+                                showNoAccommodations();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            showNoAccommodations();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressBar.setVisibility(View.GONE);
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        Toast.makeText(ChooseAccommodationActivity.this, "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        showNoAccommodations();
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("ngrok-skip-browser-warning", "any");
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    private void displayAccommodations(JSONObject roomsByCategory) throws JSONException {
+        layoutAccommodations.removeAllViews();
+        
+        if (roomsByCategory.length() == 0) {
+            showNoAccommodations();
+            return;
+        }
+        
+        layoutAccommodations.setVisibility(View.VISIBLE);
+        tvNoAccommodations.setVisibility(View.GONE);
+        
+        // Process each category
+        JSONArray categoryNames = roomsByCategory.names();
+        if (categoryNames == null) {
+            showNoAccommodations();
+            return;
+        }
+        
+        for (int i = 0; i < categoryNames.length(); i++) {
+            String categoryName = categoryNames.getString(i);
+            JSONArray roomsInCategory = roomsByCategory.getJSONArray(categoryName);
+            
+            // Create category section
+            createCategorySection(categoryName, roomsInCategory);
+        }
+    }
+    
+    private void createCategorySection(String categoryName, JSONArray rooms) throws JSONException {
+        // Category header
+        TextView categoryHeader = new TextView(this);
+        categoryHeader.setText(categoryName);
+        categoryHeader.setTextSize(20);
+        try {
+            Typeface semiboldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_semibold.ttf");
+            categoryHeader.setTypeface(semiboldTypeface);
+        } catch (Exception e) {
+            categoryHeader.setTypeface(null, Typeface.BOLD);
+        }
+        categoryHeader.setTextColor(getResources().getColor(R.color.brown));
+        categoryHeader.setPadding(24, 24, 24, 12);
+        
+        android.widget.LinearLayout.LayoutParams headerParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        headerParams.setMargins(0, 0, 0, 8);
+        categoryHeader.setLayoutParams(headerParams);
+        
+        layoutAccommodations.addView(categoryHeader);
+        
+        // Create a card for each room in this category
+        for (int i = 0; i < rooms.length(); i++) {
+            JSONObject room = rooms.getJSONObject(i);
+            createRoomCard(room);
+        }
+    }
+    
+    private void createRoomCard(JSONObject room) throws JSONException {
+        // Create MaterialCardView
+        com.google.android.material.card.MaterialCardView cardView = new com.google.android.material.card.MaterialCardView(this);
+        cardView.setCardElevation(6);
+        cardView.setRadius(16);
+        cardView.setCardBackgroundColor(getResources().getColor(android.R.color.white));
+        cardView.setStrokeWidth(1);
+        cardView.setStrokeColor(getResources().getColor(R.color.brown));
+        
+        android.widget.LinearLayout.LayoutParams cardParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.setMargins(16, 0, 16, 16);
+        cardView.setLayoutParams(cardParams);
+        
+        // Create inner LinearLayout
+        android.widget.LinearLayout cardContent = new android.widget.LinearLayout(this);
+        cardContent.setOrientation(android.widget.LinearLayout.VERTICAL);
+        cardContent.setPadding(20, 20, 20, 20);
+        
+        // Room Name
+        TextView tvRoomName = new TextView(this);
+        tvRoomName.setText(room.getString("room_name"));
+        tvRoomName.setTextSize(18);
+        try {
+            Typeface semiboldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_semibold.ttf");
+            tvRoomName.setTypeface(semiboldTypeface);
+        } catch (Exception e) {
+            tvRoomName.setTypeface(null, Typeface.BOLD);
+        }
+        tvRoomName.setTextColor(getResources().getColor(android.R.color.black));
+        
+        android.widget.LinearLayout.LayoutParams nameParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        nameParams.setMargins(0, 0, 0, 8);
+        tvRoomName.setLayoutParams(nameParams);
+        
+        // Room Description
+        TextView tvDescription = new TextView(this);
+        String description = room.optString("room_description", "No description available");
+        if (description.isEmpty() || description.equals("0")) {
+            description = "No description available";
+        }
+        tvDescription.setText(description);
+        tvDescription.setTextSize(14);
+        tvDescription.setTextColor(getResources().getColor(R.color.dark_gray));
+        tvDescription.setLineSpacing(4, 1.2f);
+        
+        android.widget.LinearLayout.LayoutParams descParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        descParams.setMargins(0, 0, 0, 12);
+        tvDescription.setLayoutParams(descParams);
+        
+        // Price and Capacity Row
+        android.widget.LinearLayout infoRow = new android.widget.LinearLayout(this);
+        infoRow.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        
+        // Price
+        TextView tvPrice = new TextView(this);
+        double price = room.getDouble("price");
+        tvPrice.setText("₱" + String.format("%,.0f", price) + "/month");
+        tvPrice.setTextSize(16);
+        try {
+            Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
+            tvPrice.setTypeface(boldTypeface);
+        } catch (Exception e) {
+            tvPrice.setTypeface(null, Typeface.BOLD);
+        }
+        tvPrice.setTextColor(getResources().getColor(R.color.brown));
+        
+        android.widget.LinearLayout.LayoutParams priceParams = new android.widget.LinearLayout.LayoutParams(
+                0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        );
+        tvPrice.setLayoutParams(priceParams);
+        
+        // Capacity
+        TextView tvCapacity = new TextView(this);
+        int capacity = room.getInt("capacity");
+        tvCapacity.setText("Capacity: " + capacity + " person(s)");
+        tvCapacity.setTextSize(14);
+        tvCapacity.setTextColor(getResources().getColor(R.color.dark_gray));
+        
+        android.widget.LinearLayout.LayoutParams capacityParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        tvCapacity.setLayoutParams(capacityParams);
+        
+        infoRow.addView(tvPrice);
+        infoRow.addView(tvCapacity);
+        
+        android.widget.LinearLayout.LayoutParams infoRowParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        infoRowParams.setMargins(0, 0, 0, 12);
+        infoRow.setLayoutParams(infoRowParams);
+        
+        // Availability (total rooms)
+        TextView tvAvailability = new TextView(this);
+        int totalRooms = room.getInt("total_rooms");
+        tvAvailability.setText("Available rooms: " + totalRooms);
+        tvAvailability.setTextSize(14);
+        tvAvailability.setTextColor(getResources().getColor(R.color.green));
+        
+        android.widget.LinearLayout.LayoutParams availParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        availParams.setMargins(0, 0, 0, 16);
+        tvAvailability.setLayoutParams(availParams);
+        
+        // Select Button
+        MaterialButton btnSelect = new MaterialButton(this);
+        btnSelect.setText("Select");
+        btnSelect.setTextSize(14);
+        btnSelect.setBackgroundColor(getResources().getColor(R.color.brown));
+        btnSelect.setTextColor(getResources().getColor(android.R.color.white));
+        btnSelect.setCornerRadius(8);
+        
+        android.widget.LinearLayout.LayoutParams btnParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        btnSelect.setLayoutParams(btnParams);
+        
+        // Set click listener for Select button
+        int bhrId = room.getInt("bhr_id");
+        btnSelect.setOnClickListener(v -> {
+            // TODO: Navigate to booking screen with selected room details
+            Toast.makeText(this, "Selected: " + room.optString("room_name") + 
+                         "\nPrice: " + tvPrice.getText() + 
+                         "\nCapacity: " + capacity + " person(s)", 
+                         Toast.LENGTH_LONG).show();
+            // Intent intent = new Intent(this, BookingActivity.class);
+            // intent.putExtra("bhr_id", bhrId);
+            // intent.putExtra("room_detail", room.toString());
+            // startActivity(intent);
+        });
+        
+        // Add views to card content
+        cardContent.addView(tvRoomName);
+        cardContent.addView(tvDescription);
+        cardContent.addView(infoRow);
+        cardContent.addView(tvAvailability);
+        cardContent.addView(btnSelect);
+        
+        // Add card content to card view
+        cardView.addView(cardContent);
+        
+        // Add card to layout
+        layoutAccommodations.addView(cardView);
+    }
+    
+    private void showNoAccommodations() {
+        layoutAccommodations.setVisibility(View.GONE);
+        tvNoAccommodations.setVisibility(View.VISIBLE);
+    }
+}
+

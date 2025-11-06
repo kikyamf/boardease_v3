@@ -24,7 +24,6 @@ import com.android.volley.toolbox.Volley;
 import com.example.mock.adapters.ImageCarouselAdapter;
 import com.example.mock.adapters.RoomCategoryAdapter;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -130,7 +129,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         btnCall.setOnClickListener(v -> contactOwner());
         
-        btnChooseAccommodation.setOnClickListener(v -> showAccommodationDialog());
+        btnChooseAccommodation.setOnClickListener(v -> openChooseAccommodationActivity());
     }
     
     private void loadBoardingHouseDetails() {
@@ -429,81 +428,10 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         }
     }
     
-    private void showAccommodationDialog() {
-        // Get room details - use actual data if available, otherwise use mockup data
-        List<BoardingHouseDetails.RoomDetail> roomDetails;
-        
-        if (boardingHouseDetails != null && !boardingHouseDetails.getRoomDetails().isEmpty()) {
-            // Use actual room details from API
-            roomDetails = boardingHouseDetails.getRoomDetails();
-        } else {
-            // Use mockup data if no room details available
-            roomDetails = getMockupRoomDetails();
-            Toast.makeText(this, "Showing sample accommodation options", Toast.LENGTH_SHORT).show();
-        }
-        
-        // Build room names array for the dialog
-        String[] roomNames = new String[roomDetails.size()];
-        for (int i = 0; i < roomDetails.size(); i++) {
-            BoardingHouseDetails.RoomDetail room = roomDetails.get(i);
-            roomNames[i] = room.getRoomName() + " - " + room.getFormattedPrice();
-        }
-        
-        // Show the dialog
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Choose Accommodation")
-                .setItems(roomNames, (dialog, which) -> {
-                    BoardingHouseDetails.RoomDetail selectedRoom = roomDetails.get(which);
-                    Toast.makeText(this, "Selected: " + selectedRoom.getRoomName() + 
-                                 "\nPrice: " + selectedRoom.getFormattedPrice() + 
-                                 "\nCapacity: " + selectedRoom.getCapacity() + " person(s)", 
-                                 Toast.LENGTH_LONG).show();
-                    // TODO: Navigate to booking screen with selected room details
-                    // Intent intent = new Intent(this, BookingActivity.class);
-                    // intent.putExtra("room_detail", selectedRoom);
-                    // startActivity(intent);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-    
-    /**
-     * Returns mockup room details for testing when real data is not available
-     */
-    private List<BoardingHouseDetails.RoomDetail> getMockupRoomDetails() {
-        List<BoardingHouseDetails.RoomDetail> mockRooms = new ArrayList<>();
-        
-        // Mock Private Room
-        BoardingHouseDetails.RoomDetail privateRoom = new BoardingHouseDetails.RoomDetail();
-        privateRoom.setRoomCategory("Private Room");
-        privateRoom.setRoomName("Single Private Room");
-        privateRoom.setPrice(2500);
-        privateRoom.setCapacity(1);
-        privateRoom.setRoomDescription("Comfortable private room with basic amenities, perfect for students");
-        privateRoom.setTotalRooms(3);
-        mockRooms.add(privateRoom);
-        
-        // Mock Bed Spacer
-        BoardingHouseDetails.RoomDetail bedSpacer = new BoardingHouseDetails.RoomDetail();
-        bedSpacer.setRoomCategory("Bed Spacer");
-        bedSpacer.setRoomName("Shared Room (Bed Spacer)");
-        bedSpacer.setPrice(1500);
-        bedSpacer.setCapacity(4);
-        bedSpacer.setRoomDescription("Shared room with bunk beds, ideal for budget-conscious boarders");
-        bedSpacer.setTotalRooms(2);
-        mockRooms.add(bedSpacer);
-        
-        // Mock Double Private Room
-        BoardingHouseDetails.RoomDetail doubleRoom = new BoardingHouseDetails.RoomDetail();
-        doubleRoom.setRoomCategory("Private Room");
-        doubleRoom.setRoomName("Double Private Room");
-        doubleRoom.setPrice(4000);
-        doubleRoom.setCapacity(2);
-        doubleRoom.setRoomDescription("Spacious private room for two, includes shared facilities");
-        doubleRoom.setTotalRooms(2);
-        mockRooms.add(doubleRoom);
-        
-        return mockRooms;
+    private void openChooseAccommodationActivity() {
+        Intent intent = new Intent(this, ChooseAccommodationActivity.class);
+        intent.putExtra("bh_id", boardingHouseId);
+        startActivity(intent);
     }
     
     private void showFallbackData() {

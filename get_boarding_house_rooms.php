@@ -1,0 +1,80 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Database configuration
+$host = 'localhost';
+$dbname = 'boardease2';
+$username = 'boardease';
+$password = 'boardease';
+
+try {
+    // Create PDO connection
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Get boarding house ID from request
+    $bhId = isset($_GET['bh_id']) ? (int)$_GET['bh_id'] : 0;
+
+    if ($bhId === 0) {
+        echo json_encode(array('success' => false, 'error' => 'Boarding house ID is required.'));
+        exit();
+    }
+
+    // Fetch room information grouped by category
+    $roomDetailsSql = "
+        SELECT
+            bhr_id,
+            room_category,
+            room_name,
+            price,
+            capacity,
+            room_description,
+            total_rooms,
+            created_at
+        FROM boarding_house_rooms
+        WHERE bh_id = ?
+        ORDER BY room_category, price ASC
+    ";
+    $roomDetailsStmt = $pdo->prepare($roomDetailsSql);
+    $roomDetailsStmt->execute([$bhId]);
+    $roomDetails = $roomDetailsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Group rooms by category
+    $groupedRooms = array();
+    foreach ($roomDetails as $room) {
+        $category = $room['room_category'];
+        if (!isset($groupedRooms[$category])) {
+            $groupedRooms[$category] = array();
+        }
+        $groupedRooms[$category][] = $room;
+    }
+
+    // Format the response
+    $response = array(
+        'success' => true,
+        'data' => array(
+            'bh_id' => $bhId,
+            'rooms_by_category' => $groupedRooms,
+            'total_categories' => count($groupedRooms),
+            'total_rooms' => count($roomDetails)
+        )
+    );
+
+    echo json_encode($response);
+
+} catch (PDOException $e) {
+    echo json_encode(array(
+        'success' => false,
+        'error' => 'Database error: ' . $e->getMessage()
+    ));
+} catch (Exception $e) {
+    echo json_encode(array(
+        'success' => false,
+        'error' => 'Server error: ' . $e->getMessage()
+    ));
+}
+?>
+

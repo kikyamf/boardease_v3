@@ -148,6 +148,9 @@
             android:name=".BoardingHouseDetailsActivity"
             android:exported="false" />
         <activity
+            android:name=".ChooseAccommodationActivity"
+            android:exported="false" />
+        <activity
             android:name=".BoardingHouseDetailsActivitySimple"
             android:name=".IdCaptureActivity"
             android:exported="false" />
