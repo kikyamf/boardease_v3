@@ -77,11 +77,14 @@ try {
     $imagesStmt->execute([$bhId]);
     $images = $imagesStmt->fetchAll(PDO::FETCH_COLUMN);
 
+    // Get base URL for images (use local IP for local development)
+    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+
     // Format image URLs
     $formattedImages = array();
     foreach ($images as $imagePath) {
         if (!empty($imagePath)) {
-            $formattedImages[] = 'https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/' . $imagePath;
+            $formattedImages[] = $baseUrl . $imagePath;
         }
     }
 
@@ -169,12 +172,16 @@ try {
                 'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
                 'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
                 'owner' => array(
-                    'first_name' => $boardingHouse['first_name'],
-                    'middle_name' => $boardingHouse['middle_name'],
-                    'last_name' => $boardingHouse['last_name'],
-                    'phone' => $boardingHouse['phone'],
-                    'email' => $boardingHouse['email'],
-                    'role' => $boardingHouse['role']
+                    'first_name' => $boardingHouse['first_name'] ?? null,
+                    'middle_name' => $boardingHouse['middle_name'] ?? null,
+                    'last_name' => $boardingHouse['last_name'] ?? null,
+                    'phone' => $boardingHouse['phone'] ?? null,
+                    'email' => $boardingHouse['email'] ?? null,
+                    'role' => $boardingHouse['role'] ?? null,
+                    // Add full name for convenience
+                    'full_name' => trim(($boardingHouse['first_name'] ?? '') . ' ' . 
+                                       ($boardingHouse['middle_name'] ?? '') . ' ' . 
+                                       ($boardingHouse['last_name'] ?? ''))
                 )
             )
         )

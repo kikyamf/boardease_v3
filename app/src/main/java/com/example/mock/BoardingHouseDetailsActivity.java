@@ -324,15 +324,33 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             boardingHouseDetails.setMaxPrice(maxPrice);
         }
         
-        // Owner info from registrations table - owner data is in the main data object
+        // Owner info from registrations table - owner data is nested in "owner" object
         BoardingHouseDetails.OwnerInfo owner = new BoardingHouseDetails.OwnerInfo();
-        owner.setFirstName(data.optString("first_name", ""));
-        owner.setMiddleName(data.optString("middle_name", ""));
-        owner.setLastName(data.optString("last_name", ""));
-        owner.setPhone(data.optString("phone", ""));
-        owner.setEmail(data.optString("email", ""));
-        owner.setRole(data.optString("role", ""));
+        
+        // Try to get owner info from nested "owner" object first
+        if (data.has("owner")) {
+            JSONObject ownerObj = data.getJSONObject("owner");
+            owner.setFirstName(ownerObj.optString("first_name", ""));
+            owner.setMiddleName(ownerObj.optString("middle_name", ""));
+            owner.setLastName(ownerObj.optString("last_name", ""));
+            owner.setPhone(ownerObj.optString("phone", ""));
+            owner.setEmail(ownerObj.optString("email", ""));
+            owner.setRole(ownerObj.optString("role", ""));
+        } else {
+            // Fallback: try to get from main data object (for backward compatibility)
+            owner.setFirstName(data.optString("first_name", ""));
+            owner.setMiddleName(data.optString("middle_name", ""));
+            owner.setLastName(data.optString("last_name", ""));
+            owner.setPhone(data.optString("phone", ""));
+            owner.setEmail(data.optString("email", ""));
+            owner.setRole(data.optString("role", ""));
+        }
+        
         boardingHouseDetails.setOwner(owner);
+        
+        // Debug: Log owner information
+        Log.d(TAG, "Owner info - Name: " + owner.getFirstName() + " " + owner.getLastName() + 
+                   ", Phone: " + owner.getPhone() + ", Email: " + owner.getEmail());
     }
     
     private void displayBoardingHouseDetails() {
