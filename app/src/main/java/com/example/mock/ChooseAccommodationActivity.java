@@ -450,16 +450,35 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                 JSONObject data = jsonResponse.getJSONObject("data");
                                 Log.d(TAG, "Data object keys: " + data.toString());
                                 
+                                // Try to get room_details from different possible locations
+                                JSONArray roomDetailsArray = null;
+                                
+                                // First, try data.boarding_house.room_details (standard structure)
                                 JSONObject boardingHouse = data.optJSONObject("boarding_house");
-                                if (boardingHouse == null) {
-                                    Log.d(TAG, "boarding_house not found, using data directly");
-                                    boardingHouse = data;
-                                } else {
+                                if (boardingHouse != null) {
                                     Log.d(TAG, "Found boarding_house object");
+                                    roomDetailsArray = boardingHouse.optJSONArray("room_details");
+                                    if (roomDetailsArray != null) {
+                                        Log.d(TAG, "Found room_details in data.boarding_house.room_details");
+                                    }
                                 }
                                 
-                                // Extract room_details from the boarding house data
-                                JSONArray roomDetailsArray = boardingHouse.optJSONArray("room_details");
+                                // If not found, try data.room_details (alternative structure)
+                                if (roomDetailsArray == null) {
+                                    roomDetailsArray = data.optJSONArray("room_details");
+                                    if (roomDetailsArray != null) {
+                                        Log.d(TAG, "Found room_details in data.room_details");
+                                    }
+                                }
+                                
+                                // If still not found, the response doesn't have room_details, show no accommodations
+                                if (roomDetailsArray == null || roomDetailsArray.length() == 0) {
+                                    Log.e(TAG, "room_details not found in response. This boarding house may not have rooms configured.");
+                                    Log.e(TAG, "Full data structure: " + data.toString());
+                                    showNoAccommodations();
+                                    return;
+                                }
+                                
                                 Log.d(TAG, "room_details array: " + (roomDetailsArray != null ? roomDetailsArray.length() + " items" : "null"));
                                 
                                 if (roomDetailsArray != null && roomDetailsArray.length() > 0) {
@@ -480,7 +499,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                     Log.d(TAG, "Grouped rooms into " + roomsByCategory.length() + " categories");
                                     displayAccommodations(roomsByCategory);
                                 } else {
-                                    Log.e(TAG, "No room details found in response. boardingHouse keys: " + boardingHouse.toString());
+                                    Log.e(TAG, "No room details found. Data structure: " + data.toString());
                                     showNoAccommodations();
                                 }
                             } else {

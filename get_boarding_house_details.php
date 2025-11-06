@@ -174,6 +174,17 @@ try {
         error_log("DEBUG: bh_rules is NOT in the response!");
     }
     
+    // Debug: Check room_details
+    if (isset($response['data']['boarding_house']['room_details'])) {
+        $roomCount = count($response['data']['boarding_house']['room_details']);
+        error_log("DEBUG: room_details IS in the response with " . $roomCount . " rooms");
+        if ($roomCount > 0) {
+            error_log("DEBUG: First room: " . json_encode($response['data']['boarding_house']['room_details'][0]));
+        }
+    } else {
+        error_log("DEBUG: room_details is NOT in the response!");
+    }
+    
     echo json_encode($response);
 
 } catch (PDOException $e) {
