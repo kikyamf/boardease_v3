@@ -32,8 +32,10 @@ import java.util.Map;
 public class ChooseAccommodationActivity extends AppCompatActivity {
     
     private static final String TAG = "ChooseAccommodation";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_rooms.php";
-    private static final String FALLBACK_API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String API_URL = BASE_URL + "get_boarding_house_rooms.php";
+    private static final String FALLBACK_API_URL = BASE_URL + "get_boarding_house_details.php";
     
     private ImageButton btnBack;
     private ProgressBar progressBar;
@@ -190,7 +192,6 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
-                headers.put("ngrok-skip-browser-warning", "any");
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
                 return headers;
@@ -546,7 +547,6 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
             @Override
             public Map<String, String> getHeaders() {
                 Map<String, String> headers = new HashMap<>();
-                headers.put("ngrok-skip-browser-warning", "any");
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
                 return headers;

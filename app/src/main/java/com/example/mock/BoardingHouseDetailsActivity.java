@@ -33,7 +33,9 @@ import java.util.List;
 public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private static final String TAG = "BoardingHouseDetails";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details.php";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String API_URL = BASE_URL + "get_boarding_house_details.php";
     
     private ViewPager2 viewPagerImages;
     private LinearLayout layoutIndicators;
@@ -220,7 +222,6 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             @Override
             public java.util.Map<String, String> getHeaders() {
                 java.util.Map<String, String> headers = new java.util.HashMap<>();
-                headers.put("ngrok-skip-browser-warning", "any");
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
                 return headers;
