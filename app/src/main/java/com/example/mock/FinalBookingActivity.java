@@ -271,6 +271,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
@@ -322,6 +323,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
@@ -506,6 +508,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
