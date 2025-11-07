@@ -271,8 +271,11 @@ public class Login extends AppCompatActivity {
                 }
                 
                 // Store user session in SharedPreferences
-                saveUserSession(userId, userRole, fullName, userEmail, 
+                saveUserSession(userId, userRole, fullName, userEmail,
                               middleName, phone, birthDate, address, gcashNumber, suffix);
+                
+                // Also store first and last name separately
+                saveUserNameParts(firstName, lastName);
                 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
@@ -314,6 +317,14 @@ public class Login extends AppCompatActivity {
         editor.putString("user_address", address);
         editor.putString("user_gcash_number", gcashNumber);
         editor.putString("user_suffix", suffix);
+        editor.apply();
+    }
+    
+    // Helper method to save first and last name separately (called during login)
+    private void saveUserNameParts(String firstName, String lastName) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("user_first_name", firstName);
+        editor.putString("user_last_name", lastName);
         editor.apply();
     }
     
@@ -401,4 +412,13 @@ public class Login extends AppCompatActivity {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_suffix", "");
     }
-}
+    
+    public static String getCurrentUserFirstName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_first_name", "");
+    }
+    
+    public static String getCurrentUserLastName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_last_name", "");
+    }

@@ -395,15 +395,10 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         // Set click listener for Select button
         int bhrId = room.getInt("bhr_id");
         btnSelect.setOnClickListener(v -> {
-            // TODO: Navigate to booking screen with selected room details
-            Toast.makeText(this, "Selected: " + room.optString("room_name") + 
-                         "\nPrice: " + tvPrice.getText() + 
-                         "\nCapacity: " + capacity + " person(s)", 
-                         Toast.LENGTH_LONG).show();
-            // Intent intent = new Intent(this, BookingActivity.class);
-            // intent.putExtra("bhr_id", bhrId);
-            // intent.putExtra("room_detail", room.toString());
-            // startActivity(intent);
+            Intent intent = new Intent(this, BookingActivity.class);
+            intent.putExtra("bhr_id", bhrId);
+            intent.putExtra("room_data", room.toString());
+            startActivity(intent);
         });
         
         // Add views to card content
