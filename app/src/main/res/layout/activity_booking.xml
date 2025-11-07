@@ -259,9 +259,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
+                    android:hint="First Name"
                     app:boxStrokeColor="@color/brown"
-                    app:hintEnabled="true"
-                    app:hint="First Name"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -279,9 +278,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
+                    android:hint="Last Name"
                     app:boxStrokeColor="@color/brown"
-                    app:hintEnabled="true"
-                    app:hint="Last Name"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -299,9 +297,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
+                    android:hint="Email"
                     app:boxStrokeColor="@color/brown"
-                    app:hintEnabled="true"
-                    app:hint="Email"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -319,9 +316,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
+                    android:hint="Phone Number"
                     app:boxStrokeColor="@color/brown"
-                    app:hintEnabled="true"
-                    app:hint="Phone Number"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -352,9 +348,8 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:hint="Select country"
                         app:boxStrokeColor="@color/brown"
-                        app:hintEnabled="true"
-                        app:hint="Select country"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <AutoCompleteTextView
