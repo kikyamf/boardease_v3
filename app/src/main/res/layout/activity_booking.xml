@@ -336,6 +336,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="First Name"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -346,7 +347,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
@@ -360,6 +360,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Last Name"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -370,7 +371,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
@@ -384,6 +384,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Email"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -394,7 +395,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textEmailAddress"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/email"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
