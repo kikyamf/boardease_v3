@@ -3,6 +3,7 @@ package com.example.mock;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -104,11 +105,27 @@ public class FinalBookingActivity extends AppCompatActivity {
         endDate = intent.getStringExtra("end_date");
         String roomDataString = intent.getStringExtra("room_data");
         
+        // If user_id from intent is 0, try to get it from SharedPreferences
+        if (userId == 0) {
+            SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Retrieved user_id from SharedPreferences: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences: " + e.getMessage());
+                }
+            }
+        }
+        
         if (roomId == 0 || userId == 0 || startDate == null || endDate == null || roomDataString == null) {
-            Toast.makeText(this, "Invalid booking data", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid booking data. Please log in again.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+        
+        Log.d(TAG, "Booking data - user_id: " + userId + ", room_id: " + roomId);
         
         try {
             roomData = new JSONObject(roomDataString);
@@ -469,7 +486,28 @@ public class FinalBookingActivity extends AppCompatActivity {
                             if (success) {
                                 showSuccessDialog();
                             } else {
-                                showErrorDialog("Unsuccessful: " + message);
+                                // Check if it's a user not found error
+                                if (message.contains("User not found")) {
+                                    // Clear session and ask user to log in again
+                                    SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+                                    sharedPreferences.edit().clear().apply();
+                                    
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(FinalBookingActivity.this);
+                                    builder.setTitle("Session Expired");
+                                    builder.setMessage("Your session is invalid. Please log in again.");
+                                    builder.setPositiveButton("OK", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        // Navigate to login
+                                        Intent loginIntent = new Intent(FinalBookingActivity.this, Login.class);
+                                        loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(loginIntent);
+                                        finish();
+                                    });
+                                    builder.setCancelable(false);
+                                    builder.show();
+                                } else {
+                                    showErrorDialog("Unsuccessful: " + message);
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing response: " + e.getMessage());
