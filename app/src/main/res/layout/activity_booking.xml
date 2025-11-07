@@ -70,6 +70,7 @@
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="@color/brown"
                     android:drawableStart="@drawable/ic_bed"
+                    android:drawableTint="@color/green"
                     android:drawablePadding="8dp"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="16dp" />
@@ -94,31 +95,26 @@
                     android:textColor="@color/dark_gray"
                     android:layout_marginBottom="12dp" />
 
-                <LinearLayout
+                <!-- Price -->
+                <TextView
+                    android:id="@+id/tvRoomPrice"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:text="₱0/month"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="@color/brown"
+                    android:layout_marginBottom="8dp" />
 
-                    <TextView
-                        android:id="@+id/tvRoomPrice"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="₱0/month"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/poppins_bold"
-                        android:textColor="@color/brown" />
-
-                    <TextView
-                        android:id="@+id/tvRoomCapacity"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Capacity: 0"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textColor="@color/dark_gray" />
-                </LinearLayout>
+                <!-- Capacity -->
+                <TextView
+                    android:id="@+id/tvRoomCapacity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Capacity: 0"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textColor="@color/green" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -148,6 +144,7 @@
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="@color/brown"
                     android:drawableStart="@drawable/ic_calendar"
+                    android:drawableTint="@color/green"
                     android:drawablePadding="8dp"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="16dp" />
