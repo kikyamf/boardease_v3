@@ -257,8 +257,7 @@
                     android:textSize="18sp"
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="@color/brown"
-                    android:drawableStart="@drawable/ic_person"
-                    android:drawableTint="@color/brown"
+                    android:drawableTint="@color/green"
                     android:drawablePadding="8dp"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="16dp" />
