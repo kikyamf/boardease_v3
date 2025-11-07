@@ -408,6 +408,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Phone Number"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -418,7 +419,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="phone"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_phone"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
