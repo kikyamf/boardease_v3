@@ -583,15 +583,22 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void showSuccessDialog() {
+        // Inflate custom layout
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_booking_success, null);
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Booking Successful");
-        builder.setMessage("Your booking is received by the Owner and is subject for approval. you will receive a notification once the booking is successful. If you haven't received an update within 6 hours, you may message the BH Owner in the Messages section. Track your booking the Booking Page. Thank you!");
+        builder.setView(dialogView);
         builder.setPositiveButton("OK", (dialog, which) -> {
             dialog.dismiss();
             finish();
         });
         builder.setCancelable(false);
-        builder.show();
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Style the button
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.brown));
     }
     
     private void showErrorDialog(String message) {
