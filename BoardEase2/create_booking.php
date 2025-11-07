@@ -73,6 +73,7 @@ try {
     }
     
     // Check if room exists in boarding_house_rooms (bhr_id)
+    // The room_id in bookings should reference bhr_id, not room_units.room_id
     $checkRoomSql = "SELECT bhr_id FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
     $checkRoomStmt = $pdo->prepare($checkRoomSql);
     $checkRoomStmt->execute([':bhr_id' => $roomId]);
@@ -86,47 +87,8 @@ try {
         exit;
     }
     
-    // Get or create a room_unit for this bhr_id
-    // First, try to find an available room_unit
-    $getRoomUnitSql = "SELECT room_id FROM room_units WHERE bhr_id = :bhr_id AND status = 'Available' LIMIT 1";
-    $getRoomUnitStmt = $pdo->prepare($getRoomUnitSql);
-    $getRoomUnitStmt->execute([':bhr_id' => $roomId]);
-    $roomUnit = $getRoomUnitStmt->fetch(PDO::FETCH_ASSOC);
-    
-    $actualRoomId = null;
-    if ($roomUnit) {
-        // Use existing available room_unit
-        $actualRoomId = $roomUnit['room_id'];
-    } else {
-        // Create a new room_unit for this bhr_id if none exists
-        // Get room details to create appropriate room_number
-        $getRoomDetailsSql = "SELECT room_name, room_category FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
-        $getRoomDetailsStmt = $pdo->prepare($getRoomDetailsSql);
-        $getRoomDetailsStmt->execute([':bhr_id' => $roomId]);
-        $roomDetails = $getRoomDetailsStmt->fetch(PDO::FETCH_ASSOC);
-        
-        $roomNumber = $roomDetails ? $roomDetails['room_name'] : 'R-1';
-        if (empty($roomNumber)) {
-            $roomNumber = 'R-1';
-        }
-        
-        // Insert new room_unit
-        $insertRoomUnitSql = "INSERT INTO room_units (bhr_id, room_number, status) VALUES (:bhr_id, :room_number, 'Available')";
-        $insertRoomUnitStmt = $pdo->prepare($insertRoomUnitSql);
-        $insertRoomUnitStmt->execute([
-            ':bhr_id' => $roomId,
-            ':room_number' => $roomNumber
-        ]);
-        $actualRoomId = $pdo->lastInsertId();
-    }
-    
-    if (!$actualRoomId) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Failed to get or create room unit'
-        ));
-        exit;
-    }
+    // Use bhr_id directly as room_id in bookings
+    $actualRoomId = $roomId;
     
     // Check if user exists in registrations and get corresponding user_id from users table
     // The userId from Android is registrations.id, but bookings needs users.user_id
@@ -166,7 +128,7 @@ try {
         }
     }
     
-    // Check for overlapping bookings using actual room_id
+    // Check for overlapping bookings using bhr_id as room_id
     $checkOverlapSql = "
         SELECT booking_id 
         FROM bookings 
@@ -180,7 +142,7 @@ try {
     ";
     $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
     $checkOverlapStmt->execute([
-        ':room_id' => $actualRoomId,
+        ':room_id' => $actualRoomId,  // This is bhr_id
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
@@ -193,7 +155,7 @@ try {
         exit;
     }
     
-    // Insert booking using actual room_id from room_units
+    // Insert booking using bhr_id as room_id
     $insertSql = "
         INSERT INTO bookings (
             room_id, 
@@ -214,7 +176,7 @@ try {
     
     $insertStmt = $pdo->prepare($insertSql);
     $insertStmt->execute([
-        ':room_id' => $actualRoomId,
+        ':room_id' => $actualRoomId,  // This is bhr_id from boarding_house_rooms
         ':user_id' => $actualUserId,  // Use actual user_id from users table
         ':start_date' => $startDate,
         ':end_date' => $endDate
