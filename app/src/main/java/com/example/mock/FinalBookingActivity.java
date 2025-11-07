@@ -45,10 +45,12 @@ import java.util.Map;
 public class FinalBookingActivity extends AppCompatActivity {
     
     private static final String TAG = "FinalBookingActivity";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details.php";
-    private static final String GET_GCASH_INFO_URL = BASE_URL + "get_gcash_info.php";
-    private static final String CREATE_BOOKING_URL = BASE_URL + "create_booking.php";
+    private static final String GET_GCASH_INFO_URL = BOARD_EASE2_URL + "get_gcash_info.php";
+    private static final String CREATE_BOOKING_URL = BOARD_EASE2_URL + "create_booking.php";
     private static final int PICK_IMAGE_REQUEST = 100;
     
     // Views
@@ -341,7 +343,10 @@ public class FinalBookingActivity extends AppCompatActivity {
                             if (jsonResponse.getBoolean("success")) {
                                 ownerGcashQrPath = jsonResponse.optString("gcash_qr", "");
                                 if (!ownerGcashQrPath.isEmpty()) {
-                                    String fullImageUrl = BASE_URL + ownerGcashQrPath;
+                                    // Construct full image URL - if path doesn't start with http, prepend BASE_URL
+                                    String fullImageUrl = ownerGcashQrPath.startsWith("http") 
+                                        ? ownerGcashQrPath 
+                                        : BASE_URL + ownerGcashQrPath;
                                     Glide.with(FinalBookingActivity.this)
                                             .load(fullImageUrl)
                                             .placeholder(R.drawable.placeholder)
