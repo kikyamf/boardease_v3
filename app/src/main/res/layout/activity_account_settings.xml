@@ -230,18 +230,24 @@
 
 
         <!-- Save Button -->
-        <Button
-            android:id="@+id/btnSaveChanges"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Save Changes"
-            android:textSize="16sp"
-            android:fontFamily="@font/poppins_semibold"
-            android:background="@drawable/modern_button_ripple"
-            android:textColor="#FFFFFF"
-            android:letterSpacing="0.5"
-            android:layout_marginTop="8dp"
-            android:stateListAnimator="@null" />
+            <Button
+                android:id="@+id/btnSaveChanges"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginBottom="15dp"
+                android:layout_marginTop="8dp"
+                android:text="Save Changes"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:letterSpacing="0.5"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_semibold"
+                app:backgroundTint="#A18167"
+                app:cornerRadius="12dp"
+                android:elevation="4dp"
+                android:stateListAnimator="@null" />
 
         </LinearLayout>
 

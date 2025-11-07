@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -181,11 +183,33 @@ public class Registration2Activity extends AppCompatActivity {
                 "Postal ID"
         };
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_item,
                 roles
-        );
+        ) {
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF); // White text color
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C); // Dark gray background
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerVId.setAdapter(adapter);
 
         // Register button click

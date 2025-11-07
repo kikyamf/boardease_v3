@@ -6,7 +6,12 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Base64;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Toast;
+
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -1193,7 +1198,7 @@ public class ImageVerification {
             Log.d("QR_VALIDATION", "✅ Successfully decoded bitmap");
             Log.d("QR_VALIDATION", "Bitmap dimensions: " + bitmap.getWidth() + "x" + bitmap.getHeight());
             
-            // More lenient size requirements - accept any reasonable size
+            // Basic size validation
             if (bitmap.getWidth() < 50 || bitmap.getHeight() < 50) {
                 Log.d("QR_VALIDATION", "❌ Image too small: " + bitmap.getWidth() + "x" + bitmap.getHeight());
                 callback.onVerificationComplete(false, "Image too small (minimum 50x50 pixels)");
@@ -1208,58 +1213,109 @@ public class ImageVerification {
             
             Log.d("QR_VALIDATION", "✅ Image size validation passed");
             
-            // More lenient aspect ratio - QR codes can be square or rectangular
+            // Use Google Vision API for accurate QR code detection
+            Log.d("QR_VALIDATION", "Starting QR code detection using Google Vision API...");
+            BarcodeDetector detector = new BarcodeDetector.Builder(context)
+                    .setBarcodeFormats(Barcode.QR_CODE)
+                    .build();
+            
+            if (!detector.isOperational()) {
+                Log.d("QR_VALIDATION", "⚠️ Barcode detector not operational, falling back to pattern detection");
+                detector.release();
+                // Fallback to pattern-based detection
+                verifyQrCodeWithPatternDetection(bitmap, callback);
+                return;
+            }
+            
+            Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+            SparseArray<Barcode> barcodes = detector.detect(frame);
+            
+            if (barcodes.size() > 0) {
+                Log.d("QR_VALIDATION", "✅ QR code detected using Google Vision API");
+                Barcode qrCode = barcodes.valueAt(0);
+                String qrContent = qrCode.rawValue;
+                Log.d("QR_VALIDATION", "QR Code Content: " + (qrContent != null ? qrContent.substring(0, Math.min(50, qrContent.length())) + "..." : "null"));
+                
+                // Validate QR code content
+                if (qrContent != null && !qrContent.isEmpty()) {
+                    QrCodeValidationResult validation = validateQrCodeContent(qrContent);
+                    if (validation.isValidGcashQr) {
+                        Log.d("QR_VALIDATION", "✅ Valid GCash QR code detected");
+                        callback.onVerificationComplete(true, "Valid GCash QR code detected");
+                    } else {
+                        Log.d("QR_VALIDATION", "⚠️ QR code detected but content validation failed: " + validation.reason);
+                        // Still accept it as a valid QR code, just warn about content
+                        callback.onVerificationComplete(true, "QR code detected");
+                    }
+                } else {
+                    Log.d("QR_VALIDATION", "✅ QR code detected (content not extracted)");
+                    callback.onVerificationComplete(true, "Valid QR code detected");
+                }
+            } else {
+                Log.d("QR_VALIDATION", "❌ No QR code detected using Google Vision API");
+                callback.onVerificationComplete(false, "No QR code detected in image. Please upload a clear photo of your GCash QR code.");
+            }
+            
+            detector.release();
+            
+        } catch (Exception e) {
+            Log.e("QR_VALIDATION", "❌ Exception in verifyQrCodeLocally: " + e.getMessage());
+            Log.e(TAG, "QR code verification error: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback to pattern-based detection
+            try {
+                InputStream inputStream = context.getContentResolver().openInputStream(imageUri);
+                if (inputStream != null) {
+                    Bitmap fallbackBitmap = BitmapFactory.decodeStream(inputStream);
+                    if (fallbackBitmap != null) {
+                        verifyQrCodeWithPatternDetection(fallbackBitmap, callback);
+                        return;
+                    }
+                }
+            } catch (Exception ex) {
+                Log.e("QR_VALIDATION", "Fallback also failed: " + ex.getMessage());
+            }
+            callback.onVerificationError("QR code verification failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Fallback pattern-based QR code detection (used when Google Vision API is not available)
+     */
+    private static void verifyQrCodeWithPatternDetection(Bitmap bitmap, VerificationCallback callback) {
+        Log.d("QR_VALIDATION", "Using pattern-based QR code detection (fallback)");
+        
+        try {
+            // Aspect ratio validation
             double aspectRatio = (double) bitmap.getWidth() / bitmap.getHeight();
-            Log.d("QR_VALIDATION", "Aspect ratio: " + aspectRatio);
             if (aspectRatio < 0.3 || aspectRatio > 3.0) {
                 Log.d("QR_VALIDATION", "❌ Aspect ratio unusual for QR code: " + aspectRatio);
                 callback.onVerificationComplete(false, "Image dimensions seem unusual for a QR code");
                 return;
             }
-            Log.d("QR_VALIDATION", "✅ Aspect ratio validation passed");
             
-            // STRICT QR code detection - must have ALL indicators
-            Log.d("QR_VALIDATION", "Starting QR code detection...");
+            // Pattern-based detection
             QrCodeDetectionResult qrDetection = detectQrCodeInImage(bitmap);
-            Log.d("QR_VALIDATION", "QR detection result - hasQrCode: " + qrDetection.hasQrCode);
+            
             if (!qrDetection.hasQrCode) {
                 Log.d("QR_VALIDATION", "❌ No QR code detected in image");
                 callback.onVerificationComplete(false, "No QR code detected in image. Please upload a clear photo of your GCash QR code.");
                 return;
             }
-            Log.d("QR_VALIDATION", "✅ QR code detected in image");
             
-            // More lenient payment QR validation
-            Log.d("QR_VALIDATION", "Starting QR code content analysis...");
+            // Content analysis
             QrCodeAnalysisResult analysis = analyzeQrCodeContent(bitmap);
-            Log.d("QR_VALIDATION", "Content analysis result - isLegitimateQrCode: " + analysis.isLegitimateQrCode);
-            
             if (!analysis.isLegitimateQrCode) {
                 Log.d("QR_VALIDATION", "❌ QR code content analysis failed: " + analysis.reason);
                 callback.onVerificationComplete(false, analysis.reason);
                 return;
             }
-            Log.d("QR_VALIDATION", "✅ QR code content analysis passed");
             
-            // Validate QR code content (if detected)
-            if (qrDetection.qrCodeContent != null && !qrDetection.qrCodeContent.isEmpty()) {
-                Log.d("QR_VALIDATION", "Validating QR code content: " + qrDetection.qrCodeContent);
-                QrCodeValidationResult validation = validateQrCodeContent(qrDetection.qrCodeContent);
-                Log.d("QR_VALIDATION", "Content validation result - isValidGcashQr: " + validation.isValidGcashQr);
-                if (!validation.isValidGcashQr) {
-                    Log.d("QR_VALIDATION", "❌ QR code content validation failed: " + validation.reason);
-                    callback.onVerificationComplete(false, validation.reason);
-                    return;
-                }
-                Log.d("QR_VALIDATION", "✅ QR code content validation passed");
-            }
-            
-            Log.d("QR_VALIDATION", "✅ ALL QR CODE VALIDATIONS PASSED");
+            Log.d("QR_VALIDATION", "✅ QR code validated using pattern detection");
             callback.onVerificationComplete(true, "Valid QR code detected");
             
         } catch (Exception e) {
-            Log.e("QR_VALIDATION", "❌ Exception in verifyQrCodeLocally: " + e.getMessage());
-            Log.e(TAG, "QR code verification error: " + e.getMessage());
+            Log.e("QR_VALIDATION", "Pattern detection error: " + e.getMessage());
             callback.onVerificationError("QR code verification failed");
         }
     }
@@ -1386,17 +1442,36 @@ public class ImageVerification {
             // Look for QR code characteristic patterns
             QrCodePatternAnalysis patternAnalysis = analyzeQrCodePatterns(pixels, width, height);
             
-            // Check for QR code corner markers (three squares in corners)
+            // Check for QR code corner markers (three squares in corners) - REQUIRED
             boolean hasCornerMarkers = detectQrCodeCornerMarkers(pixels, width, height);
             
-            // Check for high contrast patterns typical of QR codes
-            boolean hasHighContrastPatterns = patternAnalysis.highContrastRatio > 0.3;
+            // Check for high contrast patterns typical of QR codes (adjusted for GCash QR codes)
+            boolean hasHighContrastPatterns = patternAnalysis.highContrastRatio > 0.35;
             
-            // Check for square-like patterns
-            boolean hasSquarePatterns = patternAnalysis.squarePatternRatio > 0.1;
+            // Check for square-like patterns (adjusted for GCash QR codes which may have logos)
+            boolean hasSquarePatterns = patternAnalysis.squarePatternRatio > 0.12;
             
-            // Determine if QR code is detected
-            boolean hasQrCode = hasCornerMarkers || (hasHighContrastPatterns && hasSquarePatterns);
+            // Check for black/white ratio typical of QR codes (adjusted for GCash blue background)
+            boolean hasBlackWhitePatterns = patternAnalysis.blackWhiteRatio > 0.25;
+            
+            // STRICT but reasonable: Require corner markers AND at least 2 of the 3 pattern checks
+            // This ensures we accept actual QR codes (including GCash QR codes with blue backgrounds)
+            // while rejecting non-QR images
+            int patternChecksPassed = 0;
+            if (hasHighContrastPatterns) patternChecksPassed++;
+            if (hasSquarePatterns) patternChecksPassed++;
+            if (hasBlackWhitePatterns) patternChecksPassed++;
+            
+            // Require corner markers (essential for QR codes) AND at least 2 pattern checks
+            boolean hasQrCode = hasCornerMarkers && patternChecksPassed >= 2;
+            
+            // Log detailed detection results for debugging
+            Log.d("QR_VALIDATION", "QR Detection Details:");
+            Log.d("QR_VALIDATION", "  - Corner Markers: " + hasCornerMarkers);
+            Log.d("QR_VALIDATION", "  - High Contrast: " + hasHighContrastPatterns + " (ratio: " + patternAnalysis.highContrastRatio + ")");
+            Log.d("QR_VALIDATION", "  - Square Patterns: " + hasSquarePatterns + " (ratio: " + patternAnalysis.squarePatternRatio + ")");
+            Log.d("QR_VALIDATION", "  - Black/White Patterns: " + hasBlackWhitePatterns + " (ratio: " + patternAnalysis.blackWhiteRatio + ")");
+            Log.d("QR_VALIDATION", "  - Final Result: " + hasQrCode);
             
             // Try to extract QR code content (simplified)
             String qrCodeContent = null;
@@ -1404,11 +1479,12 @@ public class ImageVerification {
                 qrCodeContent = attemptQrCodeContentExtraction(pixels, width, height);
             }
             
-            return new QrCodeDetectionResult(hasQrCode, qrCodeContent, patternAnalysis);
+            return new QrCodeDetectionResult(hasQrCode, qrCodeContent, patternAnalysis, 
+                                           hasCornerMarkers, hasHighContrastPatterns, hasSquarePatterns, hasBlackWhitePatterns);
             
         } catch (Exception e) {
             Log.e(TAG, "QR code detection error: " + e.getMessage());
-            return new QrCodeDetectionResult(false, null, null);
+            return new QrCodeDetectionResult(false, null, null, false, false, false, false);
         }
     }
     
@@ -1676,11 +1752,26 @@ public class ImageVerification {
         boolean hasQrCode;
         String qrCodeContent;
         QrCodePatternAnalysis patternAnalysis;
+        boolean hasCornerMarkers;
+        boolean hasHighContrast;
+        boolean hasSquarePatterns;
+        boolean hasBlackWhitePatterns;
         
         QrCodeDetectionResult(boolean hasQrCode, String qrCodeContent, QrCodePatternAnalysis patternAnalysis) {
             this.hasQrCode = hasQrCode;
             this.qrCodeContent = qrCodeContent;
             this.patternAnalysis = patternAnalysis;
+        }
+        
+        QrCodeDetectionResult(boolean hasQrCode, String qrCodeContent, QrCodePatternAnalysis patternAnalysis,
+                             boolean hasCornerMarkers, boolean hasHighContrast, boolean hasSquarePatterns, boolean hasBlackWhitePatterns) {
+            this.hasQrCode = hasQrCode;
+            this.qrCodeContent = qrCodeContent;
+            this.patternAnalysis = patternAnalysis;
+            this.hasCornerMarkers = hasCornerMarkers;
+            this.hasHighContrast = hasHighContrast;
+            this.hasSquarePatterns = hasSquarePatterns;
+            this.hasBlackWhitePatterns = hasBlackWhitePatterns;
         }
     }
     

@@ -54,8 +54,8 @@ public class PrivateRoomsAdapter extends RecyclerView.Adapter<PrivateRoomsAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         PrivateRoomsFragment.RoomData room = roomList.get(position);
         
-        holder.tvTitle.setText(room.title);
-        holder.tvDescription.setText(room.description);
+        holder.tvRoomName.setText(room.title);
+        holder.tvRoomDescription.setText(room.description);
         holder.tvPrice.setText("₱" + room.price);
         holder.tvCapacity.setText(room.capacity + " person(s)");
         holder.tvTotalRooms.setText(room.totalRooms + " units");
@@ -103,14 +103,14 @@ public class PrivateRoomsAdapter extends RecyclerView.Adapter<PrivateRoomsAdapte
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivRoomImage;
-        TextView tvTitle, tvDescription, tvPrice, tvCapacity, tvTotalRooms;
+        TextView tvRoomName, tvRoomDescription, tvPrice, tvCapacity, tvTotalRooms;
         ImageButton btnEdit, btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivRoomImage = itemView.findViewById(R.id.ivRoomImage);
-            tvTitle = itemView.findViewById(R.id.tvTitle);
-            tvDescription = itemView.findViewById(R.id.tvDescription);
+            tvRoomName = itemView.findViewById(R.id.tvRoomName);
+            tvRoomDescription = itemView.findViewById(R.id.tvRoomDescription);
             tvPrice = itemView.findViewById(R.id.tvPrice);
             tvCapacity = itemView.findViewById(R.id.tvCapacity);
             tvTotalRooms = itemView.findViewById(R.id.tvTotalRooms);

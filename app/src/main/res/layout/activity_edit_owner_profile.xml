@@ -216,12 +216,13 @@
                     android:fontFamily="@font/poppins_medium"
                     android:layout_marginBottom="8dp" />
 
-                <Button
+                <EditText
                     android:id="@+id/btnBirthdate"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:background="@drawable/modern_edittext_focused"
-                    android:text="Select Birthdate"
+                    android:hint="Select Birthdate"
+                    android:text=""
                     android:textColor="#212529"
                     android:textColorHint="#6C757D"
                     android:fontFamily="@font/poppins_regular"
@@ -229,8 +230,12 @@
                     android:textAlignment="textStart"
                     android:gravity="start|center_vertical"
                     android:drawableStart="@drawable/ic_calendar"
+                    app:drawableTint="#A18167"
                     android:drawablePadding="8dp"
-                    android:padding="16dp" />
+                    android:padding="16dp"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:cursorVisible="false" />
 
             </LinearLayout>
 
@@ -288,45 +293,127 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Address *"
+                    android:text="Permanent Address"
                     android:textSize="14sp"
                     android:textColor="#495057"
                     android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Province Selection -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Province *"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerProvince"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Municipality Selection -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Municipality/City *"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerMunicipality"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Barangay Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Barangay *"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
                     android:layout_marginBottom="4dp" />
 
                 <EditText
-                    android:id="@+id/etAddress"
+                    android:id="@+id/etBarangay"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:hint="Enter barangay"
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Detailed Address -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Detailed Address (Street, House No., etc.) *"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+
+                <EditText
+                    android:id="@+id/etDetailedAddress"
                     android:layout_width="match_parent"
                     android:layout_height="70dp"
                     android:background="@drawable/modern_edittext_focused"
                     android:padding="16dp"
-                    android:hint="Enter your address"
+                    android:hint="Enter street, house number, building name, etc."
                     android:textColor="#212529"
                     android:textColorHint="#6C757D"
                     android:inputType="textMultiLine"
                     android:gravity="top|start"
                     android:fontFamily="@font/poppins_regular"
                     android:textSize="16sp"
-                    android:maxLines="3" />
+                    android:maxLines="3"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Hidden field for complete address -->
+                <EditText
+                    android:id="@+id/etAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
 
         <!-- Save Button -->
-        <Button
-            android:id="@+id/btnSaveChanges"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Save Changes"
-            android:textSize="16sp"
-            android:fontFamily="@font/poppins_semibold"
-            android:background="@drawable/modern_button_ripple"
-            android:textColor="#FFFFFF"
-            android:letterSpacing="0.5"
-            android:layout_marginTop="8dp"
-            android:stateListAnimator="@null" />
-
+            <Button
+                android:id="@+id/btnSaveChanges"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginBottom="15dp"
+                android:layout_marginTop="8dp"
+                android:text="Save Changes"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:letterSpacing="0.5"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_semibold"
+                app:backgroundTint="#A18167"
+                app:cornerRadius="12dp"
+                android:elevation="4dp"
+                android:stateListAnimator="@null" />
         </LinearLayout>
 
     </ScrollView>

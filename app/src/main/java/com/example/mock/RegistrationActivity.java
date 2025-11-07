@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -142,12 +143,34 @@ public class RegistrationActivity extends AppCompatActivity {
         // Create a list of choices
         String[] roles = {"Select --", "Boarder", "BH Owner"};
 
-        // Set adapter
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        // Set adapter with custom styling
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_item,
                 roles
-        );
+        ) {
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF); // White text color
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C); // Dark gray background
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRole.setAdapter(adapter);
 
         // Setup role spinner listener to show/hide GCash fields
@@ -177,11 +200,33 @@ public class RegistrationActivity extends AppCompatActivity {
         // Setup suffix spinner
         String[] suffixes = {"None", "Jr.", "Sr.", "I", "II", "III", "IV", "V"};
 
-        ArrayAdapter<String> suffixAdapter = new ArrayAdapter<>(
+        ArrayAdapter<String> suffixAdapter = new ArrayAdapter<String>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_item,
                 suffixes
-        );
+        ) {
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF); // White text color
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C); // Dark gray background
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        suffixAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSuffix.setAdapter(suffixAdapter);
 
         // Initialize address picker
@@ -1041,8 +1086,30 @@ public class RegistrationActivity extends AppCompatActivity {
                             provinceNames[i + 1] = province.getString("name");
                         }
                         
-                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            this, android.R.layout.simple_spinner_dropdown_item, provinceNames);
+                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                            this, android.R.layout.simple_spinner_item, provinceNames) {
+                            @Override
+                            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                View view = super.getDropDownView(position, convertView, parent);
+                                if (view instanceof TextView) {
+                                    TextView textView = (TextView) view;
+                                    textView.setTextColor(0xFFFFFFFF);
+                                    textView.setTextSize(16);
+                                    textView.setPadding(16, 16, 16, 16);
+                                    textView.setBackgroundColor(0xFF2C2C2C);
+                                } else {
+                                    TextView textView = view.findViewById(android.R.id.text1);
+                                    if (textView != null) {
+                                        textView.setTextColor(0xFFFFFFFF);
+                                        textView.setTextSize(16);
+                                        textView.setPadding(16, 16, 16, 16);
+                                    }
+                                    view.setBackgroundColor(0xFF2C2C2C);
+                                }
+                                return view;
+                            }
+                        };
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                         spinnerProvince.setAdapter(adapter);
                         
                         Log.d("AddressPicker", "Provinces loaded successfully");
@@ -1092,8 +1159,30 @@ public class RegistrationActivity extends AppCompatActivity {
             "Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"
         };
         
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-            this, android.R.layout.simple_spinner_dropdown_item, fallbackProvinces);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item, fallbackProvinces) {
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerProvince.setAdapter(adapter);
         
         Log.d("AddressPicker", "Fallback provinces loaded successfully");
@@ -1120,8 +1209,30 @@ public class RegistrationActivity extends AppCompatActivity {
                                 municipalityNames[i + 1] = municipality.getString("name");
                             }
                             
-                            ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                                this, android.R.layout.simple_spinner_dropdown_item, municipalityNames);
+                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                                this, android.R.layout.simple_spinner_item, municipalityNames) {
+                                @Override
+                                public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                    View view = super.getDropDownView(position, convertView, parent);
+                                    if (view instanceof TextView) {
+                                        TextView textView = (TextView) view;
+                                        textView.setTextColor(0xFFFFFFFF);
+                                        textView.setTextSize(16);
+                                        textView.setPadding(16, 16, 16, 16);
+                                        textView.setBackgroundColor(0xFF2C2C2C);
+                                    } else {
+                                        TextView textView = view.findViewById(android.R.id.text1);
+                                        if (textView != null) {
+                                            textView.setTextColor(0xFFFFFFFF);
+                                            textView.setTextSize(16);
+                                            textView.setPadding(16, 16, 16, 16);
+                                        }
+                                        view.setBackgroundColor(0xFF2C2C2C);
+                                    }
+                                    return view;
+                                }
+                            };
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                             spinnerMunicipality.setAdapter(adapter);
                         } else {
                             // No municipalities found
@@ -1163,7 +1274,29 @@ public class RegistrationActivity extends AppCompatActivity {
     
     private void clearMunicipalityAndBarangay() {
         String[] emptyArray = {"Select Municipality"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, emptyArray);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerMunicipality.setAdapter(adapter);
         clearBarangay();
     }
