@@ -429,12 +429,14 @@ public class FinalBookingActivity extends AppCompatActivity {
         btnBook.setEnabled(false);
         
         // Convert image to base64
-        String paymentProofBase64 = "";
+        final String paymentProofBase64;
         try {
             if (paymentMethod.equals("Cash") && cashProofUri != null) {
                 paymentProofBase64 = imageToBase64(cashProofUri);
             } else if (paymentMethod.equals("GCash") && gcashProofUri != null) {
                 paymentProofBase64 = imageToBase64(gcashProofUri);
+            } else {
+                paymentProofBase64 = "";
             }
         } catch (IOException e) {
             Log.e(TAG, "Error converting image to base64: " + e.getMessage());
