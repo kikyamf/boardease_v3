@@ -157,6 +157,16 @@
                 android:textColor="#333333"
                 android:fontFamily="@font/poppins_medium" />
 
+            <!-- Progress Bar for Recommended -->
+            <ProgressBar
+                android:id="@+id/progressBarRecommended"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="visible" />
+
             <!-- Horizontal RecyclerView for Recommended BHs -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvRecommendedBH"
@@ -165,7 +175,8 @@
                 android:layout_marginTop="12dp"
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
-                android:paddingEnd="24dp" />
+                android:paddingEnd="24dp"
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -209,6 +220,16 @@
 
             </LinearLayout>
 
+            <!-- Progress Bar for Nearby -->
+            <ProgressBar
+                android:id="@+id/progressBarNearby"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="visible" />
+
             <!-- Vertical RecyclerView for Nearby BHs -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvNearbyBH"
@@ -217,7 +238,8 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical"
                 android:clipToPadding="false"
-                android:paddingBottom="24dp" />
+                android:paddingBottom="24dp"
+                android:visibility="gone" />
 
         </LinearLayout>
 

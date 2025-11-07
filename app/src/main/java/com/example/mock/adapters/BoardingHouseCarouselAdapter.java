@@ -47,16 +47,30 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
         // Set boarding house name
         holder.tvBoardingHouseName.setText(boardingHouse.getBhName());
         
-        // Set location (shortened for carousel)
-        holder.tvLocation.setText("Quezon City");
+        // Set location using actual address (extract municipality/province for shorter display)
+        String location = extractLocationForDisplay(boardingHouse.getBhAddress());
+        holder.tvLocation.setText(location);
         
         // Set price using real data from database
         holder.tvPrice.setText(boardingHouse.getFormattedPrice());
         
-        // Load image with Glide
-        if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {
+        // Load image with Glide - construct full URL if needed
+        String imagePath = boardingHouse.getImagePath();
+        if (imagePath != null && !imagePath.isEmpty() && !imagePath.equals("null")) {
+            // If image path doesn't start with http, it might be a relative path
+            String fullImageUrl = imagePath;
+            if (!imagePath.startsWith("http://") && !imagePath.startsWith("https://")) {
+                // Construct full URL (assuming base URL structure)
+                // Remove leading slash if present
+                String cleanPath = imagePath.startsWith("/") ? imagePath.substring(1) : imagePath;
+                // If path already contains 'uploads/', use as is, otherwise prepend it
+                if (!cleanPath.startsWith("uploads/")) {
+                    cleanPath = "uploads/" + cleanPath;
+                }
+                fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + cleanPath;
+            }
             Glide.with(context)
-                    .load(boardingHouse.getImagePath())
+                    .load(fullImageUrl)
                     .placeholder(R.drawable.sample_listing)
                     .error(R.drawable.sample_listing)
                     .into(holder.imgBoardingHouse);
@@ -64,10 +78,10 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
             holder.imgBoardingHouse.setImageResource(R.drawable.sample_listing);
         }
         
-        // Set click listener for the entire card
+        // Set click listener for the entire card - use "bh_id" key to match BoardingHouseDetailsActivity
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, BoardingHouseDetailsActivity.class);
-            intent.putExtra("boarding_house_id", boardingHouse.getBhId());
+            intent.putExtra("bh_id", boardingHouse.getBhId());
             intent.putExtra("boarding_house_name", boardingHouse.getBhName());
             intent.putExtra("boarding_house_image", boardingHouse.getImagePath());
             context.startActivity(intent);
@@ -81,6 +95,36 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
                 favoriteClickListener.onFavoriteClick(boardingHouse, !isCurrentlyFavorite);
             }
         });
+    }
+    
+    /**
+     * Extract a shortened location string from full address for carousel display
+     * Format: "Municipality, Province" or just "Province" if municipality not available
+     */
+    private String extractLocationForDisplay(String fullAddress) {
+        if (fullAddress == null || fullAddress.trim().isEmpty()) {
+            return "Location not specified";
+        }
+        
+        // Address format is typically: "Detailed Address, Barangay, Municipality, Province"
+        // Split by comma and trim
+        String[] parts = fullAddress.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].trim();
+        }
+        
+        // If we have at least 2 parts, show "Municipality, Province"
+        // If we have only 1 part, show that part
+        if (parts.length >= 2) {
+            // Municipality is usually second to last, Province is last
+            String municipality = parts[parts.length - 2];
+            String province = parts[parts.length - 1];
+            return municipality + ", " + province;
+        } else if (parts.length == 1) {
+            return parts[0];
+        } else {
+            return fullAddress; // Fallback to full address
+        }
     }
     
     @Override

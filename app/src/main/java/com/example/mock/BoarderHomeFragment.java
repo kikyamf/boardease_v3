@@ -4,11 +4,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,8 +25,16 @@ import com.example.mock.adapters.BoardingHouseCarouselAdapter;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +45,17 @@ import java.util.List;
  */
 public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener, BoardingHouseCarouselAdapter.OnFavoriteClickListener {
 
+    private static final String TAG = "BoarderHomeFragment";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String BOARDER_INFO_API = BASE_URL + "get_boarder_info.php";
+    private static final String BOARDING_HOUSES_API = BASE_URL + "get_boarding_houses1.php";
+
     // Views
     private EditText etSearch;
     private RecyclerView rvRecommendedBH;
     private RecyclerView rvNearbyBH;
+    private ProgressBar progressBarRecommended;
+    private ProgressBar progressBarNearby;
     private MaterialButton btnSeeAll;
     private MaterialCardView btnMyBookings;
     private MaterialCardView btnFavorites;
@@ -55,8 +72,17 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private BoardingHouseAdapter nearbyAdapter;
 
     // Data
+    private List<Listing> allBoardingHouses;
     private List<Listing> recommendedBoardingHouses;
     private List<Listing> nearbyBoardingHouses;
+    
+    // Boarder info
+    private String boarderFirstName;
+    private String boarderLastName;
+    private String boarderSuffix;
+    private String boarderAddress;
+    private String boarderProvince;
+    private String boarderMunicipality;
 
     public BoarderHomeFragment() {
         // Required empty public constructor
@@ -85,7 +111,8 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         initializeViews(view);
         setupRecyclerViews();
         setupClickListeners();
-        loadMockData();
+        // Load boarder info first, then boarding houses
+        loadBoarderInfo();
         android.util.Log.d("BoarderHomeFragment", "=== About to call loadUnreadCount ===");
         loadUnreadCount();
         android.util.Log.d("BoarderHomeFragment", "=== loadUnreadCount called ===");
@@ -103,6 +130,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         android.util.Log.d("BoarderHomeFragment", "=== loadUnreadCount called from onResume ===");
         loadNotificationCount();
         android.util.Log.d("BoarderHomeFragment", "=== loadNotificationCount called from onResume ===");
+        // Refresh boarding houses data
+        if (allBoardingHouses != null && allBoardingHouses.isEmpty()) {
+            loadBoarderInfo();
+        }
     }
 
     private void initializeViews(View view) {
@@ -110,6 +141,8 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             etSearch = view.findViewById(R.id.etSearch);
             rvRecommendedBH = view.findViewById(R.id.rvRecommendedBH);
             rvNearbyBH = view.findViewById(R.id.rvNearbyBH);
+            progressBarRecommended = view.findViewById(R.id.progressBarRecommended);
+            progressBarNearby = view.findViewById(R.id.progressBarNearby);
             btnSeeAll = view.findViewById(R.id.btnSeeAll);
             btnMyBookings = (MaterialCardView) view.findViewById(R.id.cardMyBookings);
             btnFavorites = (MaterialCardView) view.findViewById(R.id.cardFavorites);
@@ -118,6 +151,20 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             tvBoarderName = view.findViewById(R.id.tvBoarderName);
             badgeMsg = view.findViewById(R.id.badgeMsg);
             badgeNotif = view.findViewById(R.id.badgeNotif);
+            
+            // Initially show progress bars and hide RecyclerViews
+            if (progressBarRecommended != null) {
+                progressBarRecommended.setVisibility(View.VISIBLE);
+            }
+            if (progressBarNearby != null) {
+                progressBarNearby.setVisibility(View.VISIBLE);
+            }
+            if (rvRecommendedBH != null) {
+                rvRecommendedBH.setVisibility(View.GONE);
+            }
+            if (rvNearbyBH != null) {
+                rvNearbyBH.setVisibility(View.GONE);
+            }
             
             // Create a TextView for message badge count if it doesn't exist
             android.util.Log.d("BoarderHomeFragment", "=== BADGE INITIALIZATION ===");
@@ -227,6 +274,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private void setupRecyclerViews() {
         try {
             // Initialize data lists
+            allBoardingHouses = new ArrayList<>();
             recommendedBoardingHouses = new ArrayList<>();
             nearbyBoardingHouses = new ArrayList<>();
 
@@ -361,48 +409,394 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         }
     }
 
-    private void loadMockData() {
-        try {
-            // Create mock data for recommended boarding houses
-            createRecommendedMockData();
+    private void loadBoarderInfo() {
+        String userId = Login.getCurrentUserId(getContext());
+        if (userId == null || userId.isEmpty()) {
+            Log.e(TAG, "User ID not found");
+            // Load boarding houses anyway (without filtering)
+            loadBoardingHouses();
+            return;
+        }
+
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        String url = BOARDER_INFO_API + "?user_id=" + userId;
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            Log.d(TAG, "Boarder info response: " + response);
+                            
+                            if (response == null || response.trim().isEmpty()) {
+                                Log.e(TAG, "Received null or empty response");
+                                loadBoardingHouses();
+                                return;
+                            }
+                            
+                            if (response.trim().startsWith("<!DOCTYPE html>") || response.trim().startsWith("<html")) {
+                                Log.e(TAG, "Received HTML page instead of JSON");
+                                loadBoardingHouses();
+                                return;
+                            }
+                            
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                JSONObject data = jsonResponse.getJSONObject("data");
+                                boarderFirstName = data.optString("first_name", "");
+                                boarderLastName = data.optString("last_name", "");
+                                boarderSuffix = data.optString("suffix", "");
+                                boarderAddress = data.optString("address", "");
+                                
+                                // Normalize suffix - handle "none", "null", or empty
+                                if (boarderSuffix == null || boarderSuffix.isEmpty() || 
+                                    boarderSuffix.equalsIgnoreCase("null") || 
+                                    boarderSuffix.equalsIgnoreCase("none")) {
+                                    boarderSuffix = "";
+                                }
+                                
+                                // Parse address to extract province and municipality
+                                parseBoarderAddress(boarderAddress);
+                                
+                                // Update boarder name in UI
+                                updateBoarderName();
+                                
+                                Log.d(TAG, "Boarder loaded: " + boarderFirstName + " " + boarderLastName + 
+                                          (boarderSuffix.isEmpty() ? "" : ", " + boarderSuffix));
+                                Log.d(TAG, "Boarder address: " + boarderAddress);
+                                Log.d(TAG, "Boarder province: " + boarderProvince);
+                                Log.d(TAG, "Boarder municipality: " + boarderMunicipality);
+                            } else {
+                                Log.e(TAG, "Failed to load boarder info");
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Unexpected error: " + e.getMessage());
+                        } finally {
+                            // Load boarding houses after boarder info is loaded (or failed)
+                            loadBoardingHouses();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Volley error loading boarder info: " + error.getMessage());
+                        // Load boarding houses anyway
+                        loadBoardingHouses();
+                    }
+                });
+
+        requestQueue.add(stringRequest);
+    }
+
+    private void parseBoarderAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            boarderProvince = "";
+            boarderMunicipality = "";
+            return;
+        }
+
+        // Address format is typically: "Detailed Address, Barangay, Municipality, Province"
+        // Split by comma and trim
+        String[] parts = address.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].trim();
+        }
+
+        // Province is usually the last part
+        if (parts.length > 0) {
+            boarderProvince = parts[parts.length - 1];
+        } else {
+            boarderProvince = "";
+        }
+
+        // Municipality is usually the second to last part
+        if (parts.length > 1) {
+            boarderMunicipality = parts[parts.length - 2];
+        } else {
+            boarderMunicipality = "";
+        }
+
+        Log.d(TAG, "Parsed address - Province: " + boarderProvince + ", Municipality: " + boarderMunicipality);
+    }
+
+    private void updateBoarderName() {
+        if (tvBoarderName != null) {
+            StringBuilder displayName = new StringBuilder();
             
-            // Create mock data for nearby boarding houses
-            createNearbyMockData();
+            // Add first name
+            if (boarderFirstName != null && !boarderFirstName.isEmpty()) {
+                displayName.append(boarderFirstName);
+            }
             
-            // Update adapters
-            if (recommendedAdapter != null) {
-                recommendedAdapter.notifyDataSetChanged();
+            // Add last name
+            if (boarderLastName != null && !boarderLastName.isEmpty()) {
+                if (displayName.length() > 0) {
+                    displayName.append(" ");
+                }
+                displayName.append(boarderLastName);
             }
-            if (nearbyAdapter != null) {
-                nearbyAdapter.notifyDataSetChanged();
+            
+            // Add suffix if available and not "none"
+            if (boarderSuffix != null && !boarderSuffix.isEmpty() && 
+                !boarderSuffix.equalsIgnoreCase("none") && 
+                !boarderSuffix.equalsIgnoreCase("null")) {
+                if (displayName.length() > 0) {
+                    displayName.append(", ");
+                }
+                displayName.append(boarderSuffix);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            
+            // Set the display name, or default to "Boarder" if empty
+            if (displayName.length() > 0) {
+                tvBoarderName.setText(displayName.toString());
+            } else {
+                tvBoarderName.setText("Boarder");
+            }
         }
     }
 
-    private void createRecommendedMockData() {
-        recommendedBoardingHouses.clear();
+    private void loadBoardingHouses() {
+        // Show progress bars when starting to load boarding houses
+        showProgressBars();
         
-        // Recommended boarding houses (featured/popular ones)
-        recommendedBoardingHouses.add(new Listing(1, "Sunshine Boarding House", "sample_listing"));
-        recommendedBoardingHouses.add(new Listing(2, "Green Valley Dormitory", "sample_listing"));
-        recommendedBoardingHouses.add(new Listing(3, "Metro Student Housing", "sample_listing"));
-        recommendedBoardingHouses.add(new Listing(4, "Quezon City Boarding", "sample_listing"));
-        recommendedBoardingHouses.add(new Listing(5, "Manila Central Dorm", "sample_listing"));
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, BOARDING_HOUSES_API,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            Log.d(TAG, "Boarding houses response received");
+                            
+                            if (response == null || response.trim().isEmpty()) {
+                                Log.e(TAG, "Received null or empty response");
+                                return;
+                            }
+                            
+                            if (response.trim().startsWith("<!DOCTYPE html>") || response.trim().startsWith("<html")) {
+                                Log.e(TAG, "Received HTML page instead of JSON");
+                                return;
+                            }
+                            
+                            JSONArray dataArray;
+                            // Try to parse as wrapped JSON object first
+                            try {
+                                JSONObject jsonResponse = new JSONObject(response);
+                                boolean success = jsonResponse.getBoolean("success");
+                                
+                                if (success) {
+                                    dataArray = jsonResponse.getJSONArray("data");
+                                } else {
+                                    Log.e(TAG, "API returned success=false");
+                                    return;
+                                }
+                            } catch (JSONException e) {
+                                // If wrapped format fails, try parsing as direct array
+                                Log.d(TAG, "Wrapped format failed, trying direct array format");
+                                dataArray = new JSONArray(response);
+                            }
+                            
+                            parseBoardingHousesData(dataArray);
+                            filterBoardingHouses();
+                            updateAdapters();
+                            
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                            hideProgressBars();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Unexpected error: " + e.getMessage());
+                            hideProgressBars();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Volley error loading boarding houses: " + error.getMessage());
+                        hideProgressBars();
+                    }
+                }) {
+            @Override
+            public java.util.Map<String, String> getHeaders() {
+                java.util.Map<String, String> headers = new java.util.HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+
+        requestQueue.add(stringRequest);
     }
 
-    private void createNearbyMockData() {
+    private void parseBoardingHousesData(JSONArray dataArray) throws JSONException {
+        allBoardingHouses.clear();
+        
+        for (int i = 0; i < dataArray.length(); i++) {
+            JSONObject boardingHouseJson = dataArray.getJSONObject(i);
+            
+            int bhId = boardingHouseJson.getInt("bh_id");
+            String bhName = boardingHouseJson.getString("bh_name");
+            String bhAddress = boardingHouseJson.optString("bh_address", "");
+            String bhDescription = boardingHouseJson.optString("bh_description", "");
+            String bhRules = boardingHouseJson.optString("bh_rules", "");
+            String bhBathrooms = boardingHouseJson.optString("number_of_bathroom", "");
+            String area = boardingHouseJson.optString("area", "");
+            String buildYear = boardingHouseJson.optString("build_year", "");
+            String imagePath = boardingHouseJson.optString("image_path", "");
+            
+            // Parse price data
+            Integer minPrice = null;
+            Integer maxPrice = null;
+            if (!boardingHouseJson.isNull("min_price")) {
+                minPrice = boardingHouseJson.optInt("min_price");
+            }
+            if (!boardingHouseJson.isNull("max_price")) {
+                maxPrice = boardingHouseJson.optInt("max_price");
+            }
+            
+            // Create image paths list
+            ArrayList<String> imagePaths = new ArrayList<>();
+            if (imagePath != null && !imagePath.isEmpty()) {
+                imagePaths.add(imagePath);
+            }
+            
+            // Create Listing object with full details
+            Listing boardingHouse = new Listing(
+                bhId, bhName, bhAddress, bhDescription, bhRules,
+                bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice
+            );
+            
+            allBoardingHouses.add(boardingHouse);
+        }
+        
+        Log.d(TAG, "Loaded " + allBoardingHouses.size() + " boarding houses from API");
+    }
+
+    private void filterBoardingHouses() {
+        recommendedBoardingHouses.clear();
         nearbyBoardingHouses.clear();
         
-        // Nearby boarding houses
-        nearbyBoardingHouses.add(new Listing(6, "Downtown Boarding House", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(7, "University Dormitory", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(8, "City Center Housing", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(9, "Student Plaza Dorm", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(10, "Metro Boarding Inn", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(11, "Campus View Dormitory", "sample_listing"));
-        nearbyBoardingHouses.add(new Listing(12, "Central Station Boarding", "sample_listing"));
+        if (allBoardingHouses == null || allBoardingHouses.isEmpty()) {
+            Log.d(TAG, "No boarding houses to filter");
+            return;
+        }
+        
+        // If no boarder address info, show all boarding houses in both sections
+        if (boarderProvince == null || boarderProvince.isEmpty()) {
+            Log.d(TAG, "No boarder address info, showing all boarding houses");
+            recommendedBoardingHouses.addAll(allBoardingHouses);
+            nearbyBoardingHouses.addAll(allBoardingHouses);
+            Log.d(TAG, "Showing all - Recommended: " + recommendedBoardingHouses.size() + 
+                       ", Nearby: " + nearbyBoardingHouses.size());
+            return;
+        }
+        
+        // Filter recommended: same province as boarder
+        // Filter nearby: same province AND municipality as boarder (closer/nearby)
+        for (Listing bh : allBoardingHouses) {
+            String bhAddress = bh.getBhAddress();
+            if (bhAddress == null || bhAddress.trim().isEmpty()) {
+                continue;
+            }
+            
+            // Parse boarding house address
+            String[] bhParts = bhAddress.split(",");
+            for (int i = 0; i < bhParts.length; i++) {
+                bhParts[i] = bhParts[i].trim();
+            }
+            
+            String bhProvince = "";
+            String bhMunicipality = "";
+            
+            if (bhParts.length > 0) {
+                bhProvince = bhParts[bhParts.length - 1];
+            }
+            if (bhParts.length > 1) {
+                bhMunicipality = bhParts[bhParts.length - 2];
+            }
+            
+            // Check if province matches (case-insensitive)
+            boolean provinceMatch = boarderProvince != null && 
+                                   !boarderProvince.isEmpty() && 
+                                   bhProvince.equalsIgnoreCase(boarderProvince);
+            
+            // Check if municipality matches (case-insensitive)
+            boolean municipalityMatch = boarderMunicipality != null && 
+                                       !boarderMunicipality.isEmpty() && 
+                                       bhMunicipality.equalsIgnoreCase(boarderMunicipality);
+            
+            // Recommended: same province as boarder
+            if (provinceMatch) {
+                recommendedBoardingHouses.add(bh);
+            }
+            
+            // Nearby: same province AND municipality (closer to boarder)
+            if (provinceMatch && municipalityMatch) {
+                nearbyBoardingHouses.add(bh);
+            }
+        }
+        
+        // If no matches found, show all boarding houses
+        if (recommendedBoardingHouses.isEmpty()) {
+            recommendedBoardingHouses.addAll(allBoardingHouses);
+            Log.d(TAG, "No recommended matches, showing all");
+        }
+        if (nearbyBoardingHouses.isEmpty()) {
+            nearbyBoardingHouses.addAll(allBoardingHouses);
+            Log.d(TAG, "No nearby matches, showing all");
+        }
+        
+        Log.d(TAG, "Filtered - Recommended: " + recommendedBoardingHouses.size() + 
+                   ", Nearby: " + nearbyBoardingHouses.size());
+    }
+
+    private void updateAdapters() {
+        if (recommendedAdapter != null) {
+            recommendedAdapter.notifyDataSetChanged();
+        }
+        if (nearbyAdapter != null) {
+            nearbyAdapter.notifyDataSetChanged();
+        }
+        
+        // Hide progress bars and show RecyclerViews when data is loaded
+        hideProgressBars();
+        
+        // Show RecyclerViews even if empty (they will show empty state)
+        if (rvRecommendedBH != null) {
+            rvRecommendedBH.setVisibility(View.VISIBLE);
+        }
+        if (rvNearbyBH != null) {
+            rvNearbyBH.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    private void showProgressBars() {
+        if (progressBarRecommended != null) {
+            progressBarRecommended.setVisibility(View.VISIBLE);
+        }
+        if (progressBarNearby != null) {
+            progressBarNearby.setVisibility(View.VISIBLE);
+        }
+        if (rvRecommendedBH != null) {
+            rvRecommendedBH.setVisibility(View.GONE);
+        }
+        if (rvNearbyBH != null) {
+            rvNearbyBH.setVisibility(View.GONE);
+        }
+    }
+    
+    private void hideProgressBars() {
+        if (progressBarRecommended != null) {
+            progressBarRecommended.setVisibility(View.GONE);
+        }
+        if (progressBarNearby != null) {
+            progressBarNearby.setVisibility(View.GONE);
+        }
     }
 
     @Override
