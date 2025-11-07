@@ -46,7 +46,6 @@ public class BookingActivity extends AppCompatActivity {
     
     // Views
     private ImageButton btnBack;
-    private TextView tvRoomName, tvRoomDescription, tvRoomPrice, tvRoomCapacity;
     private TextInputEditText etStartDate, etEndDate, etFirstName, etLastName, etEmail, etPhone;
     private AutoCompleteTextView actvCountry;
     private MaterialButton btnProceed;
@@ -85,9 +84,6 @@ public class BookingActivity extends AppCompatActivity {
         
         // Setup click listeners
         setupClickListeners();
-        
-        // Load room details
-        displayRoomDetails();
         
         // Autofill user information
         autofillUserInfo();
@@ -161,10 +157,6 @@ public class BookingActivity extends AppCompatActivity {
     private void initializeViews() {
         try {
             btnBack = findViewById(R.id.btnBack);
-            tvRoomName = findViewById(R.id.tvRoomName);
-            tvRoomDescription = findViewById(R.id.tvRoomDescription);
-            tvRoomPrice = findViewById(R.id.tvRoomPrice);
-            tvRoomCapacity = findViewById(R.id.tvRoomCapacity);
             etStartDate = findViewById(R.id.etStartDate);
             etEndDate = findViewById(R.id.etEndDate);
             etFirstName = findViewById(R.id.etFirstName);
@@ -176,8 +168,7 @@ public class BookingActivity extends AppCompatActivity {
             progressBar = findViewById(R.id.progressBar);
             
             // Check if any view is null
-            if (btnBack == null || tvRoomName == null || tvRoomDescription == null || 
-                tvRoomPrice == null || tvRoomCapacity == null || etStartDate == null || 
+            if (btnBack == null || etStartDate == null || 
                 etEndDate == null || etFirstName == null || etLastName == null || 
                 etEmail == null || etPhone == null || actvCountry == null || 
                 btnProceed == null || progressBar == null) {
@@ -208,23 +199,6 @@ public class BookingActivity extends AppCompatActivity {
                 createBooking();
             }
         });
-    }
-    
-    private void displayRoomDetails() {
-        try {
-            if (roomData != null) {
-                tvRoomName.setText(roomData.optString("room_name", "Room Name"));
-                tvRoomDescription.setText(roomData.optString("room_description", "No description available"));
-                
-                double price = roomData.optDouble("price", 0);
-                tvRoomPrice.setText("₱" + String.format("%,.0f", price) + "/month");
-                
-                int capacity = roomData.optInt("capacity", 0);
-                tvRoomCapacity.setText("Capacity: " + capacity + " person(s)");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error displaying room details: " + e.getMessage());
-        }
     }
     
     private void autofillUserInfo() {
