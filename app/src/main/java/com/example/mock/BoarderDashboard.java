@@ -16,6 +16,13 @@ public class BoarderDashboard extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private Fragment currentFragment;
+    
+    // Cache fragment instances to avoid recreating them
+    private BoarderHomeFragment homeFragment;
+    private ExploreFragment exploreFragment;
+    private BoarderFavoriteFragment favoriteFragment;
+    private BoarderBookingFragment bookingFragment;
+    private BoarderProfileFragment profileFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +35,114 @@ public class BoarderDashboard extends AppCompatActivity {
             return insets;
         });
 
+        // Get user ID from SharedPreferences
+        android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+        String userIdString = prefs.getString("user_id", "0");
+        int userId = 0;
+        try {
+            userId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            userId = 0;
+        }
+        
+        // Try to restore fragments from FragmentManager first (they persist across configuration changes)
+        homeFragment = (BoarderHomeFragment) getSupportFragmentManager().findFragmentByTag("home");
+        exploreFragment = (ExploreFragment) getSupportFragmentManager().findFragmentByTag("explore");
+        favoriteFragment = (BoarderFavoriteFragment) getSupportFragmentManager().findFragmentByTag("favorite");
+        bookingFragment = (BoarderBookingFragment) getSupportFragmentManager().findFragmentByTag("booking");
+        profileFragment = (BoarderProfileFragment) getSupportFragmentManager().findFragmentByTag("profile");
+        
+        // Create new fragment instances only if they don't exist
+        if (homeFragment == null) {
+            homeFragment = BoarderHomeFragment.newInstance();
+        }
+        if (exploreFragment == null) {
+            exploreFragment = ExploreFragment.newInstance(userId);
+        }
+        if (favoriteFragment == null) {
+            favoriteFragment = BoarderFavoriteFragment.newInstance();
+        }
+        if (bookingFragment == null) {
+            bookingFragment = BoarderBookingFragment.newInstance();
+        }
+        if (profileFragment == null) {
+            profileFragment = BoarderProfileFragment.newInstance();
+        }
+
         // Initialize bottom navigation
         initializeBottomNavigation();
         
-        // Load default fragment (Home)
-        loadFragment(new BoarderHomeFragment());
+        // Restore current fragment or load default (Home)
+        if (savedInstanceState != null) {
+            // Try to restore the current fragment
+            String currentTag = savedInstanceState.getString("currentFragmentTag", "home");
+            Fragment restoredFragment = getSupportFragmentManager().findFragmentByTag(currentTag);
+            if (restoredFragment != null) {
+                currentFragment = restoredFragment;
+                // Make sure all fragments are added but hidden, then show current
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                if (homeFragment != null && !homeFragment.isAdded()) {
+                    transaction.add(R.id.fragment_container, homeFragment, "home");
+                }
+                if (exploreFragment != null && !exploreFragment.isAdded()) {
+                    transaction.add(R.id.fragment_container, exploreFragment, "explore");
+                }
+                if (favoriteFragment != null && !favoriteFragment.isAdded()) {
+                    transaction.add(R.id.fragment_container, favoriteFragment, "favorite");
+                }
+                if (bookingFragment != null && !bookingFragment.isAdded()) {
+                    transaction.add(R.id.fragment_container, bookingFragment, "booking");
+                }
+                if (profileFragment != null && !profileFragment.isAdded()) {
+                    transaction.add(R.id.fragment_container, profileFragment, "profile");
+                }
+                
+                // Hide all fragments first
+                if (homeFragment != null && homeFragment.isAdded()) transaction.hide(homeFragment);
+                if (exploreFragment != null && exploreFragment.isAdded()) transaction.hide(exploreFragment);
+                if (favoriteFragment != null && favoriteFragment.isAdded()) transaction.hide(favoriteFragment);
+                if (bookingFragment != null && bookingFragment.isAdded()) transaction.hide(bookingFragment);
+                if (profileFragment != null && profileFragment.isAdded()) transaction.hide(profileFragment);
+                
+                // Show current fragment
+                if (currentFragment != null && currentFragment.isAdded()) {
+                    transaction.show(currentFragment);
+                }
+                
+                transaction.commit();
+                
+                // Update bottom navigation to match current fragment
+                int selectedItemId = R.id.nav_home;
+                if (currentFragment == homeFragment) selectedItemId = R.id.nav_home;
+                else if (currentFragment == exploreFragment) selectedItemId = R.id.nav_post;
+                else if (currentFragment == favoriteFragment) selectedItemId = R.id.nav_manage;
+                else if (currentFragment == bookingFragment) selectedItemId = R.id.nav_activity;
+                else if (currentFragment == profileFragment) selectedItemId = R.id.nav_profile;
+                
+                if (bottomNavigationView != null) {
+                    bottomNavigationView.setSelectedItemId(selectedItemId);
+                }
+            } else {
+                // Fallback: load default fragment
+                if (homeFragment != null) {
+                    loadFragment(homeFragment, "home");
+                }
+            }
+        } else {
+            // First time: load default fragment (Home)
+            if (homeFragment != null) {
+                loadFragment(homeFragment, "home");
+            }
+        }
+    }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save current fragment tag
+        if (currentFragment != null && currentFragment.getTag() != null) {
+            outState.putString("currentFragmentTag", currentFragment.getTag());
+        }
     }
 
     private void initializeBottomNavigation() {
@@ -43,23 +153,28 @@ public class BoarderDashboard extends AppCompatActivity {
                 bottomNavigationView.setOnItemSelectedListener(item -> {
                     try {
                         Fragment selectedFragment = null;
+                        String tag = null;
                         
                         int itemId = item.getItemId();
                         if (itemId == R.id.nav_home) {
-                            selectedFragment = new BoarderHomeFragment();
+                            selectedFragment = homeFragment;
+                            tag = "home";
                         } else if (itemId == R.id.nav_post) {
-                            // TODO: Replace with BoarderExploreFragment when created
-                            selectedFragment = new ExploreFragment(); // Using existing ExploreFragment as placeholder
+                            selectedFragment = exploreFragment;
+                            tag = "explore";
                         } else if (itemId == R.id.nav_manage) {
-                            selectedFragment = new BoarderFavoriteFragment();
+                            selectedFragment = favoriteFragment;
+                            tag = "favorite";
                         } else if (itemId == R.id.nav_activity) {
-                            selectedFragment = new BoarderBookingFragment();
+                            selectedFragment = bookingFragment;
+                            tag = "booking";
                         } else if (itemId == R.id.nav_profile) {
-                            selectedFragment = new BoarderProfileFragment();
+                            selectedFragment = profileFragment;
+                            tag = "profile";
                         }
                         
                         if (selectedFragment != null) {
-                            loadFragment(selectedFragment);
+                            loadFragment(selectedFragment, tag);
                             return true;
                         }
                         
@@ -75,12 +190,29 @@ public class BoarderDashboard extends AppCompatActivity {
         }
     }
 
-    private void loadFragment(Fragment fragment) {
-        if (fragment != null && !fragment.equals(currentFragment)) {
+    private void loadFragment(Fragment fragment, String tag) {
+        if (fragment != null && fragment != currentFragment) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.fragment_container, fragment);
+            
+            // Hide current fragment if it exists
+            if (currentFragment != null) {
+                transaction.hide(currentFragment);
+            }
+            
+            // Show selected fragment (or add if first time)
+            if (fragment.isAdded()) {
+                transaction.show(fragment);
+            } else {
+                transaction.add(R.id.fragment_container, fragment, tag);
+            }
+            
             transaction.commit();
             currentFragment = fragment;
+        } else if (fragment == currentFragment && fragment != null && fragment.isAdded()) {
+            // Fragment is already visible, just make sure it's shown
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.show(fragment);
+            transaction.commit();
         }
     }
 

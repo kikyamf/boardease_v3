@@ -53,6 +53,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     private ProgressBar progressBar;
     private TextView tvFavoritesCount;
     private EditText etSearchFavorites;
+    private ImageView ivClearSearch;
     private MaterialButton btnExploreNow;
 
     // Adapter and Data
@@ -64,6 +65,12 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     private SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "boarder_favorites";
     private static final String KEY_FAVORITES = "favorite_ids";
+    
+    // Flag to track if data has been loaded (to prevent reloading on navigation)
+    private boolean dataLoaded = false;
+    
+    // Track last known favorite count to detect changes
+    private int lastFavoriteCount = 0;
     
     // API URL
     private static final String TAG = "BoarderFavoriteFragment";
@@ -97,7 +104,14 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         initializeViews(view);
         setupRecyclerView();
         setupClickListeners();
-        loadFavorites();
+        
+        // Only load data if it hasn't been loaded yet (first time only)
+        if (!dataLoaded) {
+            loadFavorites();
+        } else {
+            // Data already loaded, but check if favorites changed
+            checkAndRefreshIfNeeded();
+        }
     }
 
     private void initializeViews(View view) {
@@ -107,6 +121,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             progressBar = view.findViewById(R.id.progressBar);
             tvFavoritesCount = view.findViewById(R.id.tvFavoritesCount);
             etSearchFavorites = view.findViewById(R.id.etSearchFavorites);
+            ivClearSearch = view.findViewById(R.id.ivClearSearch);
             btnExploreNow = view.findViewById(R.id.btnExploreNow);
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,10 +152,25 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     filterFavorites(s.toString());
+                    // Show/hide clear icon based on text
+                    if (ivClearSearch != null) {
+                        ivClearSearch.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+                    }
                 }
 
                 @Override
                 public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        // Setup clear search icon
+        if (ivClearSearch != null) {
+            ivClearSearch.setOnClickListener(v -> {
+                if (etSearchFavorites != null) {
+                    etSearchFavorites.setText("");
+                    etSearchFavorites.clearFocus();
+                    ivClearSearch.setVisibility(View.GONE);
+                }
             });
         }
 
@@ -184,6 +214,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                 }
                 allFavorites.clear();
                 filteredFavorites.clear();
+                // Update tracking flags
+                dataLoaded = true;
+                lastFavoriteCount = 0;
                 updateUI();
                 return;
             }
@@ -372,6 +405,10 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             // Initially show all favorites
             filteredFavorites.clear();
             filteredFavorites.addAll(allFavorites);
+            
+            // Update tracking flags
+            dataLoaded = true;
+            lastFavoriteCount = allFavorites.size();
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing boarding house data: " + e.getMessage());
             throw e;
@@ -567,7 +604,37 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh favorites when returning to this fragment
-        loadFavorites();
+        // Check if favorites have changed when fragment becomes visible
+        if (dataLoaded && isVisible()) {
+            checkAndRefreshIfNeeded();
+        }
+    }
+    
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        // When fragment becomes visible, check if favorites changed
+        if (!hidden && dataLoaded) {
+            checkAndRefreshIfNeeded();
+        }
+    }
+    
+    private void checkAndRefreshIfNeeded() {
+        try {
+            // Get current favorite count from SharedPreferences
+            Set<String> currentFavoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
+            int currentCount = currentFavoriteIds.size();
+            
+            // If count changed, or if we don't have data, refresh
+            if (currentCount != lastFavoriteCount || allFavorites == null || allFavorites.isEmpty()) {
+                Log.d(TAG, "Favorites changed (count: " + lastFavoriteCount + " -> " + currentCount + "), refreshing...");
+                loadFavorites();
+            } else {
+                Log.d(TAG, "Favorites unchanged, no refresh needed");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking favorites: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

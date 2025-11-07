@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -57,6 +58,9 @@ public class OwnerHomeFragment extends Fragment {
     // Periodic message check
     private android.os.Handler messageCheckHandler;
     private Runnable messageCheckRunnable;
+    
+    // Flag to track if data has been loaded (to prevent reloading on navigation)
+    private boolean dataLoaded = false;
 
     public OwnerHomeFragment() {
         // Required empty public constructor
@@ -76,6 +80,17 @@ public class OwnerHomeFragment extends Fragment {
         if (getArguments() != null) {
             userId = getArguments().getInt(ARG_USER_ID, -1);
         }
+        // Restore dataLoaded flag if fragment was recreated
+        if (savedInstanceState != null) {
+            dataLoaded = savedInstanceState.getBoolean("dataLoaded", false);
+        }
+    }
+    
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save dataLoaded flag to prevent reloading after recreation
+        outState.putBoolean("dataLoaded", dataLoaded);
     }
 
     @SuppressLint("MissingInflatedId")
@@ -84,23 +99,25 @@ public class OwnerHomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_owner_home, container, false);
 
-        // Bind views
-        tvOwnerName = view.findViewById(R.id.tvOwnerName);
-        tvListingsCount = view.findViewById(R.id.tvListingsCount);
-        tvBoardersCount = view.findViewById(R.id.tvBoardersCount);
-        tvViewsCount = view.findViewById(R.id.tvViewsCount);
-        tvPopularTitle = view.findViewById(R.id.tvPopularTitle);
-        tvPopularVisits = view.findViewById(R.id.tvPopularVisits);
-        imgPopularListing = view.findViewById(R.id.imgPopularListing);
-        numofListings = view.findViewById(R.id.noofListings);
-        layoutTotalBoarders = view.findViewById(R.id.layoutTotalBoarders);
-        ivNotification = view.findViewById(R.id.ivNotification);
-        ivMessage = view.findViewById(R.id.ivMessage);
-        badgeMsg = view.findViewById(R.id.badgeMsg);
-        badgeNotif = view.findViewById(R.id.badgeNotif);
-        
-        // Create a TextView for message badge count if it doesn't exist
-        if (badgeMsg != null) {
+        // Check if views are already initialized (fragment was hidden/shown, not recreated)
+        if (tvOwnerName == null) {
+            // Bind views
+            tvOwnerName = view.findViewById(R.id.tvOwnerName);
+            tvListingsCount = view.findViewById(R.id.tvListingsCount);
+            tvBoardersCount = view.findViewById(R.id.tvBoardersCount);
+            tvViewsCount = view.findViewById(R.id.tvViewsCount);
+            tvPopularTitle = view.findViewById(R.id.tvPopularTitle);
+            tvPopularVisits = view.findViewById(R.id.tvPopularVisits);
+            imgPopularListing = view.findViewById(R.id.imgPopularListing);
+            numofListings = view.findViewById(R.id.noofListings);
+            layoutTotalBoarders = view.findViewById(R.id.layoutTotalBoarders);
+            ivNotification = view.findViewById(R.id.ivNotification);
+            ivMessage = view.findViewById(R.id.ivMessage);
+            badgeMsg = view.findViewById(R.id.badgeMsg);
+            badgeNotif = view.findViewById(R.id.badgeNotif);
+            
+            // Create a TextView for message badge count if it doesn't exist
+            if (badgeMsg != null) {
             badgeCount = new TextView(getContext());
             
             // Create FrameLayout.LayoutParams for proper positioning (same as notification badge)
@@ -180,8 +197,10 @@ public class OwnerHomeFragment extends Fragment {
             } else {
                 android.util.Log.d("NotificationBadge", "ivNotification parent is not a ViewGroup: " + ivNotification.getParent().getClass().getSimpleName());
             }
+            }
         }
 
+        // Setup click listeners (always, regardless of whether views were just initialized)
         ivNotification.setOnClickListener(v -> {
             if (getContext() != null) { // or getActivity() if inside a fragment
                 // Hide badge when opening notifications
@@ -219,19 +238,28 @@ public class OwnerHomeFragment extends Fragment {
 
         // Click listener for LinearLayout to navigate to ManageFragment
         numofListings.setOnClickListener(v -> {
-            // 1️⃣ Replace fragment
-            ManageFragment manageFragment = ManageFragment.newInstance(userId);
-            if (getActivity() != null) {
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, manageFragment)
-                        .addToBackStack(null)
-                        .commit();
-
-                // 2️⃣ Update BottomNavigationView selection
+            // Navigate using MainActivity's switchToTab method if available
+            if (getActivity() instanceof MainActivity) {
+                // Use the bottom navigation to switch (fragment is already cached)
                 BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_navigation);
                 if (bottomNav != null) {
-                    bottomNav.setSelectedItemId(R.id.nav_manage); // highlight Manage icon
+                    bottomNav.setSelectedItemId(R.id.nav_manage);
+                }
+            } else {
+                // Fallback: use fragment transaction
+                ManageFragment manageFragment = ManageFragment.newInstance(userId);
+                if (getActivity() != null) {
+                    getActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, manageFragment)
+                            .addToBackStack(null)
+                            .commit();
+
+                    // Update BottomNavigationView selection
+                    BottomNavigationView bottomNav = getActivity().findViewById(R.id.bottom_navigation);
+                    if (bottomNav != null) {
+                        bottomNav.setSelectedItemId(R.id.nav_manage);
+                    }
                 }
             }
         });
@@ -247,9 +275,10 @@ public class OwnerHomeFragment extends Fragment {
 
 
 
-        if (userId != -1) {
+        // Only load data if it hasn't been loaded yet (first time only)
+        if (userId != -1 && !dataLoaded) {
             fetchOwnerDashboardData();
-        } else {
+        } else if (userId == -1) {
             Toast.makeText(getContext(), "User not logged in!", Toast.LENGTH_SHORT).show();
         }
 
@@ -314,6 +343,9 @@ public class OwnerHomeFragment extends Fragment {
                             tvPopularVisits.setText("0 visits");
                             imgPopularListing.setImageResource(R.drawable.sample_listing);
                         }
+                        
+                        // Mark data as loaded after successful parsing
+                        dataLoaded = true;
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -692,6 +724,7 @@ public class OwnerHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // Only refresh badge counts, don't reload data
         // Check for unread messages when returning to this fragment
         checkUnreadMessages();
         // Check for unread notifications when returning to this fragment
@@ -702,6 +735,7 @@ public class OwnerHomeFragment extends Fragment {
         
         // Start periodic message check
         startPeriodicMessageCheck();
+        // Don't reload data - it's already loaded and cached
     }
     
     @Override

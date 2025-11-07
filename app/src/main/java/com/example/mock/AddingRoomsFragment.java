@@ -760,6 +760,7 @@ public class AddingRoomsFragment extends Fragment {
         EditText etCapacity = form.findViewById(R.id.etCapacity) != null ? form.findViewById(R.id.etCapacity) : form.findViewById(R.id.etBedCapacity);
         EditText etTotal = form.findViewById(R.id.etTotalRooms) != null ? form.findViewById(R.id.etTotalRooms) : form.findViewById(R.id.etBedTotalRooms);
 
+        @SuppressWarnings("unchecked")
         List<Uri> imgUris = (List<Uri>) form.getTag(R.id.room_images);
         if (imgUris == null) imgUris = new ArrayList<>();
 
@@ -923,6 +924,7 @@ public class AddingRoomsFragment extends Fragment {
         ViewPager2 viewPager = form.findViewById(R.id.viewPagerImages);
         ArrayList<Uri> imageUris = new ArrayList<>();
         if (viewPager != null && viewPager.getAdapter() != null) {
+            @SuppressWarnings("unchecked")
             ImageAdapter adapter = (ImageAdapter) viewPager.getAdapter();
             imageUris.addAll(adapter.getImageUris());
         }
@@ -1105,6 +1107,7 @@ public class AddingRoomsFragment extends Fragment {
         }
         
         // Validate images (at least 1 image required)
+        @SuppressWarnings("unchecked")
         ArrayList<Uri> imageUris = (ArrayList<Uri>) form.getTag(R.id.room_images);
         if (imageUris == null || imageUris.isEmpty()) {
             return "Private Room #" + roomNumber + ": At least 1 image is required";
@@ -1187,6 +1190,7 @@ public class AddingRoomsFragment extends Fragment {
         }
         
         // Validate images (at least 1 image required)
+        @SuppressWarnings("unchecked")
         ArrayList<Uri> imageUris = (ArrayList<Uri>) form.getTag(R.id.room_images);
         if (imageUris == null || imageUris.isEmpty()) {
             return "Bed Spacer #" + bedNumber + ": At least 1 image is required";

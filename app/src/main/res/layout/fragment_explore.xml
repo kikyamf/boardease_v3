@@ -36,10 +36,23 @@
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
                 android:fontFamily="@font/poppins_regular"
-                android:hint="Seach by location or name"
+                android:hint="Search by location or name..."
                 android:paddingStart="12dp"
                 android:textColor="#000000"
+                android:textColorHint="#999999"
                 android:textSize="16sp" />
+
+            <ImageView
+                android:id="@+id/ivClearSearch"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_close"
+                android:contentDescription="Clear Search"
+                android:tint="#666666"
+                android:layout_marginStart="12dp"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

@@ -63,9 +63,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_notification1"
-                        android:background="@drawable/circle_border1"
+                        android:background="@drawable/icon_hover_effect"
                         android:padding="10dp"
-                        android:contentDescription="Notification" />
+                        android:contentDescription="Notification"
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <!-- Red Dot -->
                     <View
@@ -89,9 +91,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:src="@drawable/ic_message1"
-                        android:background="@drawable/circle_border1"
+                        android:background="@drawable/icon_hover_effect"
                         android:padding="10dp"
-                        android:contentDescription="Message" />
+                        android:contentDescription="Message"
+                        android:clickable="true"
+                        android:focusable="true" />
 
                     <View
                         android:id="@+id/badgeMsg"
@@ -133,12 +137,25 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="Search for boarding houses..."
+                    android:hint="Search for boarding houses by name or location..."
                     android:background="@android:color/transparent"
                     android:paddingStart="12dp"
                     android:textColor="#000000"
+                    android:textColorHint="#999999"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_regular" />
+
+                <ImageView
+                    android:id="@+id/ivClearSearch"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_close"
+                    android:contentDescription="Clear Search"
+                    android:tint="#666666"
+                    android:layout_marginStart="12dp"
+                    android:visibility="gone"
+                    android:clickable="true"
+                    android:focusable="true" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -147,7 +164,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="32dp">
+            android:layout_marginTop="32dp"
+            android:clipChildren="false">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -173,9 +191,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:nestedScrollingEnabled="false"
                 android:clipToPadding="false"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
+                android:clipChildren="false"
+                android:paddingStart="0dp"
+                android:paddingEnd="16dp"
+                android:overScrollMode="never"
+                android:visibility="gone" />
+
+            <!-- Empty State for Recommended (Search Results) -->
+            <TextView
+                android:id="@+id/tvRecommendedEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No boarding houses found"
+                android:textSize="14sp"
+                android:textColor="#999999"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:padding="24dp"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -239,6 +273,19 @@
                 android:orientation="vertical"
                 android:clipToPadding="false"
                 android:paddingBottom="24dp"
+                android:visibility="gone" />
+
+            <!-- Empty State for Nearby (Search Results) -->
+            <TextView
+                android:id="@+id/tvNearbyEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No boarding houses found"
+                android:textSize="14sp"
+                android:textColor="#999999"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:padding="24dp"
                 android:visibility="gone" />
 
         </LinearLayout>

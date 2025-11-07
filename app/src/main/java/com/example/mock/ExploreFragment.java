@@ -1,5 +1,6 @@
 package com.example.mock;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,12 +9,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import java.util.HashSet;
+import java.util.Set;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.annotation.NonNull;
@@ -43,6 +47,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     private static final String API_URL = BASE_URL + "get_boarding_houses1.php";
     
     private EditText etSearch;
+    private ImageView ivClearSearch;
     private RecyclerView rvBoardingHouses;
     private ProgressBar progressBar;
     private LinearLayout layoutEmptyState;
@@ -57,6 +62,14 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     // Filter and Sort state
     private String currentSortBy = "sortby"; // sortby, name, price_low, price_high, date
     private String currentFilter = "all"; // all, private_room, bed_spacer
+    
+    // SharedPreferences for tracking favorite changes
+    private SharedPreferences sharedPreferences;
+    private static final String PREFS_NAME = "boarder_favorites";
+    private static final String KEY_FAVORITES = "favorite_ids";
+    
+    // Track last known favorite count to detect changes
+    private int lastFavoriteCount = -1;
     
     // Factory method to create new instance with user ID
     public static ExploreFragment newInstance(int userId) {
@@ -78,11 +91,22 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         }
         
         try {
+            // Initialize SharedPreferences for tracking favorites
+            if (getContext() != null) {
+                sharedPreferences = getContext().getSharedPreferences(PREFS_NAME, 0);
+            }
+            
             initializeViews(view);
             setupRecyclerView();
             setupSearchFunctionality();
             setupFilterAndSortButtons();
             loadBoardingHouses();
+            
+            // Initialize last favorite count
+            if (lastFavoriteCount == -1 && sharedPreferences != null) {
+                Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
+                lastFavoriteCount = favoriteIds.size();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,6 +116,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private void initializeViews(View view) {
         etSearch = view.findViewById(R.id.etSearch);
+        ivClearSearch = view.findViewById(R.id.ivClearSearch);
         rvBoardingHouses = view.findViewById(R.id.rvBoardingHouses);
         progressBar = view.findViewById(R.id.progressBar);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
@@ -117,11 +142,24 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filterBoardingHouses(s.toString());
+                // Show/hide clear icon based on text
+                if (ivClearSearch != null) {
+                    ivClearSearch.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+                }
             }
             
             @Override
             public void afterTextChanged(Editable s) {}
         });
+        
+        // Setup clear search icon
+        if (ivClearSearch != null) {
+            ivClearSearch.setOnClickListener(v -> {
+                etSearch.setText("");
+                etSearch.clearFocus();
+                ivClearSearch.setVisibility(View.GONE);
+            });
+        }
     }
     
     private void setupFilterAndSortButtons() {
@@ -586,9 +624,57 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 String message = "Removed from favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             }
+            // Update last favorite count
+            Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
+            lastFavoriteCount = favoriteIds.size();
+            
             // Refresh the adapter to update favorite icons
             adapter.notifyDataSetChanged();
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Check if favorites have changed when fragment becomes visible
+        if (isVisible() && adapter != null) {
+            checkAndRefreshFavoritesIfNeeded();
+        }
+    }
+    
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        // When fragment becomes visible, check if favorites changed
+        if (!hidden && adapter != null) {
+            checkAndRefreshFavoritesIfNeeded();
+        }
+    }
+    
+    private void checkAndRefreshFavoritesIfNeeded() {
+        try {
+            if (sharedPreferences == null) {
+                return;
+            }
+            
+            // Get current favorite count from SharedPreferences
+            Set<String> currentFavoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
+            int currentCount = currentFavoriteIds.size();
+            
+            // If count changed, refresh the adapter to update heart icons
+            if (currentCount != lastFavoriteCount) {
+                Log.d(TAG, "Favorites changed (count: " + lastFavoriteCount + " -> " + currentCount + "), refreshing heart icons...");
+                lastFavoriteCount = currentCount;
+                
+                // Refresh adapter to update heart icons based on current favorite status
+                if (adapter != null) {
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking favorites: " + e.getMessage());
             e.printStackTrace();
         }
     }
