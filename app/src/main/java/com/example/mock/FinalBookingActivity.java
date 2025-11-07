@@ -3,6 +3,7 @@ package com.example.mock;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -45,10 +46,12 @@ import java.util.Map;
 public class FinalBookingActivity extends AppCompatActivity {
     
     private static final String TAG = "FinalBookingActivity";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    // Local development URL - Update this to match your local IP
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details.php";
-    private static final String GET_GCASH_INFO_URL = BASE_URL + "get_gcash_info.php";
-    private static final String CREATE_BOOKING_URL = BASE_URL + "create_booking.php";
+    private static final String GET_GCASH_INFO_URL = BOARD_EASE2_URL + "get_gcash_info.php";
+    private static final String CREATE_BOOKING_URL = BOARD_EASE2_URL + "create_booking.php";
     private static final int PICK_IMAGE_REQUEST = 100;
     
     // Views
@@ -102,11 +105,27 @@ public class FinalBookingActivity extends AppCompatActivity {
         endDate = intent.getStringExtra("end_date");
         String roomDataString = intent.getStringExtra("room_data");
         
+        // If user_id from intent is 0, try to get it from SharedPreferences
+        if (userId == 0) {
+            SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Retrieved user_id from SharedPreferences: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences: " + e.getMessage());
+                }
+            }
+        }
+        
         if (roomId == 0 || userId == 0 || startDate == null || endDate == null || roomDataString == null) {
-            Toast.makeText(this, "Invalid booking data", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid booking data. Please log in again.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+        
+        Log.d(TAG, "Booking data - user_id: " + userId + ", room_id: " + roomId);
         
         try {
             roomData = new JSONObject(roomDataString);
@@ -271,6 +290,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
@@ -322,6 +342,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
@@ -339,7 +360,10 @@ public class FinalBookingActivity extends AppCompatActivity {
                             if (jsonResponse.getBoolean("success")) {
                                 ownerGcashQrPath = jsonResponse.optString("gcash_qr", "");
                                 if (!ownerGcashQrPath.isEmpty()) {
-                                    String fullImageUrl = BASE_URL + ownerGcashQrPath;
+                                    // Construct full image URL - if path doesn't start with http, prepend BASE_URL
+                                    String fullImageUrl = ownerGcashQrPath.startsWith("http") 
+                                        ? ownerGcashQrPath 
+                                        : BASE_URL + ownerGcashQrPath;
                                     Glide.with(FinalBookingActivity.this)
                                             .load(fullImageUrl)
                                             .placeholder(R.drawable.placeholder)
@@ -462,7 +486,28 @@ public class FinalBookingActivity extends AppCompatActivity {
                             if (success) {
                                 showSuccessDialog();
                             } else {
-                                showErrorDialog("Unsuccessful: " + message);
+                                // Check if it's a user not found error
+                                if (message.contains("User not found")) {
+                                    // Clear session and ask user to log in again
+                                    SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+                                    sharedPreferences.edit().clear().apply();
+                                    
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(FinalBookingActivity.this);
+                                    builder.setTitle("Session Expired");
+                                    builder.setMessage("Your session is invalid. Please log in again.");
+                                    builder.setPositiveButton("OK", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        // Navigate to login
+                                        Intent loginIntent = new Intent(FinalBookingActivity.this, Login.class);
+                                        loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(loginIntent);
+                                        finish();
+                                    });
+                                    builder.setCancelable(false);
+                                    builder.show();
+                                } else {
+                                    showErrorDialog("Unsuccessful: " + message);
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing response: " + e.getMessage());
@@ -498,6 +543,10 @@ public class FinalBookingActivity extends AppCompatActivity {
                 params.put("end_date", endDate);
                 params.put("payment_method", paymentMethod);
                 params.put("payment_proof", paymentProofBase64);
+                
+                // Debug logging
+                Log.d(TAG, "Sending booking request with user_id: " + userId + ", room_id: " + roomId);
+                
                 return params;
             }
             
@@ -506,6 +555,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };

@@ -3,7 +3,7 @@
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, User-Agent, Accept');
+    header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning, User-Agent, Accept');
     header('Access-Control-Max-Age: 86400');
     http_response_code(200);
     exit;
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, User-Agent, Accept');
+header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning, User-Agent, Accept');
 
 // Database configuration
 $host = 'localhost';
@@ -33,11 +33,20 @@ try {
     $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
     $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
     
+    // Debug logging
+    error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate");
+    
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'Missing required fields'
+            'message' => 'Missing required fields',
+            'debug' => array(
+                'room_id' => $roomId,
+                'user_id' => $userId,
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            )
         ));
         exit;
     }
@@ -63,10 +72,10 @@ try {
         exit;
     }
     
-    // Check if room exists and is available
-    $checkRoomSql = "SELECT bhr_id, status FROM boarding_house_rooms WHERE bhr_id = :room_id";
+    // Check if room exists in boarding_house_rooms (bhr_id)
+    $checkRoomSql = "SELECT bhr_id FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
     $checkRoomStmt = $pdo->prepare($checkRoomSql);
-    $checkRoomStmt->execute([':room_id' => $roomId]);
+    $checkRoomStmt->execute([':bhr_id' => $roomId]);
     $room = $checkRoomStmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$room) {
@@ -77,26 +86,92 @@ try {
         exit;
     }
     
-    // Check if user exists
-    $checkUserSql = "SELECT id FROM registrations WHERE id = :user_id";
+    // Get or create a room_unit for this bhr_id
+    // First, try to find an available room_unit
+    $getRoomUnitSql = "SELECT room_id FROM room_units WHERE bhr_id = :bhr_id AND status = 'Available' LIMIT 1";
+    $getRoomUnitStmt = $pdo->prepare($getRoomUnitSql);
+    $getRoomUnitStmt->execute([':bhr_id' => $roomId]);
+    $roomUnit = $getRoomUnitStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $actualRoomId = null;
+    if ($roomUnit) {
+        // Use existing available room_unit
+        $actualRoomId = $roomUnit['room_id'];
+    } else {
+        // Create a new room_unit for this bhr_id if none exists
+        // Get room details to create appropriate room_number
+        $getRoomDetailsSql = "SELECT room_name, room_category FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
+        $getRoomDetailsStmt = $pdo->prepare($getRoomDetailsSql);
+        $getRoomDetailsStmt->execute([':bhr_id' => $roomId]);
+        $roomDetails = $getRoomDetailsStmt->fetch(PDO::FETCH_ASSOC);
+        
+        $roomNumber = $roomDetails ? $roomDetails['room_name'] : 'R-1';
+        if (empty($roomNumber)) {
+            $roomNumber = 'R-1';
+        }
+        
+        // Insert new room_unit
+        $insertRoomUnitSql = "INSERT INTO room_units (bhr_id, room_number, status) VALUES (:bhr_id, :room_number, 'Available')";
+        $insertRoomUnitStmt = $pdo->prepare($insertRoomUnitSql);
+        $insertRoomUnitStmt->execute([
+            ':bhr_id' => $roomId,
+            ':room_number' => $roomNumber
+        ]);
+        $actualRoomId = $pdo->lastInsertId();
+    }
+    
+    if (!$actualRoomId) {
+        echo json_encode(array(
+            'success' => false,
+            'message' => 'Failed to get or create room unit'
+        ));
+        exit;
+    }
+    
+    // Check if user exists in registrations and get corresponding user_id from users table
+    // The userId from Android is registrations.id, but bookings needs users.user_id
+    $checkUserSql = "SELECT r.id, u.user_id 
+                     FROM registrations r 
+                     LEFT JOIN users u ON r.id = u.reg_id 
+                     WHERE r.id = :reg_id";
     $checkUserStmt = $pdo->prepare($checkUserSql);
-    $checkUserStmt->execute([':user_id' => $userId]);
+    $checkUserStmt->execute([':reg_id' => $userId]);
     $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$user) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'User not found'
+            'message' => 'User not found in registrations'
         ));
         exit;
     }
     
-    // Check for overlapping bookings
+    // Get the actual user_id from users table (needed for bookings foreign key)
+    $actualUserId = $user['user_id'];
+    
+    // If user doesn't have a corresponding entry in users table, create one
+    if (!$actualUserId) {
+        // Insert into users table
+        $insertUserSql = "INSERT INTO users (reg_id, status) VALUES (:reg_id, 'Active')";
+        $insertUserStmt = $pdo->prepare($insertUserSql);
+        $insertUserStmt->execute([':reg_id' => $userId]);
+        $actualUserId = $pdo->lastInsertId();
+        
+        if (!$actualUserId) {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Failed to create user entry'
+            ));
+            exit;
+        }
+    }
+    
+    // Check for overlapping bookings using actual room_id
     $checkOverlapSql = "
         SELECT booking_id 
         FROM bookings 
         WHERE room_id = :room_id 
-        AND booking_status IN ('Pending', 'Approved')
+        AND booking_status IN ('Pending', 'Confirmed')
         AND (
             (start_date <= :start_date AND end_date >= :start_date)
             OR (start_date <= :end_date AND end_date >= :end_date)
@@ -105,7 +180,7 @@ try {
     ";
     $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
     $checkOverlapStmt->execute([
-        ':room_id' => $roomId,
+        ':room_id' => $actualRoomId,
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
@@ -118,7 +193,7 @@ try {
         exit;
     }
     
-    // Insert booking (only fields that exist in bookings table)
+    // Insert booking using actual room_id from room_units
     $insertSql = "
         INSERT INTO bookings (
             room_id, 
@@ -139,8 +214,8 @@ try {
     
     $insertStmt = $pdo->prepare($insertSql);
     $insertStmt->execute([
-        ':room_id' => $roomId,
-        ':user_id' => $userId,
+        ':room_id' => $actualRoomId,
+        ':user_id' => $actualUserId,  // Use actual user_id from users table
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
@@ -174,18 +249,29 @@ try {
     }
     
     // Get owner_id from room
-    $getOwnerSql = "SELECT bh.user_id as owner_id FROM boarding_house_rooms bhr 
+    // boarding_houses.user_id is registrations.id, but we need users.user_id
+    $getOwnerSql = "SELECT bh.user_id as owner_reg_id, u.user_id as owner_user_id 
+                    FROM boarding_house_rooms bhr 
                     JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
-                    WHERE bhr.bhr_id = :room_id";
+                    LEFT JOIN users u ON bh.user_id = u.reg_id
+                    WHERE bhr.bhr_id = :bhr_id";
     $getOwnerStmt = $pdo->prepare($getOwnerSql);
-    $getOwnerStmt->execute([':room_id' => $roomId]);
+    $getOwnerStmt->execute([':bhr_id' => $roomId]);
     $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
-    $ownerId = $ownerData ? intval($ownerData['owner_id']) : 0;
+    $ownerId = $ownerData ? intval($ownerData['owner_user_id']) : 0;
     
-    // Get room price for payment amount
-    $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :room_id";
+    // If owner doesn't have a users entry, create one
+    if (!$ownerId && $ownerData && $ownerData['owner_reg_id']) {
+        $insertOwnerSql = "INSERT INTO users (reg_id, status) VALUES (:reg_id, 'Active')";
+        $insertOwnerStmt = $pdo->prepare($insertOwnerSql);
+        $insertOwnerStmt->execute([':reg_id' => $ownerData['owner_reg_id']]);
+        $ownerId = $pdo->lastInsertId();
+    }
+    
+    // Get room price for payment amount (using bhr_id)
+    $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
     $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
-    $getRoomPriceStmt->execute([':room_id' => $roomId]);
+    $getRoomPriceStmt->execute([':bhr_id' => $roomId]);
     $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
     $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
     
@@ -229,7 +315,7 @@ try {
         $insertPaymentStmt = $pdo->prepare($insertPaymentSql);
         $insertPaymentStmt->execute([
             ':booking_id' => $bookingId,
-            ':user_id' => $userId,
+            ':user_id' => $actualUserId,  // Use actual user_id from users table
             ':owner_id' => $ownerId,
             ':payment_amount' => $paymentAmount,
             ':payment_method' => $paymentMethod,
