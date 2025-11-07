@@ -353,14 +353,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:boxStrokeColor="@color/brown"
-                        app:hintEnabled="false"
+                        app:hintEnabled="true"
+                        app:hint="Select country"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <AutoCompleteTextView
                             android:id="@+id/actvCountry"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Select country"
                             android:inputType="none"
                             android:drawableEnd="@drawable/ic_arrow_down"
                             android:drawablePadding="8dp"
