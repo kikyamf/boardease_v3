@@ -258,6 +258,7 @@
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="@color/brown"
                     android:drawableStart="@drawable/ic_person"
+                    android:drawableTint="@color/brown"
                     android:drawablePadding="8dp"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="16dp" />
@@ -278,7 +279,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
+                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
+                        android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -299,7 +302,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
+                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
+                        android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -320,7 +325,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textEmailAddress"
+                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/email"
+                        android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -341,7 +348,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="phone"
+                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_phone"
+                        android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
