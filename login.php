@@ -93,7 +93,7 @@ if ($result->num_rows === 0) {
                 "success" => true,
                 "message" => "Login successful",
                 "user" => array(
-                    "id" => $user['id'], // Always use registrations.id (not users.user_id)
+                    "id" => $user['user_id'] ? $user['user_id'] : $user['id'], // Use user_id if available, fallback to registration id
                     "role" => $user['role'],
                     "firstName" => $user['first_name'],
                     "lastName" => $user['last_name'],
@@ -102,7 +102,6 @@ if ($result->num_rows === 0) {
                 )
             );
             error_log("Login successful for user: " . $email);
-            error_log("Using registrations.id: " . $user['id'] . " (users.user_id was: " . ($user['user_id'] ?? 'NULL') . ")");
             error_log("Response being sent: " . json_encode($response));
             echo json_encode($response);
         } else if ($user['status'] === 'unverified') {
