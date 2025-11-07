@@ -72,89 +72,73 @@ try {
         exit;
     }
     
-    // Check if room exists in boarding_house_rooms (bhr_id)
-    $checkRoomSql = "SELECT bhr_id FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
-    $checkRoomStmt = $pdo->prepare($checkRoomSql);
-    $checkRoomStmt->execute([':bhr_id' => $roomId]);
-    $room = $checkRoomStmt->fetch(PDO::FETCH_ASSOC);
+    // Check if room unit exists in room_units table
+    // The room_id from Android is now room_units.room_id (selected by user)
+    $checkRoomUnitSql = "SELECT room_id, bhr_id, room_number, status FROM room_units WHERE room_id = :room_id";
+    $checkRoomUnitStmt = $pdo->prepare($checkRoomUnitSql);
+    $checkRoomUnitStmt->execute([':room_id' => $roomId]);
+    $roomUnit = $checkRoomUnitStmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$room) {
+    if (!$roomUnit) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'Room not found'
+            'message' => 'Room unit not found'
         ));
         exit;
     }
     
-    // Get or create a room_unit for this bhr_id
-    // First, try to find an available room_unit
-    $getRoomUnitSql = "SELECT room_id FROM room_units WHERE bhr_id = :bhr_id AND status = 'Available' LIMIT 1";
-    $getRoomUnitStmt = $pdo->prepare($getRoomUnitSql);
-    $getRoomUnitStmt->execute([':bhr_id' => $roomId]);
-    $roomUnit = $getRoomUnitStmt->fetch(PDO::FETCH_ASSOC);
-    
-    $actualRoomId = null;
-    if ($roomUnit) {
-        // Use existing available room_unit
-        $actualRoomId = $roomUnit['room_id'];
-    } else {
-        // Create a new room_unit for this bhr_id if none exists
-        // Get room details to create appropriate room_number
-        $getRoomDetailsSql = "SELECT room_name, room_category FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
-        $getRoomDetailsStmt = $pdo->prepare($getRoomDetailsSql);
-        $getRoomDetailsStmt->execute([':bhr_id' => $roomId]);
-        $roomDetails = $getRoomDetailsStmt->fetch(PDO::FETCH_ASSOC);
-        
-        $roomNumber = $roomDetails ? $roomDetails['room_name'] : 'R-1';
-        if (empty($roomNumber)) {
-            $roomNumber = 'R-1';
-        }
-        
-        // Insert new room_unit
-        $insertRoomUnitSql = "INSERT INTO room_units (bhr_id, room_number, status) VALUES (:bhr_id, :room_number, 'Available')";
-        $insertRoomUnitStmt = $pdo->prepare($insertRoomUnitSql);
-        $insertRoomUnitStmt->execute([
-            ':bhr_id' => $roomId,
-            ':room_number' => $roomNumber
-        ]);
-        $actualRoomId = $pdo->lastInsertId();
-    }
-    
-    if (!$actualRoomId) {
+    // Check if room unit is available
+    if ($roomUnit['status'] !== 'Available') {
         echo json_encode(array(
             'success' => false,
-            'message' => 'Failed to get or create room unit'
+            'message' => 'Selected room unit is not available'
         ));
         exit;
     }
     
-    // Check if user exists in registrations and get corresponding user_id from users table
-    // The userId from Android is registrations.id, but bookings needs users.user_id
-    $checkUserSql = "SELECT r.id, u.user_id 
-                     FROM registrations r 
-                     LEFT JOIN users u ON r.id = u.reg_id 
-                     WHERE r.id = :reg_id";
-    $checkUserStmt = $pdo->prepare($checkUserSql);
-    $checkUserStmt->execute([':reg_id' => $userId]);
-    $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    // Use room_units.room_id directly (this is what the user selected)
+    $actualRoomId = $roomId;
+    
+    // Check if user exists - userId from Android is users.user_id (from login.php)
+    // First try to find by users.user_id (most common case since login.php returns this)
+    $checkUserByUserIdSql = "SELECT r.id as reg_id, u.user_id 
+                             FROM users u 
+                             JOIN registrations r ON u.reg_id = r.id 
+                             WHERE u.user_id = :user_id";
+    $checkUserByUserIdStmt = $pdo->prepare($checkUserByUserIdSql);
+    $checkUserByUserIdStmt->execute([':user_id' => $userId]);
+    $user = $checkUserByUserIdStmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If not found by users.user_id, try to find by registrations.id (fallback)
+    if (!$user) {
+        $checkUserSql = "SELECT r.id as reg_id, u.user_id 
+                         FROM registrations r 
+                         LEFT JOIN users u ON r.id = u.reg_id 
+                         WHERE r.id = :user_id";
+        $checkUserStmt = $pdo->prepare($checkUserSql);
+        $checkUserStmt->execute([':user_id' => $userId]);
+        $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     if (!$user) {
+        error_log("User not found - searched userId: " . $userId);
         echo json_encode(array(
             'success' => false,
-            'message' => 'User not found in registrations'
+            'message' => 'User not found'
         ));
         exit;
     }
     
     // Get the actual user_id from users table (needed for bookings foreign key)
     $actualUserId = $user['user_id'];
+    $regId = $user['reg_id'];
     
     // If user doesn't have a corresponding entry in users table, create one
     if (!$actualUserId) {
         // Insert into users table
         $insertUserSql = "INSERT INTO users (reg_id, status) VALUES (:reg_id, 'Active')";
         $insertUserStmt = $pdo->prepare($insertUserSql);
-        $insertUserStmt->execute([':reg_id' => $userId]);
+        $insertUserStmt->execute([':reg_id' => $regId]);
         $actualUserId = $pdo->lastInsertId();
         
         if (!$actualUserId) {
@@ -166,7 +150,7 @@ try {
         }
     }
     
-    // Check for overlapping bookings using actual room_id
+    // Check for overlapping bookings using bhr_id as room_id
     $checkOverlapSql = "
         SELECT booking_id 
         FROM bookings 
@@ -180,7 +164,7 @@ try {
     ";
     $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
     $checkOverlapStmt->execute([
-        ':room_id' => $actualRoomId,
+        ':room_id' => $actualRoomId,  // This is bhr_id
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
@@ -193,7 +177,7 @@ try {
         exit;
     }
     
-    // Insert booking using actual room_id from room_units
+    // Insert booking using bhr_id as room_id
     $insertSql = "
         INSERT INTO bookings (
             room_id, 
@@ -214,7 +198,7 @@ try {
     
     $insertStmt = $pdo->prepare($insertSql);
     $insertStmt->execute([
-        ':room_id' => $actualRoomId,
+        ':room_id' => $actualRoomId,  // This is bhr_id from boarding_house_rooms
         ':user_id' => $actualUserId,  // Use actual user_id from users table
         ':start_date' => $startDate,
         ':end_date' => $endDate
@@ -248,15 +232,16 @@ try {
         }
     }
     
-    // Get owner_id from room
+    // Get owner_id from room_unit's bhr_id
     // boarding_houses.user_id is registrations.id, but we need users.user_id
+    $bhrId = $roomUnit['bhr_id']; // Get bhr_id from the room_unit we already fetched
     $getOwnerSql = "SELECT bh.user_id as owner_reg_id, u.user_id as owner_user_id 
                     FROM boarding_house_rooms bhr 
                     JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
                     LEFT JOIN users u ON bh.user_id = u.reg_id
                     WHERE bhr.bhr_id = :bhr_id";
     $getOwnerStmt = $pdo->prepare($getOwnerSql);
-    $getOwnerStmt->execute([':bhr_id' => $roomId]);
+    $getOwnerStmt->execute([':bhr_id' => $bhrId]);
     $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
     $ownerId = $ownerData ? intval($ownerData['owner_user_id']) : 0;
     
@@ -268,10 +253,10 @@ try {
         $ownerId = $pdo->lastInsertId();
     }
     
-    // Get room price for payment amount (using bhr_id)
+    // Get room price for payment amount (using bhr_id from room_unit)
     $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
     $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
-    $getRoomPriceStmt->execute([':bhr_id' => $roomId]);
+    $getRoomPriceStmt->execute([':bhr_id' => $bhrId]);
     $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
     $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
     

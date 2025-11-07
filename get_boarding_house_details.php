@@ -23,7 +23,7 @@ try {
         exit();
     }
 
-    // SQL query to get boarding house details with owner info
+    // SQL query to get boarding house details with owner info (including GCash QR)
     $sql = "
         SELECT
             bh.*,
@@ -32,7 +32,8 @@ try {
             r.last_name,
             r.phone,
             r.email,
-            r.role
+            r.role,
+            r.gcash_qr
         FROM boarding_houses AS bh
         LEFT JOIN registrations AS r ON bh.user_id = r.id
         WHERE bh.bh_id = ?
@@ -172,6 +173,7 @@ try {
                 'room_details' => $roomDetails,
                 'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
                 'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
+                'gcash_qr' => !empty($boardingHouse['gcash_qr']) ? $boardingHouse['gcash_qr'] : null, // Include GCash QR code from registrations (null if empty or not set)
                 'owner' => array(
                     'first_name' => $boardingHouse['first_name'] ?? null,
                     'middle_name' => $boardingHouse['middle_name'] ?? null,

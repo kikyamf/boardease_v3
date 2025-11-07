@@ -118,6 +118,71 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Available Room Units Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/light_brown"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/brown">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Available Room Units"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="@color/brown"
+                    android:drawableStart="@drawable/ic_home"
+                    android:drawableTint="@color/brown"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgRoomUnits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Room units will be added dynamically here -->
+
+                </RadioGroup>
+
+                <ProgressBar
+                    android:id="@+id/progressBarRoomUnits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/brown" />
+
+                <TextView
+                    android:id="@+id/tvNoRoomUnits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No available room units"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textColor="@color/dark_gray"
+                    android:gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Date Selection Section -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -180,6 +245,7 @@
                             android:layout_height="wrap_content"
                             android:hint="Select start date"
                             android:textColorHint="@color/brown"
+                            android:textColor="@android:color/black"
                             android:inputType="none"
                             android:focusable="false"
                             android:clickable="true"
@@ -220,6 +286,7 @@
                             android:layout_height="wrap_content"
                             android:hint="Select end date"
                             android:textColorHint="@color/brown"
+                            android:textColor="@android:color/black"
                             android:inputType="none"
                             android:focusable="false"
                             android:clickable="true"
@@ -269,6 +336,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="First Name"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -279,7 +347,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
@@ -293,6 +360,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Last Name"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -303,7 +371,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_name"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
@@ -317,6 +384,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Email"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -327,7 +395,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textEmailAddress"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/email"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
@@ -341,6 +408,7 @@
                     android:layout_marginBottom="12dp"
                     android:backgroundTint="@color/light_brown"
                     android:hint="Phone Number"
+                    app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
@@ -351,7 +419,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="phone"
                         android:textColor="@android:color/black"
-                        android:textColorHint="@color/brown"
                         android:drawableStart="@drawable/ic_phone"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
