@@ -261,6 +261,12 @@ public class FinalBookingActivity extends AppCompatActivity {
                                 // Display BH name
                                 tvBhName.setText(bh.getString("bh_name"));
                                 
+                                // Store GCash QR code from boarding house details (if available)
+                                if (bh.has("gcash_qr") && !bh.isNull("gcash_qr")) {
+                                    ownerGcashQrPath = bh.getString("gcash_qr");
+                                    Log.d(TAG, "GCash QR stored from BH details: " + ownerGcashQrPath);
+                                }
+                                
                                 // Load BH image
                                 if (bh.has("images") && !bh.isNull("images")) {
                                     org.json.JSONArray images = bh.getJSONArray("images");
@@ -299,100 +305,24 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void loadOwnerGcashQr() {
-        // Get owner's user_id from boarding house
-        String url = GET_BH_DETAILS_URL + "?bh_id=" + bhId;
-        
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            if (jsonResponse.getBoolean("success")) {
-                                JSONObject data = jsonResponse.getJSONObject("data");
-                                JSONObject bh = data.getJSONObject("boarding_house");
-                                
-                                // Get owner user_id from boarding house
-                                int ownerUserId = 0;
-                                if (bh.has("user_id")) {
-                                    ownerUserId = bh.getInt("user_id");
-                                }
-                                
-                                if (ownerUserId > 0) {
-                                    loadGcashQrCode(ownerUserId);
-                                } else {
-                                    Log.e(TAG, "Could not find owner user_id");
-                                    Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, "Error parsing BH details for owner: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "Error loading owner info: " + error.getMessage());
-                    }
-                }) {
-            @Override
-            public Map<String, String> getHeaders() {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("User-Agent", "BoardEase-Android-App");
-                headers.put("Accept", "application/json");
-                headers.put("ngrok-skip-browser-warning", "true");
-                return headers;
-            }
-        };
-        
-        requestQueue.add(stringRequest);
-    }
-    
-    private void loadGcashQrCode(int ownerUserId) {
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, GET_GCASH_INFO_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            if (jsonResponse.getBoolean("success")) {
-                                ownerGcashQrPath = jsonResponse.optString("gcash_qr", "");
-                                if (!ownerGcashQrPath.isEmpty()) {
-                                    // Construct full image URL - if path doesn't start with http, prepend BASE_URL
-                                    String fullImageUrl = ownerGcashQrPath.startsWith("http") 
-                                        ? ownerGcashQrPath 
-                                        : BASE_URL + ownerGcashQrPath;
-                                    Glide.with(FinalBookingActivity.this)
-                                            .load(fullImageUrl)
-                                            .placeholder(R.drawable.placeholder)
-                                            .error(R.drawable.placeholder)
-                                            .into(ivOwnerQrCode);
-                                } else {
-                                    ivOwnerQrCode.setImageResource(R.drawable.placeholder);
-                                }
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, "Error parsing GCash info: " + e.getMessage());
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "Error loading GCash QR: " + error.getMessage());
-                    }
-                }) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("user_id", String.valueOf(ownerUserId));
-                return params;
-            }
-        };
-        
-        requestQueue.add(stringRequest);
+        // Use the QR code that was already fetched from boarding house details
+        if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty()) {
+            // Construct full image URL - if path doesn't start with http, prepend BASE_URL
+            String fullImageUrl = ownerGcashQrPath.startsWith("http") 
+                ? ownerGcashQrPath 
+                : BASE_URL + ownerGcashQrPath;
+            
+            Log.d(TAG, "Loading GCash QR from stored path: " + fullImageUrl);
+            Glide.with(FinalBookingActivity.this)
+                    .load(fullImageUrl)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
+                    .into(ivOwnerQrCode);
+        } else {
+            Log.e(TAG, "GCash QR not available - path is empty or null");
+            ivOwnerQrCode.setImageResource(R.drawable.placeholder);
+            Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void selectImage(int requestCode) {

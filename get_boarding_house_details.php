@@ -23,7 +23,7 @@ try {
         exit();
     }
 
-    // SQL query to get boarding house details with owner info
+    // SQL query to get boarding house details with owner info (including GCash QR)
     $sql = "
         SELECT
             bh.*,
@@ -32,7 +32,8 @@ try {
             r.last_name,
             r.phone,
             r.email,
-            r.role
+            r.role,
+            r.gcash_qr
         FROM boarding_houses AS bh
         LEFT JOIN registrations AS r ON bh.user_id = r.id
         WHERE bh.bh_id = ?
