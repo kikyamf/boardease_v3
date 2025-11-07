@@ -72,22 +72,31 @@ try {
         exit;
     }
     
-    // Check if room exists in boarding_house_rooms (bhr_id)
-    // The room_id in bookings should reference bhr_id, not room_units.room_id
-    $checkRoomSql = "SELECT bhr_id FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
-    $checkRoomStmt = $pdo->prepare($checkRoomSql);
-    $checkRoomStmt->execute([':bhr_id' => $roomId]);
-    $room = $checkRoomStmt->fetch(PDO::FETCH_ASSOC);
+    // Check if room unit exists in room_units table
+    // The room_id from Android is now room_units.room_id (selected by user)
+    $checkRoomUnitSql = "SELECT room_id, bhr_id, room_number, status FROM room_units WHERE room_id = :room_id";
+    $checkRoomUnitStmt = $pdo->prepare($checkRoomUnitSql);
+    $checkRoomUnitStmt->execute([':room_id' => $roomId]);
+    $roomUnit = $checkRoomUnitStmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$room) {
+    if (!$roomUnit) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'Room not found'
+            'message' => 'Room unit not found'
         ));
         exit;
     }
     
-    // Use bhr_id directly as room_id in bookings
+    // Check if room unit is available
+    if ($roomUnit['status'] !== 'Available') {
+        echo json_encode(array(
+            'success' => false,
+            'message' => 'Selected room unit is not available'
+        ));
+        exit;
+    }
+    
+    // Use room_units.room_id directly (this is what the user selected)
     $actualRoomId = $roomId;
     
     // Check if user exists in registrations and get corresponding user_id from users table
@@ -210,15 +219,16 @@ try {
         }
     }
     
-    // Get owner_id from room
+    // Get owner_id from room_unit's bhr_id
     // boarding_houses.user_id is registrations.id, but we need users.user_id
+    $bhrId = $roomUnit['bhr_id']; // Get bhr_id from the room_unit we already fetched
     $getOwnerSql = "SELECT bh.user_id as owner_reg_id, u.user_id as owner_user_id 
                     FROM boarding_house_rooms bhr 
                     JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
                     LEFT JOIN users u ON bh.user_id = u.reg_id
                     WHERE bhr.bhr_id = :bhr_id";
     $getOwnerStmt = $pdo->prepare($getOwnerSql);
-    $getOwnerStmt->execute([':bhr_id' => $roomId]);
+    $getOwnerStmt->execute([':bhr_id' => $bhrId]);
     $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
     $ownerId = $ownerData ? intval($ownerData['owner_user_id']) : 0;
     
@@ -230,10 +240,10 @@ try {
         $ownerId = $pdo->lastInsertId();
     }
     
-    // Get room price for payment amount (using bhr_id)
+    // Get room price for payment amount (using bhr_id from room_unit)
     $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
     $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
-    $getRoomPriceStmt->execute([':bhr_id' => $roomId]);
+    $getRoomPriceStmt->execute([':bhr_id' => $bhrId]);
     $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
     $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
     

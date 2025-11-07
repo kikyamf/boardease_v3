@@ -27,6 +27,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -38,8 +41,10 @@ import java.util.Map;
 public class BookingActivity extends AppCompatActivity {
     
     private static final String TAG = "BookingActivity";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
-    private static final String BOOKING_API_URL = BASE_URL + "create_booking.php";
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
+    private static final String GET_ROOM_UNITS_URL = BOARD_EASE2_URL + "get_room_units.php";
+    private static final String BOOKING_API_URL = BOARD_EASE2_URL + "create_booking.php";
     
     // Views
     private ImageButton btnBack;
@@ -47,11 +52,23 @@ public class BookingActivity extends AppCompatActivity {
     private TextInputEditText etStartDate, etEndDate, etFirstName, etLastName, etEmail, etPhone;
     private MaterialButton btnProceed;
     private ProgressBar progressBar;
+    private RadioGroup rgRoomUnits;
+    private ProgressBar progressBarRoomUnits;
+    private TextView tvNoRoomUnits;
     
     // Data
-    private int roomId;
+    private int roomId; // This is bhr_id
+    private int selectedRoomUnitId; // This is room_units.room_id
     private int userId;
     private JSONObject roomData;
+    private List<RoomUnitData> roomUnitsList;
+    
+    // Room Unit data class
+    private static class RoomUnitData {
+        int roomId;
+        String roomNumber;
+        String status;
+    }
     private Calendar startDateCalendar;
     private Calendar endDateCalendar;
     private SimpleDateFormat dateFormat;
@@ -82,6 +99,9 @@ public class BookingActivity extends AppCompatActivity {
         
         // Load room details
         displayRoomDetails();
+        
+        // Load available room units
+        loadRoomUnits();
         
         // Autofill user information
         autofillUserInfo();
@@ -164,6 +184,12 @@ public class BookingActivity extends AppCompatActivity {
             etPhone = findViewById(R.id.etPhone);
             btnProceed = findViewById(R.id.btnProceed);
             progressBar = findViewById(R.id.progressBar);
+            rgRoomUnits = findViewById(R.id.rgRoomUnits);
+            progressBarRoomUnits = findViewById(R.id.progressBarRoomUnits);
+            tvNoRoomUnits = findViewById(R.id.tvNoRoomUnits);
+            
+            // Initialize room units list
+            roomUnitsList = new ArrayList<>();
             
             // Check if any view is null
             if (btnBack == null || tvRoomName == null || tvRoomDescription == null || 
@@ -214,6 +240,120 @@ public class BookingActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error displaying room details: " + e.getMessage());
+        }
+    }
+    
+    private void loadRoomUnits() {
+        if (roomId == 0) {
+            Log.e(TAG, "Room ID is 0, cannot load room units");
+            return;
+        }
+        
+        progressBarRoomUnits.setVisibility(View.VISIBLE);
+        tvNoRoomUnits.setVisibility(View.GONE);
+        rgRoomUnits.setVisibility(View.GONE);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, GET_ROOM_UNITS_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressBarRoomUnits.setVisibility(View.GONE);
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            if (jsonResponse.getBoolean("success")) {
+                                JSONArray unitsArray = jsonResponse.getJSONArray("units");
+                                roomUnitsList.clear();
+                                
+                                for (int i = 0; i < unitsArray.length(); i++) {
+                                    JSONObject unitObj = unitsArray.getJSONObject(i);
+                                    RoomUnitData unit = new RoomUnitData();
+                                    unit.roomId = unitObj.getInt("room_id");
+                                    unit.roomNumber = unitObj.getString("room_number");
+                                    unit.status = unitObj.getString("status");
+                                    
+                                    // Only add available units
+                                    if ("Available".equals(unit.status)) {
+                                        roomUnitsList.add(unit);
+                                    }
+                                }
+                                
+                                if (roomUnitsList.isEmpty()) {
+                                    tvNoRoomUnits.setVisibility(View.VISIBLE);
+                                    rgRoomUnits.setVisibility(View.GONE);
+                                } else {
+                                    populateRoomUnitsRadioGroup();
+                                    rgRoomUnits.setVisibility(View.VISIBLE);
+                                    tvNoRoomUnits.setVisibility(View.GONE);
+                                }
+                            } else {
+                                String error = jsonResponse.optString("error", "Failed to load room units");
+                                Log.e(TAG, "Error loading room units: " + error);
+                                tvNoRoomUnits.setVisibility(View.VISIBLE);
+                                rgRoomUnits.setVisibility(View.GONE);
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing room units: " + e.getMessage());
+                            tvNoRoomUnits.setVisibility(View.VISIBLE);
+                            rgRoomUnits.setVisibility(View.GONE);
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressBarRoomUnits.setVisibility(View.GONE);
+                        Log.e(TAG, "Error loading room units: " + error.getMessage());
+                        tvNoRoomUnits.setVisibility(View.VISIBLE);
+                        rgRoomUnits.setVisibility(View.GONE);
+                    }
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("bhr_id", String.valueOf(roomId));
+                return params;
+            }
+            
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    private void populateRoomUnitsRadioGroup() {
+        rgRoomUnits.removeAllViews();
+        
+        for (int i = 0; i < roomUnitsList.size(); i++) {
+            RoomUnitData unit = roomUnitsList.get(i);
+            RadioButton radioButton = new RadioButton(this);
+            radioButton.setId(View.generateViewId());
+            radioButton.setText(unit.roomNumber);
+            radioButton.setTextSize(16);
+            radioButton.setPadding(16, 16, 16, 16);
+            radioButton.setButtonTintList(getResources().getColorStateList(R.color.brown));
+            radioButton.setTextColor(getResources().getColor(R.color.black));
+            radioButton.setTag(unit.roomId); // Store room_id in tag
+            
+            // Select first unit by default
+            if (i == 0) {
+                radioButton.setChecked(true);
+                selectedRoomUnitId = unit.roomId;
+            }
+            
+            radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    selectedRoomUnitId = (Integer) buttonView.getTag();
+                    Log.d(TAG, "Selected room unit ID: " + selectedRoomUnitId);
+                }
+            });
+            
+            rgRoomUnits.addView(radioButton);
         }
     }
     
@@ -292,6 +432,12 @@ public class BookingActivity extends AppCompatActivity {
     private boolean validateForm() {
         boolean isValid = true;
         
+        // Validate room unit selection
+        if (selectedRoomUnitId == 0) {
+            Toast.makeText(this, "Please select a room unit", Toast.LENGTH_SHORT).show();
+            isValid = false;
+        }
+        
         // Validate start date
         if (etStartDate.getText().toString().isEmpty()) {
             etStartDate.setError("Please select start date");
@@ -356,7 +502,8 @@ public class BookingActivity extends AppCompatActivity {
     private void navigateToFinalBooking() {
         try {
             Intent intent = new Intent(BookingActivity.this, FinalBookingActivity.class);
-            intent.putExtra("room_id", roomId);
+            intent.putExtra("room_id", selectedRoomUnitId); // Pass room_units.room_id, not bhr_id
+            intent.putExtra("bhr_id", roomId); // Also pass bhr_id for reference
             intent.putExtra("user_id", userId);
             intent.putExtra("start_date", etStartDate.getText().toString());
             intent.putExtra("end_date", etEndDate.getText().toString());
