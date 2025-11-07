@@ -195,7 +195,7 @@ public class BookingActivity extends AppCompatActivity {
         // Proceed Button
         btnProceed.setOnClickListener(v -> {
             if (validateForm()) {
-                createBooking();
+                navigateToFinalBooking();
             }
         });
     }
@@ -351,6 +351,21 @@ public class BookingActivity extends AppCompatActivity {
         }
         
         return isValid;
+    }
+    
+    private void navigateToFinalBooking() {
+        try {
+            Intent intent = new Intent(BookingActivity.this, FinalBookingActivity.class);
+            intent.putExtra("room_id", roomId);
+            intent.putExtra("user_id", userId);
+            intent.putExtra("start_date", etStartDate.getText().toString());
+            intent.putExtra("end_date", etEndDate.getText().toString());
+            intent.putExtra("room_data", roomData.toString());
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error navigating to FinalBookingActivity: " + e.getMessage());
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void createBooking() {

@@ -30,6 +30,8 @@ try {
     $userId = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
     $startDate = isset($_POST['start_date']) ? trim($_POST['start_date']) : '';
     $endDate = isset($_POST['end_date']) ? trim($_POST['end_date']) : '';
+    $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
+    $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
     
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
@@ -144,6 +146,98 @@ try {
     ]);
     
     $bookingId = $pdo->lastInsertId();
+    
+    // Handle payment proof upload
+    $paymentProofPath = '';
+    if (!empty($paymentProofBase64)) {
+        // Decode base64 image
+        $imageData = base64_decode($paymentProofBase64);
+        
+        // Generate unique filename
+        $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
+        $uploadDir = 'uploads/payment_proofs/';
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        
+        $filePath = $uploadDir . $filename;
+        
+        // Save image
+        if (file_put_contents($filePath, $imageData)) {
+            $paymentProofPath = $filePath;
+        } else {
+            error_log("Failed to save payment proof image for booking_id: " . $bookingId);
+        }
+    }
+    
+    // Get owner_id from room
+    $getOwnerSql = "SELECT bh.user_id as owner_id FROM boarding_house_rooms bhr 
+                    JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
+                    WHERE bhr.bhr_id = :room_id";
+    $getOwnerStmt = $pdo->prepare($getOwnerSql);
+    $getOwnerStmt->execute([':room_id' => $roomId]);
+    $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
+    $ownerId = $ownerData ? intval($ownerData['owner_id']) : 0;
+    
+    // Get room price for payment amount
+    $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :room_id";
+    $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
+    $getRoomPriceStmt->execute([':room_id' => $roomId]);
+    $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
+    $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
+    
+    // Calculate payment month/year
+    $paymentMonth = date('Y-m', strtotime($startDate));
+    $paymentYear = intval(date('Y', strtotime($startDate)));
+    $paymentMonthNumber = intval(date('m', strtotime($startDate)));
+    
+    // Create payment record
+    if ($ownerId > 0) {
+        $insertPaymentSql = "
+            INSERT INTO payments (
+                booking_id,
+                user_id,
+                owner_id,
+                payment_amount,
+                payment_method,
+                payment_proof,
+                payment_status,
+                payment_date,
+                payment_month,
+                payment_year,
+                payment_month_number,
+                is_monthly_payment
+            ) VALUES (
+                :booking_id,
+                :user_id,
+                :owner_id,
+                :payment_amount,
+                :payment_method,
+                :payment_proof,
+                'Pending',
+                NOW(),
+                :payment_month,
+                :payment_year,
+                :payment_month_number,
+                1
+            )
+        ";
+        
+        $insertPaymentStmt = $pdo->prepare($insertPaymentSql);
+        $insertPaymentStmt->execute([
+            ':booking_id' => $bookingId,
+            ':user_id' => $userId,
+            ':owner_id' => $ownerId,
+            ':payment_amount' => $paymentAmount,
+            ':payment_method' => $paymentMethod,
+            ':payment_proof' => $paymentProofPath,
+            ':payment_month' => $paymentMonth,
+            ':payment_year' => $paymentYear,
+            ':payment_month_number' => $paymentMonthNumber
+        ]);
+    }
     
     echo json_encode(array(
         'success' => true,

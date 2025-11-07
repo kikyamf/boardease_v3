@@ -157,6 +157,7 @@ try {
         'data' => array(
             'boarding_house' => array(
                 'bh_id' => (int)$boardingHouse['bh_id'],
+                'user_id' => (int)$boardingHouse['user_id'],
                 'bh_name' => $boardingHouse['bh_name'],
                 'bh_address' => $boardingHouse['bh_address'],
                 'bh_description' => $boardingHouse['bh_description'],
