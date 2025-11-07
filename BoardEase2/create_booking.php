@@ -64,7 +64,7 @@ try {
     }
     
     // Check if room exists and is available
-    $checkRoomSql = "SELECT bhr_id, status FROM boarding_house_rooms WHERE bhr_id = :room_id";
+    $checkRoomSql = "SELECT bhr_id FROM boarding_house_rooms WHERE bhr_id = :room_id";
     $checkRoomStmt = $pdo->prepare($checkRoomSql);
     $checkRoomStmt->execute([':room_id' => $roomId]);
     $room = $checkRoomStmt->fetch(PDO::FETCH_ASSOC);
