@@ -33,11 +33,20 @@ try {
     $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
     $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
     
+    // Debug logging
+    error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate");
+    
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'Missing required fields'
+            'message' => 'Missing required fields',
+            'debug' => array(
+                'room_id' => $roomId,
+                'user_id' => $userId,
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            )
         ));
         exit;
     }
@@ -83,10 +92,22 @@ try {
     $checkUserStmt->execute([':user_id' => $userId]);
     $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
     
+    // Debug: Check what users exist
+    $debugUserSql = "SELECT id, email, first_name, last_name FROM registrations LIMIT 10";
+    $debugUserStmt = $pdo->prepare($debugUserSql);
+    $debugUserStmt->execute();
+    $allUsers = $debugUserStmt->fetchAll(PDO::FETCH_ASSOC);
+    error_log("create_booking.php - Looking for user_id: $userId");
+    error_log("create_booking.php - Available users: " . json_encode($allUsers));
+    
     if (!$user) {
         echo json_encode(array(
             'success' => false,
-            'message' => 'User not found'
+            'message' => 'User not found',
+            'debug' => array(
+                'searched_user_id' => $userId,
+                'available_user_ids' => array_column($allUsers, 'id')
+            )
         ));
         exit;
     }

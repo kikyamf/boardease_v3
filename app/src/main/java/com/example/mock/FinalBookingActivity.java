@@ -505,6 +505,10 @@ public class FinalBookingActivity extends AppCompatActivity {
                 params.put("end_date", endDate);
                 params.put("payment_method", paymentMethod);
                 params.put("payment_proof", paymentProofBase64);
+                
+                // Debug logging
+                Log.d(TAG, "Sending booking request with user_id: " + userId + ", room_id: " + roomId);
+                
                 return params;
             }
             
