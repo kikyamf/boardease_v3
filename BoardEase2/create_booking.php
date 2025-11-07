@@ -99,33 +99,46 @@ try {
     // Use room_units.room_id directly (this is what the user selected)
     $actualRoomId = $roomId;
     
-    // Check if user exists in registrations and get corresponding user_id from users table
-    // The userId from Android is registrations.id, but bookings needs users.user_id
-    $checkUserSql = "SELECT r.id, u.user_id 
-                     FROM registrations r 
-                     LEFT JOIN users u ON r.id = u.reg_id 
-                     WHERE r.id = :reg_id";
-    $checkUserStmt = $pdo->prepare($checkUserSql);
-    $checkUserStmt->execute([':reg_id' => $userId]);
-    $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    // Check if user exists - userId from Android is users.user_id (from login.php)
+    // First try to find by users.user_id (most common case since login.php returns this)
+    $checkUserByUserIdSql = "SELECT r.id as reg_id, u.user_id 
+                             FROM users u 
+                             JOIN registrations r ON u.reg_id = r.id 
+                             WHERE u.user_id = :user_id";
+    $checkUserByUserIdStmt = $pdo->prepare($checkUserByUserIdSql);
+    $checkUserByUserIdStmt->execute([':user_id' => $userId]);
+    $user = $checkUserByUserIdStmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If not found by users.user_id, try to find by registrations.id (fallback)
+    if (!$user) {
+        $checkUserSql = "SELECT r.id as reg_id, u.user_id 
+                         FROM registrations r 
+                         LEFT JOIN users u ON r.id = u.reg_id 
+                         WHERE r.id = :user_id";
+        $checkUserStmt = $pdo->prepare($checkUserSql);
+        $checkUserStmt->execute([':user_id' => $userId]);
+        $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     if (!$user) {
+        error_log("User not found - searched userId: " . $userId);
         echo json_encode(array(
             'success' => false,
-            'message' => 'User not found in registrations'
+            'message' => 'User not found'
         ));
         exit;
     }
     
     // Get the actual user_id from users table (needed for bookings foreign key)
     $actualUserId = $user['user_id'];
+    $regId = $user['reg_id'];
     
     // If user doesn't have a corresponding entry in users table, create one
     if (!$actualUserId) {
         // Insert into users table
         $insertUserSql = "INSERT INTO users (reg_id, status) VALUES (:reg_id, 'Active')";
         $insertUserStmt = $pdo->prepare($insertUserSql);
-        $insertUserStmt->execute([':reg_id' => $userId]);
+        $insertUserStmt->execute([':reg_id' => $regId]);
         $actualUserId = $pdo->lastInsertId();
         
         if (!$actualUserId) {
