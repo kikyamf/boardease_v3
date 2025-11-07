@@ -45,7 +45,7 @@ public class Login extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private RequestQueue requestQueue;
     private boolean isPasswordVisible = false;
-    
+
     // SharedPreferences for storing user session
     private SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "UserSession";
@@ -53,7 +53,7 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "user_email";
-    
+
     // Server URL - Update this path if login.php is in a different location
     private static final String LOGIN_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/login.php";
 
@@ -66,13 +66,13 @@ public class Login extends AppCompatActivity {
 
         // Initialize views
         initializeViews();
-        
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        
+
         // Initialize Volley RequestQueue
         requestQueue = Volley.newRequestQueue(this);
-        
+
         // Check if user is already logged in
         checkExistingSession();
 
@@ -85,7 +85,7 @@ public class Login extends AppCompatActivity {
             return insets;
         });
     }
-    
+
     private void initializeViews() {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -93,24 +93,24 @@ public class Login extends AppCompatActivity {
         btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
         btnTogglePassword = findViewById(R.id.btnTogglePassword);
-        
+
         // Initialize progress dialog
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Logging in...");
         progressDialog.setCancelable(false);
     }
-    
+
     private void checkExistingSession() {
         // Check if user is already logged in
         String userId = sharedPreferences.getString(KEY_USER_ID, null);
         String userRole = sharedPreferences.getString(KEY_USER_ROLE, null);
-        
+
         if (userId != null && userRole != null) {
             // User is already logged in, navigate to appropriate dashboard
             navigateToDashboard(userRole);
         }
     }
-    
+
     private void setClickListeners() {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,7 +154,7 @@ public class Login extends AppCompatActivity {
             btnTogglePassword.setImageResource(R.drawable.ic_password_visible);
             isPasswordVisible = true;
         }
-        
+
         // Move cursor to end of text
         etPassword.setSelection(etPassword.getText().length());
     }
@@ -163,38 +163,38 @@ public class Login extends AppCompatActivity {
         Intent intent = new Intent(Login.this, GuestHomeActivity.class);
         startActivity(intent);
     }
-    
+
     private void performLogin() {
         // Get input values
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        
+
         // Validate input
         if (TextUtils.isEmpty(email)) {
             etEmail.setError("Email is required");
             etEmail.requestFocus();
             return;
         }
-        
+
         if (TextUtils.isEmpty(password)) {
             etPassword.setError("Password is required");
             etPassword.requestFocus();
             return;
         }
-        
+
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Please enter a valid email address");
             etEmail.requestFocus();
             return;
         }
-        
+
         // Show progress dialog
         progressDialog.show();
-        
+
         // Log the login attempt
         Log.d("LoginAttempt", "Attempting login for email: " + email);
         Log.d("LoginAttempt", "Login URL: " + LOGIN_URL);
-        
+
         // Create login request
         StringRequest stringRequest = new StringRequest(Request.Method.POST, LOGIN_URL,
                 new Response.Listener<String>() {
@@ -211,7 +211,7 @@ public class Login extends AppCompatActivity {
                         progressDialog.dismiss();
                         Log.e("LoginError", "Volley error: " + error.getMessage());
                         Log.e("LoginError", "Error details: " + error.toString());
-                        
+
                         String errorMessage = "Network error: ";
                         if (error.getMessage() != null) {
                             errorMessage += error.getMessage();
@@ -224,7 +224,7 @@ public class Login extends AppCompatActivity {
                         } else {
                             errorMessage += "Unknown network error";
                         }
-                        
+
                         Toast.makeText(Login.this, errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
@@ -236,17 +236,17 @@ public class Login extends AppCompatActivity {
                 return params;
             }
         };
-        
+
         // Add request to queue
         requestQueue.add(stringRequest);
     }
-    
+
     private void handleLoginResponse(String response) {
         try {
             JSONObject jsonObject = new JSONObject(response);
             boolean success = jsonObject.getBoolean("success");
             String message = jsonObject.getString("message");
-            
+
             if (success) {
                 // Login successful
                 JSONObject userObject = jsonObject.getJSONObject("user");
@@ -255,7 +255,7 @@ public class Login extends AppCompatActivity {
                 String firstName = userObject.getString("firstName");
                 String lastName = userObject.getString("lastName");
                 String userEmail = userObject.getString("email");
-                
+
                 // Get additional user details (if available)
                 String suffix = userObject.optString("suffix", "");
                 String middleName = userObject.optString("middleName", "");
@@ -263,27 +263,30 @@ public class Login extends AppCompatActivity {
                 String birthDate = userObject.optString("birthDate", "");
                 String address = userObject.optString("address", "");
                 String gcashNumber = userObject.optString("gcashNumber", "");
-                
+
                 // Build full name with suffix
                 String fullName = firstName + " " + lastName;
                 if (suffix != null && !suffix.isEmpty() && !suffix.equals("None")) {
                     fullName += " " + suffix;
                 }
-                
+
                 // Store user session in SharedPreferences
-                saveUserSession(userId, userRole, fullName, userEmail, 
-                              middleName, phone, birthDate, address, gcashNumber, suffix);
-                
+                saveUserSession(userId, userRole, fullName, userEmail,
+                        middleName, phone, birthDate, address, gcashNumber, suffix);
+
+                // Also store first and last name separately
+                saveUserNameParts(firstName, lastName);
+
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
-                
+
                 // Navigate to appropriate dashboard based on role
                 navigateToDashboard(userRole);
-                
+
             } else {
                 // Check if verification is required
                 boolean requiresVerification = jsonObject.optBoolean("requires_verification", false);
-                
+
                 if (requiresVerification) {
                     // Navigate to email verification
                     Intent intent = new Intent(Login.this, EmailVerificationActivity.class);
@@ -294,15 +297,15 @@ public class Login extends AppCompatActivity {
                     Toast.makeText(this, message, Toast.LENGTH_LONG).show();
                 }
             }
-            
+
         } catch (JSONException e) {
             Log.e("LoginError", "JSON parsing error: " + e.getMessage());
             Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_SHORT).show();
         }
     }
-    
-    private void saveUserSession(String userId, String userRole, String userName, String userEmail, 
-                                String middleName, String phone, String birthDate, String address, String gcashNumber, String suffix) {
+
+    private void saveUserSession(String userId, String userRole, String userName, String userEmail,
+                                 String middleName, String phone, String birthDate, String address, String gcashNumber, String suffix) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_ROLE, userRole);
@@ -316,10 +319,18 @@ public class Login extends AppCompatActivity {
         editor.putString("user_suffix", suffix);
         editor.apply();
     }
-    
+
+    // Helper method to save first and last name separately (called during login)
+    private void saveUserNameParts(String firstName, String lastName) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("user_first_name", firstName);
+        editor.putString("user_last_name", lastName);
+        editor.apply();
+    }
+
     private void navigateToDashboard(String userRole) {
         Intent intent;
-        
+
         if ("Boarder".equals(userRole)) {
             // Navigate to BoarderDashboard
             intent = new Intent(Login.this, BoarderDashboard.class);
@@ -331,74 +342,84 @@ public class Login extends AppCompatActivity {
             Toast.makeText(this, "Unknown user role. Please contact support.", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         // Clear the login activity from the stack
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
-    
+
     // Method to logout (can be called from other activities)
     public static void logout(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();
-        
+
         Intent intent = new Intent(context, Login.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
     }
-    
+
     // Method to get current user info (can be called from other activities)
     public static String getCurrentUserId(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_ID, null);
     }
-    
+
     public static String getCurrentUserRole(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_ROLE, null);
     }
-    
+
     public static String getCurrentUserName(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_NAME, null);
     }
-    
+
     public static String getCurrentUserEmail(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString(KEY_USER_EMAIL, null);
     }
-    
+
     // Additional user info methods
     public static String getCurrentUserMiddleName(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_middle_name", "");
     }
-    
+
     public static String getCurrentUserPhone(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_phone", "");
     }
-    
+
     public static String getCurrentUserBirthDate(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_birth_date", "");
     }
-    
+
     public static String getCurrentUserAddress(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_address", "");
     }
-    
+
     public static String getCurrentUserGcashNumber(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_gcash_number", "");
     }
-    
+
     public static String getCurrentUserSuffix(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return sharedPreferences.getString("user_suffix", "");
+    }
+
+    public static String getCurrentUserFirstName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_first_name", "");
+    }
+
+    public static String getCurrentUserLastName(android.content.Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return sharedPreferences.getString("user_last_name", "");
     }
 }

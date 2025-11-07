@@ -25,6 +25,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.mock.adapters.BoardingHouseAdapter;
 import com.google.android.material.button.MaterialButton;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +64,11 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     private SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "boarder_favorites";
     private static final String KEY_FAVORITES = "favorite_ids";
+    
+    // API URL
+    private static final String TAG = "BoarderFavoriteFragment";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String API_URL = BASE_URL + "get_boarding_houses1.php";
 
     public BoarderFavoriteFragment() {
         // Required empty public constructor
@@ -161,49 +177,215 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             // Get favorite IDs from SharedPreferences
             Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
             
-            // Create mock data for favorites (in real app, this would come from API)
-            createMockFavoritesData(favoriteIds);
-
-            // Hide loading indicator and update UI
+            // If no favorites, show empty state immediately
+            if (favoriteIds.isEmpty()) {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                allFavorites.clear();
+                filteredFavorites.clear();
+                updateUI();
+                return;
+            }
+            
+            // Fetch real data from API
+            fetchBoardingHousesFromAPI(favoriteIds);
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading favorites: " + e.getMessage());
+            e.printStackTrace();
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
-            updateUI();
-        } catch (Exception e) {
-            e.printStackTrace();
+            showError("Error loading favorites");
         }
     }
 
-    private void createMockFavoritesData(Set<String> favoriteIds) {
+    private void fetchBoardingHousesFromAPI(Set<String> favoriteIds) {
+        try {
+            // Create request queue
+            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            
+            // Create string request with custom headers
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            try {
+                                Log.d(TAG, "API Response received");
+                                
+                                // Check if response is null or empty
+                                if (response == null || response.trim().isEmpty()) {
+                                    Log.e(TAG, "Received null or empty response");
+                                    showError("Server returned empty response");
+                                    return;
+                                }
+                                
+                                // Check if response is HTML (error page)
+                                if (response.trim().startsWith("<!DOCTYPE html>") || response.trim().startsWith("<html")) {
+                                    Log.e(TAG, "Received HTML page instead of JSON");
+                                    showError("Server returned HTML instead of JSON. Please check the API endpoint.");
+                                    return;
+                                }
+                                
+                                // Parse JSON response
+                                JSONObject jsonResponse = new JSONObject(response);
+                                boolean success = jsonResponse.getBoolean("success");
+                                
+                                if (success) {
+                                    JSONArray dataArray = jsonResponse.getJSONArray("data");
+                                    Log.d(TAG, "Successfully parsed JSON with " + dataArray.length() + " items");
+                                    parseAndFilterBoardingHouses(dataArray, favoriteIds);
+                                } else {
+                                    String error = jsonResponse.optString("error", "Unknown error occurred");
+                                    Log.e(TAG, "API Error: " + error);
+                                    showError("Failed to load boarding houses: " + error);
+                                }
+                            } catch (JSONException e) {
+                                // Try parsing as direct array
+                                try {
+                                    JSONArray dataArray = new JSONArray(response);
+                                    Log.d(TAG, "Successfully parsed direct array with " + dataArray.length() + " items");
+                                    parseAndFilterBoardingHouses(dataArray, favoriteIds);
+                                } catch (JSONException e2) {
+                                    Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                                    showError("Error parsing server response: " + e.getMessage());
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Unexpected error: " + e.getMessage());
+                                showError("Unexpected error: " + e.getMessage());
+                            } finally {
+                                // Hide loading indicator
+                                if (progressBar != null) {
+                                    progressBar.setVisibility(View.GONE);
+                                }
+                                updateUI();
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e(TAG, "Volley error: " + error.getMessage());
+                            if (progressBar != null) {
+                                progressBar.setVisibility(View.GONE);
+                            }
+                            showError("Network error: " + error.getMessage());
+                        }
+                    }) {
+                @Override
+                public java.util.Map<String, String> getHeaders() {
+                    java.util.Map<String, String> headers = new java.util.HashMap<>();
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
+                    return headers;
+                }
+            };
+            
+            // Add request to queue
+            requestQueue.add(stringRequest);
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating request: " + e.getMessage());
+            e.printStackTrace();
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            showError("Error loading favorites");
+        }
+    }
+    
+    private void parseAndFilterBoardingHouses(JSONArray dataArray, Set<String> favoriteIds) throws JSONException {
         allFavorites.clear();
         
-        // Create all possible boarding houses
-        List<Listing> allBoardingHouses = new ArrayList<>();
-        allBoardingHouses.add(new Listing(1, "Sunshine Boarding House", "sample_listing"));
-        allBoardingHouses.add(new Listing(2, "Green Valley Dormitory", "sample_listing"));
-        allBoardingHouses.add(new Listing(3, "Metro Student Housing", "sample_listing"));
-        allBoardingHouses.add(new Listing(4, "Quezon City Boarding", "sample_listing"));
-        allBoardingHouses.add(new Listing(5, "Manila Central Dorm", "sample_listing"));
-        allBoardingHouses.add(new Listing(6, "Downtown Boarding House", "sample_listing"));
-        allBoardingHouses.add(new Listing(7, "University Dormitory", "sample_listing"));
-        allBoardingHouses.add(new Listing(8, "City Center Housing", "sample_listing"));
-
-        // Add only the ones that are in favorites
-        for (Listing bh : allBoardingHouses) {
-            if (favoriteIds.contains(String.valueOf(bh.getBhId()))) {
-                allFavorites.add(bh);
+        try {
+            for (int i = 0; i < dataArray.length(); i++) {
+                JSONObject boardingHouseJson = dataArray.getJSONObject(i);
+                
+                int bhId = boardingHouseJson.getInt("bh_id");
+                
+                // Only add if this boarding house is in favorites
+                if (favoriteIds.contains(String.valueOf(bhId))) {
+                    String bhName = boardingHouseJson.getString("bh_name");
+                    String bhAddress = boardingHouseJson.optString("bh_address", "");
+                    String bhDescription = boardingHouseJson.optString("bh_description", "");
+                    String bhRules = boardingHouseJson.optString("bh_rules", "");
+                    String bhBathrooms = boardingHouseJson.optString("number_of_bathroom", "");
+                    String area = boardingHouseJson.optString("area", "");
+                    String buildYear = boardingHouseJson.optString("build_year", "");
+                    String imagePath = boardingHouseJson.optString("image_path", "");
+                    
+                    // Parse price data
+                    Integer minPrice = null;
+                    Integer maxPrice = null;
+                    if (!boardingHouseJson.isNull("min_price")) {
+                        minPrice = boardingHouseJson.optInt("min_price");
+                    }
+                    if (!boardingHouseJson.isNull("max_price")) {
+                        maxPrice = boardingHouseJson.optInt("max_price");
+                    }
+                    
+                    // Create image paths list
+                    ArrayList<String> imagePaths = new ArrayList<>();
+                    if (imagePath != null && !imagePath.isEmpty()) {
+                        imagePaths.add(imagePath);
+                    }
+                    
+                    // Create Listing object with full details
+                    Listing boardingHouse = new Listing(
+                        bhId, bhName, bhAddress, bhDescription, bhRules,
+                        bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice
+                    );
+                    
+                    // Parse and set owner contact information
+                    String ownerName = boardingHouseJson.optString("owner_name", "");
+                    String ownerPhone = boardingHouseJson.optString("owner_phone", "");
+                    String ownerEmail = boardingHouseJson.optString("owner_email", "");
+                    
+                    // If owner_name is not directly available, build it from separate fields
+                    if (ownerName.isEmpty()) {
+                        String firstName = boardingHouseJson.optString("owner_first_name", "");
+                        String middleName = boardingHouseJson.optString("owner_middle_name", "");
+                        String lastName = boardingHouseJson.optString("owner_last_name", "");
+                        
+                        StringBuilder nameBuilder = new StringBuilder();
+                        if (!firstName.isEmpty()) nameBuilder.append(firstName);
+                        if (!middleName.isEmpty()) {
+                            if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                            nameBuilder.append(middleName);
+                        }
+                        if (!lastName.isEmpty()) {
+                            if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                            nameBuilder.append(lastName);
+                        }
+                        ownerName = nameBuilder.toString();
+                    }
+                    
+                    boardingHouse.setOwnerName(ownerName);
+                    boardingHouse.setOwnerPhone(ownerPhone);
+                    boardingHouse.setOwnerEmail(ownerEmail);
+                    
+                    allFavorites.add(boardingHouse);
+                }
             }
+            
+            Log.d(TAG, "Loaded " + allFavorites.size() + " favorite boarding houses");
+            
+            // Initially show all favorites
+            filteredFavorites.clear();
+            filteredFavorites.addAll(allFavorites);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing boarding house data: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error parsing boarding house data: " + e.getMessage());
+            throw new JSONException("Error parsing boarding house data: " + e.getMessage());
         }
-
-        // If no favorites, add some sample ones for demo
-        if (allFavorites.isEmpty()) {
-            allFavorites.add(new Listing(1, "Sunshine Boarding House", "sample_listing"));
-            allFavorites.add(new Listing(3, "Metro Student Housing", "sample_listing"));
-        }
-
-        // Initially show all favorites
+    }
+    
+    private void showError(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+        allFavorites.clear();
         filteredFavorites.clear();
-        filteredFavorites.addAll(allFavorites);
+        updateUI();
     }
 
     private void filterFavorites(String query) {
@@ -330,13 +512,8 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             allFavorites.remove(boardingHouse);
             filteredFavorites.remove(boardingHouse);
             
-            // Update SharedPreferences
-            Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
-            favoriteIds.remove(String.valueOf(boardingHouse.getBhId()));
-            
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putStringSet(KEY_FAVORITES, favoriteIds);
-            editor.apply();
+            // Update SharedPreferences using static method
+            BoarderFavoriteFragment.removeFromFavorites(getContext(), boardingHouse);
             
             // Update UI
             updateUI();
@@ -351,6 +528,21 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
             Set<String> favoriteIds = prefs.getStringSet(KEY_FAVORITES, new HashSet<>());
             favoriteIds.add(String.valueOf(boardingHouse.getBhId()));
+            
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putStringSet(KEY_FAVORITES, favoriteIds);
+            editor.apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Public method to remove a boarding house from favorites (called from other fragments)
+    public static void removeFromFavorites(android.content.Context context, Listing boardingHouse) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+            Set<String> favoriteIds = prefs.getStringSet(KEY_FAVORITES, new HashSet<>());
+            favoriteIds.remove(String.valueOf(boardingHouse.getBhId()));
             
             SharedPreferences.Editor editor = prefs.edit();
             editor.putStringSet(KEY_FAVORITES, favoriteIds);

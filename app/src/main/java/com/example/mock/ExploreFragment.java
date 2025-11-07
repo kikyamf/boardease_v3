@@ -582,10 +582,12 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             } else {
                 // Remove from favorites
+                BoarderFavoriteFragment.removeFromFavorites(getContext(), boardingHouse);
                 String message = "Removed from favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                // TODO: Implement remove from favorites functionality
             }
+            // Refresh the adapter to update favorite icons
+            adapter.notifyDataSetChanged();
         } catch (Exception e) {
             e.printStackTrace();
         }
