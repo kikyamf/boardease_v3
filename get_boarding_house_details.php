@@ -173,6 +173,7 @@ try {
                 'room_details' => $roomDetails,
                 'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
                 'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
+                'gcash_qr' => $boardingHouse['gcash_qr'] ?? null, // Include GCash QR code from registrations
                 'owner' => array(
                     'first_name' => $boardingHouse['first_name'] ?? null,
                     'middle_name' => $boardingHouse['middle_name'] ?? null,

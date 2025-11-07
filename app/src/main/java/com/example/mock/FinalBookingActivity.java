@@ -263,8 +263,15 @@ public class FinalBookingActivity extends AppCompatActivity {
                                 
                                 // Store GCash QR code from boarding house details (if available)
                                 if (bh.has("gcash_qr") && !bh.isNull("gcash_qr")) {
-                                    ownerGcashQrPath = bh.getString("gcash_qr");
-                                    Log.d(TAG, "GCash QR stored from BH details: " + ownerGcashQrPath);
+                                    String qrPath = bh.getString("gcash_qr");
+                                    if (qrPath != null && !qrPath.isEmpty() && !qrPath.equals("null")) {
+                                        ownerGcashQrPath = qrPath;
+                                        Log.d(TAG, "GCash QR stored from BH details: " + ownerGcashQrPath);
+                                    } else {
+                                        Log.d(TAG, "GCash QR is null or empty in response");
+                                    }
+                                } else {
+                                    Log.d(TAG, "GCash QR field not found in boarding house response. Available keys: " + bh.keys());
                                 }
                                 
                                 // Load BH image
@@ -305,8 +312,10 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void loadOwnerGcashQr() {
+        Log.d(TAG, "loadOwnerGcashQr called. ownerGcashQrPath: " + ownerGcashQrPath);
+        
         // Use the QR code that was already fetched from boarding house details
-        if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty()) {
+        if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty() && !ownerGcashQrPath.equals("null")) {
             // Construct full image URL - if path doesn't start with http, prepend BASE_URL
             String fullImageUrl = ownerGcashQrPath.startsWith("http") 
                 ? ownerGcashQrPath 
@@ -319,9 +328,24 @@ public class FinalBookingActivity extends AppCompatActivity {
                     .error(R.drawable.placeholder)
                     .into(ivOwnerQrCode);
         } else {
-            Log.e(TAG, "GCash QR not available - path is empty or null");
-            ivOwnerQrCode.setImageResource(R.drawable.placeholder);
-            Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "GCash QR not available - path is empty, null, or 'null'. ownerGcashQrPath: '" + ownerGcashQrPath + "'");
+            // Try to reload boarding house details if QR wasn't loaded yet
+            if (ownerGcashQrPath == null) {
+                Log.d(TAG, "QR path is null, reloading boarding house details...");
+                loadBoardingHouseDetails();
+                // Wait a bit and try again (this is a workaround for async timing)
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty()) {
+                        loadOwnerGcashQr();
+                    } else {
+                        ivOwnerQrCode.setImageResource(R.drawable.placeholder);
+                        Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
+                    }
+                }, 500);
+            } else {
+                ivOwnerQrCode.setImageResource(R.drawable.placeholder);
+                Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
+            }
         }
     }
     
