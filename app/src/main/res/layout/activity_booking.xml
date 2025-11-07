@@ -357,41 +357,6 @@
                         android:drawablePadding="8dp"
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Country of Residence -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Country of Residence"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins_medium"
-                        android:textColor="@color/dark_gray"
-                        android:layout_marginBottom="8dp" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/light_brown"
-                        android:hint="Select country"
-                        app:boxStrokeColor="@color/brown"
-                        app:boxStrokeWidth="2dp"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/actvCountry"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:drawableEnd="@drawable/ic_arrow_down"
-                            android:drawablePadding="8dp"
-                            android:paddingEnd="12dp" />
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

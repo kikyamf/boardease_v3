@@ -6,8 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -42,13 +40,11 @@ public class BookingActivity extends AppCompatActivity {
     private static final String TAG = "BookingActivity";
     private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
     private static final String BOOKING_API_URL = BASE_URL + "create_booking.php";
-    private static final String COUNTRIES_API_URL = "https://restcountries.com/v3.1/all?fields=name";
     
     // Views
     private ImageButton btnBack;
     private TextView tvRoomName, tvRoomDescription, tvRoomPrice, tvRoomCapacity;
     private TextInputEditText etStartDate, etEndDate, etFirstName, etLastName, etEmail, etPhone;
-    private AutoCompleteTextView actvCountry;
     private MaterialButton btnProceed;
     private ProgressBar progressBar;
     
@@ -60,7 +56,6 @@ public class BookingActivity extends AppCompatActivity {
     private Calendar endDateCalendar;
     private SimpleDateFormat dateFormat;
     private RequestQueue requestQueue;
-    private List<String> countryList;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +67,6 @@ public class BookingActivity extends AppCompatActivity {
         startDateCalendar = Calendar.getInstance();
         endDateCalendar = Calendar.getInstance();
         requestQueue = Volley.newRequestQueue(this);
-        countryList = new ArrayList<>();
         
         // Get data from intent
         getIntentData();
@@ -91,9 +85,6 @@ public class BookingActivity extends AppCompatActivity {
         
         // Autofill user information
         autofillUserInfo();
-        
-        // Load countries
-        loadCountries();
     }
     
     private void getIntentData() {
@@ -171,7 +162,6 @@ public class BookingActivity extends AppCompatActivity {
             etLastName = findViewById(R.id.etLastName);
             etEmail = findViewById(R.id.etEmail);
             etPhone = findViewById(R.id.etPhone);
-            actvCountry = findViewById(R.id.actvCountry);
             btnProceed = findViewById(R.id.btnProceed);
             progressBar = findViewById(R.id.progressBar);
             
@@ -179,7 +169,7 @@ public class BookingActivity extends AppCompatActivity {
             if (btnBack == null || tvRoomName == null || tvRoomDescription == null || 
                 tvRoomPrice == null || tvRoomCapacity == null || etStartDate == null || 
                 etEndDate == null || etFirstName == null || etLastName == null || 
-                etEmail == null || etPhone == null || actvCountry == null || 
+                etEmail == null || etPhone == null || 
                 btnProceed == null || progressBar == null) {
                 Log.e(TAG, "One or more views are null");
                 Toast.makeText(this, "Error initializing views", Toast.LENGTH_SHORT).show();
@@ -252,86 +242,6 @@ public class BookingActivity extends AppCompatActivity {
         etLastName.setText(lastName != null ? lastName : "");
         etEmail.setText(email != null ? email : "");
         etPhone.setText(phone != null ? phone : "");
-    }
-    
-    private void loadCountries() {
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, COUNTRIES_API_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONArray countriesArray = new JSONArray(response);
-                            countryList.clear();
-                            
-                            for (int i = 0; i < countriesArray.length(); i++) {
-                                JSONObject country = countriesArray.getJSONObject(i);
-                                JSONObject name = country.getJSONObject("name");
-                                String countryName = name.getString("common");
-                                countryList.add(countryName);
-                            }
-                            
-                            // Sort countries alphabetically
-                            countryList.sort(String::compareToIgnoreCase);
-                            
-                            // Set up AutoCompleteTextView
-                            ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                                    BookingActivity.this,
-                                    android.R.layout.simple_dropdown_item_1line,
-                                    countryList
-                            );
-                            actvCountry.setAdapter(adapter);
-                            actvCountry.setThreshold(1);
-                            
-                            Log.d(TAG, "Loaded " + countryList.size() + " countries");
-                        } catch (JSONException e) {
-                            Log.e(TAG, "Error parsing countries: " + e.getMessage());
-                            // Fallback to common countries
-                            loadFallbackCountries();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "Error loading countries: " + error.getMessage());
-                        // Fallback to common countries
-                        loadFallbackCountries();
-                    }
-                });
-        
-        requestQueue.add(stringRequest);
-    }
-    
-    private void loadFallbackCountries() {
-        countryList.clear();
-        countryList.add("Philippines");
-        countryList.add("United States");
-        countryList.add("United Kingdom");
-        countryList.add("Canada");
-        countryList.add("Australia");
-        countryList.add("Japan");
-        countryList.add("South Korea");
-        countryList.add("Singapore");
-        countryList.add("Malaysia");
-        countryList.add("Thailand");
-        countryList.add("Indonesia");
-        countryList.add("Vietnam");
-        countryList.add("India");
-        countryList.add("China");
-        countryList.add("Germany");
-        countryList.add("France");
-        countryList.add("Spain");
-        countryList.add("Italy");
-        countryList.add("New Zealand");
-        countryList.add("Other");
-        
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_dropdown_item_1line,
-                countryList
-        );
-        actvCountry.setAdapter(adapter);
-        actvCountry.setThreshold(1);
     }
     
     private void showStartDatePicker() {
@@ -440,12 +350,6 @@ public class BookingActivity extends AppCompatActivity {
             isValid = false;
         }
         
-        // Validate country
-        if (actvCountry.getText().toString().trim().isEmpty()) {
-            actvCountry.setError("Country is required");
-            isValid = false;
-        }
-        
         return isValid;
     }
     
@@ -493,7 +397,7 @@ public class BookingActivity extends AppCompatActivity {
                 params.put("user_id", String.valueOf(userId));
                 params.put("start_date", etStartDate.getText().toString());
                 params.put("end_date", etEndDate.getText().toString());
-                // Note: first_name, last_name, email, phone, country are validated but not stored in bookings table
+                // Note: first_name, last_name, email, phone are validated but not stored in bookings table
                 // They are already in the registrations table via user_id
                 return params;
             }
