@@ -151,6 +151,9 @@
             android:name=".ChooseAccommodationActivity"
             android:exported="false" />
         <activity
+            android:name=".BookingActivity"
+            android:exported="false" />
+        <activity
             android:name=".BoardingHouseDetailsActivitySimple"
             android:exported="false" />
         <activity

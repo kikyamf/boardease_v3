@@ -97,21 +97,42 @@ public class BookingActivity extends AppCompatActivity {
     }
     
     private void getIntentData() {
-        Intent intent = getIntent();
-        roomId = intent.getIntExtra("bhr_id", 0);
-        String roomDataString = intent.getStringExtra("room_data");
-        
-        if (roomId == 0 || roomDataString == null) {
-            Toast.makeText(this, "Invalid room data", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        
         try {
-            roomData = new JSONObject(roomDataString);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing room data: " + e.getMessage());
-            Toast.makeText(this, "Error loading room data", Toast.LENGTH_SHORT).show();
+            Intent intent = getIntent();
+            if (intent == null) {
+                Log.e(TAG, "Intent is null");
+                Toast.makeText(this, "Invalid room data", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            
+            roomId = intent.getIntExtra("bhr_id", 0);
+            String roomDataString = intent.getStringExtra("room_data");
+            
+            Log.d(TAG, "Received roomId: " + roomId);
+            Log.d(TAG, "Received roomDataString: " + (roomDataString != null ? roomDataString.substring(0, Math.min(100, roomDataString.length())) : "null"));
+            
+            if (roomId == 0 || roomDataString == null || roomDataString.isEmpty()) {
+                Log.e(TAG, "Invalid room data - roomId: " + roomId + ", roomDataString: " + (roomDataString != null ? "not null" : "null"));
+                Toast.makeText(this, "Invalid room data", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            
+            try {
+                roomData = new JSONObject(roomDataString);
+                Log.d(TAG, "Successfully parsed room data");
+            } catch (JSONException e) {
+                Log.e(TAG, "Error parsing room data: " + e.getMessage());
+                Log.e(TAG, "Room data string: " + roomDataString);
+                e.printStackTrace();
+                Toast.makeText(this, "Error loading room data", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error in getIntentData: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error loading booking data", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -138,20 +159,38 @@ public class BookingActivity extends AppCompatActivity {
     }
     
     private void initializeViews() {
-        btnBack = findViewById(R.id.btnBack);
-        tvRoomName = findViewById(R.id.tvRoomName);
-        tvRoomDescription = findViewById(R.id.tvRoomDescription);
-        tvRoomPrice = findViewById(R.id.tvRoomPrice);
-        tvRoomCapacity = findViewById(R.id.tvRoomCapacity);
-        etStartDate = findViewById(R.id.etStartDate);
-        etEndDate = findViewById(R.id.etEndDate);
-        etFirstName = findViewById(R.id.etFirstName);
-        etLastName = findViewById(R.id.etLastName);
-        etEmail = findViewById(R.id.etEmail);
-        etPhone = findViewById(R.id.etPhone);
-        actvCountry = findViewById(R.id.actvCountry);
-        btnProceed = findViewById(R.id.btnProceed);
-        progressBar = findViewById(R.id.progressBar);
+        try {
+            btnBack = findViewById(R.id.btnBack);
+            tvRoomName = findViewById(R.id.tvRoomName);
+            tvRoomDescription = findViewById(R.id.tvRoomDescription);
+            tvRoomPrice = findViewById(R.id.tvRoomPrice);
+            tvRoomCapacity = findViewById(R.id.tvRoomCapacity);
+            etStartDate = findViewById(R.id.etStartDate);
+            etEndDate = findViewById(R.id.etEndDate);
+            etFirstName = findViewById(R.id.etFirstName);
+            etLastName = findViewById(R.id.etLastName);
+            etEmail = findViewById(R.id.etEmail);
+            etPhone = findViewById(R.id.etPhone);
+            actvCountry = findViewById(R.id.actvCountry);
+            btnProceed = findViewById(R.id.btnProceed);
+            progressBar = findViewById(R.id.progressBar);
+            
+            // Check if any view is null
+            if (btnBack == null || tvRoomName == null || tvRoomDescription == null || 
+                tvRoomPrice == null || tvRoomCapacity == null || etStartDate == null || 
+                etEndDate == null || etFirstName == null || etLastName == null || 
+                etEmail == null || etPhone == null || actvCountry == null || 
+                btnProceed == null || progressBar == null) {
+                Log.e(TAG, "One or more views are null");
+                Toast.makeText(this, "Error initializing views", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing views: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error initializing views", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
     
     private void setupClickListeners() {
