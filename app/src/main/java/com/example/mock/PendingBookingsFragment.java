@@ -39,6 +39,7 @@ public class PendingBookingsFragment extends Fragment {
     private RequestQueue requestQueue;
     private int userId;
     private TextView tvCount;
+    private TextView emptyState;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ProgressDialog progressDialog;
@@ -68,6 +69,9 @@ public class PendingBookingsFragment extends Fragment {
         // Initialize count TextView
         tvCount = view.findViewById(R.id.tvCount);
         
+        // Initialize empty state
+        emptyState = view.findViewById(R.id.emptyState);
+        
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         swipeRefreshLayout.setOnRefreshListener(() -> {
@@ -92,33 +96,15 @@ public class PendingBookingsFragment extends Fragment {
     }
     
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        // Load data after view is created and attached
-        if (isInitialLoad) {
-            loadPendingBookings(false);
-        }
-    }
-    
-    @Override
     public void onPause() {
         super.onPause();
         hideProgressDialog();
     }
     
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Only load if we haven't loaded yet and list is empty
-        if (isInitialLoad && pendingBookings.isEmpty()) {
-            loadPendingBookings(false);
-        }
-    }
-    
     public void loadIfNeeded() {
         // Public method to trigger load from parent activity
-        // Called when tab becomes selected for the first time
-        if (isInitialLoad && pendingBookings.isEmpty()) {
+        // Called when tab is clicked/selected for the first time
+        if (isInitialLoad) {
             loadPendingBookings(false);
         }
     }
@@ -128,9 +114,12 @@ public class PendingBookingsFragment extends Fragment {
             // Show swipe refresh indicator
             swipeRefreshLayout.setRefreshing(true);
         } else if (isInitialLoad) {
-            // Show ProgressDialog on initial load (like payment fragments)
+            // Show ProgressDialog on initial load - PENDING BOOKINGS
             showProgressDialog("Loading pending bookings...");
             isInitialLoad = false;
+        } else {
+            // Not initial load and not refresh - should not happen, but just in case
+            // Don't show any loading indicator
         }
         
         String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
@@ -216,11 +205,13 @@ public class PendingBookingsFragment extends Fragment {
                             
                             recyclerView.setAdapter(adapter);
                             
-                            // Update count
+                            // Update count and UI
                             updateCount(pendingBookings.size());
+                            updateUI();
                         } else {
                             Toast.makeText(getContext(), "Error loading bookings: " + response.getString("error"), Toast.LENGTH_SHORT).show();
                             updateCount(0);
+                            updateUI();
                         }
                         hideProgressDialog();
                         hideLoadingIndicator();
@@ -228,6 +219,7 @@ public class PendingBookingsFragment extends Fragment {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error parsing booking data", Toast.LENGTH_SHORT).show();
                         updateCount(0);
+                        updateUI();
                         hideProgressDialog();
                         hideLoadingIndicator();
                     }
@@ -235,6 +227,7 @@ public class PendingBookingsFragment extends Fragment {
                 error -> {
                     Toast.makeText(getContext(), "Error loading bookings: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     updateCount(0);
+                    updateUI();
                     hideProgressDialog();
                     hideLoadingIndicator();
                 });
@@ -261,7 +254,7 @@ public class PendingBookingsFragment extends Fragment {
                         if (response.getBoolean("success")) {
                             hideProgressDialog();
                             Toast.makeText(getContext(), "Booking approved successfully!", Toast.LENGTH_SHORT).show();
-                            // Reload the list to reflect changes
+                            // Reload the list to reflect changes (this will update UI including empty state)
                             loadPendingBookings(false);
                         } else {
                             hideProgressDialog();
@@ -301,7 +294,7 @@ public class PendingBookingsFragment extends Fragment {
                         if (response.getBoolean("success")) {
                             hideProgressDialog();
                             Toast.makeText(getContext(), "Booking declined.", Toast.LENGTH_SHORT).show();
-                            // Reload the list to reflect changes
+                            // Reload the list to reflect changes (this will update UI including empty state)
                             loadPendingBookings(false);
                         } else {
                             hideProgressDialog();
@@ -418,7 +411,28 @@ public class PendingBookingsFragment extends Fragment {
     private void updateCount(int count) {
         if (tvCount != null) {
             tvCount.setText(String.valueOf(count));
-            tvCount.setVisibility(count > 0 ? View.VISIBLE : View.VISIBLE); // Always visible, even if 0
+            tvCount.setVisibility(View.VISIBLE); // Always visible, even if 0
+        }
+    }
+    
+    private void updateUI() {
+        if (pendingBookings == null || pendingBookings.isEmpty()) {
+            // Show empty state
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
+            if (emptyState != null) {
+                emptyState.setVisibility(View.VISIBLE);
+                emptyState.setText("No pending bookings yet");
+            }
+        } else {
+            // Show recycler view
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.VISIBLE);
+            }
+            if (emptyState != null) {
+                emptyState.setVisibility(View.GONE);
+            }
         }
     }
 }

@@ -39,6 +39,7 @@ public class BookingHistoryFragment extends Fragment {
     private RequestQueue requestQueue;
     private int userId;
     private TextView tvCount;
+    private TextView emptyState;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ProgressDialog progressDialog;
@@ -68,6 +69,9 @@ public class BookingHistoryFragment extends Fragment {
         // Initialize count TextView
         tvCount = view.findViewById(R.id.tvCount);
         
+        // Initialize empty state
+        emptyState = view.findViewById(R.id.emptyState);
+        
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         swipeRefreshLayout.setOnRefreshListener(() -> {
@@ -92,24 +96,6 @@ public class BookingHistoryFragment extends Fragment {
     }
     
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        // Load data after view is created and attached
-        if (isInitialLoad) {
-            loadBookingHistory(false);
-        }
-    }
-    
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Only load if we haven't loaded yet and list is empty
-        if (isInitialLoad && bookingHistory.isEmpty()) {
-            loadBookingHistory(false);
-        }
-    }
-    
-    @Override
     public void onPause() {
         super.onPause();
         hideProgressDialog();
@@ -117,8 +103,8 @@ public class BookingHistoryFragment extends Fragment {
     
     public void loadIfNeeded() {
         // Public method to trigger load from parent activity
-        // Called when tab becomes selected for the first time
-        if (isInitialLoad && bookingHistory.isEmpty()) {
+        // Called when tab is clicked/selected for the first time
+        if (isInitialLoad) {
             loadBookingHistory(false);
         }
     }
@@ -128,9 +114,12 @@ public class BookingHistoryFragment extends Fragment {
             // Show swipe refresh indicator
             swipeRefreshLayout.setRefreshing(true);
         } else if (isInitialLoad) {
-            // Show ProgressDialog on initial load (like payment fragments)
+            // Show ProgressDialog on initial load - BOOKING HISTORY
             showProgressDialog("Loading booking history...");
             isInitialLoad = false;
+        } else {
+            // Not initial load and not refresh - should not happen, but just in case
+            // Don't show any loading indicator
         }
         
         String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_booking_history.php?user_id=" + userId + "&user_type=owner";
@@ -204,11 +193,13 @@ public class BookingHistoryFragment extends Fragment {
                             
                             recyclerView.setAdapter(adapter);
                             
-                            // Update count
+                            // Update count and UI
                             updateCount(bookingHistory.size());
+                            updateUI();
                         } else {
                             Toast.makeText(getContext(), "Error loading booking history: " + response.getString("error"), Toast.LENGTH_SHORT).show();
                             updateCount(0);
+                            updateUI();
                         }
                         hideProgressDialog();
                         hideLoadingIndicator();
@@ -216,6 +207,7 @@ public class BookingHistoryFragment extends Fragment {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error parsing booking history data", Toast.LENGTH_SHORT).show();
                         updateCount(0);
+                        updateUI();
                         hideProgressDialog();
                         hideLoadingIndicator();
                     }
@@ -223,6 +215,7 @@ public class BookingHistoryFragment extends Fragment {
                 error -> {
                     Toast.makeText(getContext(), "Error loading booking history: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     updateCount(0);
+                    updateUI();
                     hideProgressDialog();
                     hideLoadingIndicator();
                 });
@@ -327,7 +320,28 @@ public class BookingHistoryFragment extends Fragment {
     private void updateCount(int count) {
         if (tvCount != null) {
             tvCount.setText(String.valueOf(count));
-            tvCount.setVisibility(count > 0 ? View.VISIBLE : View.VISIBLE); // Always visible, even if 0
+            tvCount.setVisibility(View.VISIBLE); // Always visible, even if 0
+        }
+    }
+    
+    private void updateUI() {
+        if (bookingHistory == null || bookingHistory.isEmpty()) {
+            // Show empty state
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
+            if (emptyState != null) {
+                emptyState.setVisibility(View.VISIBLE);
+                emptyState.setText("No booking history yet");
+            }
+        } else {
+            // Show recycler view
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.VISIBLE);
+            }
+            if (emptyState != null) {
+                emptyState.setVisibility(View.GONE);
+            }
         }
     }
 }

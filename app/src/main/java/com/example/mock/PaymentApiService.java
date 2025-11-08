@@ -51,11 +51,15 @@ public class PaymentApiService {
     public void getAllPayments(int ownerId, PaymentListCallback callback) {
         String url = BASE_URL + "get_payment_status.php";
         
+        Log.d(TAG, "getAllPayments - Requesting payments for ownerId: " + ownerId);
+        
         JSONObject params = new JSONObject();
         try {
             params.put("owner_id", ownerId);
             params.put("status", "all");
+            Log.d(TAG, "getAllPayments - Request params: " + params.toString());
         } catch (JSONException e) {
+            Log.e(TAG, "getAllPayments - Error creating request parameters", e);
             callback.onError("Error creating request parameters");
             return;
         }
@@ -63,22 +67,47 @@ public class PaymentApiService {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
                 response -> {
                     try {
+                        Log.d(TAG, "getAllPayments - Response received: " + response.toString());
                         if (response.getBoolean("success")) {
                             JSONObject data = response.getJSONObject("data");
-                            List<PaymentData> payments = parsePaymentList(data.getJSONArray("payments"));
+                            JSONArray paymentsArray = data.getJSONArray("payments");
+                            Log.d(TAG, "getAllPayments - Found " + paymentsArray.length() + " payments in response");
+                            List<PaymentData> payments = parsePaymentList(paymentsArray);
+                            Log.d(TAG, "getAllPayments - Parsed " + payments.size() + " payments");
                             callback.onSuccess(payments);
                         } else {
-                            callback.onError(response.getString("error"));
+                            String errorMsg = response.optString("error", "Unknown error");
+                            Log.e(TAG, "getAllPayments - Server returned error: " + errorMsg);
+                            callback.onError(errorMsg);
                         }
                     } catch (JSONException e) {
-                        Log.e(TAG, "Error parsing response", e);
-                        callback.onError("Error parsing response");
+                        Log.e(TAG, "getAllPayments - Error parsing response", e);
+                        Log.e(TAG, "getAllPayments - Response was: " + response.toString());
+                        callback.onError("Error parsing response: " + e.getMessage());
                     }
                 },
                 error -> {
-                    Log.e(TAG, "Volley error", error);
-                    callback.onError("Network error: " + error.getMessage());
-                });
+                    Log.e(TAG, "getAllPayments - Volley error", error);
+                    String errorMsg = "Network error: " + (error.getMessage() != null ? error.getMessage() : "Unknown error");
+                    if (error.networkResponse != null) {
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            Log.e(TAG, "getAllPayments - Error response body: " + responseBody);
+                            errorMsg = "Server error (" + error.networkResponse.statusCode + "): " + responseBody;
+                        } catch (Exception e) {
+                            Log.e(TAG, "getAllPayments - Error parsing error response", e);
+                        }
+                    }
+                    callback.onError(errorMsg);
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }
@@ -114,7 +143,15 @@ public class PaymentApiService {
                 error -> {
                     Log.e(TAG, "Volley error", error);
                     callback.onError("Network error: " + error.getMessage());
-                });
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }
@@ -150,7 +187,15 @@ public class PaymentApiService {
                 error -> {
                     Log.e(TAG, "Volley error", error);
                     callback.onError("Network error: " + error.getMessage());
-                });
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }
@@ -186,7 +231,15 @@ public class PaymentApiService {
                 error -> {
                     Log.e(TAG, "Volley error", error);
                     callback.onError("Network error: " + error.getMessage());
-                });
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }

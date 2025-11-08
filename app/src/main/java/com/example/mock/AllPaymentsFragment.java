@@ -44,8 +44,10 @@ public class AllPaymentsFragment extends Fragment {
         String userIdString = sharedPreferences.getString("user_id", "1");
         try {
             ownerId = Integer.parseInt(userIdString);
+            android.util.Log.d("AllPaymentsFragment", "Loaded ownerId from SharedPreferences: " + ownerId);
         } catch (NumberFormatException e) {
             ownerId = 1; // Default fallback
+            android.util.Log.e("AllPaymentsFragment", "Failed to parse user_id: " + userIdString, e);
         }
 
         // Initialize API service
@@ -60,11 +62,13 @@ public class AllPaymentsFragment extends Fragment {
 
     private void loadAllPayments() {
         showProgressDialog("Loading payments...");
+        android.util.Log.d("AllPaymentsFragment", "Loading payments for ownerId: " + ownerId);
         
         paymentApiService.getAllPayments(ownerId, new PaymentApiService.PaymentListCallback() {
             @Override
             public void onSuccess(List<PaymentData> payments) {
                 hideProgressDialog();
+                android.util.Log.d("AllPaymentsFragment", "Successfully loaded " + payments.size() + " payments");
                 allPayments.clear();
                 allPayments.addAll(payments);
                 updateUI();
@@ -73,7 +77,8 @@ public class AllPaymentsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 hideProgressDialog();
-                Toast.makeText(getContext(), "Error loading payments: " + error, Toast.LENGTH_SHORT).show();
+                android.util.Log.e("AllPaymentsFragment", "Error loading payments: " + error);
+                Toast.makeText(getContext(), "Error loading payments: " + error, Toast.LENGTH_LONG).show();
                 updateUI();
             }
         });

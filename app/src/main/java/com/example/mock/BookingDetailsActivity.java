@@ -176,8 +176,17 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvEndDate.setText(bookingData.getEndDate() != null ? bookingData.getEndDate() : "");
             tvAmount.setText(bookingData.getAmount() != null ? bookingData.getAmount() : "");
             tvRentType.setText(bookingData.getRentType() != null ? bookingData.getRentType() : "");
-            tvStatus.setText(bookingData.getStatus() != null ? bookingData.getStatus() : "");
-            tvPaymentStatus.setText(bookingData.getPaymentStatus() != null ? bookingData.getPaymentStatus() : "");
+            
+            // Set status with styling
+            String status = bookingData.getStatus() != null ? bookingData.getStatus() : "";
+            tvStatus.setText(status);
+            applyStatusStyle(tvStatus, status);
+            
+            // Set payment status with styling
+            String paymentStatus = bookingData.getPaymentStatus() != null ? bookingData.getPaymentStatus() : "";
+            tvPaymentStatus.setText(paymentStatus);
+            applyPaymentStatusStyle(tvPaymentStatus, paymentStatus);
+            
             tvBookingDate.setText(bookingData.getBookingDate() != null ? bookingData.getBookingDate() : "");
             
             // Set profile image (placeholder for now)
@@ -191,6 +200,70 @@ public class BookingDetailsActivity extends AppCompatActivity {
             Toast.makeText(this, "Error: Booking data not available", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+    
+    private void applyStatusStyle(TextView textView, String status) {
+        if (textView == null || status == null) return;
+        
+        int textColor;
+        int backgroundRes;
+        
+        switch (status) {
+            case "Confirmed":
+            case "Approved":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "Cancelled":
+            case "Declined":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_rounded_red;
+                break;
+            case "Completed":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_completed;
+                break;
+            case "Pending":
+            default:
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_pending;
+                break;
+        }
+        
+        int padding = (int) (12 * getResources().getDisplayMetrics().density);
+        textView.setTextColor(textColor);
+        textView.setBackgroundResource(backgroundRes);
+        textView.setPadding(padding, padding / 2, padding, padding / 2);
+    }
+    
+    private void applyPaymentStatusStyle(TextView textView, String paymentStatus) {
+        if (textView == null || paymentStatus == null) return;
+        
+        int textColor;
+        int backgroundRes;
+        
+        switch (paymentStatus.toLowerCase()) {
+            case "paid":
+            case "confirmed":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "overdue":
+            case "cancelled":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_rounded_red;
+                break;
+            case "pending":
+            default:
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_pending;
+                break;
+        }
+        
+        int padding = (int) (12 * getResources().getDisplayMetrics().density);
+        textView.setTextColor(textColor);
+        textView.setBackgroundResource(backgroundRes);
+        textView.setPadding(padding, padding / 2, padding, padding / 2);
     }
     
     private void updateActionButtons() {
@@ -226,6 +299,11 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 btnDecline.setVisibility(View.GONE);
                 break;
             }
+        }
+        
+        // Update status styling when status changes
+        if (tvStatus != null) {
+            applyStatusStyle(tvStatus, status);
         }
     }
     

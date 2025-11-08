@@ -89,21 +89,17 @@ public class BookingsActivity extends AppCompatActivity {
         // Set offscreen page limit to prevent pre-loading all fragments
         viewPager.setOffscreenPageLimit(1);
         
-        // Listen for page changes to trigger initial load of visible fragments
+        // Listen for page changes to trigger load when tab is clicked
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
-                // Trigger load for the selected page if it hasn't loaded yet
+                // Trigger load for the selected page when tab is clicked
                 // Use post to ensure fragment is fully created
-                viewPager.post(() -> loadFragmentIfNeeded(position));
+                viewPager.post(() -> {
+                    viewPager.postDelayed(() -> loadFragmentIfNeeded(position), 150);
+                });
             }
-        });
-        
-        // Load the first page immediately (Approved tab) after ViewPager is ready
-        viewPager.post(() -> {
-            // Wait a bit more to ensure fragment is created
-            viewPager.postDelayed(() -> loadFragmentIfNeeded(0), 100);
         });
     }
     
@@ -113,14 +109,24 @@ public class BookingsActivity extends AppCompatActivity {
             String tag = "f" + position;
             Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
             
-            if (fragment != null && fragment.isAdded() && fragment.isResumed()) {
-                if (fragment instanceof ApprovedBookingsFragment) {
-                    ((ApprovedBookingsFragment) fragment).loadIfNeeded();
-                } else if (fragment instanceof PendingBookingsFragment) {
-                    ((PendingBookingsFragment) fragment).loadIfNeeded();
-                } else if (fragment instanceof BookingHistoryFragment) {
-                    ((BookingHistoryFragment) fragment).loadIfNeeded();
-                }
+            if (fragment != null && fragment.isAdded()) {
+                // Wait for fragment to be ready
+                viewPager.post(() -> {
+                    try {
+                        if (position == 0 && fragment instanceof ApprovedBookingsFragment) {
+                            // Approved tab
+                            ((ApprovedBookingsFragment) fragment).loadIfNeeded();
+                        } else if (position == 1 && fragment instanceof PendingBookingsFragment) {
+                            // Pending tab
+                            ((PendingBookingsFragment) fragment).loadIfNeeded();
+                        } else if (position == 2 && fragment instanceof BookingHistoryFragment) {
+                            // History tab
+                            ((BookingHistoryFragment) fragment).loadIfNeeded();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();
