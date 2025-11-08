@@ -279,8 +279,11 @@ public class FinalBookingActivity extends AppCompatActivity {
             long diffInMillis = endDateObj.getTime() - startDateObj.getTime();
             long diffInDays = diffInMillis / (1000 * 60 * 60 * 24);
             
-            // Add 1 day to include both start and end dates
-            return (int) diffInDays + 1;
+            // Start date is not included in the count
+            // Count starts from the next day after start date
+            // Example: Start = Jan 1, End = Jan 3
+            // Days counted: Jan 2, Jan 3 = 2 days (not 3)
+            return (int) diffInDays;
         } catch (ParseException e) {
             Log.e(TAG, "Error calculating number of days: " + e.getMessage());
             return 30; // Default to 30 days if calculation fails
