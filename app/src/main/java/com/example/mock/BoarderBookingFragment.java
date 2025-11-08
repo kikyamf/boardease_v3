@@ -735,15 +735,22 @@ public class BoarderBookingFragment extends Fragment {
             LinearLayout layoutBreakdowns = dialogView.findViewById(R.id.layoutBreakdowns);
             TextView tvTotalAmount = dialogView.findViewById(R.id.tvTotalAmount);
             com.google.android.material.button.MaterialButton btnProceedToPayment = dialogView.findViewById(R.id.btnProceedToPayment);
+            com.google.android.material.button.MaterialButton btnToggleAllPayments = dialogView.findViewById(R.id.btnToggleAllPayments);
             
             tvTitle.setText("Payment Periods");
             
             // Map to track selected breakdowns
             Map<Integer, PaymentBreakdown> selectedBreakdowns = new HashMap<>();
             List<android.widget.CheckBox> checkboxes = new ArrayList<>();
+            List<View> breakdownItemViews = new ArrayList<>(); // Store all breakdown item views
+            
+            // Track if all payments are visible
+            boolean[] showAllPayments = {false};
             
             // Create breakdown items with checkboxes
-            for (PaymentBreakdown breakdown : filteredBreakdowns) {
+            for (int i = 0; i < filteredBreakdowns.size(); i++) {
+                PaymentBreakdown breakdown = filteredBreakdowns.get(i);
+                
                 // Create breakdown item view
                 View breakdownItem = LayoutInflater.from(getContext()).inflate(R.layout.item_payment_breakdown, null);
                 android.widget.CheckBox checkboxPeriod = breakdownItem.findViewById(R.id.checkboxPeriod);
@@ -801,8 +808,42 @@ public class BoarderBookingFragment extends Fragment {
                 });
                 
                 checkboxes.add(checkboxPeriod);
+                breakdownItemViews.add(breakdownItem);
                 layoutBreakdowns.addView(breakdownItem);
+                
+                // Initially show only the first period (soonest due date)
+                // Hide all other periods
+                if (i > 0) {
+                    breakdownItem.setVisibility(View.GONE);
+                }
             }
+            
+            // Update toggle button text and visibility
+            if (filteredBreakdowns.size() > 1) {
+                btnToggleAllPayments.setVisibility(View.VISIBLE);
+                btnToggleAllPayments.setText("Show All Pending Payments (" + (filteredBreakdowns.size() - 1) + " more)");
+            } else {
+                btnToggleAllPayments.setVisibility(View.GONE);
+            }
+            
+            // Toggle button click listener
+            btnToggleAllPayments.setOnClickListener(v -> {
+                showAllPayments[0] = !showAllPayments[0];
+                
+                if (showAllPayments[0]) {
+                    // Show all payments
+                    for (int i = 1; i < breakdownItemViews.size(); i++) {
+                        breakdownItemViews.get(i).setVisibility(View.VISIBLE);
+                    }
+                    btnToggleAllPayments.setText("Hide All Pending Payments");
+                } else {
+                    // Hide all except the first one
+                    for (int i = 1; i < breakdownItemViews.size(); i++) {
+                        breakdownItemViews.get(i).setVisibility(View.GONE);
+                    }
+                    btnToggleAllPayments.setText("Show All Pending Payments (" + (filteredBreakdowns.size() - 1) + " more)");
+                }
+            });
             
             // Update total for initially selected items
             updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);

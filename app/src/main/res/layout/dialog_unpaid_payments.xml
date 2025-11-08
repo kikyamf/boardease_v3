@@ -57,7 +57,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="12dp" />
+
+        <!-- Toggle Button to Show/Hide All Payments -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnToggleAllPayments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show All Pending Payments"
+            android:textSize="13sp"
+            android:textColor="@color/brown"
+            android:fontFamily="@font/poppins_medium"
+            android:paddingVertical="12dp"
+            android:layout_marginBottom="16dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/brown"
+            app:strokeWidth="1dp"
+            app:cornerRadius="10dp"
+            android:backgroundTint="#FFFFFF" />
 
         <!-- Total Amount for Selected Periods -->
         <LinearLayout
