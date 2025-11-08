@@ -38,14 +38,40 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         BookingData booking = bookings.get(position);
         
-        holder.tvBoarderName.setText(booking.getBoarderName());
-        holder.tvEmail.setText(booking.getEmail());
-        holder.tvPhone.setText(booking.getPhoneNumber());
-        holder.tvRoomName.setText(booking.getRoomName());
-        holder.tvStartDate.setText(booking.getStartDate());
-        holder.tvEndDate.setText(booking.getEndDate());
-        holder.tvAmount.setText(booking.getAmount());
-        holder.tvRentType.setText(booking.getRentType());
+        // Set boarder name
+        if (booking.getBoarderName() != null && !booking.getBoarderName().isEmpty()) {
+            holder.tvBoarderName.setText(booking.getBoarderName());
+        } else {
+            holder.tvBoarderName.setText("Unknown");
+        }
+        
+        // Set status
+        String status = booking.getStatus() != null ? booking.getStatus() : "Pending";
+        holder.tvStatus.setText(status);
+        
+        // Update status color based on status
+        if ("Confirmed".equals(status)) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+        } else if ("Cancelled".equals(status)) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_red);
+        } else if ("Completed".equals(status)) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+        } else {
+            // Pending
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+        }
+        
+        holder.tvEmail.setText(booking.getEmail() != null ? booking.getEmail() : "");
+        holder.tvPhone.setText(booking.getPhoneNumber() != null ? booking.getPhoneNumber() : "");
+        holder.tvRoomName.setText(booking.getRoomName() != null ? booking.getRoomName() : "");
+        holder.tvStartDate.setText(booking.getStartDate() != null ? booking.getStartDate() : "");
+        holder.tvEndDate.setText(booking.getEndDate() != null ? booking.getEndDate() : "");
+        holder.tvAmount.setText(booking.getAmount() != null ? booking.getAmount() : "");
+        holder.tvRentType.setText(booking.getRentType() != null ? booking.getRentType() : "");
 
         holder.btnApprove.setOnClickListener(v -> {
             if (listener != null) {
@@ -72,12 +98,13 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvBoarderName, tvEmail, tvPhone, tvRoomName, tvStartDate, tvEndDate, tvAmount, tvRentType;
+        TextView tvBoarderName, tvStatus, tvEmail, tvPhone, tvRoomName, tvStartDate, tvEndDate, tvAmount, tvRentType;
         Button btnApprove, btnDecline, btnViewDetails;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvBoarderName = itemView.findViewById(R.id.tvBoarderName);
+            tvStatus = itemView.findViewById(R.id.tvStatus);
             tvEmail = itemView.findViewById(R.id.tvEmail);
             tvPhone = itemView.findViewById(R.id.tvPhone);
             tvRoomName = itemView.findViewById(R.id.tvRoomName);

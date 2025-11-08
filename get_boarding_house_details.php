@@ -23,7 +23,7 @@ try {
         exit();
     }
 
-    // SQL query to get boarding house details with owner info (including GCash QR)
+    // SQL query to get boarding house details with owner info (including GCash QR and number)
     $sql = "
         SELECT
             bh.*,
@@ -33,7 +33,8 @@ try {
             r.phone,
             r.email,
             r.role,
-            r.gcash_qr
+            r.gcash_qr,
+            r.gcash_num
         FROM boarding_houses AS bh
         LEFT JOIN registrations AS r ON bh.user_id = r.id
         WHERE bh.bh_id = ?
@@ -78,14 +79,25 @@ try {
     $imagesStmt->execute([$bhId]);
     $images = $imagesStmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // Get base URL for images (use local IP for local development)
-    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+    // Get base URL for images (use ngrok URL to match app)
+    $baseUrl = 'https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/';
 
     // Format image URLs
     $formattedImages = array();
     foreach ($images as $imagePath) {
         if (!empty($imagePath)) {
-            $formattedImages[] = $baseUrl . $imagePath;
+            // If image path already starts with http, use as is
+            if (strpos($imagePath, 'http://') === 0 || strpos($imagePath, 'https://') === 0) {
+                $formattedImages[] = $imagePath;
+            } else {
+                // Remove leading slash if present
+                $cleanPath = ltrim($imagePath, '/');
+                // If path already contains 'uploads/', use as is, otherwise prepend it
+                if (strpos($cleanPath, 'uploads/') !== 0) {
+                    $cleanPath = 'uploads/' . $cleanPath;
+                }
+                $formattedImages[] = $baseUrl . $cleanPath;
+            }
         }
     }
 
@@ -173,7 +185,12 @@ try {
                 'room_details' => $roomDetails,
                 'min_price' => $priceRange['min_price'] ? (int)$priceRange['min_price'] : null,
                 'max_price' => $priceRange['max_price'] ? (int)$priceRange['max_price'] : null,
-                'gcash_qr' => !empty($boardingHouse['gcash_qr']) ? $boardingHouse['gcash_qr'] : null, // Include GCash QR code from registrations (null if empty or not set)
+                'gcash_qr' => !empty($boardingHouse['gcash_qr']) && $boardingHouse['gcash_qr'] !== 'null' ? 
+                    (strpos($boardingHouse['gcash_qr'], 'http://') === 0 || strpos($boardingHouse['gcash_qr'], 'https://') === 0 ? 
+                        $boardingHouse['gcash_qr'] : 
+                        $baseUrl . (strpos($boardingHouse['gcash_qr'], 'uploads/') === 0 ? $boardingHouse['gcash_qr'] : 'uploads/' . $boardingHouse['gcash_qr'])) 
+                    : null, // Include GCash QR code from registrations with full URL
+                'gcash_number' => !empty($boardingHouse['gcash_num']) && $boardingHouse['gcash_num'] !== 'null' ? $boardingHouse['gcash_num'] : null, // Include GCash number from registrations
                 'owner' => array(
                     'first_name' => $boardingHouse['first_name'] ?? null,
                     'middle_name' => $boardingHouse['middle_name'] ?? null,
@@ -181,6 +198,7 @@ try {
                     'phone' => $boardingHouse['phone'] ?? null,
                     'email' => $boardingHouse['email'] ?? null,
                     'role' => $boardingHouse['role'] ?? null,
+                    'gcash_number' => !empty($boardingHouse['gcash_num']) ? $boardingHouse['gcash_num'] : null,
                     // Add full name for convenience
                     'full_name' => trim(($boardingHouse['first_name'] ?? '') . ' ' . 
                                        ($boardingHouse['middle_name'] ?? '') . ' ' . 

@@ -33,6 +33,44 @@ public class BookingsActivity extends AppCompatActivity {
         setupTabs();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Don't auto-refresh on tab switch - only refresh when explicitly requested
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        // Refresh fragments when returning from BookingDetailsActivity after approve/decline
+        if (resultCode == RESULT_OK) {
+            refreshFragments();
+        }
+    }
+
+    private void refreshFragments() {
+        // Refresh all fragments by finding them through FragmentManager
+        // ViewPager2 creates fragments with tags like "f0", "f1", "f2" etc.
+        try {
+            Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
+            Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
+            Fragment historyFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
+            
+            if (approvedFragment instanceof ApprovedBookingsFragment) {
+                ((ApprovedBookingsFragment) approvedFragment).refreshBookings();
+            }
+            if (pendingFragment instanceof PendingBookingsFragment) {
+                ((PendingBookingsFragment) pendingFragment).refreshBookings();
+            }
+            if (historyFragment instanceof BookingHistoryFragment) {
+                ((BookingHistoryFragment) historyFragment).refreshBookings();
+            }
+        } catch (Exception e) {
+            // If fragment tags don't work, fragments will refresh on their onResume
+            e.printStackTrace();
+        }
+    }
+
     private void setupViews() {
         // Setup header
         TextView tvTitle = findViewById(R.id.tvTitle);
@@ -47,6 +85,46 @@ public class BookingsActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         pagerAdapter = new BookingsPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
+        
+        // Set offscreen page limit to prevent pre-loading all fragments
+        viewPager.setOffscreenPageLimit(1);
+        
+        // Listen for page changes to trigger initial load of visible fragments
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                // Trigger load for the selected page if it hasn't loaded yet
+                // Use post to ensure fragment is fully created
+                viewPager.post(() -> loadFragmentIfNeeded(position));
+            }
+        });
+        
+        // Load the first page immediately (Approved tab) after ViewPager is ready
+        viewPager.post(() -> {
+            // Wait a bit more to ensure fragment is created
+            viewPager.postDelayed(() -> loadFragmentIfNeeded(0), 100);
+        });
+    }
+    
+    private void loadFragmentIfNeeded(int position) {
+        try {
+            // ViewPager2 creates fragments with tags like "f0", "f1", "f2"
+            String tag = "f" + position;
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
+            
+            if (fragment != null && fragment.isAdded() && fragment.isResumed()) {
+                if (fragment instanceof ApprovedBookingsFragment) {
+                    ((ApprovedBookingsFragment) fragment).loadIfNeeded();
+                } else if (fragment instanceof PendingBookingsFragment) {
+                    ((PendingBookingsFragment) fragment).loadIfNeeded();
+                } else if (fragment instanceof BookingHistoryFragment) {
+                    ((BookingHistoryFragment) fragment).loadIfNeeded();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupTabs() {

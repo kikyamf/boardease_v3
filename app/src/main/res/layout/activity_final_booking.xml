@@ -269,7 +269,20 @@
                         android:src="@drawable/placeholder"
                         android:background="@drawable/rounded_rectangle_bg"
                         android:padding="8dp"
-                        android:layout_marginBottom="16dp" />
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- GCash Number Display -->
+                    <TextView
+                        android:id="@+id/tvGcashNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text=""
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:textColor="@color/brown"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone" />
 
                     <TextView
                         android:layout_width="wrap_content"

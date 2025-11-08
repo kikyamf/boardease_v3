@@ -363,40 +363,6 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Notes Section -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Notes"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvNotes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Prefer ground floor room"
-                    android:textSize="14sp"
-                    android:textColor="@color/black"
-                    android:lineSpacingExtra="2dp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
         <!-- Action Buttons -->
         <LinearLayout
             android:layout_width="match_parent"

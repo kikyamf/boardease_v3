@@ -40,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -47,9 +48,9 @@ public class FinalBookingActivity extends AppCompatActivity {
     
     private static final String TAG = "FinalBookingActivity";
     // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
-    private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details.php";
+    private static final String GET_BH_DETAILS_URL = BASE_URL + "BoardEase2/get_boarding_house_details1.php";
     private static final String GET_GCASH_INFO_URL = BOARD_EASE2_URL + "get_gcash_info.php";
     private static final String CREATE_BOOKING_URL = BOARD_EASE2_URL + "create_booking.php";
     private static final int PICK_IMAGE_REQUEST = 100;
@@ -57,7 +58,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     // Views
     private ImageButton btnBack;
     private ImageView ivBhImage, ivCashProof, ivGcashProof, ivOwnerQrCode;
-    private TextView tvBhName, tvRoomType, tvDuration, tvPrice;
+    private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber;
     private RadioGroup rgPaymentMethod;
     private RadioButton rbCash, rbGcash;
     private LinearLayout layoutCashPayment, layoutGcashPayment;
@@ -75,6 +76,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     private Uri cashProofUri;
     private Uri gcashProofUri;
     private String ownerGcashQrPath;
+    private String ownerGcashNumber;
     private RequestQueue requestQueue;
     
     @Override
@@ -129,7 +131,27 @@ public class FinalBookingActivity extends AppCompatActivity {
         
         try {
             roomData = new JSONObject(roomDataString);
-            bhId = roomData.optInt("bh_id", 0);
+            Log.d(TAG, "Room data JSON: " + roomData.toString());
+            
+            // Try multiple possible keys for bh_id
+            if (roomData.has("bh_id")) {
+                bhId = roomData.optInt("bh_id", 0);
+            } else if (roomData.has("boarding_house_id")) {
+                bhId = roomData.optInt("boarding_house_id", 0);
+            } else {
+                // Try to get it from Intent directly
+                bhId = intent.getIntExtra("bh_id", 0);
+                if (bhId == 0) {
+                    bhId = intent.getIntExtra("boarding_house_id", 0);
+                }
+            }
+            
+            Log.d(TAG, "Extracted bh_id: " + bhId);
+            
+            if (bhId == 0) {
+                Log.e(TAG, "ERROR: bh_id is 0! Room data keys: " + roomData.keys());
+                Toast.makeText(this, "Error: Boarding house ID not found", Toast.LENGTH_SHORT).show();
+            }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing room data: " + e.getMessage());
             Toast.makeText(this, "Error loading booking data", Toast.LENGTH_SHORT).show();
@@ -156,6 +178,7 @@ public class FinalBookingActivity extends AppCompatActivity {
         ivCashProof = findViewById(R.id.ivCashProof);
         ivGcashProof = findViewById(R.id.ivGcashProof);
         ivOwnerQrCode = findViewById(R.id.ivOwnerQrCode);
+        tvGcashNumber = findViewById(R.id.tvGcashNumber);
         btnBook = findViewById(R.id.btnBook);
         progressBar = findViewById(R.id.progressBar);
     }
@@ -195,9 +218,17 @@ public class FinalBookingActivity extends AppCompatActivity {
             btnRemoveGcash.setVisibility(View.GONE);
         });
         
-        // Book button
+        // Book button - prevent double clicks
         btnBook.setOnClickListener(v -> {
+            // Prevent multiple clicks
+            if (isBookingInProgress) {
+                Log.w(TAG, "Booking already in progress, ignoring click");
+                return;
+            }
+            
             if (validateForm()) {
+                // Disable button immediately to prevent double clicks
+                btnBook.setEnabled(false);
                 createBooking();
             }
         });
@@ -246,49 +277,138 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void loadBoardingHouseDetails() {
+        // Validate bhId before making API call
+        if (bhId == 0) {
+            Log.e(TAG, "ERROR: Cannot load boarding house details - bh_id is 0");
+            Toast.makeText(this, "Error: Boarding house ID is missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         String url = GET_BH_DETAILS_URL + "?bh_id=" + bhId;
+        Log.d(TAG, "Loading boarding house details from URL: " + url);
         
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         try {
+                            Log.d(TAG, "=== API Response received ===");
+                            Log.d(TAG, "Response: " + response);
+                            
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
                                 JSONObject data = jsonResponse.getJSONObject("data");
                                 JSONObject bh = data.getJSONObject("boarding_house");
                                 
+                                // Log all keys in response for debugging
+                                Log.d(TAG, "=== Boarding House Keys ===");
+                                if (bh.length() > 0) {
+                                    Iterator<String> keys = bh.keys();
+                                    while (keys.hasNext()) {
+                                        String key = keys.next();
+                                        Log.d(TAG, "Key: " + key);
+                                    }
+                                }
+                                
                                 // Display BH name
-                                tvBhName.setText(bh.getString("bh_name"));
+                                String bhName = bh.optString("bh_name", "Boarding House");
+                                if (bhName != null && !bhName.isEmpty() && !bhName.equals("Boarding House Name")) {
+                                    tvBhName.setText(bhName);
+                                    Log.d(TAG, "BH Name set: " + bhName);
+                                } else {
+                                    Log.e(TAG, "BH Name is empty or default, keeping placeholder");
+                                }
                                 
                                 // Store GCash QR code from boarding house details (if available)
                                 if (bh.has("gcash_qr") && !bh.isNull("gcash_qr")) {
-                                    String qrPath = bh.getString("gcash_qr");
+                                    String qrPath = bh.optString("gcash_qr", "");
+                                    Log.d(TAG, "GCash QR from response: '" + qrPath + "'");
                                     if (qrPath != null && !qrPath.isEmpty() && !qrPath.equals("null")) {
+                                        // If it's already a full URL, use it; otherwise it should already be formatted by PHP
                                         ownerGcashQrPath = qrPath;
-                                        Log.d(TAG, "GCash QR stored from BH details: " + ownerGcashQrPath);
+                                        Log.d(TAG, "GCash QR stored: " + ownerGcashQrPath);
                                     } else {
                                         Log.d(TAG, "GCash QR is null or empty in response");
+                                        ownerGcashQrPath = null;
                                     }
                                 } else {
-                                    Log.d(TAG, "GCash QR field not found in boarding house response. Available keys: " + bh.keys());
+                                    Log.d(TAG, "GCash QR field not found in boarding house response");
+                                    ownerGcashQrPath = null;
+                                }
+                                
+                                // Store GCash number from boarding house details (if available)
+                                if (bh.has("gcash_number") && !bh.isNull("gcash_number")) {
+                                    String gcashNum = bh.optString("gcash_number", "");
+                                    Log.d(TAG, "GCash Number from response: '" + gcashNum + "'");
+                                    if (gcashNum != null && !gcashNum.isEmpty() && !gcashNum.equals("null")) {
+                                        ownerGcashNumber = gcashNum;
+                                        Log.d(TAG, "GCash Number stored: " + ownerGcashNumber);
+                                    } else {
+                                        Log.d(TAG, "GCash Number is null or empty in response");
+                                        ownerGcashNumber = null;
+                                    }
+                                } else {
+                                    Log.d(TAG, "GCash Number not in main object, checking owner object");
+                                }
+                                
+                                // Try getting from owner object if not in main object
+                                if ((ownerGcashNumber == null || ownerGcashNumber.isEmpty()) && bh.has("owner")) {
+                                    JSONObject owner = bh.getJSONObject("owner");
+                                    if (owner.has("gcash_number") && !owner.isNull("gcash_number")) {
+                                        String gcashNum = owner.optString("gcash_number", "");
+                                        if (gcashNum != null && !gcashNum.isEmpty() && !gcashNum.equals("null")) {
+                                            ownerGcashNumber = gcashNum;
+                                            Log.d(TAG, "GCash Number from owner object: " + ownerGcashNumber);
+                                        }
+                                    }
+                                }
+                                
+                                // If GCash is selected, load QR immediately
+                                if (paymentMethod.equals("GCash") && layoutGcashPayment.getVisibility() == View.VISIBLE) {
+                                    loadOwnerGcashQr();
                                 }
                                 
                                 // Load BH image
                                 if (bh.has("images") && !bh.isNull("images")) {
                                     org.json.JSONArray images = bh.getJSONArray("images");
+                                    Log.d(TAG, "Number of images: " + images.length());
                                     if (images.length() > 0) {
                                         String imageUrl = images.getString(0);
+                                        Log.d(TAG, "Loading BH image from URL: " + imageUrl);
+                                        
+                                        // URL should already be complete from PHP, but verify
+                                        String fullImageUrl = imageUrl;
+                                        if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+                                            // If it's a relative path, prepend base URL
+                                            if (imageUrl.startsWith("uploads/")) {
+                                                fullImageUrl = BOARD_EASE2_URL + imageUrl;
+                                            } else {
+                                                fullImageUrl = BOARD_EASE2_URL + "uploads/" + imageUrl;
+                                            }
+                                        }
+                                        
+                                        Log.d(TAG, "Full image URL: " + fullImageUrl);
                                         Glide.with(FinalBookingActivity.this)
-                                                .load(imageUrl)
+                                                .load(fullImageUrl)
                                                 .placeholder(R.drawable.sample_listing)
                                                 .error(R.drawable.sample_listing)
                                                 .into(ivBhImage);
+                                    } else {
+                                        Log.d(TAG, "No images found in response");
+                                        ivBhImage.setImageResource(R.drawable.sample_listing);
                                     }
+                                } else {
+                                    Log.d(TAG, "Images field not found or is null");
+                                    ivBhImage.setImageResource(R.drawable.sample_listing);
                                 }
+                            } else {
+                                Log.e(TAG, "API returned success=false");
+                                String error = jsonResponse.optString("error", "Unknown error");
+                                Log.e(TAG, "Error: " + error);
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing BH details: " + e.getMessage());
+                            e.printStackTrace();
                         }
                     }
                 },
@@ -296,6 +416,13 @@ public class FinalBookingActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.e(TAG, "Error loading BH details: " + error.getMessage());
+                        Log.e(TAG, "Error details: " + (error.networkResponse != null ? 
+                            "Status: " + error.networkResponse.statusCode : "No network response"));
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            String errorBody = new String(error.networkResponse.data);
+                            Log.e(TAG, "Error body: " + errorBody);
+                        }
+                        Toast.makeText(FinalBookingActivity.this, "Error loading boarding house details", Toast.LENGTH_SHORT).show();
                     }
                 }) {
             @Override
@@ -312,40 +439,45 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void loadOwnerGcashQr() {
-        Log.d(TAG, "loadOwnerGcashQr called. ownerGcashQrPath: " + ownerGcashQrPath);
+        Log.d(TAG, "=== loadOwnerGcashQr called ===");
+        Log.d(TAG, "ownerGcashQrPath: " + ownerGcashQrPath);
+        Log.d(TAG, "ownerGcashNumber: " + ownerGcashNumber);
+        
+        // Display GCash number if available
+        if (ownerGcashNumber != null && !ownerGcashNumber.isEmpty() && !ownerGcashNumber.equals("null")) {
+            tvGcashNumber.setText("GCash: " + ownerGcashNumber);
+            tvGcashNumber.setVisibility(View.VISIBLE);
+            Log.d(TAG, "✓ Displaying GCash number: " + ownerGcashNumber);
+        } else {
+            tvGcashNumber.setVisibility(View.GONE);
+            Log.d(TAG, "✗ GCash number not available");
+        }
         
         // Use the QR code that was already fetched from boarding house details
         if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty() && !ownerGcashQrPath.equals("null")) {
-            // Construct full image URL - if path doesn't start with http, prepend BASE_URL
-            String fullImageUrl = ownerGcashQrPath.startsWith("http") 
-                ? ownerGcashQrPath 
-                : BASE_URL + ownerGcashQrPath;
+            // URL should already be complete from PHP, but verify
+            String fullImageUrl = ownerGcashQrPath;
+            if (!ownerGcashQrPath.startsWith("http://") && !ownerGcashQrPath.startsWith("https://")) {
+                // If it's a relative path, prepend base URL
+                String cleanPath = ownerGcashQrPath.startsWith("/") ? ownerGcashQrPath.substring(1) : ownerGcashQrPath;
+                if (cleanPath.startsWith("uploads/")) {
+                    fullImageUrl = BOARD_EASE2_URL + cleanPath;
+                } else {
+                    fullImageUrl = BOARD_EASE2_URL + "uploads/" + cleanPath;
+                }
+            }
             
-            Log.d(TAG, "Loading GCash QR from stored path: " + fullImageUrl);
+            Log.d(TAG, "Loading GCash QR from URL: " + fullImageUrl);
             Glide.with(FinalBookingActivity.this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.placeholder)
                     .error(R.drawable.placeholder)
                     .into(ivOwnerQrCode);
+            Log.d(TAG, "✓ GCash QR image loading started");
         } else {
-            Log.e(TAG, "GCash QR not available - path is empty, null, or 'null'. ownerGcashQrPath: '" + ownerGcashQrPath + "'");
-            // Try to reload boarding house details if QR wasn't loaded yet
-            if (ownerGcashQrPath == null) {
-                Log.d(TAG, "QR path is null, reloading boarding house details...");
-                loadBoardingHouseDetails();
-                // Wait a bit and try again (this is a workaround for async timing)
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    if (ownerGcashQrPath != null && !ownerGcashQrPath.isEmpty()) {
-                        loadOwnerGcashQr();
-                    } else {
-                        ivOwnerQrCode.setImageResource(R.drawable.placeholder);
-                        Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
-                    }
-                }, 500);
-            } else {
-                ivOwnerQrCode.setImageResource(R.drawable.placeholder);
-                Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
-            }
+            Log.e(TAG, "✗ GCash QR not available - path: '" + ownerGcashQrPath + "'");
+            ivOwnerQrCode.setImageResource(R.drawable.placeholder);
+            Toast.makeText(FinalBookingActivity.this, "Owner GCash QR not available", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -402,46 +534,109 @@ public class FinalBookingActivity extends AppCompatActivity {
         return true;
     }
     
+    // Flag to prevent multiple simultaneous booking requests
+    private boolean isBookingInProgress = false;
+    // Track request count to detect duplicate requests
+    private int requestCount = 0;
+    
     private void createBooking() {
+        // Prevent multiple simultaneous requests
+        if (isBookingInProgress) {
+            Log.w(TAG, "WARNING: Booking already in progress, ignoring duplicate request");
+            Log.w(TAG, "  - This should not happen if button is properly disabled");
+            return;
+        }
+        
+        requestCount++;
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "=== BOOKING PROCESS START (Android) ===");
+        Log.d(TAG, "=== Request Count: " + requestCount + " ===");
+        Log.d(TAG, "========================================");
+        
+        isBookingInProgress = true;
         progressBar.setVisibility(View.VISIBLE);
         btnBook.setEnabled(false);
+        btnBook.setClickable(false); // Also disable clicks
+        
+        Log.d(TAG, "Step 1: Preparing booking data...");
+        Log.d(TAG, "  - Room ID: " + roomId);
+        Log.d(TAG, "  - User ID: " + userId);
+        Log.d(TAG, "  - Start Date: " + startDate);
+        Log.d(TAG, "  - End Date: " + endDate);
+        Log.d(TAG, "  - Payment Method: " + paymentMethod);
         
         // Convert image to base64
         final String paymentProofBase64;
         try {
             if (paymentMethod.equals("Cash") && cashProofUri != null) {
+                Log.d(TAG, "Step 2: Converting Cash proof image to base64...");
                 paymentProofBase64 = imageToBase64(cashProofUri);
+                Log.d(TAG, "  - Cash proof converted. Length: " + (paymentProofBase64 != null ? paymentProofBase64.length() : 0) + " chars");
             } else if (paymentMethod.equals("GCash") && gcashProofUri != null) {
+                Log.d(TAG, "Step 2: Converting GCash proof image to base64...");
                 paymentProofBase64 = imageToBase64(gcashProofUri);
+                Log.d(TAG, "  - GCash proof converted. Length: " + (paymentProofBase64 != null ? paymentProofBase64.length() : 0) + " chars");
             } else {
                 paymentProofBase64 = "";
+                Log.d(TAG, "Step 2: No payment proof image (empty)");
             }
         } catch (IOException e) {
-            Log.e(TAG, "Error converting image to base64: " + e.getMessage());
+            Log.e(TAG, "ERROR: Failed to convert image to base64");
+            Log.e(TAG, "  - Error: " + e.getMessage());
+            isBookingInProgress = false; // Reset flag
             progressBar.setVisibility(View.GONE);
             btnBook.setEnabled(true);
+            btnBook.setClickable(true);
             Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show();
             return;
         }
+        
+        Log.d(TAG, "Step 3: Sending booking request to server...");
+        Log.d(TAG, "  - URL: " + CREATE_BOOKING_URL);
         
         StringRequest stringRequest = new StringRequest(Request.Method.POST, CREATE_BOOKING_URL,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+                        Log.d(TAG, "========================================");
+                        Log.d(TAG, "=== SERVER RESPONSE RECEIVED ===");
+                        Log.d(TAG, "========================================");
+                        Log.d(TAG, "Raw response: " + response);
+                        
+                        // Reset booking flag
+                        isBookingInProgress = false;
                         progressBar.setVisibility(View.GONE);
                         btnBook.setEnabled(true);
                         
                         try {
-                            Log.d(TAG, "Booking response: " + response);
                             JSONObject jsonResponse = new JSONObject(response);
                             boolean success = jsonResponse.getBoolean("success");
                             String message = jsonResponse.optString("message", "");
+                            int bookingId = jsonResponse.optInt("booking_id", 0);
+                            
+                            Log.d(TAG, "Parsed response:");
+                            Log.d(TAG, "  - Success: " + success);
+                            Log.d(TAG, "  - Message: " + message);
+                            if (bookingId > 0) {
+                                Log.d(TAG, "  - Booking ID: " + bookingId);
+                            }
                             
                             if (success) {
+                                Log.d(TAG, "========================================");
+                                Log.d(TAG, "=== BOOKING SUCCESSFUL ===");
+                                Log.d(TAG, "========================================");
+                                Log.d(TAG, "Booking ID: " + bookingId);
+                                Log.d(TAG, "Message: " + message);
                                 showSuccessDialog();
                             } else {
+                                Log.e(TAG, "========================================");
+                                Log.e(TAG, "=== BOOKING UNSUCCESSFUL ===");
+                                Log.e(TAG, "========================================");
+                                Log.e(TAG, "Error Message: " + message);
+                                
                                 // Check if it's a user not found error
                                 if (message.contains("User not found")) {
+                                    Log.e(TAG, "User not found - clearing session");
                                     // Clear session and ask user to log in again
                                     SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
                                     sharedPreferences.edit().clear().apply();
@@ -460,12 +655,17 @@ public class FinalBookingActivity extends AppCompatActivity {
                                     builder.setCancelable(false);
                                     builder.show();
                                 } else {
+                                    Log.e(TAG, "Showing error dialog with message: " + message);
                                     showErrorDialog("Unsuccessful: " + message);
                                 }
                             }
                         } catch (JSONException e) {
-                            Log.e(TAG, "Error parsing response: " + e.getMessage());
-                            Log.e(TAG, "Response: " + response);
+                            Log.e(TAG, "========================================");
+                            Log.e(TAG, "=== JSON PARSING ERROR ===");
+                            Log.e(TAG, "========================================");
+                            Log.e(TAG, "Error: " + e.getMessage());
+                            Log.e(TAG, "Response that failed to parse: " + response);
+                            e.printStackTrace();
                             showErrorDialog("Error parsing response: " + e.getMessage());
                         }
                     }
@@ -473,23 +673,40 @@ public class FinalBookingActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "========================================");
+                        Log.e(TAG, "=== NETWORK ERROR ===");
+                        Log.e(TAG, "========================================");
+                        
+                        // Reset booking flag
+                        isBookingInProgress = false;
                         progressBar.setVisibility(View.GONE);
                         btnBook.setEnabled(true);
+                        btnBook.setClickable(true);
                         String errorMessage = "Network error";
                         if (error.networkResponse != null) {
                             errorMessage = "Error " + error.networkResponse.statusCode;
+                            Log.e(TAG, "  - Status Code: " + error.networkResponse.statusCode);
                             if (error.networkResponse.data != null) {
-                                errorMessage += ": " + new String(error.networkResponse.data);
+                                String errorBody = new String(error.networkResponse.data);
+                                errorMessage += ": " + errorBody;
+                                Log.e(TAG, "  - Error Body: " + errorBody);
                             }
                         } else if (error.getMessage() != null) {
                             errorMessage = error.getMessage();
+                            Log.e(TAG, "  - Error Message: " + errorMessage);
                         }
-                        Log.e(TAG, "Volley error: " + errorMessage);
+                        Log.e(TAG, "  - Error Class: " + error.getClass().getSimpleName());
+                        if (error.getCause() != null) {
+                            Log.e(TAG, "  - Cause: " + error.getCause().getMessage());
+                        }
                         showErrorDialog("Unsuccessful: " + errorMessage);
                     }
                 }) {
             @Override
             protected Map<String, String> getParams() {
+                // NOTE: getParams() may be called multiple times by Volley internally
+                // This is normal - it doesn't mean the request is sent multiple times
+                // We log it but don't worry about it unless we see actual duplicate requests
                 Map<String, String> params = new HashMap<>();
                 params.put("room_id", String.valueOf(roomId));
                 params.put("user_id", String.valueOf(userId));
@@ -498,8 +715,15 @@ public class FinalBookingActivity extends AppCompatActivity {
                 params.put("payment_method", paymentMethod);
                 params.put("payment_proof", paymentProofBase64);
                 
-                // Debug logging
-                Log.d(TAG, "Sending booking request with user_id: " + userId + ", room_id: " + roomId);
+                // Only log once per actual request (use a counter or flag)
+                // Note: This may still log multiple times due to Volley internals
+                Log.d(TAG, "getParams() called - Preparing request parameters");
+                Log.d(TAG, "  - room_id: " + roomId);
+                Log.d(TAG, "  - user_id: " + userId);
+                Log.d(TAG, "  - start_date: " + startDate);
+                Log.d(TAG, "  - end_date: " + endDate);
+                Log.d(TAG, "  - payment_method: " + paymentMethod);
+                Log.d(TAG, "  - payment_proof length: " + (paymentProofBase64 != null ? paymentProofBase64.length() : 0) + " chars");
                 
                 return params;
             }
@@ -514,6 +738,15 @@ public class FinalBookingActivity extends AppCompatActivity {
             }
         };
         
+        // Set retry policy to prevent automatic retries (Volley retries by default)
+        // This prevents duplicate requests when network is slow
+        stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+            30000, // 30 seconds timeout
+            0, // NO retries (0 = don't retry, prevent duplicate requests)
+            com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+        
+        Log.d(TAG, "Adding request to Volley queue (should only happen once per booking)");
         requestQueue.add(stringRequest);
     }
     

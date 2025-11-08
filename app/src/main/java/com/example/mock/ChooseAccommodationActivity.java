@@ -395,10 +395,24 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         // Set click listener for Select button
         int bhrId = room.getInt("bhr_id");
         btnSelect.setOnClickListener(v -> {
-            Intent intent = new Intent(this, BookingActivity.class);
-            intent.putExtra("bhr_id", bhrId);
-            intent.putExtra("room_data", room.toString());
-            startActivity(intent);
+            try {
+                // Create a copy of the room object and add bh_id if not present
+                JSONObject roomData = new JSONObject(room.toString());
+                if (!roomData.has("bh_id") && boardingHouseId > 0) {
+                    roomData.put("bh_id", boardingHouseId);
+                    Log.d(TAG, "Added bh_id to room_data: " + boardingHouseId);
+                }
+                
+                Intent intent = new Intent(this, BookingActivity.class);
+                intent.putExtra("bhr_id", bhrId);
+                intent.putExtra("room_data", roomData.toString());
+                intent.putExtra("bh_id", boardingHouseId); // Also pass as separate extra for safety
+                Log.d(TAG, "Starting BookingActivity with bh_id: " + boardingHouseId + ", bhr_id: " + bhrId);
+                startActivity(intent);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error creating room_data: " + e.getMessage());
+                Toast.makeText(this, "Error loading room data", Toast.LENGTH_SHORT).show();
+            }
         });
         
         // Add views to card content
