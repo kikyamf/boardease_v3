@@ -76,7 +76,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No current bookings"
+                    android:text="No Current BH booked"
                     android:textSize="16sp"
                     android:textColor="#666666"
                     android:fontFamily="@font/poppins_medium"
@@ -87,6 +87,80 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Start exploring to find your perfect boarding house"
+                    android:textSize="14sp"
+                    android:textColor="#999999"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp" />
+
+        <!-- Pending Booking Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="32dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pending Booking"
+                android:textSize="18sp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Pending Bookings RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPendingBookings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp" />
+
+            <!-- Empty State for Pending Bookings -->
+            <LinearLayout
+                android:id="@+id/layoutPendingBookingsEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/btn_booking"
+                    android:contentDescription="No pending bookings"
+                    android:alpha="0.3"
+                    android:tint="#A18167" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No Pending Booking"
+                    android:textSize="16sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your pending bookings will appear here"
                     android:textSize="14sp"
                     android:textColor="#999999"
                     android:fontFamily="@font/poppins_regular"
@@ -149,7 +223,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No booking history"
+                    android:text="No Booking History"
                     android:textSize="16sp"
                     android:textColor="#666666"
                     android:fontFamily="@font/poppins_medium"

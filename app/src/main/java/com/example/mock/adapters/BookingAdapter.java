@@ -56,10 +56,13 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         holder.tvStatus.setText(booking.getStatus());
         
         // Set status background based on status
-        if ("Active".equals(booking.getStatus())) {
+        String status = booking.getStatus();
+        if ("Confirmed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
-        } else if ("Completed".equals(booking.getStatus())) {
+        } else if ("Completed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+        } else if ("Pending".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
         }
@@ -75,19 +78,22 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             holder.imgBoardingHouse.setImageResource(R.drawable.sample_listing);
         }
         
-        // Set click listener for the entire card
-        holder.itemView.setOnClickListener(v -> {
-            if (bookingClickListener != null) {
+        // Set click listener for the entire card (only if listener is provided)
+        if (bookingClickListener != null) {
+            holder.itemView.setOnClickListener(v -> {
                 bookingClickListener.onBookingClick(booking);
-            }
-        });
-        
-        // Set "See Details" button click listener
-        holder.btnSeeDetails.setOnClickListener(v -> {
-            if (bookingClickListener != null) {
+            });
+            
+            // Set "See Details" button click listener
+            holder.btnSeeDetails.setOnClickListener(v -> {
                 bookingClickListener.onBookingClick(booking);
-            }
-        });
+            });
+        } else {
+            // Remove click listeners if no listener provided
+            holder.itemView.setOnClickListener(null);
+            holder.btnSeeDetails.setOnClickListener(null);
+            holder.btnSeeDetails.setVisibility(View.GONE); // Hide button if no click listener
+        }
     }
     
     @Override
