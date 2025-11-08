@@ -100,13 +100,13 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             setupRecyclerView();
             setupSearchFunctionality();
             setupFilterAndSortButtons();
-            loadBoardingHouses();
             
-            // Initialize last favorite count
-            if (lastFavoriteCount == -1 && sharedPreferences != null) {
-                Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
-                lastFavoriteCount = favoriteIds.size();
+            // Initialize favorites cache from database
+            if (!BoarderFavoriteFragment.isCacheInitialized()) {
+                BoarderFavoriteFragment.updateFavoriteCache(getContext());
             }
+            
+            loadBoardingHouses();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -624,11 +624,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                 String message = "Removed from favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             }
-            // Update last favorite count
-            Set<String> favoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
-            lastFavoriteCount = favoriteIds.size();
             
-            // Refresh the adapter to update favorite icons
+            // Refresh the adapter to update favorite icons after a short delay
+            // to allow the API call to complete and update the cache
             adapter.notifyDataSetChanged();
         } catch (Exception e) {
             e.printStackTrace();
@@ -655,23 +653,12 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private void checkAndRefreshFavoritesIfNeeded() {
         try {
-            if (sharedPreferences == null) {
-                return;
-            }
+            // Refresh favorites cache from database and update UI
+            BoarderFavoriteFragment.updateFavoriteCache(getContext());
             
-            // Get current favorite count from SharedPreferences
-            Set<String> currentFavoriteIds = sharedPreferences.getStringSet(KEY_FAVORITES, new HashSet<>());
-            int currentCount = currentFavoriteIds.size();
-            
-            // If count changed, refresh the adapter to update heart icons
-            if (currentCount != lastFavoriteCount) {
-                Log.d(TAG, "Favorites changed (count: " + lastFavoriteCount + " -> " + currentCount + "), refreshing heart icons...");
-                lastFavoriteCount = currentCount;
-                
-                // Refresh adapter to update heart icons based on current favorite status
-                if (adapter != null) {
-                    adapter.notifyDataSetChanged();
-                }
+            // Refresh adapter to update heart icons based on current favorite status
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error checking favorites: " + e.getMessage());
