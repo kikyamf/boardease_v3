@@ -26,9 +26,11 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Get user_id from request
-    $userId = isset($_POST['user_id']) ? intval($_POST['user_id']) : (isset($_GET['user_id']) ? intval($_GET['user_id']) : 0);
+    $userIdInput = isset($_POST['user_id']) ? intval($_POST['user_id']) : (isset($_GET['user_id']) ? intval($_GET['user_id']) : 0);
     
-    if ($userId === 0) {
+    error_log("get_favorites.php - Received user_id: $userIdInput");
+    
+    if ($userIdInput === 0) {
         echo json_encode(array(
             'success' => false,
             'error' => 'User ID is required.'
@@ -36,7 +38,35 @@ try {
         exit();
     }
     
-    // SQL query to get user's favorite boarding houses with their main image, room prices, and owner contact info
+    // Map user_id: Try to find users.user_id first, then check if it's registrations.id
+    $userId = $userIdInput;
+    $checkUserSql = "SELECT user_id FROM users WHERE user_id = ?";
+    $checkUserStmt = $pdo->prepare($checkUserSql);
+    $checkUserStmt->execute([$userId]);
+    $userExists = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If not found in users table, check if it's a registrations.id
+    if (!$userExists) {
+        $checkRegSql = "SELECT u.user_id FROM users u 
+                       INNER JOIN registrations r ON u.reg_id = r.id 
+                       WHERE r.id = ?";
+        $checkRegStmt = $pdo->prepare($checkRegSql);
+        $checkRegStmt->execute([$userIdInput]);
+        $mappedUser = $checkRegStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($mappedUser) {
+            $userId = $mappedUser['user_id'];
+            error_log("get_favorites.php - Mapped registrations.id $userIdInput to users.user_id $userId");
+        } else {
+            error_log("get_favorites.php - WARNING: User ID $userIdInput not found in users table, trying with original ID");
+            // Will try with original ID - might work if table uses registrations.id
+        }
+    }
+    
+    error_log("get_favorites.php - Using user_id: $userId for query");
+    
+    // SQL query to get user's favorite boarding houses
+    // Try with users.user_id first, if no results, try with registrations.id
     $sql = "
         SELECT 
             bh.bh_id,
@@ -77,6 +107,18 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$userId]);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // If no results and we mapped the user_id, try with original ID
+    if (empty($results) && $userId !== $userIdInput) {
+        error_log("get_favorites.php - No results with mapped user_id, trying with original: $userIdInput");
+        $stmt->execute([$userIdInput]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($results)) {
+            error_log("get_favorites.php - Found results using original user_id: $userIdInput");
+        }
+    }
+    
+    error_log("get_favorites.php - Found " . count($results) . " favorites");
     
     // Get base URL for images (use local IP for local development)
     $baseUrl = 'http://192.168.1.9/boardease_v3/';
