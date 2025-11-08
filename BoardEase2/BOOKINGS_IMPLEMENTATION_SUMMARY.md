@@ -4,7 +4,7 @@
 The `BoarderBookingFragment` has been updated to fetch real booking data from the database and display it in three sections:
 1. **Current Boarding House Booked** - Approved bookings where the user is currently staying
 2. **Pending Booking** - Bookings waiting for owner approval
-3. **Booking History** - Completed bookings (past stays)
+3. **Booking History** - Completed and Cancelled bookings (past stays and cancelled bookings)
 
 ## Changes Made
 
@@ -12,7 +12,7 @@ The `BoarderBookingFragment` has been updated to fetch real booking data from th
 Created comprehensive SQL queries in `BOOKINGS_SQL_QUERIES.md`:
 - **Current Bookings**: `booking_status = 'Confirmed'` AND current date between `start_date` and `end_date`
 - **Pending Bookings**: `booking_status = 'Pending'`
-- **Booking History**: `booking_status = 'Completed'`
+- **Booking History**: `booking_status = 'Completed'` OR `booking_status = 'Cancelled'`
 
 ### 2. PHP Endpoint
 Created `get_boarder_bookings.php`:
@@ -129,7 +129,7 @@ Parameters: user_id=YOUR_USER_ID
 - **Pending**: Booking request submitted, waiting for owner approval
 - **Confirmed**: Booking approved by owner, user is currently staying
 - **Completed**: Booking has ended (past end_date)
-- **Cancelled**: Booking was cancelled (not displayed in these sections)
+- **Cancelled**: Booking was cancelled (displayed in Booking History section)
 
 ## Current Booking Logic
 

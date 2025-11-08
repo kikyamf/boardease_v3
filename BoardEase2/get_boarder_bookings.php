@@ -98,7 +98,7 @@ try {
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'current'
                 WHEN b.booking_status = 'Pending' THEN 'pending'
-                WHEN b.booking_status = 'Completed' THEN 'history'
+                WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 'history'
                 ELSE 'other'
             END as section
         FROM bookings b
@@ -107,7 +107,7 @@ try {
         INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
         LEFT JOIN payments p ON b.booking_id = p.booking_id
         WHERE b.user_id = ? 
-            AND b.booking_status IN ('Pending', 'Confirmed', 'Completed')
+            AND b.booking_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')
         GROUP BY b.booking_id, b.room_id, b.user_id, b.start_date, b.end_date, 
                  b.booking_status, b.booking_date, ru.room_number, bhr.room_category, 
                  bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description
@@ -115,7 +115,7 @@ try {
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 1
                 WHEN b.booking_status = 'Pending' THEN 2
-                WHEN b.booking_status = 'Completed' THEN 3
+                WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 3
                 ELSE 4
             END,
             b.booking_date DESC
@@ -167,6 +167,7 @@ try {
                 $pendingBookings[] = $booking;
                 break;
             case 'history':
+                // Include both Completed and Cancelled bookings in history
                 $historyBookings[] = $booking;
                 break;
         }

@@ -63,6 +63,8 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
         } else if ("Pending".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+        } else if ("Cancelled".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Use pending style for cancelled, or create a cancelled style
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
         }

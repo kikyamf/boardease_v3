@@ -101,8 +101,8 @@ ORDER BY b.booking_date DESC;
 
 ### 3. Booking History
 **Criteria:**
-- `booking_status = 'Completed'`
-- Past bookings that have ended
+- `booking_status = 'Completed'` OR `booking_status = 'Cancelled'`
+- Past bookings that have ended or were cancelled
 
 ```sql
 SELECT 
@@ -134,7 +134,7 @@ INNER JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
 INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
 LEFT JOIN payments p ON b.booking_id = p.booking_id
 WHERE b.user_id = :user_id
-    AND b.booking_status = 'Completed'
+    AND b.booking_status IN ('Completed', 'Cancelled')
 GROUP BY b.booking_id, b.room_id, b.user_id, b.start_date, b.end_date, 
          b.booking_status, b.booking_date, ru.room_number, bhr.room_category, 
          bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description
@@ -171,7 +171,7 @@ SELECT
     CASE 
         WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'current'
         WHEN b.booking_status = 'Pending' THEN 'pending'
-        WHEN b.booking_status = 'Completed' THEN 'history'
+        WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 'history'
         ELSE 'other'
     END as section
 FROM bookings b
@@ -180,7 +180,7 @@ INNER JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
 INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
 LEFT JOIN payments p ON b.booking_id = p.booking_id
 WHERE b.user_id = :user_id
-    AND b.booking_status IN ('Pending', 'Confirmed', 'Completed')
+    AND b.booking_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')
 GROUP BY b.booking_id, b.room_id, b.user_id, b.start_date, b.end_date, 
          b.booking_status, b.booking_date, ru.room_number, bhr.room_category, 
          bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description
@@ -188,7 +188,7 @@ ORDER BY
     CASE 
         WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 1
         WHEN b.booking_status = 'Pending' THEN 2
-        WHEN b.booking_status = 'Completed' THEN 3
+        WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 3
         ELSE 4
     END,
     b.booking_date DESC;
@@ -198,6 +198,6 @@ ORDER BY
 - All queries use `user_id` which references `users.user_id` (not `registrations.id`)
 - Payment calculations include total paid and balance due
 - Image path is the first image from `boarding_house_images`
-- Queries exclude 'Cancelled' bookings
+- Booking History includes both 'Completed' and 'Cancelled' bookings
 - Current bookings must have current date between start and end dates
 
