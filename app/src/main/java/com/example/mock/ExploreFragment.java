@@ -100,12 +100,6 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
             setupRecyclerView();
             setupSearchFunctionality();
             setupFilterAndSortButtons();
-            
-            // Initialize favorites cache from database
-            if (!BoarderFavoriteFragment.isCacheInitialized()) {
-                BoarderFavoriteFragment.updateFavoriteCache(getContext());
-            }
-            
             loadBoardingHouses();
         } catch (Exception e) {
             e.printStackTrace();
@@ -653,10 +647,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     
     private void checkAndRefreshFavoritesIfNeeded() {
         try {
-            // Refresh favorites cache from database and update UI
-            BoarderFavoriteFragment.updateFavoriteCache(getContext());
-            
-            // Refresh adapter to update heart icons based on current favorite status
+            // Refresh adapter to update heart icons based on current favorite status from SharedPreferences
             if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
