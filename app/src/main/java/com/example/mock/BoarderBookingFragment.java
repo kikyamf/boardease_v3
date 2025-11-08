@@ -809,6 +809,19 @@ public class BoarderBookingFragment extends Fragment {
                 
                 checkboxes.add(checkboxPeriod);
                 breakdownItemViews.add(breakdownItem);
+                
+                // Ensure margins are applied by setting LayoutParams
+                // Convert dp to pixels for proper spacing
+                float density = getContext().getResources().getDisplayMetrics().density;
+                int marginInPx = (int) (20 * density); // 20dp spacing
+                
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                layoutParams.setMargins(0, marginInPx, 0, marginInPx); // left, top, right, bottom
+                breakdownItem.setLayoutParams(layoutParams);
+                
                 layoutBreakdowns.addView(breakdownItem);
                 
                 // Initially show only the first period (soonest due date)
