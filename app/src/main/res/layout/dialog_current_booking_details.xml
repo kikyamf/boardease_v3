@@ -61,7 +61,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="16dp">
 
         <ImageView
             android:layout_width="16dp"
@@ -83,47 +83,6 @@
 
     </LinearLayout>
 
-    <!-- Room Details -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Room: "
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:fontFamily="@font/poppins_medium" />
-
-        <TextView
-            android:id="@+id/tvRoomCategory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Private Room"
-            android:textSize="14sp"
-            android:textColor="#2E7D32"
-            android:fontFamily="@font/poppins_semibold"
-            android:background="@drawable/bg_status_available"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp" />
-
-        <TextView
-            android:id="@+id/tvRoomNumber"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" - Room 101"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:fontFamily="@font/poppins_regular"
-            android:layout_marginStart="8dp" />
-
-    </LinearLayout>
-
     <!-- Booking Information Card -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
@@ -138,6 +97,34 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
+
+            <!-- Room Details -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Room"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_medium" />
+
+                <TextView
+                    android:id="@+id/tvRoomDetails"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Private Room | Room 101"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:fontFamily="@font/poppins_regular" />
+
+            </LinearLayout>
 
             <!-- Start Date -->
             <LinearLayout
@@ -217,34 +204,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="₱3,500"
-                    android:textSize="14sp"
-                    android:textColor="#2E7D32"
-                    android:fontFamily="@font/poppins_bold" />
-
-            </LinearLayout>
-
-            <!-- Balance Due -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Balance Due"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvBalanceDue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="₱0"
                     android:textSize="14sp"
                     android:textColor="#2E7D32"
                     android:fontFamily="@font/poppins_bold" />

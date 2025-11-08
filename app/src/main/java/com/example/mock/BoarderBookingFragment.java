@@ -435,12 +435,10 @@ public class BoarderBookingFragment extends Fragment {
             ImageView imgBoardingHouse = dialogView.findViewById(R.id.imgBoardingHouse);
             TextView tvBoardingHouseName = dialogView.findViewById(R.id.tvBoardingHouseName);
             TextView tvLocation = dialogView.findViewById(R.id.tvLocation);
-            TextView tvRoomCategory = dialogView.findViewById(R.id.tvRoomCategory);
-            TextView tvRoomNumber = dialogView.findViewById(R.id.tvRoomNumber);
+            TextView tvRoomDetails = dialogView.findViewById(R.id.tvRoomDetails);
             TextView tvStartDate = dialogView.findViewById(R.id.tvStartDate);
             TextView tvEndDate = dialogView.findViewById(R.id.tvEndDate);
             TextView tvMonthlyDue = dialogView.findViewById(R.id.tvMonthlyDue);
-            TextView tvBalanceDue = dialogView.findViewById(R.id.tvBalanceDue);
             TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
             com.google.android.material.button.MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
             com.google.android.material.button.MaterialButton btnReportMaintenance = dialogView.findViewById(R.id.btnReportMaintenance);
@@ -459,19 +457,16 @@ public class BoarderBookingFragment extends Fragment {
             tvBoardingHouseName.setText(booking.getBoardingHouseName());
             tvLocation.setText(booking.getLocation());
             
-            // Set room category and room number
-            tvRoomCategory.setText(booking.getRoomCategory());
+            // Set room details in format: "Type of Room | Room_number"
+            String roomDetails = booking.getRoomCategory();
             if (booking.getRoomNumber() != null && !booking.getRoomNumber().isEmpty()) {
-                tvRoomNumber.setText(" - " + booking.getRoomNumber());
-                tvRoomNumber.setVisibility(View.VISIBLE);
-            } else {
-                tvRoomNumber.setVisibility(View.GONE);
+                roomDetails += " | " + booking.getRoomNumber();
             }
+            tvRoomDetails.setText(roomDetails);
             
             tvStartDate.setText(booking.getStartDate());
             tvEndDate.setText(booking.getEndDate());
             tvMonthlyDue.setText(booking.getMonthlyDue());
-            tvBalanceDue.setText(booking.getBalanceDue());
             
             // Display "Active" instead of "Confirmed"
             String status = booking.getStatus();
