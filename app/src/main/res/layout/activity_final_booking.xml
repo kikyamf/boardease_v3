@@ -145,19 +145,6 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Total Payment"
-                    android:textSize="18sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:textColor="@color/brown"
-                    android:drawableStart="@drawable/money"
-                    android:drawableTint="@color/green"
-                    android:drawablePadding="8dp"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp" />
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
