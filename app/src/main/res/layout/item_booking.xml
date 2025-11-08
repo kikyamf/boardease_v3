@@ -131,21 +131,6 @@
 
         </LinearLayout>
 
-        <!-- Action Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSeeDetails"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="See Details"
-            android:textSize="12sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="@font/poppins_medium"
-            android:backgroundTint="@color/brown"
-            app:cornerRadius="20dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            android:layout_gravity="bottom|end" />
-
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

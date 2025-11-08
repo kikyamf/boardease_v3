@@ -89,16 +89,9 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             holder.itemView.setOnClickListener(v -> {
                 bookingClickListener.onBookingClick(booking);
             });
-            
-            // Set "See Details" button click listener
-            holder.btnSeeDetails.setOnClickListener(v -> {
-                bookingClickListener.onBookingClick(booking);
-            });
         } else {
-            // Remove click listeners if no listener provided
+            // Remove click listener if no listener provided
             holder.itemView.setOnClickListener(null);
-            holder.btnSeeDetails.setOnClickListener(null);
-            holder.btnSeeDetails.setVisibility(View.GONE); // Hide button if no click listener
         }
     }
     
@@ -115,7 +108,6 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
     public static class BookingViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
         TextView tvBoardingHouseName, tvLocation, tvBookingDates, tvMonthlyDue, tvStatus;
-        com.google.android.material.button.MaterialButton btnSeeDetails;
         
         public BookingViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -125,7 +117,6 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             tvBookingDates = itemView.findViewById(R.id.tvBookingDates);
             tvMonthlyDue = itemView.findViewById(R.id.tvMonthlyDue);
             tvStatus = itemView.findViewById(R.id.tvStatus);
-            btnSeeDetails = itemView.findViewById(R.id.btnSeeDetails);
         }
     }
 }
