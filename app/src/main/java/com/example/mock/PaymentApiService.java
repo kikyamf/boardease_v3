@@ -72,6 +72,20 @@ public class PaymentApiService {
                             JSONObject data = response.getJSONObject("data");
                             JSONArray paymentsArray = data.getJSONArray("payments");
                             Log.d(TAG, "getAllPayments - Found " + paymentsArray.length() + " payments in response");
+                            
+                            // Check debug info if available
+                            if (response.has("debug")) {
+                                try {
+                                    JSONObject debug = response.getJSONObject("debug");
+                                    Log.d(TAG, "getAllPayments - Debug info: requested_owner_id=" + 
+                                          debug.optInt("requested_owner_id", 0) + 
+                                          ", simple_query_count=" + debug.optInt("simple_query_count", 0) +
+                                          ", main_query_count=" + debug.optInt("main_query_count", 0));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "getAllPayments - Error parsing debug info", e);
+                                }
+                            }
+                            
                             List<PaymentData> payments = parsePaymentList(paymentsArray);
                             Log.d(TAG, "getAllPayments - Parsed " + payments.size() + " payments");
                             callback.onSuccess(payments);
@@ -253,7 +267,9 @@ public class PaymentApiService {
             params.put("payment_id", paymentId);
             params.put("status", newStatus);
             params.put("notes", notes);
+            Log.d(TAG, "updatePaymentStatus - Request params: " + params.toString());
         } catch (JSONException e) {
+            Log.e(TAG, "updatePaymentStatus - Error creating request parameters", e);
             callback.onError("Error creating request parameters");
             return;
         }
@@ -261,20 +277,42 @@ public class PaymentApiService {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
                 response -> {
                     try {
+                        Log.d(TAG, "updatePaymentStatus - Response received: " + response.toString());
                         if (response.getBoolean("success")) {
-                            callback.onSuccess(response.getString("message"));
+                            String message = response.optString("message", "Payment status updated successfully");
+                            callback.onSuccess(message);
                         } else {
-                            callback.onError(response.getString("error"));
+                            String errorMsg = response.optString("error", "Unknown error occurred");
+                            Log.e(TAG, "updatePaymentStatus - Server returned error: " + errorMsg);
+                            callback.onError(errorMsg);
                         }
                     } catch (JSONException e) {
-                        Log.e(TAG, "Error parsing response", e);
+                        Log.e(TAG, "updatePaymentStatus - Error parsing response", e);
                         callback.onError("Error parsing response");
                     }
                 },
                 error -> {
-                    Log.e(TAG, "Volley error", error);
-                    callback.onError("Network error: " + error.getMessage());
-                });
+                    Log.e(TAG, "updatePaymentStatus - Volley error", error);
+                    String errorMsg = "Network error: " + (error.getMessage() != null ? error.getMessage() : "Unknown error");
+                    if (error.networkResponse != null) {
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            Log.e(TAG, "updatePaymentStatus - Error response body: " + responseBody);
+                            errorMsg = "Server error (" + error.networkResponse.statusCode + "): " + responseBody;
+                        } catch (Exception e) {
+                            Log.e(TAG, "updatePaymentStatus - Error parsing error response", e);
+                        }
+                    }
+                    callback.onError(errorMsg);
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
 
         requestQueue.add(request);
     }
@@ -320,9 +358,20 @@ public class PaymentApiService {
         try {
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject paymentJson = jsonArray.getJSONObject(i);
+                
+                // Log payment proof data for debugging
+                if (paymentJson.has("payment_proof") || paymentJson.has("receipt_url")) {
+                    Log.d(TAG, "Payment ID " + paymentJson.optInt("payment_id", 0) + 
+                          " - receipt_url: " + paymentJson.optString("receipt_url", "null") +
+                          ", payment_proof: " + paymentJson.optString("payment_proof", "null"));
+                }
+                
                 PaymentData payment = PaymentData.fromJson(paymentJson);
                 if (payment != null) {
                     payments.add(payment);
+                    Log.d(TAG, "Parsed payment ID " + payment.getPaymentId() + 
+                          " - Payment Proof: " + payment.getPaymentProof() +
+                          ", Receipt URL: " + payment.getReceiptUrl());
                 }
             }
         } catch (JSONException e) {

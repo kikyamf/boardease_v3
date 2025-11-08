@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,9 @@ public class AllPaymentsFragment extends Fragment {
     private List<PaymentData> allPayments;
     private PaymentApiService paymentApiService;
     private ProgressDialog progressDialog;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private int ownerId;
+    private boolean isInitialLoad = true;
 
     @Nullable
     @Override
@@ -36,6 +39,12 @@ public class AllPaymentsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // Initialize SwipeRefreshLayout
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadAllPayments(true);
+        });
 
         // Get owner ID from SharedPreferences
         SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", getContext().MODE_PRIVATE);
@@ -54,20 +63,42 @@ public class AllPaymentsFragment extends Fragment {
         paymentApiService = new PaymentApiService(getContext());
         allPayments = new ArrayList<>();
 
-        // Load payments from API
-        loadAllPayments();
+        // Don't load automatically - wait for loadIfNeeded() to be called
 
         return view;
     }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        hideProgressDialog();
+    }
+    
+    public void loadIfNeeded() {
+        // Public method to trigger load from parent activity
+        // Called when tab is clicked/selected for the first time
+        if (isInitialLoad) {
+            loadAllPayments(false);
+        }
+    }
 
-    private void loadAllPayments() {
-        showProgressDialog("Loading payments...");
+    private void loadAllPayments(boolean isRefresh) {
+        if (isRefresh) {
+            // Show swipe refresh indicator
+            swipeRefreshLayout.setRefreshing(true);
+        } else if (isInitialLoad) {
+            // Show ProgressDialog on initial load
+            showProgressDialog("Loading payments...");
+            isInitialLoad = false;
+        }
+        
         android.util.Log.d("AllPaymentsFragment", "Loading payments for ownerId: " + ownerId);
         
         paymentApiService.getAllPayments(ownerId, new PaymentApiService.PaymentListCallback() {
             @Override
             public void onSuccess(List<PaymentData> payments) {
                 hideProgressDialog();
+                swipeRefreshLayout.setRefreshing(false);
                 android.util.Log.d("AllPaymentsFragment", "Successfully loaded " + payments.size() + " payments");
                 allPayments.clear();
                 allPayments.addAll(payments);
@@ -77,11 +108,16 @@ public class AllPaymentsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 hideProgressDialog();
+                swipeRefreshLayout.setRefreshing(false);
                 android.util.Log.e("AllPaymentsFragment", "Error loading payments: " + error);
                 Toast.makeText(getContext(), "Error loading payments: " + error, Toast.LENGTH_LONG).show();
                 updateUI();
             }
         });
+    }
+    
+    public void refreshPayments() {
+        loadAllPayments(true);
     }
 
     private void updateUI() {
@@ -93,40 +129,49 @@ public class AllPaymentsFragment extends Fragment {
             recyclerView.setVisibility(View.VISIBLE);
             emptyState.setVisibility(View.GONE);
             
+            // Create or update adapter with listener
+            PaymentAdapter.PaymentActionListener listener = new PaymentAdapter.PaymentActionListener() {
+                @Override
+                public void onMarkAsPaid(PaymentData payment) {
+                    // Handle mark as paid action
+                }
+
+                @Override
+                public void onMarkAsOverdue(PaymentData payment) {
+                    // Handle mark as overdue action
+                }
+
+                @Override
+                public void onViewDetails(PaymentData payment) {
+                    // Open payment details activity
+                    android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
+                    intent.putExtra("payment", payment);
+                    startActivity(intent);
+                }
+            };
+            
             if (adapter == null) {
-                adapter = new PaymentAdapter(allPayments, new PaymentAdapter.PaymentActionListener() {
-                    @Override
-                    public void onMarkAsPaid(PaymentData payment) {
-                        // Handle mark as paid action
-                    }
-
-                    @Override
-                    public void onMarkAsOverdue(PaymentData payment) {
-                        // Handle mark as overdue action
-                    }
-
-                    @Override
-                    public void onViewDetails(PaymentData payment) {
-                        // Open payment details activity
-                        android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
-                        intent.putExtra("payment", payment);
-                        startActivity(intent);
-                    }
-                });
+                adapter = new PaymentAdapter(allPayments, listener);
                 recyclerView.setAdapter(adapter);
             } else {
+                adapter.setActionListener(listener);
                 adapter.notifyDataSetChanged();
             }
         }
     }
 
     private void showProgressDialog(String message) {
+        if (getContext() == null || getActivity() == null || getActivity().isFinishing() || getActivity().isDestroyed()) {
+            return;
+        }
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(getContext());
             progressDialog.setCancelable(false);
         }
-        progressDialog.setMessage(message);
-        progressDialog.show();
+        if (!progressDialog.isShowing()) {
+            progressDialog.setMessage(message);
+            progressDialog.show();
+        }
     }
 
     private void hideProgressDialog() {
@@ -137,7 +182,7 @@ public class AllPaymentsFragment extends Fragment {
 
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
-        loadAllPayments();
+        loadAllPayments(true);
     }
 }
 

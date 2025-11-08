@@ -77,7 +77,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     
     // API URLs
     private static final String TAG = "BoarderFavoriteFragment";
-    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_FAVORITES_URL = BOARD_EASE2_URL + "get_favorites_v2.php";
     private static final String ADD_FAVORITE_URL = BOARD_EASE2_URL + "add_favorite_v2.php";
@@ -862,7 +862,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             
             // Save to database
             RequestQueue requestQueue = Volley.newRequestQueue(context);
-            String BASE_URL = "http://192.168.1.9/boardease_v3/";
+            String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
             String ADD_FAVORITE_URL = BASE_URL + "BoardEase2/add_favorite_v2.php";
             
             StringRequest stringRequest = new StringRequest(Request.Method.POST, ADD_FAVORITE_URL,
@@ -940,7 +940,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             
             // Remove from database
             RequestQueue requestQueue = Volley.newRequestQueue(context);
-            String BASE_URL = "http://192.168.1.9/boardease_v3/";
+            String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
             String REMOVE_FAVORITE_URL = BASE_URL + "BoardEase2/remove_favorite_v2.php";
             
             StringRequest stringRequest = new StringRequest(Request.Method.POST, REMOVE_FAVORITE_URL,

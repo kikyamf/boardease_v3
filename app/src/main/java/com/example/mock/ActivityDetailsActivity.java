@@ -60,7 +60,10 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         
         pagerAdapter = new ActivityDetailsPagerAdapter(this, activityType, userId);
         viewPager.setAdapter(pagerAdapter);
-
+        
+        // Set offscreen page limit to prevent pre-loading all fragments
+        viewPager.setOffscreenPageLimit(1);
+        
         // Set up tab layout with ViewPager2
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             if ("payment_status".equals(activityType)) {
@@ -86,6 +89,57 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                 }
             }
         }).attach();
+        
+        // Listen for page changes to trigger load when tab is clicked
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                // Trigger load for the selected page when tab is clicked
+                // Use post to ensure fragment is fully created
+                viewPager.post(() -> {
+                    viewPager.postDelayed(() -> loadFragmentIfNeeded(position), 150);
+                });
+            }
+        });
+        
+        // Load first tab on activity start
+        viewPager.post(() -> {
+            viewPager.postDelayed(() -> loadFragmentIfNeeded(0), 300);
+        });
+    }
+    
+    private void loadFragmentIfNeeded(int position) {
+        try {
+            // ViewPager2 creates fragments with tags like "f0", "f1", "f2"
+            String tag = "f" + position;
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
+            
+            if (fragment != null && fragment.isAdded()) {
+                // Wait for fragment to be ready
+                viewPager.post(() -> {
+                    try {
+                        if ("payment_status".equals(activityType)) {
+                            if (position == 0 && fragment instanceof AllPaymentsFragment) {
+                                // All Payments tab
+                                ((AllPaymentsFragment) fragment).loadIfNeeded();
+                            } else if (position == 1 && fragment instanceof CompletedPaymentsFragment) {
+                                // Completed tab
+                                ((CompletedPaymentsFragment) fragment).loadIfNeeded();
+                            } else if (position == 2 && fragment instanceof PendingPaymentsFragment) {
+                                // Pending tab
+                                ((PendingPaymentsFragment) fragment).loadIfNeeded();
+                            }
+                        }
+                        // Add boarders_rented handling if needed in the future
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static class ActivityDetailsPagerAdapter extends FragmentStateAdapter {

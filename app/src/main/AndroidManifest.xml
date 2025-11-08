@@ -127,6 +127,9 @@
             android:name=".BookingDetailsActivity"
             android:exported="false" />
         <activity
+            android:name=".PaymentDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ActivityDetailsActivity"
             android:exported="false" />
         <activity
