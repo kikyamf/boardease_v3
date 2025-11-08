@@ -52,11 +52,15 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set monthly due
         holder.tvMonthlyDue.setText(booking.getMonthlyDue());
         
-        // Set status
-        holder.tvStatus.setText(booking.getStatus());
-        
-        // Set status background based on status
+        // Set status - Display "Active" instead of "Confirmed" for Current Boarding House Booked section
         String status = booking.getStatus();
+        String displayStatus = status;
+        if ("Confirmed".equals(status)) {
+            displayStatus = "Active";
+        }
+        holder.tvStatus.setText(displayStatus);
+        
+        // Set status background based on status (use original status, not display status)
         if ("Confirmed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
         } else if ("Completed".equals(status)) {
