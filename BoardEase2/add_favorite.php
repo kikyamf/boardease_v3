@@ -25,9 +25,9 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Get POST data
-    $userIdInput = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-    $bhId = isset($_POST['bh_id']) ? intval($_POST['bh_id']) : 0;
+    // Get POST or GET data (GET for testing in browser)
+    $userIdInput = isset($_POST['user_id']) ? intval($_POST['user_id']) : (isset($_GET['user_id']) ? intval($_GET['user_id']) : 0);
+    $bhId = isset($_POST['bh_id']) ? intval($_POST['bh_id']) : (isset($_GET['bh_id']) ? intval($_GET['bh_id']) : 0);
     
     // Log the request
     error_log("add_favorite.php - Received user_id: $userIdInput, bh_id: $bhId");
@@ -72,6 +72,30 @@ try {
     }
     
     error_log("add_favorite.php - Using user_id: $userId for favorite insertion");
+    
+    // Validate that the boarding house exists and is active
+    $checkBhSql = "SELECT bh_id, bh_name, status FROM boarding_houses WHERE bh_id = ?";
+    $checkBhStmt = $pdo->prepare($checkBhSql);
+    $checkBhStmt->execute([$bhId]);
+    $boardingHouse = $checkBhStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$boardingHouse) {
+        error_log("add_favorite.php - Boarding house with bh_id: $bhId does not exist");
+        echo json_encode(array(
+            'success' => false,
+            'error' => "Boarding house with ID $bhId does not exist. Please check valid IDs using check_valid_ids.php"
+        ));
+        exit();
+    }
+    
+    if ($boardingHouse['status'] !== 'Active') {
+        error_log("add_favorite.php - Boarding house with bh_id: $bhId is not active (status: " . $boardingHouse['status'] . ")");
+        echo json_encode(array(
+            'success' => false,
+            'error' => "Boarding house '{$boardingHouse['bh_name']}' is not active and cannot be favorited."
+        ));
+        exit();
+    }
     
     // Check if favorite already exists
     $checkSql = "SELECT fav_id FROM boarder_favorites WHERE user_id = ? AND bh_id = ?";
@@ -134,18 +158,39 @@ try {
         }
     }
     
-} catch (PDOException $e) {
-    error_log("Database error in add_favorite.php: " . $e->getMessage());
-    echo json_encode(array(
-        'success' => false,
-        'error' => 'Database error: ' . $e->getMessage()
-    ));
-} catch (Exception $e) {
-    error_log("Server error in add_favorite.php: " . $e->getMessage());
-    echo json_encode(array(
-        'success' => false,
-        'error' => 'Server error: ' . $e->getMessage()
-    ));
-}
+    } catch (PDOException $e) {
+        error_log("Database error in add_favorite.php: " . $e->getMessage());
+        
+        // Provide more helpful error messages
+        $errorMessage = $e->getMessage();
+        $userFriendlyError = "Database error occurred";
+        
+        if (strpos($errorMessage, '1452') !== false) {
+            // Foreign key constraint violation
+            if (strpos($errorMessage, 'bh_id') !== false) {
+                $userFriendlyError = "Invalid boarding house ID. The boarding house does not exist or is not active.";
+            } elseif (strpos($errorMessage, 'user_id') !== false) {
+                $userFriendlyError = "Invalid user ID. The user does not exist in the system.";
+            } else {
+                $userFriendlyError = "Invalid reference. Please check that both user and boarding house exist.";
+            }
+        } elseif (strpos($errorMessage, '1062') !== false) {
+            // Duplicate entry
+            $userFriendlyError = "This boarding house is already in your favorites.";
+        }
+        
+        echo json_encode(array(
+            'success' => false,
+            'error' => $userFriendlyError,
+            'debug_error' => $errorMessage,
+            'suggestion' => 'Check valid IDs using: check_valid_ids.php'
+        ));
+    } catch (Exception $e) {
+        error_log("Server error in add_favorite.php: " . $e->getMessage());
+        echo json_encode(array(
+            'success' => false,
+            'error' => 'Server error: ' . $e->getMessage()
+        ));
+    }
 ?>
 
