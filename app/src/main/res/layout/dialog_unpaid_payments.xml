@@ -40,6 +40,17 @@
 
         </LinearLayout>
 
+        <!-- Info Text -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select the periods you want to pay for (you can pay in advance):"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginBottom="12dp"
+            android:alpha="0.8" />
+
         <!-- Payment Breakdowns List -->
         <LinearLayout
             android:id="@+id/layoutBreakdowns"
@@ -48,7 +59,7 @@
             android:orientation="vertical"
             android:layout_marginBottom="16dp" />
 
-        <!-- Total Amount -->
+        <!-- Total Amount for Selected Periods -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -56,13 +67,14 @@
             android:gravity="center_vertical"
             android:background="@drawable/bg_status_approved"
             android:padding="16dp"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Total Unpaid:"
+                android:text="Total Selected:"
                 android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:fontFamily="@font/poppins_semibold" />
@@ -77,6 +89,22 @@
                 android:fontFamily="@font/poppins_bold" />
 
         </LinearLayout>
+
+        <!-- Proceed to Payment Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnProceedToPayment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Proceed to Payment"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#2E7D32"
+            app:cornerRadius="20dp"
+            android:paddingVertical="14dp"
+            android:drawableStart="@drawable/ic_payment"
+            android:drawablePadding="8dp"
+            android:enabled="false" />
 
     </LinearLayout>
 

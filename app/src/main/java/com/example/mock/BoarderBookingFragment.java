@@ -37,6 +37,8 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -715,41 +717,78 @@ public class BoarderBookingFragment extends Fragment {
             TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
             LinearLayout layoutBreakdowns = dialogView.findViewById(R.id.layoutBreakdowns);
             TextView tvTotalAmount = dialogView.findViewById(R.id.tvTotalAmount);
+            com.google.android.material.button.MaterialButton btnProceedToPayment = dialogView.findViewById(R.id.btnProceedToPayment);
             
-            tvTitle.setText("Unpaid Payment Periods");
+            tvTitle.setText("Payment Periods");
             
-            // Calculate total unpaid amount and create breakdown items
-            double totalUnpaid = 0.0;
+            // Map to track selected breakdowns
+            Map<Integer, PaymentBreakdown> selectedBreakdowns = new HashMap<>();
+            List<android.widget.CheckBox> checkboxes = new ArrayList<>();
+            
+            // Create breakdown items with checkboxes
             for (PaymentBreakdown breakdown : filteredBreakdowns) {
-                totalUnpaid += breakdown.getAmount();
-                
                 // Create breakdown item view
                 View breakdownItem = LayoutInflater.from(getContext()).inflate(R.layout.item_payment_breakdown, null);
+                android.widget.CheckBox checkboxPeriod = breakdownItem.findViewById(R.id.checkboxPeriod);
                 TextView tvPeriodLabel = breakdownItem.findViewById(R.id.tvPeriodLabel);
                 TextView tvPeriodDates = breakdownItem.findViewById(R.id.tvPeriodDates);
                 TextView tvAmount = breakdownItem.findViewById(R.id.tvAmount);
                 TextView tvDueDate = breakdownItem.findViewById(R.id.tvDueDate);
                 TextView tvStatus = breakdownItem.findViewById(R.id.tvStatus);
                 
+                // Set period data
                 tvPeriodLabel.setText(breakdown.getPeriodLabel());
                 tvPeriodDates.setText(breakdown.getStartDate() + " - " + breakdown.getEndDate());
                 tvAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", breakdown.getAmount()));
                 tvDueDate.setText("Due: " + breakdown.getDueDate());
                 
-                // Set status
+                // Determine if this is current/overdue period (should be checked by default)
+                boolean isCurrentOrOverdue = false;
+                if ("Overdue".equals(breakdown.getPaymentStatus())) {
+                    isCurrentOrOverdue = true;
+                } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
+                    isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
+                }
+                
+                // Set checkbox - check current/overdue periods by default
+                checkboxPeriod.setChecked(isCurrentOrOverdue);
+                if (isCurrentOrOverdue) {
+                    selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                }
+                
+                // Set status and colors
                 if ("Overdue".equals(breakdown.getPaymentStatus())) {
                     tvStatus.setText("Overdue");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
-                    tvDueDate.setTextColor(getResources().getColor(R.color.red));
+                    if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
+                        tvDueDate.setTextColor(getResources().getColor(R.color.red));
+                    }
+                } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty() && isDateDueSoon(breakdown.getDueDate())) {
+                    tvStatus.setText("Due Soon");
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+                    tvDueDate.setTextColor(getResources().getColor(R.color.orange));
                 } else {
                     tvStatus.setText("Pending");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+                    // Keep default color for future periods
                 }
                 
+                // Set checkbox listener
+                checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (isChecked) {
+                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                    } else {
+                        selectedBreakdowns.remove(breakdown.getBreakdownId());
+                    }
+                    updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
+                });
+                
+                checkboxes.add(checkboxPeriod);
                 layoutBreakdowns.addView(breakdownItem);
             }
             
-            tvTotalAmount.setText("Total Unpaid: ₱" + String.format(Locale.getDefault(), "%,.2f", totalUnpaid));
+            // Update total for initially selected items
+            updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
             
             AlertDialog dialog = builder.create();
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -757,10 +796,79 @@ public class BoarderBookingFragment extends Fragment {
             
             btnClose.setOnClickListener(v -> dialog.dismiss());
             
+            // Proceed to Payment button
+            btnProceedToPayment.setOnClickListener(v -> {
+                if (selectedBreakdowns.isEmpty()) {
+                    Toast.makeText(getContext(), "Please select at least one period to pay", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                dialog.dismiss();
+                // TODO: Navigate to payment screen with selected breakdowns
+                List<PaymentBreakdown> selectedList = new ArrayList<>(selectedBreakdowns.values());
+                proceedToPayment(selectedList);
+            });
+            
         } catch (Exception e) {
             Log.e(TAG, "Error showing unpaid payment breakdowns dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error displaying payment breakdowns", Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    private void updateSelectedTotal(Map<Integer, PaymentBreakdown> selectedBreakdowns, TextView tvTotalAmount, 
+                                     com.google.android.material.button.MaterialButton btnProceedToPayment) {
+        double totalSelected = 0.0;
+        for (PaymentBreakdown breakdown : selectedBreakdowns.values()) {
+            totalSelected += breakdown.getAmount();
+        }
+        
+        tvTotalAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", totalSelected));
+        btnProceedToPayment.setEnabled(!selectedBreakdowns.isEmpty());
+    }
+    
+    private boolean isDateCurrentOrPast(String dateStr) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
+            Date dueDate = sdf.parse(dateStr);
+            Date today = new Date();
+            return dueDate != null && (dueDate.before(today) || dueDate.equals(today));
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+    
+    private boolean isDateDueSoon(String dateStr) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
+            Date dueDate = sdf.parse(dateStr);
+            if (dueDate == null) return false;
+            
+            Calendar cal = Calendar.getInstance();
+            Date today = cal.getTime();
+            cal.add(Calendar.DAY_OF_MONTH, 7);
+            Date weekFromNow = cal.getTime();
+            
+            return dueDate.after(today) && dueDate.before(weekFromNow);
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+    
+    private void proceedToPayment(List<PaymentBreakdown> selectedBreakdowns) {
+        // TODO: Implement payment flow
+        // For now, just show a message
+        double total = 0.0;
+        StringBuilder periods = new StringBuilder();
+        for (PaymentBreakdown breakdown : selectedBreakdowns) {
+            total += breakdown.getAmount();
+            if (periods.length() > 0) periods.append(", ");
+            periods.append(breakdown.getPeriodLabel());
+        }
+        
+        Toast.makeText(getContext(), 
+            String.format(Locale.getDefault(), "Selected: %s\nTotal: ₱%,.2f", periods.toString(), total), 
+            Toast.LENGTH_LONG).show();
+        
+        Log.d(TAG, "Proceed to payment for periods: " + periods.toString() + ", Total: ₱" + total);
     }
 }

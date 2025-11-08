@@ -37,8 +37,8 @@ try {
         exit();
     }
     
-    // Fetch unpaid payment breakdowns for this booking
-    // Only return breakdowns that are selected and not paid yet
+    // Fetch ALL unpaid payment breakdowns for this booking (current and future periods)
+    // Return breakdowns that are selected and not paid yet (allows advance payment)
     $sql = "
         SELECT 
             pb.breakdown_id,
@@ -55,7 +55,12 @@ try {
             pb.due_date,
             pb.payment_status,
             pb.created_at,
-            pb.updated_at
+            pb.updated_at,
+            CASE 
+                WHEN pb.due_date < CURDATE() AND pb.payment_status = 'Pending' THEN 'Overdue'
+                WHEN pb.due_date >= CURDATE() AND pb.due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'Due Soon'
+                ELSE pb.payment_status
+            END as display_status
         FROM payment_breakdowns pb
         WHERE pb.booking_id = :booking_id
             AND pb.is_selected = 1
