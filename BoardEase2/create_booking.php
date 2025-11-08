@@ -36,8 +36,13 @@ try {
     $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
     $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
     
+    // Get calculated payment amount and number of days from Android
+    // If not provided, calculate it from room price (fallback for backward compatibility)
+    $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
+    $numberOfDays = isset($_POST['number_of_days']) ? intval($_POST['number_of_days']) : 0;
+    
     // Debug logging
-    error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate");
+    error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate, total_amount=$totalAmount, number_of_days=$numberOfDays");
     
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
@@ -384,17 +389,30 @@ try {
         }
     }
     
-    // Get room price for payment amount (using bhr_id from room_unit)
-    $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
-    $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
-    $getRoomPriceStmt->execute([':bhr_id' => $bhrId]);
-    $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
-    $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
+    // Use calculated total amount from Android if provided, otherwise calculate from room price (fallback)
+    if ($totalAmount > 0) {
+        // Use the calculated amount from Android
+        $paymentAmount = $totalAmount;
+        error_log("Using calculated total_amount from Android: $paymentAmount");
+    } else {
+        // Fallback: Get room price for payment amount (using bhr_id from room_unit)
+        $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
+        $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
+        $getRoomPriceStmt->execute([':bhr_id' => $bhrId]);
+        $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
+        $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
+        error_log("Using room price as fallback: $paymentAmount");
+    }
+    
+    // Determine if this is a monthly payment (30+ days) or short-term (less than 30 days)
+    $isMonthlyPayment = ($numberOfDays >= 30) ? 1 : 0;
     
     // Calculate payment month/year
     $paymentMonth = date('Y-m', strtotime($startDate));
     $paymentYear = intval(date('Y', strtotime($startDate)));
     $paymentMonthNumber = intval(date('m', strtotime($startDate)));
+    
+    error_log("Payment details - amount: $paymentAmount, days: $numberOfDays, is_monthly: $isMonthlyPayment");
     
     // Create payment record
     if ($ownerId > 0) {
@@ -425,7 +443,7 @@ try {
                     :payment_month,
                     :payment_year,
                     :payment_month_number,
-                    1
+                    :is_monthly_payment
                 )
             ";
             
@@ -439,8 +457,10 @@ try {
                 ':payment_proof' => $paymentProofPath,
                 ':payment_month' => $paymentMonth,
                 ':payment_year' => $paymentYear,
-                ':payment_month_number' => $paymentMonthNumber
+                ':payment_month_number' => $paymentMonthNumber,
+                ':is_monthly_payment' => $isMonthlyPayment
             ]);
+            error_log("Payment record created successfully - amount: $paymentAmount, is_monthly: $isMonthlyPayment");
         } catch (PDOException $e) {
             // Log error but don't fail if payment creation fails
             error_log("Warning: Could not create payment record: " . $e->getMessage());

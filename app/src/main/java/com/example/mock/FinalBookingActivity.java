@@ -58,7 +58,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     // Views
     private ImageButton btnBack;
     private ImageView ivBhImage, ivCashProof, ivGcashProof, ivOwnerQrCode;
-    private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber;
+    private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber, tvTotalPayment, tvPaymentBreakdown;
     private RadioGroup rgPaymentMethod;
     private RadioButton rbCash, rbGcash;
     private LinearLayout layoutCashPayment, layoutGcashPayment;
@@ -78,6 +78,11 @@ public class FinalBookingActivity extends AppCompatActivity {
     private String ownerGcashQrPath;
     private String ownerGcashNumber;
     private RequestQueue requestQueue;
+    
+    // Payment calculation
+    private double monthlyPrice;
+    private int numberOfDays;
+    private double totalPaymentAmount;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +171,8 @@ public class FinalBookingActivity extends AppCompatActivity {
         tvRoomType = findViewById(R.id.tvRoomType);
         tvDuration = findViewById(R.id.tvDuration);
         tvPrice = findViewById(R.id.tvPrice);
+        tvTotalPayment = findViewById(R.id.tvTotalPayment);
+        tvPaymentBreakdown = findViewById(R.id.tvPaymentBreakdown);
         rgPaymentMethod = findViewById(R.id.rgPaymentMethod);
         rbCash = findViewById(R.id.rbCash);
         rbGcash = findViewById(R.id.rbGcash);
@@ -240,13 +247,20 @@ public class FinalBookingActivity extends AppCompatActivity {
             String roomCategory = roomData.optString("room_category", "Private Room");
             tvRoomType.setText(roomCategory);
             
-            // Display price
-            double price = roomData.optDouble("price", 0);
-            tvPrice.setText("₱" + String.format("%,.0f", price) + "/month");
+            // Get monthly price
+            monthlyPrice = roomData.optDouble("price", 0);
+            tvPrice.setText("₱" + String.format("%,.0f", monthlyPrice) + "/month");
             
-            // Calculate and display duration
-            String duration = calculateDuration(startDate, endDate);
+            // Calculate number of days and total payment
+            numberOfDays = calculateNumberOfDays(startDate, endDate);
+            totalPaymentAmount = calculateTotalPayment(monthlyPrice, numberOfDays);
+            
+            // Display duration
+            String duration = formatDuration(numberOfDays);
             tvDuration.setText("Duration: " + duration);
+            
+            // Display total payment
+            displayTotalPayment();
             
             // Load boarding house details
             loadBoardingHouseDetails();
@@ -256,25 +270,74 @@ public class FinalBookingActivity extends AppCompatActivity {
         }
     }
     
-    private String calculateDuration(String start, String end) {
+    private int calculateNumberOfDays(String start, String end) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            Date startDate = sdf.parse(start);
-            Date endDate = sdf.parse(end);
+            Date startDateObj = sdf.parse(start);
+            Date endDateObj = sdf.parse(end);
             
-            long diffInMillis = endDate.getTime() - startDate.getTime();
+            long diffInMillis = endDateObj.getTime() - startDateObj.getTime();
             long diffInDays = diffInMillis / (1000 * 60 * 60 * 24);
             
-            if (diffInDays == 1) {
-                return "1 day";
-            } else {
-                return diffInDays + " days";
-            }
+            // Add 1 day to include both start and end dates
+            return (int) diffInDays + 1;
         } catch (ParseException e) {
-            Log.e(TAG, "Error calculating duration: " + e.getMessage());
-            return "N/A";
+            Log.e(TAG, "Error calculating number of days: " + e.getMessage());
+            return 30; // Default to 30 days if calculation fails
         }
     }
+    
+    private double calculateTotalPayment(double monthlyPrice, int numberOfDays) {
+        if (numberOfDays <= 0) {
+            return 0.0;
+        }
+        
+        // If stay is less than 30 days, calculate per day: (monthly_price / 30) * days
+        // If stay is 30 days or more, use monthly price (standard monthly payment)
+        if (numberOfDays < 30) {
+            double dailyRate = monthlyPrice / 30.0;
+            return dailyRate * numberOfDays;
+        } else {
+            // For 30+ days, use monthly price (standard monthly payment)
+            // Note: This can be extended later to support multiple months if needed
+            return monthlyPrice;
+        }
+    }
+    
+    private String formatDuration(int days) {
+        if (days == 1) {
+            return "1 day";
+        } else if (days < 30) {
+            return days + " days";
+        } else {
+            int months = days / 30;
+            int remainingDays = days % 30;
+            if (remainingDays == 0) {
+                return months + (months == 1 ? " month" : " months");
+            } else {
+                return months + (months == 1 ? " month" : " months") + " and " + remainingDays + (remainingDays == 1 ? " day" : " days");
+            }
+        }
+    }
+    
+    private void displayTotalPayment() {
+        // Display total payment amount
+        tvTotalPayment.setText("₱" + String.format("%,.2f", totalPaymentAmount));
+        
+        // Display payment breakdown
+        if (numberOfDays < 30) {
+            double dailyRate = monthlyPrice / 30.0;
+            String breakdown = String.format(Locale.getDefault(), 
+                "Daily rate: ₱%,.2f/day × %d days = ₱%,.2f", 
+                dailyRate, numberOfDays, totalPaymentAmount);
+            tvPaymentBreakdown.setText(breakdown);
+        } else {
+            String breakdown = String.format(Locale.getDefault(), 
+                "Monthly rate: ₱%,.2f/month", monthlyPrice);
+            tvPaymentBreakdown.setText(breakdown);
+        }
+    }
+    
     
     private void loadBoardingHouseDetails() {
         // Validate bhId before making API call
@@ -714,6 +777,8 @@ public class FinalBookingActivity extends AppCompatActivity {
                 params.put("end_date", endDate);
                 params.put("payment_method", paymentMethod);
                 params.put("payment_proof", paymentProofBase64);
+                params.put("total_amount", String.format(Locale.getDefault(), "%.2f", totalPaymentAmount));
+                params.put("number_of_days", String.valueOf(numberOfDays));
                 
                 // Only log once per actual request (use a counter or flag)
                 // Note: This may still log multiple times due to Volley internals
@@ -723,6 +788,8 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Log.d(TAG, "  - start_date: " + startDate);
                 Log.d(TAG, "  - end_date: " + endDate);
                 Log.d(TAG, "  - payment_method: " + paymentMethod);
+                Log.d(TAG, "  - total_amount: " + totalPaymentAmount);
+                Log.d(TAG, "  - number_of_days: " + numberOfDays);
                 Log.d(TAG, "  - payment_proof length: " + (paymentProofBase64 != null ? paymentProofBase64.length() : 0) + " chars");
                 
                 return params;
