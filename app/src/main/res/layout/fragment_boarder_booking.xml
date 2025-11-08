@@ -37,14 +37,28 @@
             android:orientation="vertical"
             android:layout_marginBottom="32dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Section Header with Green Highlight -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Current Boarding House Booked"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:fontFamily="@font/poppins_medium"
-                android:layout_marginBottom="12dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="24dp"
+                    android:background="#4CAF50"
+                    android:layout_marginEnd="12dp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Current Boarding House Booked"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/poppins_medium" />
+            </LinearLayout>
 
             <!-- Current Bookings RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -111,14 +125,28 @@
             android:orientation="vertical"
             android:layout_marginBottom="32dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Section Header with Orange Highlight -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Pending Booking"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:fontFamily="@font/poppins_medium"
-                android:layout_marginBottom="12dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="24dp"
+                    android:background="#FF9800"
+                    android:layout_marginEnd="12dp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pending Booking"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/poppins_medium" />
+            </LinearLayout>
 
             <!-- Pending Bookings RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
@@ -184,14 +212,28 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Section Header with Blue Highlight -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Booking History"
-                android:textSize="18sp"
-                android:textColor="#333333"
-                android:fontFamily="@font/poppins_medium"
-                android:layout_marginBottom="12dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="24dp"
+                    android:background="#2196F3"
+                    android:layout_marginEnd="12dp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Booking History"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/poppins_medium" />
+            </LinearLayout>
 
             <!-- Booking History RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
