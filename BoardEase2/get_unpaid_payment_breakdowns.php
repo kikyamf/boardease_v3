@@ -70,8 +70,7 @@ try {
             AND pb.is_paid = 0
             AND (pb.payment_status != 'Cancelled' OR pb.payment_status IS NULL)
         ORDER BY 
-            pb.period_number ASC,
-            pb.period_start_date ASC
+            COALESCE(pb.due_date, pb.period_start_date) ASC
     ";
     
     $stmt = $pdo->prepare($sql);
