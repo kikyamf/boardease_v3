@@ -50,8 +50,8 @@ import java.util.Map;
 public class FinalBookingActivity extends AppCompatActivity {
     
     private static final String TAG = "FinalBookingActivity";
-    // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+    // Local development URL - Using local IP address (192.168.1.9)
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BH_DETAILS_URL = BASE_URL + "BoardEase2/get_boarding_house_details1.php";
     private static final String GET_GCASH_INFO_URL = BOARD_EASE2_URL + "get_gcash_info.php";
@@ -676,7 +676,6 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
-                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
@@ -1003,7 +1002,6 @@ public class FinalBookingActivity extends AppCompatActivity {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("User-Agent", "BoardEase-Android-App");
                 headers.put("Accept", "application/json");
-                headers.put("ngrok-skip-browser-warning", "true");
                 return headers;
             }
         };
