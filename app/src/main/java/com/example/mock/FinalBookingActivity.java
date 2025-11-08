@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -39,8 +40,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -61,7 +64,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber, tvTotalPayment, tvPaymentBreakdown;
     private RadioGroup rgPaymentMethod;
     private RadioButton rbCash, rbGcash;
-    private LinearLayout layoutCashPayment, layoutGcashPayment;
+    private LinearLayout layoutCashPayment, layoutGcashPayment, layoutPaymentSelection, layoutPaymentCheckboxes;
     private MaterialButton btnUploadCash, btnUploadGcash, btnRemoveCash, btnRemoveGcash, btnBook;
     private ProgressBar progressBar;
     
@@ -83,6 +86,31 @@ public class FinalBookingActivity extends AppCompatActivity {
     private double monthlyPrice;
     private int numberOfDays;
     private double totalPaymentAmount;
+    
+    // Payment breakdown for multi-month stays
+    private List<PaymentPeriod> paymentPeriods;
+    private List<CheckBox> paymentCheckboxes;
+    
+    // Inner class to represent a payment period
+    private static class PaymentPeriod {
+        String label;
+        String periodType; // "month" or "days"
+        int periodNumber; // 1, 2, 3 for months, 0 for days
+        double amount;
+        String startDate;
+        String endDate;
+        boolean isSelected;
+        
+        PaymentPeriod(String label, String periodType, int periodNumber, double amount, String startDate, String endDate) {
+            this.label = label;
+            this.periodType = periodType;
+            this.periodNumber = periodNumber;
+            this.amount = amount;
+            this.startDate = startDate;
+            this.endDate = endDate;
+            this.isSelected = false;
+        }
+    }
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -188,6 +216,12 @@ public class FinalBookingActivity extends AppCompatActivity {
         tvGcashNumber = findViewById(R.id.tvGcashNumber);
         btnBook = findViewById(R.id.btnBook);
         progressBar = findViewById(R.id.progressBar);
+        layoutPaymentSelection = findViewById(R.id.layoutPaymentSelection);
+        layoutPaymentCheckboxes = findViewById(R.id.layoutPaymentCheckboxes);
+        
+        // Initialize lists
+        paymentPeriods = new ArrayList<>();
+        paymentCheckboxes = new ArrayList<>();
     }
     
     private void setupClickListeners() {
@@ -251,16 +285,16 @@ public class FinalBookingActivity extends AppCompatActivity {
             monthlyPrice = roomData.optDouble("price", 0);
             tvPrice.setText("₱" + String.format("%,.0f", monthlyPrice) + "/month");
             
-            // Calculate number of days and total payment
+            // Calculate number of days and create payment breakdown
             numberOfDays = calculateNumberOfDays(startDate, endDate);
-            totalPaymentAmount = calculateTotalPayment(monthlyPrice, numberOfDays);
+            createPaymentBreakdown(monthlyPrice, numberOfDays);
             
             // Display duration
             String duration = formatDuration(numberOfDays);
             tvDuration.setText("Duration: " + duration);
             
-            // Display total payment
-            displayTotalPayment();
+            // Display payment UI (checkboxes for multi-month or simple display)
+            displayPaymentUI();
             
             // Load boarding house details
             loadBoardingHouseDetails();
@@ -290,20 +324,183 @@ public class FinalBookingActivity extends AppCompatActivity {
         }
     }
     
-    private double calculateTotalPayment(double monthlyPrice, int numberOfDays) {
+    private void createPaymentBreakdown(double monthlyPrice, int numberOfDays) {
+        paymentPeriods.clear();
+        
         if (numberOfDays <= 0) {
-            return 0.0;
+            totalPaymentAmount = 0.0;
+            return;
         }
         
-        // If stay is less than 30 days, calculate per day: (monthly_price / 30) * days
-        // If stay is 30 days or more, use monthly price (standard monthly payment)
-        if (numberOfDays < 30) {
-            double dailyRate = monthlyPrice / 30.0;
-            return dailyRate * numberOfDays;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(sdf.parse(startDate));
+            // Start from next day (start date is not included)
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+            
+            int remainingDays = numberOfDays;
+            int monthCount = 0;
+            
+            // Create monthly periods
+            while (remainingDays >= 30) {
+                monthCount++;
+                Calendar monthStart = (Calendar) cal.clone();
+                Calendar monthEnd = (Calendar) cal.clone();
+                monthEnd.add(Calendar.DAY_OF_MONTH, 29); // 30 days total (0-29 = 30 days)
+                
+                String periodStart = sdf.format(monthStart.getTime());
+                String periodEnd = sdf.format(monthEnd.getTime());
+                String label = getMonthLabel(monthCount);
+                
+                paymentPeriods.add(new PaymentPeriod(label, "month", monthCount, monthlyPrice, periodStart, periodEnd));
+                
+                cal.add(Calendar.DAY_OF_MONTH, 30);
+                remainingDays -= 30;
+            }
+            
+            // Create days period if there are remaining days
+            if (remainingDays > 0) {
+                Calendar daysStart = (Calendar) cal.clone();
+                Calendar daysEnd = (Calendar) cal.clone();
+                daysEnd.add(Calendar.DAY_OF_MONTH, remainingDays - 1);
+                
+                String periodStart = sdf.format(daysStart.getTime());
+                String periodEnd = sdf.format(daysEnd.getTime());
+                double dailyRate = monthlyPrice / 30.0;
+                double daysAmount = dailyRate * remainingDays;
+                String label = remainingDays + (remainingDays == 1 ? " day" : " days");
+                
+                paymentPeriods.add(new PaymentPeriod(label, "days", 0, daysAmount, periodStart, periodEnd));
+            }
+            
+            // Calculate default total (all selected by default)
+            updateTotalPayment();
+        } catch (ParseException e) {
+            Log.e(TAG, "Error creating payment breakdown: " + e.getMessage());
+            // Fallback to simple calculation
+            if (numberOfDays < 30) {
+                double dailyRate = monthlyPrice / 30.0;
+                totalPaymentAmount = dailyRate * numberOfDays;
+            } else {
+                totalPaymentAmount = monthlyPrice;
+            }
+        }
+    }
+    
+    private String getMonthLabel(int monthNumber) {
+        switch (monthNumber) {
+            case 1: return "1st month";
+            case 2: return "2nd month";
+            case 3: return "3rd month";
+            case 4: return "4th month";
+            case 5: return "5th month";
+            case 6: return "6th month";
+            default: return monthNumber + "th month";
+        }
+    }
+    
+    private void displayPaymentUI() {
+        // Clear existing checkboxes
+        layoutPaymentCheckboxes.removeAllViews();
+        paymentCheckboxes.clear();
+        
+        // Show checkboxes only if more than 1 month
+        if (paymentPeriods.size() > 1) {
+            layoutPaymentSelection.setVisibility(View.VISIBLE);
+            
+            // Create checkboxes for each period
+            for (int i = 0; i < paymentPeriods.size(); i++) {
+                PaymentPeriod period = paymentPeriods.get(i);
+                CheckBox checkBox = createPaymentCheckbox(period, i);
+                layoutPaymentCheckboxes.addView(checkBox);
+                paymentCheckboxes.add(checkBox);
+                
+                // Set first checkbox as checked by default
+                if (i == 0) {
+                    checkBox.setChecked(true);
+                    period.isSelected = true;
+                }
+            }
         } else {
-            // For 30+ days, use monthly price (standard monthly payment)
-            // Note: This can be extended later to support multiple months if needed
-            return monthlyPrice;
+            layoutPaymentSelection.setVisibility(View.GONE);
+            // For single period, select it by default
+            if (!paymentPeriods.isEmpty()) {
+                paymentPeriods.get(0).isSelected = true;
+            }
+        }
+        
+        // Update total payment display
+        updateTotalPayment();
+    }
+    
+    private CheckBox createPaymentCheckbox(PaymentPeriod period, int index) {
+        CheckBox checkBox = new CheckBox(this);
+        checkBox.setText(String.format(Locale.getDefault(), "%s - ₱%,.2f", period.label, period.amount));
+        checkBox.setTextSize(14);
+        checkBox.setTypeface(getResources().getFont(R.font.poppins_medium));
+        checkBox.setTextColor(getResources().getColor(R.color.dark_gray));
+        checkBox.setButtonTintList(getResources().getColorStateList(R.color.brown));
+        checkBox.setPadding(0, 8, 0, 8);
+        
+        // Sequential logic: can only check if previous is checked (except first)
+        if (index > 0) {
+            checkBox.setEnabled(false);
+        }
+        
+        checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            period.isSelected = isChecked;
+            updateTotalPayment();
+            updateCheckboxStates();
+        });
+        
+        return checkBox;
+    }
+    
+    private void updateCheckboxStates() {
+        // Enable/disable checkboxes based on sequential logic
+        for (int i = 0; i < paymentCheckboxes.size(); i++) {
+            CheckBox checkBox = paymentCheckboxes.get(i);
+            if (i == 0) {
+                // First checkbox is always enabled
+                checkBox.setEnabled(true);
+            } else {
+                // Can only check if previous is checked
+                CheckBox previousCheckBox = paymentCheckboxes.get(i - 1);
+                boolean canEnable = previousCheckBox.isChecked();
+                checkBox.setEnabled(canEnable);
+                
+                // If previous is unchecked, uncheck this one too
+                if (!canEnable && checkBox.isChecked()) {
+                    checkBox.setChecked(false);
+                    paymentPeriods.get(i).isSelected = false;
+                }
+            }
+        }
+    }
+    
+    private void updateTotalPayment() {
+        totalPaymentAmount = 0.0;
+        for (PaymentPeriod period : paymentPeriods) {
+            if (period.isSelected) {
+                totalPaymentAmount += period.amount;
+            }
+        }
+        
+        // Update display
+        tvTotalPayment.setText("₱" + String.format("%,.2f", totalPaymentAmount));
+        
+        // Update breakdown text
+        int selectedCount = 0;
+        for (PaymentPeriod period : paymentPeriods) {
+            if (period.isSelected) selectedCount++;
+        }
+        
+        if (selectedCount > 0) {
+            tvPaymentBreakdown.setText(String.format(Locale.getDefault(), 
+                "%d of %d period(s) selected", selectedCount, paymentPeriods.size()));
+        } else {
+            tvPaymentBreakdown.setText("Please select at least one payment period");
         }
     }
     
@@ -323,23 +520,6 @@ public class FinalBookingActivity extends AppCompatActivity {
         }
     }
     
-    private void displayTotalPayment() {
-        // Display total payment amount
-        tvTotalPayment.setText("₱" + String.format("%,.2f", totalPaymentAmount));
-        
-        // Display payment breakdown
-        if (numberOfDays < 30) {
-            double dailyRate = monthlyPrice / 30.0;
-            String breakdown = String.format(Locale.getDefault(), 
-                "Daily rate: ₱%,.2f/day × %d days = ₱%,.2f", 
-                dailyRate, numberOfDays, totalPaymentAmount);
-            tvPaymentBreakdown.setText(breakdown);
-        } else {
-            String breakdown = String.format(Locale.getDefault(), 
-                "Monthly rate: ₱%,.2f/month", monthlyPrice);
-            tvPaymentBreakdown.setText(breakdown);
-        }
-    }
     
     
     private void loadBoardingHouseDetails() {
@@ -782,6 +962,26 @@ public class FinalBookingActivity extends AppCompatActivity {
                 params.put("payment_proof", paymentProofBase64);
                 params.put("total_amount", String.format(Locale.getDefault(), "%.2f", totalPaymentAmount));
                 params.put("number_of_days", String.valueOf(numberOfDays));
+                
+                // Add payment breakdown JSON
+                try {
+                    org.json.JSONArray breakdownArray = new org.json.JSONArray();
+                    for (PaymentPeriod period : paymentPeriods) {
+                        org.json.JSONObject periodObj = new org.json.JSONObject();
+                        periodObj.put("label", period.label);
+                        periodObj.put("period_type", period.periodType);
+                        periodObj.put("period_number", period.periodNumber);
+                        periodObj.put("amount", period.amount);
+                        periodObj.put("start_date", period.startDate);
+                        periodObj.put("end_date", period.endDate);
+                        periodObj.put("is_selected", period.isSelected);
+                        breakdownArray.put(periodObj);
+                    }
+                    params.put("payment_breakdown", breakdownArray.toString());
+                    Log.d(TAG, "  - payment_breakdown: " + breakdownArray.toString());
+                } catch (org.json.JSONException e) {
+                    Log.e(TAG, "Error creating payment breakdown JSON: " + e.getMessage());
+                }
                 
                 // Only log once per actual request (use a counter or flag)
                 // Note: This may still log multiple times due to Volley internals

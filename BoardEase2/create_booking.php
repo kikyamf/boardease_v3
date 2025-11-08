@@ -40,9 +40,11 @@ try {
     // If not provided, calculate it from room price (fallback for backward compatibility)
     $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
     $numberOfDays = isset($_POST['number_of_days']) ? intval($_POST['number_of_days']) : 0;
+    $paymentBreakdownJson = isset($_POST['payment_breakdown']) ? $_POST['payment_breakdown'] : '';
     
     // Debug logging
     error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate, total_amount=$totalAmount, number_of_days=$numberOfDays");
+    error_log("Payment breakdown JSON: " . $paymentBreakdownJson);
     
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
@@ -460,7 +462,83 @@ try {
                 ':payment_month_number' => $paymentMonthNumber,
                 ':is_monthly_payment' => $isMonthlyPayment
             ]);
-            error_log("Payment record created successfully - amount: $paymentAmount, is_monthly: $isMonthlyPayment");
+            $paymentId = $pdo->lastInsertId(); // Get payment_id after insertion
+            error_log("Payment record created successfully - payment_id: $paymentId, amount: $paymentAmount, is_monthly: $isMonthlyPayment");
+            
+            // Save payment breakdown if provided
+            if (!empty($paymentBreakdownJson)) {
+                try {
+                    $breakdownArray = json_decode($paymentBreakdownJson, true);
+                    if (is_array($breakdownArray) && !empty($breakdownArray)) {
+                        error_log("Saving payment breakdown - " . count($breakdownArray) . " periods");
+                        
+                        $insertBreakdownSql = "
+                            INSERT INTO payment_breakdowns (
+                                booking_id,
+                                payment_id,
+                                period_type,
+                                period_number,
+                                period_label,
+                                period_start_date,
+                                period_end_date,
+                                amount,
+                                is_selected,
+                                payment_status,
+                                due_date
+                            ) VALUES (
+                                :booking_id,
+                                :payment_id,
+                                :period_type,
+                                :period_number,
+                                :period_label,
+                                :period_start_date,
+                                :period_end_date,
+                                :amount,
+                                :is_selected,
+                                'Pending',
+                                :due_date
+                            )
+                        ";
+                        
+                        $insertBreakdownStmt = $pdo->prepare($insertBreakdownSql);
+                        
+                        foreach ($breakdownArray as $period) {
+                            $periodType = isset($period['period_type']) ? $period['period_type'] : 'month';
+                            $periodNumber = isset($period['period_number']) ? intval($period['period_number']) : 0;
+                            $periodLabel = isset($period['label']) ? $period['label'] : '';
+                            $periodStartDate = isset($period['start_date']) ? $period['start_date'] : $startDate;
+                            $periodEndDate = isset($period['end_date']) ? $period['end_date'] : $endDate;
+                            $periodAmount = isset($period['amount']) ? floatval($period['amount']) : 0;
+                            $isSelected = isset($period['is_selected']) ? (bool)$period['is_selected'] : false;
+                            
+                            // Set due date as period start date (can be adjusted later)
+                            $dueDate = $periodStartDate;
+                            
+                            $insertBreakdownStmt->execute([
+                                ':booking_id' => $bookingId,
+                                ':payment_id' => $paymentId, // Use the payment_id from above
+                                ':period_type' => $periodType,
+                                ':period_number' => $periodNumber,
+                                ':period_label' => $periodLabel,
+                                ':period_start_date' => $periodStartDate,
+                                ':period_end_date' => $periodEndDate,
+                                ':amount' => $periodAmount,
+                                ':is_selected' => $isSelected ? 1 : 0,
+                                ':due_date' => $dueDate
+                            ]);
+                            
+                            error_log("Saved breakdown period: $periodLabel - Amount: $periodAmount - Selected: " . ($isSelected ? 'Yes' : 'No'));
+                        }
+                        
+                        error_log("Payment breakdown saved successfully");
+                    } else {
+                        error_log("Warning: Invalid payment breakdown JSON format");
+                    }
+                } catch (Exception $e) {
+                    error_log("Warning: Could not save payment breakdown: " . $e->getMessage());
+                    // Continue anyway - booking and payment are still valid
+                }
+            }
         } catch (PDOException $e) {
             // Log error but don't fail if payment creation fails
             error_log("Warning: Could not create payment record: " . $e->getMessage());

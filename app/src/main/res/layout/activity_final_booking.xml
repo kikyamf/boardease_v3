@@ -172,6 +172,32 @@
 
                 </LinearLayout>
 
+                <!-- Payment Selection Checkboxes (for multi-month stays) -->
+                <LinearLayout
+                    android:id="@+id/layoutPaymentSelection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Pay for:"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:textColor="@color/brown"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutPaymentCheckboxes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvPaymentBreakdown"
                     android:layout_width="match_parent"
