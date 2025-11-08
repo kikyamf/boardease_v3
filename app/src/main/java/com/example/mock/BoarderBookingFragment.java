@@ -1,20 +1,20 @@
 package com.example.mock;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,12 +22,25 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.mock.adapters.BookingAdapter;
-import com.google.android.material.button.MaterialButton;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * BoarderBookingFragment - Displays current bookings and booking history
@@ -37,18 +50,34 @@ public class BoarderBookingFragment extends Fragment {
 
     // Views
     private RecyclerView rvCurrentBookings;
+    private RecyclerView rvPendingBookings;
     private RecyclerView rvBookingHistory;
     private LinearLayout layoutCurrentBookingsEmpty;
+    private LinearLayout layoutPendingBookingsEmpty;
     private LinearLayout layoutBookingHistoryEmpty;
     private ProgressBar progressBar;
 
     // Adapters
     private BookingAdapter currentBookingsAdapter;
+    private BookingAdapter pendingBookingsAdapter;
     private BookingAdapter bookingHistoryAdapter;
 
     // Data
     private List<Booking> currentBookings;
+    private List<Booking> pendingBookings;
     private List<Booking> bookingHistory;
+
+    // User session
+    private SharedPreferences userSessionPrefs;
+    private int userId;
+
+    // API
+    private static final String TAG = "BoarderBookingFragment";
+    private static final String BASE_URL = "http://192.168.1.9/boardease_v3/";
+    private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
+    
+    // Request queue
+    private RequestQueue requestQueue;
 
     public BoarderBookingFragment() {
         // Required empty public constructor
@@ -61,6 +90,21 @@ public class BoarderBookingFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getContext() != null) {
+            userSessionPrefs = getContext().getSharedPreferences("UserSession", 0);
+            
+            // Get user ID from UserSession
+            String userIdString = userSessionPrefs.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                } catch (NumberFormatException e) {
+                    userId = 0;
+                }
+            }
+            
+            requestQueue = Volley.newRequestQueue(getContext());
+        }
     }
 
     @Override
@@ -81,8 +125,10 @@ public class BoarderBookingFragment extends Fragment {
     private void initializeViews(View view) {
         try {
             rvCurrentBookings = view.findViewById(R.id.rvCurrentBookings);
+            rvPendingBookings = view.findViewById(R.id.rvPendingBookings);
             rvBookingHistory = view.findViewById(R.id.rvBookingHistory);
             layoutCurrentBookingsEmpty = view.findViewById(R.id.layoutCurrentBookingsEmpty);
+            layoutPendingBookingsEmpty = view.findViewById(R.id.layoutPendingBookingsEmpty);
             layoutBookingHistoryEmpty = view.findViewById(R.id.layoutBookingHistoryEmpty);
             progressBar = view.findViewById(R.id.progressBar);
         } catch (Exception e) {
@@ -94,16 +140,23 @@ public class BoarderBookingFragment extends Fragment {
         try {
             // Initialize data lists
             currentBookings = new ArrayList<>();
+            pendingBookings = new ArrayList<>();
             bookingHistory = new ArrayList<>();
 
-            // Setup Current Bookings RecyclerView
-            currentBookingsAdapter = new BookingAdapter(getContext(), currentBookings, this::showBookingDetailsDialog);
+            // Setup Current Bookings RecyclerView with click listener
+            currentBookingsAdapter = new BookingAdapter(getContext(), currentBookings, this::showCurrentBookingDetailsDialog);
             LinearLayoutManager currentLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvCurrentBookings.setLayoutManager(currentLayoutManager);
             rvCurrentBookings.setAdapter(currentBookingsAdapter);
 
+            // Setup Pending Bookings RecyclerView
+            pendingBookingsAdapter = new BookingAdapter(getContext(), pendingBookings, null);
+            LinearLayoutManager pendingLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+            rvPendingBookings.setLayoutManager(pendingLayoutManager);
+            rvPendingBookings.setAdapter(pendingBookingsAdapter);
+
             // Setup Booking History RecyclerView
-            bookingHistoryAdapter = new BookingAdapter(getContext(), bookingHistory, this::showBookingDetailsDialog);
+            bookingHistoryAdapter = new BookingAdapter(getContext(), bookingHistory, null);
             LinearLayoutManager historyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvBookingHistory.setLayoutManager(historyLayoutManager);
             rvBookingHistory.setAdapter(bookingHistoryAdapter);
@@ -114,39 +167,183 @@ public class BoarderBookingFragment extends Fragment {
 
     private void loadBookingData() {
         try {
+            if (userId == 0) {
+                Log.e(TAG, "User ID is 0, cannot load bookings");
+                Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             // Show loading indicator
             if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
 
-            // Create mock data
-            createMockBookingData();
-
-            // Hide loading indicator and update UI
+            // Fetch bookings from database
+            fetchBookingsFromAPI();
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading booking data: " + e.getMessage());
+            e.printStackTrace();
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
-            updateUI();
-        } catch (Exception e) {
-            e.printStackTrace();
+            Toast.makeText(getContext(), "Error loading bookings", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void createMockBookingData() {
-        // Create mock current bookings
-        currentBookings.clear();
-        currentBookings.add(new Booking(1, "Sunshine Boarding House", "sample_listing", 
-            "Quezon City, Metro Manila", "January 1, 2024", "December 31, 2024", 
-            "₱3,500", "₱0", "Active"));
+    private void fetchBookingsFromAPI() {
+        try {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, GET_BOOKINGS_URL,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            try {
+                                Log.d(TAG, "Bookings API Response received");
+                                
+                                if (response == null || response.trim().isEmpty()) {
+                                    Log.e(TAG, "Received null or empty response");
+                                    showError("Server returned empty response");
+                                    return;
+                                }
+                                
+                                // Parse JSON response
+                                JSONObject jsonResponse = new JSONObject(response);
+                                boolean success = jsonResponse.getBoolean("success");
+                                
+                                if (success) {
+                                    JSONObject data = jsonResponse.getJSONObject("data");
+                                    
+                                    // Parse current bookings
+                                    JSONArray currentArray = data.getJSONArray("current");
+                                    parseBookings(currentArray, currentBookings);
+                                    
+                                    // Parse pending bookings
+                                    JSONArray pendingArray = data.getJSONArray("pending");
+                                    parseBookings(pendingArray, pendingBookings);
+                                    
+                                    // Parse booking history
+                                    JSONArray historyArray = data.getJSONArray("history");
+                                    parseBookings(historyArray, bookingHistory);
+                                    
+                                    Log.d(TAG, "Loaded bookings - Current: " + currentBookings.size() + 
+                                          ", Pending: " + pendingBookings.size() + 
+                                          ", History: " + bookingHistory.size());
+                                } else {
+                                    String error = jsonResponse.optString("error", "Unknown error occurred");
+                                    Log.e(TAG, "API Error: " + error);
+                                    showError("Failed to load bookings: " + error);
+                                }
+                            } catch (JSONException e) {
+                                Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                                showError("Error parsing server response: " + e.getMessage());
+                            } catch (Exception e) {
+                                Log.e(TAG, "Unexpected error: " + e.getMessage());
+                                showError("Unexpected error: " + e.getMessage());
+                            } finally {
+                                if (progressBar != null) {
+                                    progressBar.setVisibility(View.GONE);
+                                }
+                                updateUI();
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e(TAG, "Volley error: " + error.getMessage());
+                            if (progressBar != null) {
+                                progressBar.setVisibility(View.GONE);
+                            }
+                            showError("Network error: " + error.getMessage());
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("user_id", String.valueOf(userId));
+                    return params;
+                }
+                
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
+                    return headers;
+                }
+            };
+            
+            requestQueue.add(stringRequest);
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating request: " + e.getMessage());
+            e.printStackTrace();
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            showError("Error loading bookings");
+        }
+    }
 
-        // Create mock booking history
+    private void parseBookings(JSONArray dataArray, List<Booking> bookingsList) throws JSONException {
+        bookingsList.clear();
+        
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
+            
+            for (int i = 0; i < dataArray.length(); i++) {
+                JSONObject bookingJson = dataArray.getJSONObject(i);
+                
+                int bookingId = bookingJson.getInt("booking_id");
+                String bhName = bookingJson.getString("bh_name");
+                String imagePath = bookingJson.optString("image_path", "");
+                String location = bookingJson.optString("bh_address", "");
+                
+                // Parse dates
+                String startDateStr = bookingJson.getString("start_date");
+                String endDateStr = bookingJson.getString("end_date");
+                String startDate = formatDate(startDateStr, inputFormat, outputFormat);
+                String endDate = formatDate(endDateStr, inputFormat, outputFormat);
+                
+                // Parse price and payments
+                double price = bookingJson.getDouble("price");
+                double balanceDue = bookingJson.getDouble("balance_due");
+                String monthlyDue = "₱" + String.format(Locale.getDefault(), "%.2f", price);
+                String balanceDueStr = "₱" + String.format(Locale.getDefault(), "%.2f", balanceDue);
+                
+                String status = bookingJson.getString("booking_status");
+                
+                Booking booking = new Booking(bookingId, bhName, imagePath, location, 
+                    startDate, endDate, monthlyDue, balanceDueStr, status);
+                
+                bookingsList.add(booking);
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing booking data: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error parsing booking data: " + e.getMessage());
+            throw new JSONException("Error parsing booking data: " + e.getMessage());
+        }
+    }
+
+    private String formatDate(String dateStr, SimpleDateFormat inputFormat, SimpleDateFormat outputFormat) {
+        try {
+            if (dateStr != null && !dateStr.isEmpty()) {
+                java.util.Date date = inputFormat.parse(dateStr);
+                return outputFormat.format(date);
+            }
+        } catch (ParseException e) {
+            Log.e(TAG, "Error parsing date: " + dateStr, e);
+        }
+        return dateStr;
+    }
+
+    private void showError(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+        // Clear all lists on error
+        currentBookings.clear();
+        pendingBookings.clear();
         bookingHistory.clear();
-        bookingHistory.add(new Booking(2, "Green Valley Dormitory", "sample_listing", 
-            "Makati City, Metro Manila", "June 1, 2023", "December 31, 2023", 
-            "₱4,000", "₱0", "Completed"));
-        bookingHistory.add(new Booking(3, "Metro Student Housing", "sample_listing", 
-            "Taguig City, Metro Manila", "January 1, 2023", "May 31, 2023", 
-            "₱3,200", "₱0", "Completed"));
     }
 
     private void updateUI() {
@@ -156,12 +353,17 @@ public class BoarderBookingFragment extends Fragment {
                 currentBookingsAdapter.notifyDataSetChanged();
             }
             
+            // Update pending bookings
+            if (pendingBookingsAdapter != null) {
+                pendingBookingsAdapter.notifyDataSetChanged();
+            }
+            
             // Update booking history
             if (bookingHistoryAdapter != null) {
                 bookingHistoryAdapter.notifyDataSetChanged();
             }
 
-            // Show/hide empty states
+            // Show/hide empty states for current bookings
             if (currentBookings.isEmpty()) {
                 if (rvCurrentBookings != null) {
                     rvCurrentBookings.setVisibility(View.GONE);
@@ -178,6 +380,24 @@ public class BoarderBookingFragment extends Fragment {
                 }
             }
 
+            // Show/hide empty states for pending bookings
+            if (pendingBookings.isEmpty()) {
+                if (rvPendingBookings != null) {
+                    rvPendingBookings.setVisibility(View.GONE);
+                }
+                if (layoutPendingBookingsEmpty != null) {
+                    layoutPendingBookingsEmpty.setVisibility(View.VISIBLE);
+                }
+            } else {
+                if (rvPendingBookings != null) {
+                    rvPendingBookings.setVisibility(View.VISIBLE);
+                }
+                if (layoutPendingBookingsEmpty != null) {
+                    layoutPendingBookingsEmpty.setVisibility(View.GONE);
+                }
+            }
+
+            // Show/hide empty states for booking history
             if (bookingHistory.isEmpty()) {
                 if (rvBookingHistory != null) {
                     rvBookingHistory.setVisibility(View.GONE);
@@ -194,17 +414,19 @@ public class BoarderBookingFragment extends Fragment {
                 }
             }
         } catch (Exception e) {
+            Log.e(TAG, "Error updating UI: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void showBookingDetailsDialog(Booking booking) {
+    private void showCurrentBookingDetailsDialog(Booking booking) {
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_booking_details, null);
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_current_booking_details, null);
             builder.setView(dialogView);
 
             // Initialize dialog views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
             ImageView imgBoardingHouse = dialogView.findViewById(R.id.imgBoardingHouse);
             TextView tvBoardingHouseName = dialogView.findViewById(R.id.tvBoardingHouseName);
             TextView tvLocation = dialogView.findViewById(R.id.tvLocation);
@@ -213,14 +435,8 @@ public class BoarderBookingFragment extends Fragment {
             TextView tvMonthlyDue = dialogView.findViewById(R.id.tvMonthlyDue);
             TextView tvBalanceDue = dialogView.findViewById(R.id.tvBalanceDue);
             TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
-            MaterialButton btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
-            
-            // Initialize new buttons
-            MaterialButton btnSupportTicket = dialogView.findViewById(R.id.btnSupportTicket);
-            MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
-            MaterialButton btnSubmitReview = dialogView.findViewById(R.id.btnSubmitReview);
-            RatingBar ratingBar = dialogView.findViewById(R.id.ratingBar);
-            EditText etReviewMessage = dialogView.findViewById(R.id.etReviewMessage);
+            com.google.android.material.button.MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
+            com.google.android.material.button.MaterialButton btnReportMaintenance = dialogView.findViewById(R.id.btnReportMaintenance);
 
             // Set booking data
             if (booking.getImagePath() != null && !booking.getImagePath().isEmpty()) {
@@ -239,121 +455,44 @@ public class BoarderBookingFragment extends Fragment {
             tvEndDate.setText(booking.getEndDate());
             tvMonthlyDue.setText(booking.getMonthlyDue());
             tvBalanceDue.setText(booking.getBalanceDue());
-            tvStatus.setText(booking.getStatus());
+            
+            // Display "Active" instead of "Confirmed"
+            String status = booking.getStatus();
+            String displayStatus = "Confirmed".equals(status) ? "Active" : status;
+            tvStatus.setText(displayStatus);
 
-            // Set status background based on status
-            if ("Active".equals(booking.getStatus())) {
+            // Set status background
+            if ("Confirmed".equals(status)) {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
-            } else if ("Completed".equals(booking.getStatus())) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
             } else {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+                tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
             }
 
             AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.show();
 
             // Close button click listener
-            btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
-            
-            // Support Ticket button click listener
-            btnSupportTicket.setOnClickListener(v -> {
-                dialog.dismiss();
-                showSupportTicketDialog(booking);
-            });
-            
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
             // Make Payment button click listener
             btnMakePayment.setOnClickListener(v -> {
                 dialog.dismiss();
-                showPaymentDialog(booking);
+                // TODO: Implement Make Payment functionality
+                Toast.makeText(getContext(), "Make Payment functionality coming soon", Toast.LENGTH_SHORT).show();
             });
-            
-            // Submit Review button click listener
-            btnSubmitReview.setOnClickListener(v -> {
-                submitReview(booking, ratingBar.getRating(), etReviewMessage.getText().toString());
-                Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
+
+            // Report for Maintenance button click listener
+            btnReportMaintenance.setOnClickListener(v -> {
+                dialog.dismiss();
+                // TODO: Implement Report for Maintenance functionality
+                Toast.makeText(getContext(), "Report for Maintenance functionality coming soon", Toast.LENGTH_SHORT).show();
             });
 
         } catch (Exception e) {
+            Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void showSupportTicketDialog(Booking booking) {
-        try {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_support_ticket, null);
-            builder.setView(dialogView);
-
-            // Initialize views
-            ImageButton btnCloseSupport = dialogView.findViewById(R.id.btnCloseSupport);
-            MaterialButton btnCancelSupport = dialogView.findViewById(R.id.btnCancelSupport);
-            MaterialButton btnSendRequest = dialogView.findViewById(R.id.btnSendRequest);
-            EditText etIssueDescription = dialogView.findViewById(R.id.etIssueDescription);
-
-            AlertDialog dialog = builder.create();
-            dialog.show();
-
-            // Close button click listener
-            btnCloseSupport.setOnClickListener(v -> dialog.dismiss());
-            btnCancelSupport.setOnClickListener(v -> dialog.dismiss());
-
-            // Send Request button click listener
-            btnSendRequest.setOnClickListener(v -> {
-                String issueDescription = etIssueDescription.getText().toString().trim();
-                if (issueDescription.isEmpty()) {
-                    Toast.makeText(getContext(), "Please describe your issue", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // TODO: Send support request to server
-                // For now, just show success message
-                dialog.dismiss();
-                Toast.makeText(getContext(), "Support request sent successfully!", Toast.LENGTH_SHORT).show();
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Error showing support ticket dialog", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void showPaymentDialog(Booking booking) {
-        try {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_payment, null);
-            builder.setView(dialogView);
-
-            // Initialize views
-            MaterialButton btnDone = dialogView.findViewById(R.id.btnDone);
-
-            AlertDialog dialog = builder.create();
-            dialog.show();
-
-            // Done button click listener
-            btnDone.setOnClickListener(v -> {
-                // TODO: Process payment
-                // For now, just show success message
-                dialog.dismiss();
-                Toast.makeText(getContext(), "Payment processed successfully!", Toast.LENGTH_SHORT).show();
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Error showing payment dialog", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void submitReview(Booking booking, float rating, String reviewMessage) {
-        try {
-            // TODO: Submit review to server
-            // For now, just log the review data
-            System.out.println("Review submitted for booking: " + booking.getBoardingHouseName());
-            System.out.println("Rating: " + rating + " stars");
-            System.out.println("Review: " + reviewMessage);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

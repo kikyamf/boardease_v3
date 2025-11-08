@@ -52,14 +52,23 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set monthly due
         holder.tvMonthlyDue.setText(booking.getMonthlyDue());
         
-        // Set status
-        holder.tvStatus.setText(booking.getStatus());
+        // Set status - Display "Active" instead of "Confirmed" for Current Boarding House Booked section
+        String status = booking.getStatus();
+        String displayStatus = status;
+        if ("Confirmed".equals(status)) {
+            displayStatus = "Active";
+        }
+        holder.tvStatus.setText(displayStatus);
         
-        // Set status background based on status
-        if ("Active".equals(booking.getStatus())) {
+        // Set status background based on status (use original status, not display status)
+        if ("Confirmed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
-        } else if ("Completed".equals(booking.getStatus())) {
+        } else if ("Completed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+        } else if ("Pending".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+        } else if ("Cancelled".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red background for cancelled bookings
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
         }
@@ -75,19 +84,15 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             holder.imgBoardingHouse.setImageResource(R.drawable.sample_listing);
         }
         
-        // Set click listener for the entire card
-        holder.itemView.setOnClickListener(v -> {
-            if (bookingClickListener != null) {
+        // Set click listener for the entire card (only if listener is provided)
+        if (bookingClickListener != null) {
+            holder.itemView.setOnClickListener(v -> {
                 bookingClickListener.onBookingClick(booking);
-            }
-        });
-        
-        // Set "See Details" button click listener
-        holder.btnSeeDetails.setOnClickListener(v -> {
-            if (bookingClickListener != null) {
-                bookingClickListener.onBookingClick(booking);
-            }
-        });
+            });
+        } else {
+            // Remove click listener if no listener provided
+            holder.itemView.setOnClickListener(null);
+        }
     }
     
     @Override
@@ -103,7 +108,6 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
     public static class BookingViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
         TextView tvBoardingHouseName, tvLocation, tvBookingDates, tvMonthlyDue, tvStatus;
-        com.google.android.material.button.MaterialButton btnSeeDetails;
         
         public BookingViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -113,7 +117,6 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             tvBookingDates = itemView.findViewById(R.id.tvBookingDates);
             tvMonthlyDue = itemView.findViewById(R.id.tvMonthlyDue);
             tvStatus = itemView.findViewById(R.id.tvStatus);
-            btnSeeDetails = itemView.findViewById(R.id.btnSeeDetails);
         }
     }
 }
