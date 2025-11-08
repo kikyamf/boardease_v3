@@ -1,14 +1,20 @@
 package com.example.mock;
 
+import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -137,8 +143,8 @@ public class BoarderBookingFragment extends Fragment {
             pendingBookings = new ArrayList<>();
             bookingHistory = new ArrayList<>();
 
-            // Setup Current Bookings RecyclerView
-            currentBookingsAdapter = new BookingAdapter(getContext(), currentBookings, null);
+            // Setup Current Bookings RecyclerView with click listener
+            currentBookingsAdapter = new BookingAdapter(getContext(), currentBookings, this::showCurrentBookingDetailsDialog);
             LinearLayoutManager currentLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvCurrentBookings.setLayoutManager(currentLayoutManager);
             rvCurrentBookings.setAdapter(currentBookingsAdapter);
@@ -413,6 +419,82 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
 
+    private void showCurrentBookingDetailsDialog(Booking booking) {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_current_booking_details, null);
+            builder.setView(dialogView);
+
+            // Initialize dialog views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
+            ImageView imgBoardingHouse = dialogView.findViewById(R.id.imgBoardingHouse);
+            TextView tvBoardingHouseName = dialogView.findViewById(R.id.tvBoardingHouseName);
+            TextView tvLocation = dialogView.findViewById(R.id.tvLocation);
+            TextView tvStartDate = dialogView.findViewById(R.id.tvStartDate);
+            TextView tvEndDate = dialogView.findViewById(R.id.tvEndDate);
+            TextView tvMonthlyDue = dialogView.findViewById(R.id.tvMonthlyDue);
+            TextView tvBalanceDue = dialogView.findViewById(R.id.tvBalanceDue);
+            TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
+            com.google.android.material.button.MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
+            com.google.android.material.button.MaterialButton btnReportMaintenance = dialogView.findViewById(R.id.btnReportMaintenance);
+
+            // Set booking data
+            if (booking.getImagePath() != null && !booking.getImagePath().isEmpty()) {
+                Glide.with(getContext())
+                        .load(booking.getImagePath())
+                        .placeholder(R.drawable.sample_listing)
+                        .error(R.drawable.sample_listing)
+                        .into(imgBoardingHouse);
+            } else {
+                imgBoardingHouse.setImageResource(R.drawable.sample_listing);
+            }
+
+            tvBoardingHouseName.setText(booking.getBoardingHouseName());
+            tvLocation.setText(booking.getLocation());
+            tvStartDate.setText(booking.getStartDate());
+            tvEndDate.setText(booking.getEndDate());
+            tvMonthlyDue.setText(booking.getMonthlyDue());
+            tvBalanceDue.setText(booking.getBalanceDue());
+            
+            // Display "Active" instead of "Confirmed"
+            String status = booking.getStatus();
+            String displayStatus = "Confirmed".equals(status) ? "Active" : status;
+            tvStatus.setText(displayStatus);
+
+            // Set status background
+            if ("Confirmed".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            } else {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            }
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Close button click listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Make Payment button click listener
+            btnMakePayment.setOnClickListener(v -> {
+                dialog.dismiss();
+                // TODO: Implement Make Payment functionality
+                Toast.makeText(getContext(), "Make Payment functionality coming soon", Toast.LENGTH_SHORT).show();
+            });
+
+            // Report for Maintenance button click listener
+            btnReportMaintenance.setOnClickListener(v -> {
+                dialog.dismiss();
+                // TODO: Implement Report for Maintenance functionality
+                Toast.makeText(getContext(), "Report for Maintenance functionality coming soon", Toast.LENGTH_SHORT).show();
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     // Booking data class
     public static class Booking {
