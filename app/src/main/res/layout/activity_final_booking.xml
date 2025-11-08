@@ -235,7 +235,7 @@
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_medium"
                         android:textColor="@android:color/black"
-                        android:buttonTint="@color/brown"
+                        app:buttonTint="@color/brown"
                         android:paddingVertical="8dp"
                         android:checked="true" />
 
@@ -247,7 +247,7 @@
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_medium"
                         android:textColor="@android:color/black"
-                        android:buttonTint="@color/brown"
+                        app:buttonTint="@color/brown"
                         android:paddingVertical="8dp" />
                 </RadioGroup>
 
