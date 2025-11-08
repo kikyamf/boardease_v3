@@ -615,7 +615,20 @@ public class BoarderBookingFragment extends Fragment {
                                 JSONObject jsonResponse = new JSONObject(response);
                                 if (jsonResponse.getBoolean("success")) {
                                     JSONArray breakdownsArray = jsonResponse.getJSONArray("data");
+                                    int count = jsonResponse.optInt("count", breakdownsArray.length());
+                                    Log.d(TAG, "Received " + count + " unpaid payment breakdowns for booking_id: " + bookingId);
+                                    
                                     List<PaymentBreakdown> unpaidBreakdowns = parsePaymentBreakdowns(breakdownsArray);
+                                    Log.d(TAG, "Parsed " + unpaidBreakdowns.size() + " payment breakdowns");
+                                    
+                                    // Log each breakdown for debugging
+                                    for (PaymentBreakdown breakdown : unpaidBreakdowns) {
+                                        Log.d(TAG, "Breakdown: " + breakdown.getPeriodLabel() + 
+                                            " - Status: " + breakdown.getPaymentStatus() + 
+                                            " - Due: " + breakdown.getDueDate() + 
+                                            " - Selected: " + breakdown.isSelected() + 
+                                            " - Paid: " + breakdown.isPaid());
+                                    }
                                     
                                     if (unpaidBreakdowns.isEmpty()) {
                                         Toast.makeText(getContext(), "No unpaid payments found. All payments are up to date!", Toast.LENGTH_LONG).show();
@@ -695,10 +708,12 @@ public class BoarderBookingFragment extends Fragment {
                 return;
             }
             
-            // Filter only unpaid and selected breakdowns (should already be filtered by API, but double-check)
+            // Filter only unpaid breakdowns (API already filters, but double-check for safety)
+            // Show ALL unpaid periods, not just initially selected ones (allows advance payment)
             List<PaymentBreakdown> filteredBreakdowns = new ArrayList<>();
             for (PaymentBreakdown breakdown : unpaidBreakdowns) {
-                if (breakdown.isSelected() && !breakdown.isPaid()) {
+                // Show all unpaid periods regardless of initial selection status
+                if (!breakdown.isPaid()) {
                     filteredBreakdowns.add(breakdown);
                 }
             }
@@ -707,6 +722,8 @@ public class BoarderBookingFragment extends Fragment {
                 Toast.makeText(getContext(), "No unpaid payments found. All payments are up to date!", Toast.LENGTH_LONG).show();
                 return;
             }
+            
+            Log.d(TAG, "Showing dialog with " + filteredBreakdowns.size() + " unpaid payment periods");
             
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_unpaid_payments, null);

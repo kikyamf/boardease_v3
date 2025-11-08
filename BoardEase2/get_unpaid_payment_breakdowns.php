@@ -38,7 +38,8 @@ try {
     }
     
     // Fetch ALL unpaid payment breakdowns for this booking (current and future periods)
-    // Return breakdowns that are selected and not paid yet (allows advance payment)
+    // Show all breakdowns that are not paid, regardless of selection status (allows advance payment)
+    // Also dynamically calculate if status should be 'Overdue' based on due_date
     $sql = "
         SELECT 
             pb.breakdown_id,
@@ -52,20 +53,22 @@ try {
             pb.amount,
             pb.is_selected,
             pb.is_paid,
-            pb.due_date,
-            pb.payment_status,
-            pb.created_at,
-            pb.updated_at,
+            COALESCE(pb.due_date, pb.period_start_date) as due_date,
             CASE 
-                WHEN pb.due_date < CURDATE() AND pb.payment_status = 'Pending' THEN 'Overdue'
-                WHEN pb.due_date >= CURDATE() AND pb.due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'Due Soon'
-                ELSE pb.payment_status
-            END as display_status
+                WHEN pb.is_paid = 1 THEN 'Paid'
+                WHEN pb.payment_status = 'Cancelled' THEN 'Cancelled'
+                WHEN COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue') THEN 'Overdue'
+                WHEN COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
+                     AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) 
+                     AND pb.payment_status IN ('Pending', 'Overdue') THEN 'Pending'
+                ELSE 'Pending'
+            END as payment_status,
+            pb.created_at,
+            pb.updated_at
         FROM payment_breakdowns pb
         WHERE pb.booking_id = :booking_id
-            AND pb.is_selected = 1
             AND pb.is_paid = 0
-            AND pb.payment_status IN ('Pending', 'Overdue')
+            AND (pb.payment_status != 'Cancelled' OR pb.payment_status IS NULL)
         ORDER BY 
             pb.period_number ASC,
             pb.period_start_date ASC
@@ -80,29 +83,19 @@ try {
     // Format the results
     $breakdowns = array();
     $today = new DateTime();
+    $today->setTime(0, 0, 0); // Set to start of day for comparison
     
     foreach ($results as $row) {
-        $paymentStatus = $row['payment_status'];
+        $paymentStatus = $row['payment_status']; // This is already calculated in SQL
         $dueDateStr = $row['due_date'];
         
-        // Check if payment is overdue (due_date has passed)
-        if ($dueDateStr) {
-            try {
-                $dueDate = new DateTime($dueDateStr);
-                // Update status to Overdue if due date has passed and status is still Pending
-                if ($paymentStatus === 'Pending' && $dueDate < $today) {
-                    $paymentStatus = 'Overdue';
-                    // Optionally update in database (commented out for now to avoid too many updates)
-                    // $updateStmt = $pdo->prepare("UPDATE payment_breakdowns SET payment_status = 'Overdue' WHERE breakdown_id = :breakdown_id");
-                    // $updateStmt->execute([':breakdown_id' => $row['breakdown_id']]);
-                }
-            } catch (Exception $e) {
-                error_log("Error parsing due_date for breakdown_id " . $row['breakdown_id'] . ": " . $e->getMessage());
-            }
-        } else {
-            // If no due date, use period start date as due date
+        // Ensure due_date is set (should already be handled in SQL with COALESCE)
+        if (empty($dueDateStr)) {
             $dueDateStr = $row['period_start_date'];
         }
+        
+        // Log for debugging
+        error_log("Breakdown: ID=" . $row['breakdown_id'] . ", Label=" . $row['period_label'] . ", Status=" . $paymentStatus . ", Due=" . $dueDateStr . ", IsPaid=" . $row['is_paid']);
         
         $breakdown = array(
             'breakdown_id' => (int)$row['breakdown_id'],
@@ -116,7 +109,7 @@ try {
             'amount' => floatval($row['amount']),
             'is_selected' => (int)$row['is_selected'],
             'is_paid' => (int)$row['is_paid'],
-            'due_date' => $dueDateStr ? $dueDateStr : $row['period_start_date'],
+            'due_date' => $dueDateStr,
             'payment_status' => $paymentStatus,
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at']
@@ -124,6 +117,8 @@ try {
         
         $breakdowns[] = $breakdown;
     }
+    
+    error_log("get_unpaid_payment_breakdowns.php - Returning " . count($breakdowns) . " unpaid breakdowns for booking_id: $bookingId");
     
     echo json_encode(array(
         'success' => true,
