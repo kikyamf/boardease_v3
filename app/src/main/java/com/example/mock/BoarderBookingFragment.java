@@ -1081,8 +1081,8 @@ public class BoarderBookingFragment extends Fragment {
             // Get room ID from booking
             int roomId = booking.getRoomId();
             
-            // API URL - using ngrok URL to match other services
-            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/submit_maintenance_request.php";
+            // API URL - using local IP address
+            String url = BASE_URL + "BoardEase2/submit_maintenance_request.php";
             
             // Create JSON request body
             JSONObject requestBody = new JSONObject();
@@ -1150,7 +1150,8 @@ public class BoarderBookingFragment extends Fragment {
                 public Map<String, String> getHeaders() {
                     Map<String, String> headers = new HashMap<>();
                     headers.put("Content-Type", "application/json");
-                    headers.put("ngrok-skip-browser-warning", "true");
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
                     return headers;
                 }
             };
