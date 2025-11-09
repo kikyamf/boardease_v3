@@ -84,37 +84,123 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Area for Maintenance Dropdown -->
-        <com.google.android.material.textfield.TextInputLayout
+        <!-- Area for Maintenance Section -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Area for Maintenance"
-            app:boxBackgroundMode="outline"
-            app:boxCornerRadiusTopStart="8dp"
-            app:boxCornerRadiusTopEnd="8dp"
-            app:boxCornerRadiusBottomStart="8dp"
-            app:boxCornerRadiusBottomEnd="8dp"
-            app:boxStrokeColor="#E0E0E0"
-            app:hintTextColor="#666666"
-            android:layout_marginBottom="16dp"
-            app:startIconDrawable="@drawable/location"
-            app:startIconTint="#FF6B35">
+            android:backgroundTint="#F9FAFB"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="16dp">
 
-            <AutoCompleteTextView
-                android:id="@+id/spinnerAreaForMaintenance"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/poppins_regular"
-                android:textSize="14sp"
-                android:textColor="#000000"
-                android:minHeight="56dp"
-                android:padding="16dp"
-                android:inputType="none"
-                android:focusable="false"
-                android:clickable="true"
-                android:hint="--Select Area--" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <!-- Section Title -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/location"
+                        android:tint="#FF6B35"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Area for Maintenance"
+                        android:textSize="14sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+                <!-- Info Note -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Please select the area where maintenance is needed. You can report one area at a time for better tracking and faster resolution."
+                    android:textSize="11sp"
+                    android:textColor="#999999"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="16dp"
+                    android:lineSpacingExtra="2dp"
+                    android:alpha="0.9" />
+
+                <!-- Radio Group -->
+                <RadioGroup
+                    android:id="@+id/radioGroupAreaForMaintenance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- BH Room Option -->
+                    <RadioButton
+                        android:id="@+id/radioBHRoom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="BH Room"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        android:buttonTint="#FF6B35" />
+
+                    <!-- Bathroom Option -->
+                    <RadioButton
+                        android:id="@+id/radioBathroom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Bathroom"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        android:buttonTint="#FF6B35" />
+
+                    <!-- Kitchen Option -->
+                    <RadioButton
+                        android:id="@+id/radioKitchen"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Kitchen"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        android:buttonTint="#FF6B35" />
+
+                    <!-- Others Option -->
+                    <RadioButton
+                        android:id="@+id/radioOthers"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Others"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        android:buttonTint="#FF6B35" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Description Field -->
         <com.google.android.material.textfield.TextInputLayout
