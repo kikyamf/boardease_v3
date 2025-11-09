@@ -1113,10 +1113,10 @@ public class BoarderBookingFragment extends Fragment {
                         progressDialog.dismiss();
                         try {
                             if (response.getBoolean("success")) {
-                                String message = response.optString("message", "Maintenance request submitted successfully");
-                                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                                // Close the maintenance report dialog
                                 dialog.dismiss();
-                                // Optionally refresh the bookings list or show success message
+                                // Show success dialog
+                                showMaintenanceReportSuccessDialog();
                             } else {
                                 String error = response.optString("error", "Failed to submit maintenance request");
                                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
@@ -1164,6 +1164,40 @@ public class BoarderBookingFragment extends Fragment {
             Log.e(TAG, "Error submitting maintenance request: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error submitting maintenance request", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Show success dialog after maintenance report submission
+     */
+    private void showMaintenanceReportSuccessDialog() {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_maintenance_report_success, null);
+            builder.setView(dialogView);
+            
+            // Initialize views
+            com.google.android.material.button.MaterialButton btnOk = dialogView.findViewById(R.id.btnOkSuccess);
+            
+            // Create and show dialog
+            android.app.AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.show();
+            
+            // OK button click listener
+            btnOk.setOnClickListener(v -> dialog.dismiss());
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing success dialog: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback to toast if dialog fails
+            Toast.makeText(getContext(), "Maintenance request submitted successfully", Toast.LENGTH_SHORT).show();
         }
     }
 }
