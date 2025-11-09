@@ -964,28 +964,21 @@ public class BoarderBookingFragment extends Fragment {
             com.google.android.material.textfield.TextInputEditText etTitle = dialogView.findViewById(R.id.etMaintenanceTitle);
             com.google.android.material.textfield.TextInputEditText etDescription = dialogView.findViewById(R.id.etDescription);
             
-            // Set orange cursor color for text fields
-            try {
-                if (etTitle != null) {
-                    java.lang.reflect.Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
-                    fCursorDrawableRes.setAccessible(true);
-                    fCursorDrawableRes.setInt(etTitle, R.drawable.cursor_orange);
-                }
-                if (etDescription != null) {
-                    java.lang.reflect.Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
-                    fCursorDrawableRes.setAccessible(true);
-                    fCursorDrawableRes.setInt(etDescription, R.drawable.cursor_orange);
-                }
-            } catch (Exception e) {
-                // Fallback: try alternative method for cursor color
-                android.graphics.drawable.Drawable cursorDrawable = getContext().getResources().getDrawable(R.drawable.cursor_orange);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    if (etTitle != null) {
+            // Set orange cursor color for text fields (API 29+ only)
+            // Note: Cursor color customization is limited on older Android versions
+            // due to hidden API restrictions. On API 29+, we can use setTextCursorDrawable()
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                try {
+                    android.graphics.drawable.Drawable cursorDrawable = getContext().getResources().getDrawable(R.drawable.cursor_orange);
+                    if (etTitle != null && cursorDrawable != null) {
                         etTitle.setTextCursorDrawable(cursorDrawable);
                     }
-                    if (etDescription != null) {
+                    if (etDescription != null && cursorDrawable != null) {
                         etDescription.setTextCursorDrawable(cursorDrawable);
                     }
+                } catch (Exception e) {
+                    Log.d(TAG, "Could not set cursor color: " + e.getMessage());
+                    // Cursor color customization not available on this device/version
                 }
             }
             
