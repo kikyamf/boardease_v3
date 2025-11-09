@@ -813,7 +813,7 @@ public class BoarderBookingFragment extends Fragment {
                 // Ensure margins are applied by setting LayoutParams
                 // Convert dp to pixels for proper spacing
                 float density = getContext().getResources().getDisplayMetrics().density;
-                int marginInPx = (int) (20 * density); // 20dp spacing
+                int marginInPx = (int) (10 * density); // 10dp spacing (reduced from 20dp)
                 
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
