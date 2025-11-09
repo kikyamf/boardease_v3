@@ -68,7 +68,8 @@
             app:boxCornerRadiusTopEnd="8dp"
             app:boxCornerRadiusBottomStart="8dp"
             app:boxCornerRadiusBottomEnd="8dp"
-            app:boxStrokeColor="#E0E0E0"
+            app:boxStrokeColor="@color/textinput_stroke_orange"
+            app:boxStrokeWidthFocused="2dp"
             app:hintTextColor="#FF6B35"
             android:layout_marginBottom="16dp">
 
@@ -79,6 +80,8 @@
                 android:fontFamily="@font/poppins_regular"
                 android:textSize="14sp"
                 android:textColor="#000000"
+                android:textColorHint="#FF6B35"
+                android:textCursorDrawable="@drawable/cursor_orange"
                 android:inputType="textCapSentences"
                 android:maxLines="1" />
 
@@ -155,7 +158,7 @@
                         android:fontFamily="@font/poppins_regular"
                         android:paddingVertical="8dp"
                         android:paddingStart="4dp"
-                        android:buttonTint="#FF6B35" />
+                        app:buttonTint="@color/radio_button_orange" />
 
                     <!-- Bathroom Option -->
                     <RadioButton
@@ -168,7 +171,7 @@
                         android:fontFamily="@font/poppins_regular"
                         android:paddingVertical="8dp"
                         android:paddingStart="4dp"
-                        android:buttonTint="#FF6B35" />
+                        app:buttonTint="@color/radio_button_orange" />
 
                     <!-- Kitchen Option -->
                     <RadioButton
@@ -181,7 +184,7 @@
                         android:fontFamily="@font/poppins_regular"
                         android:paddingVertical="8dp"
                         android:paddingStart="4dp"
-                        android:buttonTint="#FF6B35" />
+                        app:buttonTint="@color/radio_button_orange" />
 
                     <!-- Others Option -->
                     <RadioButton
@@ -194,7 +197,7 @@
                         android:fontFamily="@font/poppins_regular"
                         android:paddingVertical="8dp"
                         android:paddingStart="4dp"
-                        android:buttonTint="#FF6B35" />
+                        app:buttonTint="@color/radio_button_orange" />
 
                 </RadioGroup>
 
@@ -212,7 +215,8 @@
             app:boxCornerRadiusTopEnd="8dp"
             app:boxCornerRadiusBottomStart="8dp"
             app:boxCornerRadiusBottomEnd="8dp"
-            app:boxStrokeColor="#E0E0E0"
+            app:boxStrokeColor="@color/textinput_stroke_orange"
+            app:boxStrokeWidthFocused="2dp"
             app:hintTextColor="#FF6B35"
             android:layout_marginBottom="20dp">
 
@@ -226,6 +230,8 @@
                 android:fontFamily="@font/poppins_regular"
                 android:textSize="14sp"
                 android:textColor="#000000"
+                android:textColorHint="#FF6B35"
+                android:textCursorDrawable="@drawable/cursor_orange"
                 android:inputType="textMultiLine|textCapSentences" />
 
         </com.google.android.material.textfield.TextInputLayout>

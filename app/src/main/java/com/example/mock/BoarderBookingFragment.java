@@ -961,6 +961,33 @@ public class BoarderBookingFragment extends Fragment {
             com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelMaintenance);
             com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitMaintenance);
             android.widget.RadioGroup radioGroupArea = dialogView.findViewById(R.id.radioGroupAreaForMaintenance);
+            com.google.android.material.textfield.TextInputEditText etTitle = dialogView.findViewById(R.id.etMaintenanceTitle);
+            com.google.android.material.textfield.TextInputEditText etDescription = dialogView.findViewById(R.id.etDescription);
+            
+            // Set orange cursor color for text fields
+            try {
+                if (etTitle != null) {
+                    java.lang.reflect.Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
+                    fCursorDrawableRes.setAccessible(true);
+                    fCursorDrawableRes.setInt(etTitle, R.drawable.cursor_orange);
+                }
+                if (etDescription != null) {
+                    java.lang.reflect.Field fCursorDrawableRes = TextView.class.getDeclaredField("mCursorDrawableRes");
+                    fCursorDrawableRes.setAccessible(true);
+                    fCursorDrawableRes.setInt(etDescription, R.drawable.cursor_orange);
+                }
+            } catch (Exception e) {
+                // Fallback: try alternative method for cursor color
+                android.graphics.drawable.Drawable cursorDrawable = getContext().getResources().getDrawable(R.drawable.cursor_orange);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    if (etTitle != null) {
+                        etTitle.setTextCursorDrawable(cursorDrawable);
+                    }
+                    if (etDescription != null) {
+                        etDescription.setTextCursorDrawable(cursorDrawable);
+                    }
+                }
+            }
             
             // TODO: Implement radio group selection handling
             // Radio buttons: radioBHRoom, radioBathroom, radioKitchen, radioOthers
