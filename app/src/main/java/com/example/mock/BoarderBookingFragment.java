@@ -960,6 +960,10 @@ public class BoarderBookingFragment extends Fragment {
             ImageButton btnClose = dialogView.findViewById(R.id.btnCloseMaintenance);
             com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelMaintenance);
             com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitMaintenance);
+            android.widget.AutoCompleteTextView spinnerArea = dialogView.findViewById(R.id.spinnerAreaForMaintenance);
+            
+            // TODO: Populate area dropdown with options: "--Select Area--", "BH Room", "Bathroom", "Kitchen", "Others"
+            // This will be implemented when functionality is added
             
             // Create and show dialog
             android.app.AlertDialog dialog = builder.create();
