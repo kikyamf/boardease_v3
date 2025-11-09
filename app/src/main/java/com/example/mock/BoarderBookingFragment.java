@@ -498,8 +498,8 @@ public class BoarderBookingFragment extends Fragment {
             // Report for Maintenance button click listener
             btnReportMaintenance.setOnClickListener(v -> {
                 dialog.dismiss();
-                // TODO: Implement Report for Maintenance functionality
-                Toast.makeText(getContext(), "Report for Maintenance functionality coming soon", Toast.LENGTH_SHORT).show();
+                // Show maintenance report dialog (UI only - functionality to be added later)
+                showMaintenanceReportDialog(booking);
             });
 
         } catch (Exception e) {
@@ -941,5 +941,48 @@ public class BoarderBookingFragment extends Fragment {
             Toast.LENGTH_LONG).show();
         
         Log.d(TAG, "Proceed to payment for periods: " + periods.toString() + ", Total: ₱" + total);
+    }
+    
+    /**
+     * Show maintenance report dialog (UI only - functionality to be implemented later)
+     */
+    private void showMaintenanceReportDialog(Booking booking) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_report_maintenance, null);
+            builder.setView(dialogView);
+            
+            // Initialize views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseMaintenance);
+            com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelMaintenance);
+            com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitMaintenance);
+            
+            // Create and show dialog
+            android.app.AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+            
+            // Close button click listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+            
+            // Cancel button click listener
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+            
+            // Submit button click listener (UI only - functionality to be added later)
+            btnSubmit.setOnClickListener(v -> {
+                // TODO: Implement form validation and submission
+                Toast.makeText(getContext(), "Maintenance report submission functionality will be implemented soon", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing maintenance report dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing maintenance report dialog", Toast.LENGTH_SHORT).show();
+        }
     }
 }

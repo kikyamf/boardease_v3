@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="600dp"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/dialog_background">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_maintenance"
+                android:tint="#FF6B35"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Report for Maintenance"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <ImageButton
+                android:id="@+id/btnCloseMaintenance"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Info Text -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Please provide details about the maintenance issue you're experiencing. We'll get back to you as soon as possible."
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginBottom="20dp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- Title Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Title"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="#E0E0E0"
+            app:hintTextColor="#666666"
+            android:layout_marginBottom="16dp"
+            app:startIconDrawable="@drawable/ic_edit"
+            app:startIconTint="#FF6B35">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMaintenanceTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="textCapSentences"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Maintenance Type and Priority Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <!-- Maintenance Type Spinner -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Type"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxStrokeColor="#E0E0E0"
+                app:hintTextColor="#666666"
+                app:startIconDrawable="@drawable/ic_tools"
+                app:startIconTint="#FF6B35"
+                android:layout_marginEnd="8dp">
+
+                <AutoCompleteTextView
+                    android:id="@+id/spinnerMaintenanceType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:minHeight="56dp"
+                    android:padding="16dp"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Priority Spinner -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Priority"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxStrokeColor="#E0E0E0"
+                app:hintTextColor="#666666"
+                app:startIconDrawable="@drawable/ic_info"
+                app:startIconTint="#FF6B35"
+                android:layout_marginStart="8dp">
+
+                <AutoCompleteTextView
+                    android:id="@+id/spinnerPriority"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:minHeight="56dp"
+                    android:padding="16dp"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <!-- Location Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Location"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="#E0E0E0"
+            app:hintTextColor="#666666"
+            android:layout_marginBottom="16dp"
+            app:startIconDrawable="@drawable/location"
+            app:startIconTint="#FF6B35">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="textCapSentences"
+                android:hint="e.g., Room 101, Bathroom, Common Area"
+                android:maxLines="2" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Description Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="#E0E0E0"
+            app:hintTextColor="#666666"
+            android:layout_marginBottom="16dp"
+            app:startIconDrawable="@drawable/ic_edit"
+            app:startIconTint="#FF6B35">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="4"
+                android:maxLines="6"
+                android:gravity="top"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="textMultiLine|textCapSentences"
+                android:hint="Please describe the maintenance issue in detail..." />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Contact Phone Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Contact Phone"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="#E0E0E0"
+            app:hintTextColor="#666666"
+            android:layout_marginBottom="16dp"
+            app:startIconDrawable="@drawable/ic_phone"
+            app:startIconTint="#FF6B35">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etContactPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="phone"
+                android:hint="e.g., +63 912 345 6789"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Preferred Date and Time Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <!-- Preferred Date Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPreferredDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Select Date"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:paddingVertical="16dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp"
+                android:backgroundTint="#FFFFFF"
+                app:icon="@drawable/ic_calendar"
+                app:iconTint="#FF6B35"
+                app:iconGravity="start"
+                android:drawablePadding="8dp"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Preferred Time Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPreferredTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Select Time"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:paddingVertical="16dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp"
+                app:cornerRadius="8dp"
+                android:backgroundTint="#FFFFFF"
+                app:icon="@drawable/ic_clock"
+                app:iconTint="#FF6B35"
+                app:iconGravity="start"
+                android:drawablePadding="8dp"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+        <!-- Image Attachment Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#F9FAFB"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Attach Photos (Optional)"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Image Grid Container -->
+                <LinearLayout
+                    android:id="@+id/layoutImageContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:minHeight="100dp">
+
+                    <!-- Images Grid (will be populated programmatically) -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvMaintenanceImages"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone" />
+
+                    <!-- Add Image Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Add Photo"
+                        android:textSize="13sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_medium"
+                        android:paddingVertical="12dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="#E0E0E0"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="8dp"
+                        android:backgroundTint="#FFFFFF"
+                        app:icon="@drawable/ic_camera1"
+                        app:iconTint="#FF6B35"
+                        app:iconGravity="start"
+                        android:drawablePadding="8dp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="You can attach up to 5 photos to help us understand the issue better"
+                    android:textSize="11sp"
+                    android:textColor="#999999"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginTop="8dp"
+                    android:alpha="0.8" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelMaintenance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="20dp"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:layout_marginEnd="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmitMaintenance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Submit Report"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="#FF6B35"
+                app:cornerRadius="20dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                app:icon="@drawable/ic_maintenance"
+                app:iconGravity="start"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
+
