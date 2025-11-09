@@ -70,9 +70,7 @@
             app:boxCornerRadiusBottomEnd="8dp"
             app:boxStrokeColor="#E0E0E0"
             app:hintTextColor="#666666"
-            android:layout_marginBottom="16dp"
-            app:startIconDrawable="@drawable/ic_edit"
-            app:startIconTint="#FF6B35">
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etMaintenanceTitle"
@@ -200,9 +198,7 @@
             app:boxCornerRadiusBottomEnd="8dp"
             app:boxStrokeColor="#E0E0E0"
             app:hintTextColor="#666666"
-            android:layout_marginBottom="16dp"
-            app:startIconDrawable="@drawable/ic_edit"
-            app:startIconTint="#FF6B35">
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etDescription"
