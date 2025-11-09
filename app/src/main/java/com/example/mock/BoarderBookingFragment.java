@@ -318,9 +318,10 @@ public class BoarderBookingFragment extends Fragment {
                 // Get room category and room number
                 String roomCategory = bookingJson.optString("room_category", "Private Room");
                 String roomNumber = bookingJson.optString("room_number", "");
+                int roomId = bookingJson.optInt("room_id", 0);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId);
                 
                 bookingsList.add(booking);
             }
@@ -522,10 +523,11 @@ public class BoarderBookingFragment extends Fragment {
         private String status;
         private String roomCategory;
         private String roomNumber;
+        private int roomId;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
                       String startDate, String endDate, String monthlyDue, String balanceDue, String status,
-                      String roomCategory, String roomNumber) {
+                      String roomCategory, String roomNumber, int roomId) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
             this.imagePath = imagePath;
@@ -537,6 +539,7 @@ public class BoarderBookingFragment extends Fragment {
             this.status = status;
             this.roomCategory = roomCategory;
             this.roomNumber = roomNumber;
+            this.roomId = roomId;
         }
 
         // Getters
@@ -551,6 +554,7 @@ public class BoarderBookingFragment extends Fragment {
         public String getStatus() { return status; }
         public String getRoomCategory() { return roomCategory; }
         public String getRoomNumber() { return roomNumber; }
+        public int getRoomId() { return roomId; }
     }
     
     // Payment Breakdown data class
@@ -944,7 +948,7 @@ public class BoarderBookingFragment extends Fragment {
     }
     
     /**
-     * Show maintenance report dialog (UI only - functionality to be implemented later)
+     * Show maintenance report dialog and handle form submission
      */
     private void showMaintenanceReportDialog(Booking booking) {
         try {
@@ -961,12 +965,14 @@ public class BoarderBookingFragment extends Fragment {
             com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelMaintenance);
             com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitMaintenance);
             android.widget.RadioGroup radioGroupArea = dialogView.findViewById(R.id.radioGroupAreaForMaintenance);
+            android.widget.RadioButton radioBHRoom = dialogView.findViewById(R.id.radioBHRoom);
+            android.widget.RadioButton radioBathroom = dialogView.findViewById(R.id.radioBathroom);
+            android.widget.RadioButton radioKitchen = dialogView.findViewById(R.id.radioKitchen);
+            android.widget.RadioButton radioOthers = dialogView.findViewById(R.id.radioOthers);
             com.google.android.material.textfield.TextInputEditText etTitle = dialogView.findViewById(R.id.etMaintenanceTitle);
             com.google.android.material.textfield.TextInputEditText etDescription = dialogView.findViewById(R.id.etDescription);
             
             // Set orange cursor color for text fields (API 29+ only)
-            // Note: Cursor color customization is limited on older Android versions
-            // due to hidden API restrictions. On API 29+, we can use setTextCursorDrawable()
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 try {
                     android.graphics.drawable.Drawable cursorDrawable = getContext().getResources().getDrawable(R.drawable.cursor_orange);
@@ -978,13 +984,8 @@ public class BoarderBookingFragment extends Fragment {
                     }
                 } catch (Exception e) {
                     Log.d(TAG, "Could not set cursor color: " + e.getMessage());
-                    // Cursor color customization not available on this device/version
                 }
             }
-            
-            // TODO: Implement radio group selection handling
-            // Radio buttons: radioBHRoom, radioBathroom, radioKitchen, radioOthers
-            // This will be implemented when functionality is added
             
             // Create and show dialog
             android.app.AlertDialog dialog = builder.create();
@@ -997,17 +998,171 @@ public class BoarderBookingFragment extends Fragment {
             // Cancel button click listener
             btnCancel.setOnClickListener(v -> dialog.dismiss());
             
-            // Submit button click listener (UI only - functionality to be added later)
+            // Submit button click listener
             btnSubmit.setOnClickListener(v -> {
-                // TODO: Implement form validation and submission
-                Toast.makeText(getContext(), "Maintenance report submission functionality will be implemented soon", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+                // Validate form
+                String subject = etTitle.getText() != null ? etTitle.getText().toString().trim() : "";
+                String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
+                
+                // Get selected area
+                String areaForMaintenance = "";
+                int selectedRadioId = radioGroupArea.getCheckedRadioButtonId();
+                if (selectedRadioId == radioBHRoom.getId()) {
+                    areaForMaintenance = "BH Room";
+                } else if (selectedRadioId == radioBathroom.getId()) {
+                    areaForMaintenance = "Bathroom";
+                } else if (selectedRadioId == radioKitchen.getId()) {
+                    areaForMaintenance = "Kitchen";
+                } else if (selectedRadioId == radioOthers.getId()) {
+                    areaForMaintenance = "Others";
+                }
+                
+                // Validate fields
+                if (subject.isEmpty()) {
+                    etTitle.setError("Subject is required");
+                    etTitle.requestFocus();
+                    return;
+                }
+                
+                if (areaForMaintenance.isEmpty()) {
+                    Toast.makeText(getContext(), "Please select an area for maintenance", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                if (description.isEmpty()) {
+                    etDescription.setError("Description is required");
+                    etDescription.requestFocus();
+                    return;
+                }
+                
+                // Submit maintenance request
+                submitMaintenanceRequest(booking, subject, areaForMaintenance, description, dialog);
             });
             
         } catch (Exception e) {
             Log.e(TAG, "Error showing maintenance report dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing maintenance report dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Submit maintenance request to server
+     */
+    private void submitMaintenanceRequest(Booking booking, String subject, String areaForMaintenance, String description, android.app.AlertDialog dialog) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            // Get user ID from SharedPreferences
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", getContext().MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", "0");
+            int userId = 0;
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid user_id in SharedPreferences: " + userIdString);
+                Toast.makeText(getContext(), "Error: Invalid user session", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (userId == 0) {
+                Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Show loading indicator
+            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+            progressDialog.setMessage("Submitting maintenance request...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            
+            // Get room ID from booking
+            int roomId = booking.getRoomId();
+            
+            // API URL - using ngrok URL to match other services
+            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/submit_maintenance_request.php";
+            
+            // Create JSON request body
+            JSONObject requestBody = new JSONObject();
+            try {
+                requestBody.put("user_id", userId);
+                // Only include room_id if it's valid (greater than 0)
+                if (roomId > 0) {
+                    requestBody.put("room_id", roomId);
+                }
+                requestBody.put("subject", subject);
+                requestBody.put("area_for_maintenance", areaForMaintenance);
+                requestBody.put("description", description);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error creating request body: " + e.getMessage());
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error preparing request", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Create request
+            com.android.volley.toolbox.JsonObjectRequest jsonRequest = new com.android.volley.toolbox.JsonObjectRequest(
+                com.android.volley.Request.Method.POST,
+                url,
+                requestBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        progressDialog.dismiss();
+                        try {
+                            if (response.getBoolean("success")) {
+                                String message = response.optString("message", "Maintenance request submitted successfully");
+                                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                                // Optionally refresh the bookings list or show success message
+                            } else {
+                                String error = response.optString("error", "Failed to submit maintenance request");
+                                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing response: " + e.getMessage());
+                            Toast.makeText(getContext(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressDialog.dismiss();
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        String errorMessage = "Network error";
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            try {
+                                String responseBody = new String(error.networkResponse.data, "utf-8");
+                                JSONObject errorJson = new JSONObject(responseBody);
+                                errorMessage = errorJson.optString("error", "Network error");
+                            } catch (Exception e) {
+                                errorMessage = "Network error: " + error.getMessage();
+                            }
+                        }
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
+            ) {
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Content-Type", "application/json");
+                    headers.put("ngrok-skip-browser-warning", "true");
+                    return headers;
+                }
+            };
+            
+            // Add request to queue
+            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            requestQueue.add(jsonRequest);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error submitting maintenance request: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error submitting maintenance request", Toast.LENGTH_SHORT).show();
         }
     }
 }
