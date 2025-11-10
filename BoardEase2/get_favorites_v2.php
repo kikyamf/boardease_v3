@@ -113,7 +113,7 @@ try {
     error_log("get_favorites_v2.php - Found " . count($results) . " favorites for user_id: $userId");
     
     // Get base URL for images
-    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+    $baseUrl = 'http://192.168.1.4/boardease_v3/';
     
     // Format the response
     $response = array();

@@ -128,7 +128,7 @@ try {
     error_log("get_boarder_bookings.php - Found " . count($results) . " bookings for user_id: $userId");
     
     // Get base URL for images
-    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+    $baseUrl = 'http://192.168.1.4/boardease_v3/';
     
     // Separate bookings into sections
     $currentBookings = array();
