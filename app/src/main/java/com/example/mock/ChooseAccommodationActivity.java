@@ -364,12 +364,22 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         infoRowParams.setMargins(0, 0, 0, 12);
         infoRow.setLayoutParams(infoRowParams);
         
-        // Availability (total rooms)
+        // Availability (actual available rooms)
         TextView tvAvailability = new TextView(this);
-        int totalRooms = room.getInt("total_rooms");
-        tvAvailability.setText("Available rooms: " + totalRooms);
+        int availableRooms = room.optInt("available_rooms", -1);
+        // If available_rooms is not in the response, fallback to total_rooms
+        if (availableRooms == -1) {
+            availableRooms = room.optInt("total_rooms", 0);
+        }
+        
+        if (availableRooms == 0) {
+            tvAvailability.setText("No available rooms as of the moment");
+            tvAvailability.setTextColor(getResources().getColor(R.color.red));
+        } else {
+            tvAvailability.setText("Available rooms: " + availableRooms);
+            tvAvailability.setTextColor(getResources().getColor(R.color.green));
+        }
         tvAvailability.setTextSize(14);
-        tvAvailability.setTextColor(getResources().getColor(R.color.green));
         
         android.widget.LinearLayout.LayoutParams availParams = new android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
