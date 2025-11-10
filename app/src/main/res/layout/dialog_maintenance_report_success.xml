@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:background="@drawable/dialog_background"
+    android:gravity="center">
+
+    <!-- Success Icon -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="4dp"
+        android:backgroundTint="#E8F5E9">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_check"
+            android:contentDescription="Success"
+            android:tint="#4CAF50"
+            android:padding="16dp" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Report Submitted"
+        android:textSize="24sp"
+        android:fontFamily="@font/poppins_bold"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your maintenance request has been submitted successfully"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_regular"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:lineSpacingExtra="4dp"
+        android:paddingHorizontal="8dp" />
+
+    <!-- Message Content -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#F9FAFB"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        android:layout_marginBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+        <!-- First message with icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_check"
+                android:tint="#4CAF50"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="Received" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Your maintenance report has been received and is being reviewed."
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="#666666"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        <!-- Second message with icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_notification1"
+                android:tint="#FF6B35"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="Notification" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="You will receive updates on the status of your maintenance request."
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="#666666"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        <!-- Third message with icon -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_maintenance"
+                android:tint="#FF6B35"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="Track" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="You can track your maintenance requests in the Maintenance section."
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="#666666"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- OK Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOkSuccess"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OK"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:fontFamily="@font/poppins_medium"
+        android:backgroundTint="#FF6B35"
+        app:cornerRadius="20dp"
+        android:paddingVertical="14dp" />
+
+</LinearLayout>
+
