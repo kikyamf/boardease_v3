@@ -1045,7 +1045,7 @@ public class FinalBookingActivity extends AppCompatActivity {
         builder.setView(dialogView);
         builder.setPositiveButton("OK", (dialog, which) -> {
             dialog.dismiss();
-            finish();
+            navigateToBoardingHouseDetails();
         });
         builder.setCancelable(false);
         
@@ -1054,6 +1054,39 @@ public class FinalBookingActivity extends AppCompatActivity {
         
         // Style the button
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.brown));
+    }
+    
+    private void navigateToBoardingHouseDetails() {
+        try {
+            if (bhId > 0) {
+                Log.d(TAG, "Navigating to BoardingHouseDetailsActivity with bh_id: " + bhId);
+                
+                // Navigate to BoardingHouseDetailsActivity with the boarding house ID
+                Intent intent = new Intent(FinalBookingActivity.this, BoardingHouseDetailsActivity.class);
+                intent.putExtra("bh_id", bhId);
+                
+                // Clear all activities on top of BoardingHouseDetailsActivity if it exists in the back stack
+                // This will remove BookingActivity and FinalBookingActivity from the stack
+                // If BoardingHouseDetailsActivity doesn't exist in stack, it will start fresh
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                
+                startActivity(intent);
+                
+                // Finish this activity (FinalBookingActivity)
+                // The FLAG_ACTIVITY_CLEAR_TOP will handle clearing activities above BoardingHouseDetailsActivity
+                finish();
+            } else {
+                // If bhId is not available, just finish and go back
+                Log.e(TAG, "bhId is 0, cannot navigate to BoardingHouseDetailsActivity");
+                finish();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error navigating to BoardingHouseDetailsActivity: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback: just finish the activity
+            finish();
+        }
     }
     
     private void showErrorDialog(String message) {
