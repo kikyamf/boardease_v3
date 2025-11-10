@@ -9,6 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Start output buffering to prevent any unwanted output
+ob_start();
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -28,29 +31,47 @@ try {
     // Start transaction to ensure all operations succeed or fail together
     $pdo->beginTransaction();
     
-    // Get POST data
-    $roomId = isset($_POST['room_id']) ? intval($_POST['room_id']) : 0;
-    $userId = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-    $startDate = isset($_POST['start_date']) ? trim($_POST['start_date']) : '';
-    $endDate = isset($_POST['end_date']) ? trim($_POST['end_date']) : '';
-    $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
-    $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
+    // Get POST data - handle both POST and JSON input
+    $inputData = [];
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!empty($_POST)) {
+            $inputData = $_POST;
+        } else {
+            // Try to get JSON input
+            $jsonInput = file_get_contents('php://input');
+            if (!empty($jsonInput)) {
+                $decoded = json_decode($jsonInput, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $inputData = $decoded;
+                }
+            }
+        }
+    }
+    
+    $roomId = isset($inputData['room_id']) ? intval($inputData['room_id']) : 0;
+    $userId = isset($inputData['user_id']) ? intval($inputData['user_id']) : 0;
+    $startDate = isset($inputData['start_date']) ? trim($inputData['start_date']) : '';
+    $endDate = isset($inputData['end_date']) ? trim($inputData['end_date']) : '';
+    $paymentMethod = isset($inputData['payment_method']) ? trim($inputData['payment_method']) : 'Cash';
+    $paymentProofBase64 = isset($inputData['payment_proof']) ? trim($inputData['payment_proof']) : '';
     
     // Get calculated payment amount and number of days from Android
     // If not provided, calculate it from room price (fallback for backward compatibility)
-    $totalAmount = isset($_POST['total_amount']) ? floatval($_POST['total_amount']) : 0;
-    $numberOfDays = isset($_POST['number_of_days']) ? intval($_POST['number_of_days']) : 0;
-    $paymentBreakdownJson = isset($_POST['payment_breakdown']) ? $_POST['payment_breakdown'] : '';
+    $totalAmount = isset($inputData['total_amount']) ? floatval($inputData['total_amount']) : 0;
+    $numberOfDays = isset($inputData['number_of_days']) ? intval($inputData['number_of_days']) : 0;
+    $paymentBreakdownJson = isset($inputData['payment_breakdown']) ? $inputData['payment_breakdown'] : '';
     
     // Debug logging
     error_log("create_booking.php - Received data: room_id=$roomId, user_id=$userId, start_date=$startDate, end_date=$endDate, total_amount=$totalAmount, number_of_days=$numberOfDays");
-    error_log("Payment breakdown JSON: " . $paymentBreakdownJson);
+    error_log("Payment breakdown JSON length: " . strlen($paymentBreakdownJson));
     
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
+        ob_clean();
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        http_response_code(400);
         echo json_encode(array(
             'success' => false,
             'message' => 'Missing required fields',
@@ -61,6 +82,7 @@ try {
                 'end_date' => $endDate
             )
         ));
+        ob_end_flush();
         exit;
     }
     
@@ -69,25 +91,31 @@ try {
     $endDateObj = DateTime::createFromFormat('Y-m-d', $endDate);
     
     if (!$startDateObj || !$endDateObj) {
+        ob_clean();
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        http_response_code(400);
         echo json_encode(array(
             'success' => false,
             'message' => 'Invalid date format. Expected YYYY-MM-DD'
         ));
+        ob_end_flush();
         exit;
     }
     
     // Validate end date is after start date
     if ($endDateObj <= $startDateObj) {
+        ob_clean();
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+        http_response_code(400);
         echo json_encode(array(
             'success' => false,
             'message' => 'End date must be after start date'
         ));
+        ob_end_flush();
         exit;
     }
     
@@ -103,14 +131,17 @@ try {
     
     if (!$roomUnit) {
         error_log("ERROR: Room unit not found for room_id: $roomId");
+        ob_clean();
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
             error_log("Transaction rolled back - Room unit not found");
         }
+        http_response_code(404);
         echo json_encode(array(
             'success' => false,
             'message' => 'Room unit not found'
         ));
+        ob_end_flush();
         exit;
     }
     
@@ -122,6 +153,7 @@ try {
         error_log("ERROR: Exiting BEFORE creating booking - no booking should be created");
         
         // CRITICAL: Rollback transaction BEFORE exiting
+        ob_clean();
         try {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -134,6 +166,7 @@ try {
         }
         
         // Return error response
+        http_response_code(400);
         $errorResponse = json_encode(array(
             'success' => false,
             'message' => 'Selected room unit is not available. Status: ' . $roomUnit['status']
@@ -141,6 +174,7 @@ try {
         error_log("ERROR: Returning error response: " . $errorResponse);
         error_log("ERROR: EXITING - No booking should be created after this point");
         echo $errorResponse;
+        ob_end_flush();
         exit; // CRITICAL: Exit immediately to prevent any further code execution
     }
     
@@ -171,14 +205,17 @@ try {
     }
     
     if (!$user) {
+        ob_clean();
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
         error_log("User not found - searched userId: " . $userId);
+        http_response_code(404);
         echo json_encode(array(
             'success' => false,
             'message' => 'User not found'
         ));
+        ob_end_flush();
         exit;
     }
     
@@ -207,13 +244,16 @@ try {
         }
         
         if (!$actualUserId) {
+            ob_clean();
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
+            http_response_code(500);
             echo json_encode(array(
                 'success' => false,
                 'message' => 'Failed to create user entry'
             ));
+            ob_end_flush();
             exit;
         }
     }
@@ -243,12 +283,15 @@ try {
     
     if ($checkOverlapStmt->fetch()) {
         error_log("ERROR: Overlapping booking found for room_id: $actualRoomId");
+        ob_clean();
         $pdo->rollBack();
         error_log("Transaction rolled back - Overlapping booking");
+        http_response_code(400);
         echo json_encode(array(
             'success' => false,
             'message' => 'Room is already booked for the selected dates'
         ));
+        ob_end_flush();
         exit;
     }
     error_log("Step 2 Success: No overlapping bookings found");
@@ -272,12 +315,15 @@ try {
         $actualStatus = $checkStatusStmt->fetch(PDO::FETCH_ASSOC);
         error_log("ERROR: Current room status: " . ($actualStatus['status'] ?? 'null'));
         
+        ob_clean();
         $pdo->rollBack();
         error_log("Transaction rolled back - Room reservation failed");
+        http_response_code(400);
         echo json_encode(array(
             'success' => false,
             'message' => 'Selected room unit is not available. Status: ' . ($actualStatus['status'] ?? 'Unknown')
         ));
+        ob_end_flush();
         exit;
     }
     error_log("Step 3 Success: Room reserved (status updated to 'Occupied')");
@@ -321,38 +367,59 @@ try {
         $rollbackStatusStmt->execute([':room_id' => $actualRoomId]);
         error_log("Rolled back room status to 'Available'");
         
+        ob_clean();
         $pdo->rollBack();
         error_log("Transaction rolled back - Booking creation failed");
+        http_response_code(500);
         echo json_encode(array(
             'success' => false,
             'message' => 'Failed to create booking'
         ));
+        ob_end_flush();
         exit;
     }
     
     // Handle payment proof upload
     $paymentProofPath = '';
     if (!empty($paymentProofBase64)) {
-        // Decode base64 image
-        $imageData = base64_decode($paymentProofBase64);
-        
-        // Generate unique filename
-        $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
-        $uploadDir = '../uploads/payment_proofs/';
-        
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-        
-        $filePath = $uploadDir . $filename;
-        
-        // Save image
-        if (file_put_contents($filePath, $imageData)) {
-            // Store relative path from BoardEase2 directory
-            $paymentProofPath = 'uploads/payment_proofs/' . $filename;
-        } else {
-            error_log("Failed to save payment proof image for booking_id: " . $bookingId);
+        error_log("Step 5: Processing payment proof upload...");
+        try {
+            // Remove data URL prefix if present
+            $base64Data = $paymentProofBase64;
+            if (preg_match('/^data:image\/(\w+);base64,/', $paymentProofBase64, $matches)) {
+                $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $paymentProofBase64);
+            }
+            
+            // Decode base64 image
+            $imageData = base64_decode($base64Data, true);
+            
+            if ($imageData === false) {
+                error_log("Warning: Failed to decode payment proof base64 data");
+            } else {
+                // Generate unique filename
+                $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
+                $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/';
+                
+                // Create directory if it doesn't exist
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                    error_log("Created payment proof directory: $uploadDir");
+                }
+                
+                $filePath = $uploadDir . $filename;
+                
+                // Save image
+                if (file_put_contents($filePath, $imageData)) {
+                    // Store relative path from BoardEase2 directory (for get_payment_proof.php)
+                    $paymentProofPath = 'uploads/payment_proofs/' . $filename;
+                    error_log("Payment proof saved successfully: $paymentProofPath");
+                } else {
+                    error_log("Warning: Failed to save payment proof image for booking_id: $bookingId");
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Warning: Error processing payment proof: " . $e->getMessage());
+            // Continue anyway - booking is still valid
         }
     }
     
@@ -406,6 +473,15 @@ try {
         error_log("Using room price as fallback: $paymentAmount");
     }
     
+    // Calculate number of days if not provided
+    if ($numberOfDays == 0) {
+        $numberOfDays = $startDateObj->diff($endDateObj)->days;
+        if ($numberOfDays == 0) {
+            $numberOfDays = 1; // Minimum 1 day
+        }
+        error_log("Calculated number_of_days: $numberOfDays");
+    }
+    
     // Determine if this is a monthly payment (30+ days) or short-term (less than 30 days)
     $isMonthlyPayment = ($numberOfDays >= 30) ? 1 : 0;
     
@@ -417,7 +493,9 @@ try {
     error_log("Payment details - amount: $paymentAmount, days: $numberOfDays, is_monthly: $isMonthlyPayment");
     
     // Create payment record
+    $paymentId = null;
     if ($ownerId > 0) {
+        error_log("Step 6: Creating payment record...");
         try {
             $insertPaymentSql = "
                 INSERT INTO payments (
@@ -466,133 +544,190 @@ try {
             error_log("Payment record created successfully - payment_id: $paymentId, amount: $paymentAmount, is_monthly: $isMonthlyPayment");
             
             // Save payment breakdown if provided
-            if (!empty($paymentBreakdownJson)) {
+            if (!empty($paymentBreakdownJson) && $paymentId) {
+                error_log("Step 7: Processing payment breakdown...");
                 try {
+                    // Parse JSON breakdown
                     $breakdownArray = json_decode($paymentBreakdownJson, true);
-                    if (is_array($breakdownArray) && !empty($breakdownArray)) {
+                    
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        error_log("Warning: Invalid payment breakdown JSON - Error: " . json_last_error_msg());
+                    } elseif (is_array($breakdownArray) && !empty($breakdownArray)) {
                         error_log("Saving payment breakdown - " . count($breakdownArray) . " periods");
                         
-                        $insertBreakdownSql = "
-                            INSERT INTO payment_breakdowns (
-                                booking_id,
-                                payment_id,
-                                period_type,
-                                period_number,
-                                period_label,
-                                period_start_date,
-                                period_end_date,
-                                amount,
-                                is_selected,
-                                payment_status,
-                                due_date
-                            ) VALUES (
-                                :booking_id,
-                                :payment_id,
-                                :period_type,
-                                :period_number,
-                                :period_label,
-                                :period_start_date,
-                                :period_end_date,
-                                :amount,
-                                :is_selected,
-                                'Pending',
-                                :due_date
-                            )
-                        ";
-                        
-                        $insertBreakdownStmt = $pdo->prepare($insertBreakdownSql);
-                        
-                        foreach ($breakdownArray as $period) {
-                            $periodType = isset($period['period_type']) ? $period['period_type'] : 'month';
-                            $periodNumber = isset($period['period_number']) ? intval($period['period_number']) : 0;
-                            $periodLabel = isset($period['label']) ? $period['label'] : '';
-                            $periodStartDate = isset($period['start_date']) ? $period['start_date'] : $startDate;
-                            $periodEndDate = isset($period['end_date']) ? $period['end_date'] : $endDate;
-                            $periodAmount = isset($period['amount']) ? floatval($period['amount']) : 0;
-                            $isSelected = isset($period['is_selected']) ? (bool)$period['is_selected'] : false;
-                            
-                            // Set due date as period start date (can be adjusted later)
-                            $dueDate = $periodStartDate;
-                            
-                            $insertBreakdownStmt->execute([
-                                ':booking_id' => $bookingId,
-                                ':payment_id' => $paymentId, // Use the payment_id from above
-                                ':period_type' => $periodType,
-                                ':period_number' => $periodNumber,
-                                ':period_label' => $periodLabel,
-                                ':period_start_date' => $periodStartDate,
-                                ':period_end_date' => $periodEndDate,
-                                ':amount' => $periodAmount,
-                                ':is_selected' => $isSelected ? 1 : 0,
-                                ':due_date' => $dueDate
-                            ]);
-                            
-                            error_log("Saved breakdown period: $periodLabel - Amount: $periodAmount - Selected: " . ($isSelected ? 'Yes' : 'No'));
+                        // Check if payment_breakdowns table exists by attempting to describe it
+                        $tableExists = false;
+                        try {
+                            $checkTableSql = "DESCRIBE payment_breakdowns";
+                            $pdo->query($checkTableSql);
+                            $tableExists = true;
+                            error_log("payment_breakdowns table exists");
+                        } catch (PDOException $e) {
+                            error_log("Warning: payment_breakdowns table does not exist or cannot be accessed: " . $e->getMessage());
+                            $tableExists = false;
                         }
                         
-                        error_log("Payment breakdown saved successfully");
+                        if ($tableExists) {
+                            $insertBreakdownSql = "
+                                INSERT INTO payment_breakdowns (
+                                    booking_id,
+                                    payment_id,
+                                    period_type,
+                                    period_number,
+                                    period_label,
+                                    period_start_date,
+                                    period_end_date,
+                                    amount,
+                                    is_selected,
+                                    payment_status,
+                                    due_date
+                                ) VALUES (
+                                    :booking_id,
+                                    :payment_id,
+                                    :period_type,
+                                    :period_number,
+                                    :period_label,
+                                    :period_start_date,
+                                    :period_end_date,
+                                    :amount,
+                                    :is_selected,
+                                    'Pending',
+                                    :due_date
+                                )
+                            ";
+                            
+                            $insertBreakdownStmt = $pdo->prepare($insertBreakdownSql);
+                            $breakdownCount = 0;
+                            
+                            foreach ($breakdownArray as $index => $period) {
+                                try {
+                                    $periodType = isset($period['period_type']) ? trim($period['period_type']) : 'month';
+                                    $periodNumber = isset($period['period_number']) ? intval($period['period_number']) : ($index + 1);
+                                    $periodLabel = isset($period['label']) ? trim($period['label']) : (isset($period['period_label']) ? trim($period['period_label']) : 'Period ' . ($index + 1));
+                                    $periodStartDate = isset($period['start_date']) ? trim($period['start_date']) : $startDate;
+                                    $periodEndDate = isset($period['end_date']) ? trim($period['end_date']) : $endDate;
+                                    $periodAmount = isset($period['amount']) ? floatval($period['amount']) : 0;
+                                    $isSelected = isset($period['is_selected']) ? (bool)$period['is_selected'] : false;
+                                    
+                                    // Validate period dates
+                                    $periodStartObj = DateTime::createFromFormat('Y-m-d', $periodStartDate);
+                                    $periodEndObj = DateTime::createFromFormat('Y-m-d', $periodEndDate);
+                                    
+                                    if (!$periodStartObj || !$periodEndObj) {
+                                        error_log("Warning: Invalid date format in breakdown period $index, skipping");
+                                        continue;
+                                    }
+                                    
+                                    // Set due date as period start date (can be adjusted later)
+                                    $dueDate = $periodStartDate;
+                                    
+                                    $insertBreakdownStmt->execute([
+                                        ':booking_id' => $bookingId,
+                                        ':payment_id' => $paymentId,
+                                        ':period_type' => $periodType,
+                                        ':period_number' => $periodNumber,
+                                        ':period_label' => $periodLabel,
+                                        ':period_start_date' => $periodStartDate,
+                                        ':period_end_date' => $periodEndDate,
+                                        ':amount' => $periodAmount,
+                                        ':is_selected' => $isSelected ? 1 : 0,
+                                        ':due_date' => $dueDate
+                                    ]);
+                                    
+                                    $breakdownCount++;
+                                    error_log("Saved breakdown period $index: $periodLabel - Amount: $periodAmount - Selected: " . ($isSelected ? 'Yes' : 'No'));
+                                } catch (PDOException $e) {
+                                    error_log("Warning: Failed to save breakdown period $index: " . $e->getMessage());
+                                    // Continue with next period
+                                }
+                            }
+                            
+                            if ($breakdownCount > 0) {
+                                error_log("Payment breakdown saved successfully - $breakdownCount periods");
+                            } else {
+                                error_log("Warning: No breakdown periods were saved");
+                            }
+                        } else {
+                            error_log("Warning: payment_breakdowns table does not exist - skipping breakdown save");
+                        }
                     } else {
-                        error_log("Warning: Invalid payment breakdown JSON format");
+                        error_log("Warning: Payment breakdown JSON is empty or not an array");
                     }
                 } catch (Exception $e) {
-                    error_log("Warning: Could not save payment breakdown: " . $e->getMessage());
+                    error_log("Warning: Error processing payment breakdown: " . $e->getMessage());
+                    error_log("Breakdown error trace: " . $e->getTraceAsString());
                     // Continue anyway - booking and payment are still valid
+                }
+            } else {
+                if (empty($paymentBreakdownJson)) {
+                    error_log("No payment breakdown JSON provided");
+                } else {
+                    error_log("Warning: Payment ID is null, cannot save breakdown");
                 }
             }
         } catch (PDOException $e) {
             // Log error but don't fail if payment creation fails
             error_log("Warning: Could not create payment record: " . $e->getMessage());
+            error_log("Payment error trace: " . $e->getTraceAsString());
             // Continue anyway - booking is still valid
         }
+    } else {
+        error_log("Warning: Owner ID is 0 or not found - skipping payment creation");
     }
     
-    // Status was already updated immediately after booking creation
-    // Now commit transaction - all operations succeeded
-    error_log("Step 4: Committing transaction for booking_id: $bookingId");
+    // Commit transaction - all operations succeeded
+    error_log("Step 8: Committing transaction for booking_id: $bookingId");
     $pdo->commit();
-    error_log("Step 4 Success: Transaction committed successfully");
+    error_log("Step 8 Success: Transaction committed successfully");
     
     error_log("=== BOOKING PROCESS COMPLETE - SUCCESS ===");
-    error_log("Final result: booking_id=$bookingId, room_id=$actualRoomId, user_id=$actualUserId");
+    error_log("Final result: booking_id=$bookingId, room_id=$actualRoomId, user_id=$actualUserId, payment_id=" . ($paymentId ?? 'null'));
     
+    ob_clean();
+    http_response_code(200);
     echo json_encode(array(
         'success' => true,
         'message' => 'Booking created successfully',
-        'booking_id' => $bookingId
+        'booking_id' => $bookingId,
+        'payment_id' => $paymentId
     ));
+    ob_end_flush();
     
 } catch (PDOException $e) {
     // Rollback transaction on error
     error_log("=== BOOKING PROCESS FAILED - PDOException ===");
     error_log("Exception message: " . $e->getMessage());
     error_log("Exception trace: " . $e->getTraceAsString());
-    if ($pdo->inTransaction()) {
+    ob_clean();
+    if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
         error_log("Transaction rolled back due to PDOException");
     } else {
         error_log("WARNING: No active transaction to rollback");
     }
-    error_log("Database error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(array(
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
     ));
+    ob_end_flush();
 } catch (Exception $e) {
     // Rollback transaction on error
     error_log("=== BOOKING PROCESS FAILED - Exception ===");
     error_log("Exception message: " . $e->getMessage());
     error_log("Exception trace: " . $e->getTraceAsString());
-    if ($pdo->inTransaction()) {
+    ob_clean();
+    if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
         error_log("Transaction rolled back due to Exception");
     } else {
         error_log("WARNING: No active transaction to rollback");
     }
-    error_log("Server error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(array(
         'success' => false,
         'message' => 'Server error: ' . $e->getMessage()
     ));
+    ob_end_flush();
 }
 ?>
-
