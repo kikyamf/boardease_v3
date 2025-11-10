@@ -77,7 +77,7 @@ try {
     }
     
     // Get base URL for images (use local IP for local development)
-    $baseUrl = 'http://192.168.1.9/boardease_v3/';
+    $baseUrl = 'http://192.168.1.4/boardease_v3/';
     
     // Format the response
     $response = array();
