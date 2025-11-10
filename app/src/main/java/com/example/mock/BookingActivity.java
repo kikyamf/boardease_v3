@@ -41,7 +41,7 @@ import java.util.Map;
 public class BookingActivity extends AppCompatActivity {
     
     private static final String TAG = "BookingActivity";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+    private static final String BASE_URL = "http://192.168.1.4/boardease_v3/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_ROOM_UNITS_URL = BOARD_EASE2_URL + "get_room_units1.php";
     private static final String BOOKING_API_URL = BOARD_EASE2_URL + "create_booking.php";
@@ -271,10 +271,9 @@ public class BookingActivity extends AppCompatActivity {
                                     unit.roomNumber = unitObj.getString("room_number");
                                     unit.status = unitObj.getString("status");
                                     
-                                    // Only add available units
-                                    if ("Available".equals(unit.status)) {
-                                        roomUnitsList.add(unit);
-                                    }
+                                    // All units returned from API are already filtered to be available
+                                    // (excludes units with Pending or Confirmed bookings)
+                                    roomUnitsList.add(unit);
                                 }
                                 
                                 if (roomUnitsList.isEmpty()) {
