@@ -76,7 +76,7 @@ try {
         $availableStmt = $pdo->prepare($availableRoomsSql);
         $availableStmt->execute([$bhrId]);
         $availableResult = $availableStmt->fetch(PDO::FETCH_ASSOC);
-        $room['available_rooms'] = (int)$availableResult['available_count'];
+        $room['available_rooms'] = isset($availableResult['available_count']) ? (int)$availableResult['available_count'] : 0;
         
         if (!isset($groupedRooms[$category])) {
             $groupedRooms[$category] = array();

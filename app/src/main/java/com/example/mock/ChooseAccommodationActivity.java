@@ -366,10 +366,16 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Availability (actual available rooms)
         TextView tvAvailability = new TextView(this);
-        int availableRooms = room.optInt("available_rooms", -1);
-        // If available_rooms is not in the response, fallback to total_rooms
-        if (availableRooms == -1) {
+        int availableRooms = -1;
+        
+        // Check if available_rooms exists in the response
+        if (room.has("available_rooms") && !room.isNull("available_rooms")) {
+            availableRooms = room.optInt("available_rooms", 0);
+            Log.d(TAG, "Room " + room.optString("room_name") + " - available_rooms from API: " + availableRooms);
+        } else {
+            // If available_rooms is not in the response, fallback to total_rooms
             availableRooms = room.optInt("total_rooms", 0);
+            Log.d(TAG, "Room " + room.optString("room_name") + " - available_rooms not in response, using total_rooms: " + availableRooms);
         }
         
         if (availableRooms == 0) {
