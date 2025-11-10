@@ -58,7 +58,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     private static final String CREATE_BOOKING_URL = BOARD_EASE2_URL + "create_booking.php";
     private static final int PICK_IMAGE_REQUEST = 100;
     
-    // Views
+    // Views // balik update
     private ImageButton btnBack;
     private ImageView ivBhImage, ivCashProof, ivGcashProof, ivOwnerQrCode;
     private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber, tvTotalPayment, tvPaymentBreakdown;
