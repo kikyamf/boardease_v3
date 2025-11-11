@@ -147,38 +147,67 @@ try {
     
     error_log("Step 1 Result: Room unit found - room_id: " . $roomUnit['room_id'] . ", bhr_id: " . $roomUnit['bhr_id'] . ", status: " . $roomUnit['status']);
     
-    // Check if room unit is available (check again within transaction with lock)
-    if (isset($roomUnit['status']) && $roomUnit['status'] !== 'Available') {
-        error_log("ERROR: Room unit status is NOT Available. Current status: " . $roomUnit['status']);
-        error_log("ERROR: Exiting BEFORE creating booking - no booking should be created");
-        
-        // CRITICAL: Rollback transaction BEFORE exiting
+    // Get room category and capacity from boarding_house_rooms
+    $bhrId = $roomUnit['bhr_id'];
+    $getRoomInfoSql = "SELECT room_category, capacity FROM boarding_house_rooms WHERE bhr_id = :bhr_id";
+    $getRoomInfoStmt = $pdo->prepare($getRoomInfoSql);
+    $getRoomInfoStmt->execute([':bhr_id' => $bhrId]);
+    $roomInfo = $getRoomInfoStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$roomInfo) {
+        error_log("ERROR: Room category not found for bhr_id: $bhrId");
         ob_clean();
-        try {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-                error_log("Transaction rolled back successfully - Room not available");
-            } else {
-                error_log("WARNING: No active transaction to rollback (this is OK if we haven't done any writes yet)");
-            }
-        } catch (PDOException $rollbackError) {
-            error_log("ERROR: Failed to rollback transaction: " . $rollbackError->getMessage());
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
         }
-        
-        // Return error response
-        http_response_code(400);
-        $errorResponse = json_encode(array(
+        http_response_code(404);
+        echo json_encode(array(
             'success' => false,
-            'message' => 'Selected room unit is not available. Status: ' . $roomUnit['status']
+            'message' => 'Room information not found'
         ));
-        error_log("ERROR: Returning error response: " . $errorResponse);
-        error_log("ERROR: EXITING - No booking should be created after this point");
-        echo $errorResponse;
         ob_end_flush();
-        exit; // CRITICAL: Exit immediately to prevent any further code execution
+        exit;
     }
     
-    error_log("Step 1 Success: Room unit is Available, proceeding with booking");
+    $roomCategory = $roomInfo['room_category'];
+    $capacity = intval($roomInfo['capacity']);
+    error_log("Step 1.1: Room category: $roomCategory, capacity: $capacity");
+    
+    // Check if room unit is available (for Private Room only - Bed Spacer uses capacity logic)
+    if ($roomCategory === 'Private Room') {
+        if (isset($roomUnit['status']) && $roomUnit['status'] !== 'Available') {
+            error_log("ERROR: Private Room unit status is NOT Available. Current status: " . $roomUnit['status']);
+            error_log("ERROR: Exiting BEFORE creating booking - no booking should be created");
+            
+            // CRITICAL: Rollback transaction BEFORE exiting
+            ob_clean();
+            try {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                    error_log("Transaction rolled back successfully - Room not available");
+                } else {
+                    error_log("WARNING: No active transaction to rollback (this is OK if we haven't done any writes yet)");
+                }
+            } catch (PDOException $rollbackError) {
+                error_log("ERROR: Failed to rollback transaction: " . $rollbackError->getMessage());
+            }
+            
+            // Return error response
+            http_response_code(400);
+            $errorResponse = json_encode(array(
+                'success' => false,
+                'message' => 'Selected room unit is not available. Status: ' . $roomUnit['status']
+            ));
+            error_log("ERROR: Returning error response: " . $errorResponse);
+            error_log("ERROR: EXITING - No booking should be created after this point");
+            echo $errorResponse;
+            ob_end_flush();
+            exit; // CRITICAL: Exit immediately to prevent any further code execution
+        }
+        error_log("Step 1 Success: Private Room unit is Available, proceeding with booking");
+    } else {
+        error_log("Step 1 Success: Bed Spacer room - will check capacity during overlap check");
+    }
     
     // Use room_units.room_id directly (this is what the user selected)
     $actualRoomId = $roomId;
@@ -259,74 +288,194 @@ try {
     }
     
     // Check for overlapping bookings using room_units.room_id (the actual room unit selected)
-    // This checks if the specific room unit is already booked, not just the bhr_id
-    error_log("Step 2: Checking for overlapping bookings...");
-    $checkOverlapSql = "
-        SELECT b.booking_id 
-        FROM bookings b
-        INNER JOIN room_units ru ON b.room_id = ru.room_id
-        WHERE ru.room_id = :room_id 
-        AND b.booking_status IN ('Pending', 'Confirmed')
-        AND (
-            (b.start_date <= :start_date AND b.end_date >= :start_date)
-            OR (b.start_date <= :end_date AND b.end_date >= :end_date)
-            OR (b.start_date >= :start_date AND b.end_date <= :end_date)
-        )
-        LIMIT 1
-    ";
-    $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
-    $checkOverlapStmt->execute([
-        ':room_id' => $actualRoomId,  // This is room_units.room_id
-        ':start_date' => $startDate,
-        ':end_date' => $endDate
-    ]);
+    // Different logic for Private Room vs Bed Spacer
+    error_log("Step 2: Checking for overlapping bookings (room_category: $roomCategory)...");
     
-    if ($checkOverlapStmt->fetch()) {
-        error_log("ERROR: Overlapping booking found for room_id: $actualRoomId");
-        ob_clean();
-        $pdo->rollBack();
-        error_log("Transaction rolled back - Overlapping booking");
-        http_response_code(400);
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Room is already booked for the selected dates'
-        ));
-        ob_end_flush();
-        exit;
-    }
-    error_log("Step 2 Success: No overlapping bookings found");
+    // Initialize overlap count (used for Bed Spacer)
+    $overlapCount = 0;
     
-    // CRITICAL: Update status to 'Occupied' BEFORE creating booking to prevent race conditions
-    // Use atomic UPDATE that only succeeds if status is still 'Available'
-    error_log("Step 3: Attempting to reserve room by updating status to 'Occupied' (atomic operation)...");
-    $updateStatusSql = "UPDATE room_units SET status = 'Occupied' WHERE room_id = :room_id AND status = 'Available'";
-    $updateStatusStmt = $pdo->prepare($updateStatusSql);
-    $updateStatusStmt->execute([':room_id' => $actualRoomId]);
-    $rowsAffected = $updateStatusStmt->rowCount();
-    error_log("Step 3 Result: Status update attempted - rows affected: $rowsAffected");
-    
-    // If no rows were affected, room was already booked by another request
-    if ($rowsAffected == 0) {
-        error_log("ERROR: Failed to reserve room - status was already changed (race condition)");
-        // Re-check status to see what it actually is
-        $checkStatusSql = "SELECT status FROM room_units WHERE room_id = :room_id";
-        $checkStatusStmt = $pdo->prepare($checkStatusSql);
-        $checkStatusStmt->execute([':room_id' => $actualRoomId]);
-        $actualStatus = $checkStatusStmt->fetch(PDO::FETCH_ASSOC);
-        error_log("ERROR: Current room status: " . ($actualStatus['status'] ?? 'null'));
+    if ($roomCategory === 'Private Room') {
+        // Private Room: Check if ANY overlapping booking exists
+        $checkOverlapSql = "
+            SELECT b.booking_id 
+            FROM bookings b
+            INNER JOIN room_units ru ON b.room_id = ru.room_id
+            WHERE ru.room_id = :room_id 
+            AND b.booking_status IN ('Pending', 'Confirmed')
+            AND (
+                (b.start_date <= :start_date AND b.end_date >= :start_date)
+                OR (b.start_date <= :end_date AND b.end_date >= :end_date)
+                OR (b.start_date >= :start_date AND b.end_date <= :end_date)
+            )
+            LIMIT 1
+        ";
+        $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
+        $checkOverlapStmt->execute([
+            ':room_id' => $actualRoomId,
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ]);
         
-        ob_clean();
-        $pdo->rollBack();
-        error_log("Transaction rolled back - Room reservation failed");
-        http_response_code(400);
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Selected room unit is not available. Status: ' . ($actualStatus['status'] ?? 'Unknown')
-        ));
-        ob_end_flush();
-        exit;
+        if ($checkOverlapStmt->fetch()) {
+            error_log("ERROR: Overlapping booking found for Private Room - room_id: $actualRoomId");
+            ob_clean();
+            $pdo->rollBack();
+            error_log("Transaction rolled back - Overlapping booking");
+            http_response_code(400);
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Room is already booked for the selected dates'
+            ));
+            ob_end_flush();
+            exit;
+        }
+        error_log("Step 2 Success: No overlapping bookings found for Private Room");
+        
+    } else if ($roomCategory === 'Bed Spacer') {
+        // Bed Spacer: Count overlapping bookings and check against capacity
+        $checkOverlapSql = "
+            SELECT COUNT(b.booking_id) as overlap_count
+            FROM bookings b
+            INNER JOIN room_units ru ON b.room_id = ru.room_id
+            WHERE ru.room_id = :room_id 
+            AND b.booking_status IN ('Pending', 'Confirmed')
+            AND (
+                (b.start_date <= :start_date AND b.end_date >= :start_date)
+                OR (b.start_date <= :end_date AND b.end_date >= :end_date)
+                OR (b.start_date >= :start_date AND b.end_date <= :end_date)
+            )
+        ";
+        $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
+        $checkOverlapStmt->execute([
+            ':room_id' => $actualRoomId,
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ]);
+        
+        $overlapResult = $checkOverlapStmt->fetch(PDO::FETCH_ASSOC);
+        $overlapCount = intval($overlapResult['overlap_count']);
+        error_log("Step 2: Bed Spacer - Found $overlapCount overlapping bookings, capacity: $capacity");
+        
+        // For Bed Spacer, allow booking if overlap_count < capacity
+        if ($overlapCount >= $capacity) {
+            error_log("ERROR: Bed Spacer room is at full capacity - room_id: $actualRoomId, overlap_count: $overlapCount, capacity: $capacity");
+            ob_clean();
+            $pdo->rollBack();
+            error_log("Transaction rolled back - Bed Spacer at full capacity");
+            http_response_code(400);
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Room is already fully booked for the selected dates. All ' . $capacity . ' beds are occupied.'
+            ));
+            ob_end_flush();
+            exit;
+        }
+        error_log("Step 2 Success: Bed Spacer has capacity available ($overlapCount/$capacity beds occupied)");
+        
+    } else {
+        // Unknown room category - use Private Room logic (conservative approach)
+        error_log("WARNING: Unknown room category: $roomCategory, using Private Room logic");
+        $checkOverlapSql = "
+            SELECT b.booking_id 
+            FROM bookings b
+            INNER JOIN room_units ru ON b.room_id = ru.room_id
+            WHERE ru.room_id = :room_id 
+            AND b.booking_status IN ('Pending', 'Confirmed')
+            AND (
+                (b.start_date <= :start_date AND b.end_date >= :start_date)
+                OR (b.start_date <= :end_date AND b.end_date >= :end_date)
+                OR (b.start_date >= :start_date AND b.end_date <= :end_date)
+            )
+            LIMIT 1
+        ";
+        $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
+        $checkOverlapStmt->execute([
+            ':room_id' => $actualRoomId,
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ]);
+        
+        if ($checkOverlapStmt->fetch()) {
+            error_log("ERROR: Overlapping booking found - room_id: $actualRoomId");
+            ob_clean();
+            $pdo->rollBack();
+            error_log("Transaction rolled back - Overlapping booking");
+            http_response_code(400);
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Room is already booked for the selected dates'
+            ));
+            ob_end_flush();
+            exit;
+        }
+        error_log("Step 2 Success: No overlapping bookings found");
     }
-    error_log("Step 3 Success: Room reserved (status updated to 'Occupied')");
+    
+    // Update room status based on room category
+    // Private Room: Set to 'Occupied' immediately (only one booking allowed)
+    // Bed Spacer: Only set to 'Occupied' if capacity is reached after this booking
+    error_log("Step 3: Updating room status (room_category: $roomCategory)...");
+    
+    if ($roomCategory === 'Private Room') {
+        // Private Room: Update status to 'Occupied' BEFORE creating booking to prevent race conditions
+        // Use atomic UPDATE that only succeeds if status is still 'Available'
+        error_log("Step 3: Attempting to reserve Private Room by updating status to 'Occupied' (atomic operation)...");
+        $updateStatusSql = "UPDATE room_units SET status = 'Occupied' WHERE room_id = :room_id AND status = 'Available'";
+        $updateStatusStmt = $pdo->prepare($updateStatusSql);
+        $updateStatusStmt->execute([':room_id' => $actualRoomId]);
+        $rowsAffected = $updateStatusStmt->rowCount();
+        error_log("Step 3 Result: Status update attempted - rows affected: $rowsAffected");
+        
+        // If no rows were affected, room was already booked by another request
+        if ($rowsAffected == 0) {
+            error_log("ERROR: Failed to reserve Private Room - status was already changed (race condition)");
+            // Re-check status to see what it actually is
+            $checkStatusSql = "SELECT status FROM room_units WHERE room_id = :room_id";
+            $checkStatusStmt = $pdo->prepare($checkStatusSql);
+            $checkStatusStmt->execute([':room_id' => $actualRoomId]);
+            $actualStatus = $checkStatusStmt->fetch(PDO::FETCH_ASSOC);
+            error_log("ERROR: Current room status: " . ($actualStatus['status'] ?? 'null'));
+            
+            ob_clean();
+            $pdo->rollBack();
+            error_log("Transaction rolled back - Room reservation failed");
+            http_response_code(400);
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Selected room unit is not available. Status: ' . ($actualStatus['status'] ?? 'Unknown')
+            ));
+            ob_end_flush();
+            exit;
+        }
+        error_log("Step 3 Success: Private Room reserved (status updated to 'Occupied')");
+        
+    } else if ($roomCategory === 'Bed Spacer') {
+        // Bed Spacer: Check if this booking will fill the capacity
+        // Count current active bookings (including this one we're about to create)
+        $currentBookingCount = $overlapCount + 1; // +1 for the booking we're about to create
+        error_log("Step 3: Bed Spacer - Current bookings after this one: $currentBookingCount/$capacity");
+        
+        if ($currentBookingCount >= $capacity) {
+            // This booking will fill the capacity, update status to 'Occupied'
+            error_log("Step 3: Bed Spacer will be at full capacity, updating status to 'Occupied'...");
+            $updateStatusSql = "UPDATE room_units SET status = 'Occupied' WHERE room_id = :room_id";
+            $updateStatusStmt = $pdo->prepare($updateStatusSql);
+            $updateStatusStmt->execute([':room_id' => $actualRoomId]);
+            error_log("Step 3 Success: Bed Spacer status updated to 'Occupied' (at full capacity)");
+        } else {
+            // Still has capacity, keep status as 'Available' (or don't change it)
+            error_log("Step 3 Success: Bed Spacer still has capacity ($currentBookingCount/$capacity), status remains 'Available'");
+        }
+        
+    } else {
+        // Unknown category - use Private Room logic
+        error_log("Step 3: Unknown room category, using Private Room logic...");
+        $updateStatusSql = "UPDATE room_units SET status = 'Occupied' WHERE room_id = :room_id AND status = 'Available'";
+        $updateStatusStmt = $pdo->prepare($updateStatusSql);
+        $updateStatusStmt->execute([':room_id' => $actualRoomId]);
+        $rowsAffected = $updateStatusStmt->rowCount();
+        error_log("Step 3 Result: Status update attempted - rows affected: $rowsAffected");
+    }
     
     // Now create the booking (room is already reserved, so this should always succeed)
     error_log("Step 4: Creating booking - room_id: $actualRoomId, user_id: $actualUserId, start_date: $startDate, end_date: $endDate");
@@ -425,7 +574,7 @@ try {
     
     // Get owner_id from room_unit's bhr_id
     // boarding_houses.user_id is registrations.id, but we need users.user_id
-    $bhrId = $roomUnit['bhr_id']; // Get bhr_id from the room_unit we already fetched
+    // Note: $bhrId is already set from Step 1.1 above
     $getOwnerSql = "SELECT bh.user_id as owner_reg_id, u.user_id as owner_user_id 
                     FROM boarding_house_rooms bhr 
                     JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 

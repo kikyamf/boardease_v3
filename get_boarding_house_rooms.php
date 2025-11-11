@@ -61,10 +61,27 @@ try {
         error_log("DEBUG: First room: " . json_encode($roomDetails[0]));
     }
 
-    // Group rooms by category
+    // Group rooms by category and calculate available rooms for each room
     $groupedRooms = array();
     foreach ($roomDetails as $room) {
         $category = $room['room_category'];
+        $bhrId = $room['bhr_id'];
+        
+        // Count available room units for this bhr_id
+        $availableRoomsSql = "
+            SELECT COUNT(*) as available_count
+            FROM room_units
+            WHERE bhr_id = ? AND status = 'Available'
+        ";
+        $availableStmt = $pdo->prepare($availableRoomsSql);
+        $availableStmt->execute([$bhrId]);
+        $availableResult = $availableStmt->fetch(PDO::FETCH_ASSOC);
+        $availableCount = isset($availableResult['available_count']) ? (int)$availableResult['available_count'] : 0;
+        
+        // Add available_rooms to the room array
+        $room['available_rooms'] = $availableCount;
+        error_log("DEBUG: Room bhr_id=" . $bhrId . " (" . $room['room_name'] . ") - available_rooms: " . $room['available_rooms']);
+        
         if (!isset($groupedRooms[$category])) {
             $groupedRooms[$category] = array();
         }

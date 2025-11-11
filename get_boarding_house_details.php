@@ -136,6 +136,24 @@ try {
     $roomDetailsStmt->execute([$bhId]);
     $roomDetails = $roomDetailsStmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Calculate available rooms for each room type
+    foreach ($roomDetails as &$room) {
+        $bhrId = $room['bhr_id'];
+        
+        // Count available room units for this bhr_id
+        $availableRoomsSql = "
+            SELECT COUNT(*) as available_count
+            FROM room_units
+            WHERE bhr_id = ? AND status = 'Available'
+        ";
+        $availableStmt = $pdo->prepare($availableRoomsSql);
+        $availableStmt->execute([$bhrId]);
+        $availableResult = $availableStmt->fetch(PDO::FETCH_ASSOC);
+        $room['available_rooms'] = isset($availableResult['available_count']) ? (int)$availableResult['available_count'] : 0;
+        error_log("DEBUG: get_boarding_house_details.php - Room bhr_id=" . $bhrId . " (" . $room['room_name'] . ") - available_rooms: " . $room['available_rooms']);
+    }
+    unset($room); // Unset reference to avoid issues
+    
     // Debug: Log room details query results
     error_log("DEBUG: get_boarding_house_details.php - Querying rooms for bh_id: " . $bhId);
     error_log("DEBUG: get_boarding_house_details.php - Found " . count($roomDetails) . " rooms");
