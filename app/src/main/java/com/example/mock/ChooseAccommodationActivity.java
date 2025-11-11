@@ -118,14 +118,23 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                             
                             if (success) {
                                 JSONObject data = jsonResponse.getJSONObject("data");
-                                Log.d(TAG, "Data object: " + data.toString());
+                                Log.d(TAG, "Data object keys: " + (data.names() != null ? data.names().toString() : "null"));
                                 
                                 JSONObject roomsByCategory = data.optJSONObject("rooms_by_category");
                                 if (roomsByCategory != null) {
                                     Log.d(TAG, "Found rooms_by_category with " + roomsByCategory.length() + " categories");
+                                    // Log first room to see structure
+                                    JSONArray categoryNames = roomsByCategory.names();
+                                    if (categoryNames != null && categoryNames.length() > 0) {
+                                        String firstCategory = categoryNames.getString(0);
+                                        JSONArray firstCategoryRooms = roomsByCategory.getJSONArray(firstCategory);
+                                        if (firstCategoryRooms.length() > 0) {
+                                            Log.d(TAG, "Sample room from API: " + firstCategoryRooms.getJSONObject(0).toString());
+                                        }
+                                    }
                                     displayAccommodations(roomsByCategory);
                                 } else {
-                                    Log.e(TAG, "rooms_by_category not found in response. Data keys: " + data.toString());
+                                    Log.e(TAG, "rooms_by_category not found in response. Data keys: " + (data.names() != null ? data.names().toString() : "null"));
                                     // Try fallback if primary endpoint structure is wrong
                                     Log.d(TAG, "Primary endpoint structure mismatch, trying fallback");
                                     loadAccommodationsFromFallback();
@@ -260,6 +269,9 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     }
     
     private void createRoomCard(JSONObject room) throws JSONException {
+        // Log the room object to see what fields are available
+        Log.d(TAG, "Creating card for room: " + room.toString());
+        
         // Create MaterialCardView
         com.google.android.material.card.MaterialCardView cardView = new com.google.android.material.card.MaterialCardView(this);
         cardView.setCardElevation(6);
@@ -364,12 +376,28 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         infoRowParams.setMargins(0, 0, 0, 12);
         infoRow.setLayoutParams(infoRowParams);
         
-        // Availability (total rooms)
+        // Availability (actual available rooms)
         TextView tvAvailability = new TextView(this);
-        int totalRooms = room.getInt("total_rooms");
-        tvAvailability.setText("Available rooms: " + totalRooms);
+        int availableRooms = -1;
+        
+        // Check if available_rooms exists in the response
+        if (room.has("available_rooms") && !room.isNull("available_rooms")) {
+            availableRooms = room.optInt("available_rooms", 0);
+            Log.d(TAG, "Room " + room.optString("room_name") + " - available_rooms from API: " + availableRooms);
+        } else {
+            // If available_rooms is not in the response, fallback to total_rooms
+            availableRooms = room.optInt("total_rooms", 0);
+            Log.d(TAG, "Room " + room.optString("room_name") + " - available_rooms not in response, using total_rooms: " + availableRooms);
+        }
+        
+        if (availableRooms == 0) {
+            tvAvailability.setText("No available rooms as of the moment");
+            tvAvailability.setTextColor(getResources().getColor(R.color.red));
+        } else {
+            tvAvailability.setText("Room(s): " + availableRooms);
+            tvAvailability.setTextColor(getResources().getColor(R.color.green));
+        }
         tvAvailability.setTextSize(14);
-        tvAvailability.setTextColor(getResources().getColor(R.color.green));
         
         android.widget.LinearLayout.LayoutParams availParams = new android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -506,6 +534,10 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                 
                                 if (roomDetailsArray != null && roomDetailsArray.length() > 0) {
                                     Log.d(TAG, "Processing " + roomDetailsArray.length() + " room details");
+                                    // Log first room to see structure from fallback
+                                    if (roomDetailsArray.length() > 0) {
+                                        Log.d(TAG, "Sample room from fallback API: " + roomDetailsArray.getJSONObject(0).toString());
+                                    }
                                     // Group rooms by category
                                     JSONObject roomsByCategory = new JSONObject();
                                     for (int i = 0; i < roomDetailsArray.length(); i++) {

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,7 +42,7 @@ import java.util.Map;
 public class BookingActivity extends AppCompatActivity {
     
     private static final String TAG = "BookingActivity";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+    private static final String BASE_URL = "http://192.168.1.4/boardease_v3/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_ROOM_UNITS_URL = BOARD_EASE2_URL + "get_room_units1.php";
     private static final String BOOKING_API_URL = BOARD_EASE2_URL + "create_booking.php";
@@ -62,12 +63,17 @@ public class BookingActivity extends AppCompatActivity {
     private int userId;
     private JSONObject roomData;
     private List<RoomUnitData> roomUnitsList;
+    private String roomCategory; // "Private Room" or "Bed Spacer"
+    private int roomCapacity; // Total capacity for Bed Spacer rooms
     
     // Room Unit data class
     private static class RoomUnitData {
         int roomId;
         String roomNumber;
         String status;
+        int availableCapacity; // Available beds for Bed Spacer
+        int totalCapacity; // Total capacity for Bed Spacer
+        int occupiedCapacity; // Occupied beds for Bed Spacer
     }
     private Calendar startDateCalendar;
     private Calendar endDateCalendar;
@@ -261,6 +267,10 @@ public class BookingActivity extends AppCompatActivity {
                         try {
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
+                                // Get room category and capacity from response
+                                roomCategory = jsonResponse.optString("room_category", "Private Room");
+                                roomCapacity = jsonResponse.optInt("capacity", 1);
+                                
                                 JSONArray unitsArray = jsonResponse.getJSONArray("units");
                                 roomUnitsList.clear();
                                 
@@ -271,10 +281,21 @@ public class BookingActivity extends AppCompatActivity {
                                     unit.roomNumber = unitObj.getString("room_number");
                                     unit.status = unitObj.getString("status");
                                     
-                                    // Only add available units
-                                    if ("Available".equals(unit.status)) {
-                                        roomUnitsList.add(unit);
+                                    // Parse capacity information for Bed Spacer rooms
+                                    if ("Bed Spacer".equals(roomCategory)) {
+                                        unit.availableCapacity = unitObj.optInt("available_capacity", 0);
+                                        unit.totalCapacity = unitObj.optInt("total_capacity", roomCapacity);
+                                        unit.occupiedCapacity = unitObj.optInt("occupied_capacity", 0);
+                                    } else {
+                                        // Private Room - no capacity info needed
+                                        unit.availableCapacity = 0;
+                                        unit.totalCapacity = 0;
+                                        unit.occupiedCapacity = 0;
                                     }
+                                    
+                                    // All units returned from API are already filtered to be available
+                                    // (excludes units with Pending or Confirmed bookings)
+                                    roomUnitsList.add(unit);
                                 }
                                 
                                 if (roomUnitsList.isEmpty()) {
@@ -331,29 +352,113 @@ public class BookingActivity extends AppCompatActivity {
         
         for (int i = 0; i < roomUnitsList.size(); i++) {
             RoomUnitData unit = roomUnitsList.get(i);
+            
+            // Create a container for radio button and availability text
+            LinearLayout container = new LinearLayout(this);
+            container.setOrientation(LinearLayout.VERTICAL);
+            container.setPadding(16, 8, 16, 8);
+            
             RadioButton radioButton = new RadioButton(this);
             radioButton.setId(View.generateViewId());
             radioButton.setText(unit.roomNumber);
             radioButton.setTextSize(16);
-            radioButton.setPadding(16, 16, 16, 16);
+            radioButton.setPadding(0, 0, 0, 0); // Remove padding since container handles it
             radioButton.setButtonTintList(getResources().getColorStateList(R.color.brown));
             radioButton.setTextColor(getResources().getColor(R.color.black));
             radioButton.setTag(unit.roomId); // Store room_id in tag
+            
+            // Create TextView for available bed count (for Bed Spacer only)
+            TextView tvAvailability = null;
+            if ("Bed Spacer".equals(roomCategory) && unit.availableCapacity > 0) {
+                tvAvailability = new TextView(this);
+                tvAvailability.setText(String.format(Locale.getDefault(), "%d bed(s) available", unit.availableCapacity));
+                tvAvailability.setTextSize(12);
+                tvAvailability.setTextColor(getResources().getColor(R.color.dark_gray));
+                tvAvailability.setPadding(40, 4, 0, 0); // Indent to align with radio button text
+                tvAvailability.setVisibility(View.GONE); // Initially hidden, shown when selected
+            }
             
             // Select first unit by default
             if (i == 0) {
                 radioButton.setChecked(true);
                 selectedRoomUnitId = unit.roomId;
+                // Show availability for first selected item if Bed Spacer
+                if (tvAvailability != null) {
+                    tvAvailability.setVisibility(View.VISIBLE);
+                }
+            }
+            
+            // Store reference to availability TextView and container in radio button
+            // Use a custom object to store multiple references
+            if (tvAvailability != null) {
+                // Store both roomId and availability TextView reference
+                Object[] tagData = new Object[]{unit.roomId, tvAvailability, container};
+                radioButton.setTag(tagData);
+            } else {
+                // Just store roomId for Private Room
+                radioButton.setTag(unit.roomId);
             }
             
             radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                Object tag = buttonView.getTag();
+                int roomIdValue;
+                TextView availabilityText = null;
+                LinearLayout containerLayout = null;
+                
+                // Extract data from tag
+                if (tag instanceof Object[]) {
+                    Object[] tagData = (Object[]) tag;
+                    roomIdValue = (Integer) tagData[0];
+                    availabilityText = (TextView) tagData[1];
+                    containerLayout = (LinearLayout) tagData[2];
+                } else {
+                    roomIdValue = (Integer) tag;
+                }
+                
                 if (isChecked) {
-                    selectedRoomUnitId = (Integer) buttonView.getTag();
+                    selectedRoomUnitId = roomIdValue;
                     Log.d(TAG, "Selected room unit ID: " + selectedRoomUnitId);
+                    
+                    // Show availability text for selected Bed Spacer room
+                    if ("Bed Spacer".equals(roomCategory)) {
+                        // Hide all availability texts first
+                        for (int j = 0; j < rgRoomUnits.getChildCount(); j++) {
+                            View child = rgRoomUnits.getChildAt(j);
+                            if (child instanceof LinearLayout) {
+                                LinearLayout layout = (LinearLayout) child;
+                                for (int k = 0; k < layout.getChildCount(); k++) {
+                                    View subChild = layout.getChildAt(k);
+                                    // Hide TextViews that are not RadioButtons (these are availability texts)
+                                    if (subChild instanceof TextView && !(subChild instanceof RadioButton)) {
+                                        subChild.setVisibility(View.GONE);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Show availability for selected radio button
+                        if (availabilityText != null) {
+                            availabilityText.setVisibility(View.VISIBLE);
+                        }
+                    }
+                } else {
+                    // Hide availability text when unchecked
+                    if ("Bed Spacer".equals(roomCategory) && availabilityText != null) {
+                        availabilityText.setVisibility(View.GONE);
+                    }
                 }
             });
             
-            rgRoomUnits.addView(radioButton);
+            // Add radio button to container
+            container.addView(radioButton);
+            
+            // Add availability text to container if it exists
+            if (tvAvailability != null) {
+                container.addView(tvAvailability);
+            }
+            
+            // Add container to RadioGroup
+            rgRoomUnits.addView(container);
         }
     }
     
