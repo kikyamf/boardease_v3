@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:backgroundTint="#F9FAFB"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:paddingTop="18dp"
-        android:paddingBottom="18dp">
+        android:padding="12dp">
 
-        <!-- Checkbox and Period Label Row -->
+        <!-- Period Label, Checkbox, and Status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,8 +26,7 @@
                 android:id="@+id/checkboxPeriod"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:buttonTint="@color/brown"
-                android:layout_marginEnd="12dp" />
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tvPeriodLabel"
@@ -36,9 +34,23 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="1st month"
-                android:textSize="16sp"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_semibold" />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+
+            <TextView
+                android:id="@+id/tvPeriodStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PAID"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"
+                android:background="#E8F5E8"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
 
             <TextView
                 android:id="@+id/tvStatus"
@@ -46,54 +58,130 @@
                 android:layout_height="wrap_content"
                 android:text="Pending"
                 android:textSize="11sp"
+                android:textStyle="bold"
                 android:textColor="#FFFFFF"
-                android:fontFamily="@font/poppins_medium"
                 android:background="@drawable/bg_status_pending"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp" />
-
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Period Dates -->
+        <!-- Period Dates (Combined) -->
         <TextView
             android:id="@+id/tvPeriodDates"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="January 1, 2024 - January 31, 2024"
+            android:text="2025-11-09 - 2025-12-08"
             android:textSize="12sp"
             android:textColor="#666666"
-            android:fontFamily="@font/poppins_regular"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
 
-        <!-- Due Date and Amount -->
+        <!-- Period Dates (Separate) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="8dp">
 
-            <TextView
-                android:id="@+id/tvDueDate"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Due: January 1, 2024"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Start Date"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:id="@+id/tvPeriodStartDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2025-11-09"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="End Date"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+                <TextView
+                    android:id="@+id/tvPeriodEndDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2025-12-08"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Amount -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Amount:"
                 android:textSize="12sp"
-                android:textColor="#FF6B35"
-                android:fontFamily="@font/poppins_medium" />
+                android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/tvPeriodAmount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="₱1,000.00"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"
+                android:gravity="end" />
 
             <TextView
                 android:id="@+id/tvAmount"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="₱3,500.00"
-                android:textSize="16sp"
-                android:textColor="#2E7D32"
-                android:fontFamily="@font/poppins_bold" />
-
+                android:layout_weight="1"
+                android:text="₱1,000.00"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"
+                android:gravity="end"
+                android:visibility="gone" />
         </LinearLayout>
+
+        <!-- Due Date -->
+        <TextView
+            android:id="@+id/tvDueDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Due: 2025-12-08"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:visibility="gone" />
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
-
+</androidx.cardview.widget.CardView>

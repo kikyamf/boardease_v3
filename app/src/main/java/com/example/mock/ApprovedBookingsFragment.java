@@ -158,6 +158,27 @@ public class ApprovedBookingsFragment extends Fragment {
                                     bookingObj.optInt("boarding_house_id", 0)
                                 );
                                 
+                                // Set payment progress fields
+                                booking.setTotalPeriods(bookingObj.optInt("total_periods", 0));
+                                booking.setPaidPeriods(bookingObj.optInt("paid_periods", 0));
+                                booking.setUnpaidPeriods(bookingObj.optInt("unpaid_periods", 0));
+                                booking.setTotalMonthsForBooking(bookingObj.optInt("total_months_for_booking", 0));
+                                booking.setPaidMonthsForBooking(bookingObj.optInt("paid_months_for_booking", 0));
+                                if (!bookingObj.isNull("remaining_months_to_pay")) {
+                                    booking.setRemainingMonthsToPay(bookingObj.optInt("remaining_months_to_pay", 0));
+                                }
+                                // Parse total_amount_for_booking - use null if not present or empty, not "0.00"
+                                String totalAmountForBooking = bookingObj.optString("total_amount_for_booking", null);
+                                if (totalAmountForBooking != null && !totalAmountForBooking.isEmpty() && !totalAmountForBooking.equals("null")) {
+                                    booking.setTotalAmountForBooking(totalAmountForBooking);
+                                } else {
+                                    booking.setTotalAmountForBooking(null);
+                                }
+                                booking.setPaidAmountForBooking(bookingObj.optString("paid_amount_for_booking", "0.00"));
+                                booking.setRemainingAmountToPay(bookingObj.optString("remaining_amount_to_pay", "0.00"));
+                                booking.setFullyPaid(bookingObj.optBoolean("is_fully_paid", false));
+                                booking.setPaymentProgressPercent(bookingObj.optDouble("payment_progress_percent", 0.0));
+                                
                                 approvedBookings.add(booking);
                             }
                             
@@ -187,6 +208,12 @@ public class ApprovedBookingsFragment extends Fragment {
                                     intent.putExtra("room_id", booking.getRoomId());
                                     intent.putExtra("boarding_house_id", booking.getBoardingHouseId());
                                     intent.putExtra("owner_id", userId);
+                                    // Pass payment progress data
+                                    intent.putExtra("total_periods", booking.getTotalPeriods());
+                                    intent.putExtra("paid_periods", booking.getPaidPeriods());
+                                    intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
+                                    intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
+                                    intent.putExtra("is_fully_paid", booking.isFullyPaid());
                                     startActivity(intent);
                                 }
                             });

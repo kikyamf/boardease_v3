@@ -65,7 +65,61 @@ public class ApprovedBookingsAdapter extends RecyclerView.Adapter<ApprovedBookin
         holder.tvRoomName.setText(booking.getRoomName() != null ? booking.getRoomName() : "");
         holder.tvStartDate.setText(booking.getStartDate() != null ? booking.getStartDate() : "");
         holder.tvEndDate.setText(booking.getEndDate() != null ? booking.getEndDate() : "");
-        holder.tvAmount.setText(booking.getAmount() != null ? booking.getAmount() : "");
+        
+        // Set room amount (monthly price)
+        String roomAmount = booking.getAmount();
+        if (roomAmount != null && !roomAmount.isEmpty()) {
+            // Format if not already formatted
+            if (!roomAmount.startsWith("₱")) {
+                holder.tvAmount.setText("₱" + formatAmount(roomAmount));
+            } else {
+                holder.tvAmount.setText(roomAmount);
+            }
+        } else {
+            holder.tvAmount.setText("₱0.00");
+        }
+        
+        // Set total booking amount (from payment_breakdowns)
+        String totalBookingAmount = booking.getTotalAmountForBooking();
+        int totalPeriods = booking.getTotalPeriods();
+        
+        // Try to use total_amount_for_booking if payment breakdown exists (total_periods > 0)
+        boolean useTotalAmount = false;
+        if (totalPeriods > 0 && totalBookingAmount != null && !totalBookingAmount.isEmpty()) {
+            try {
+                double totalValue = Double.parseDouble(totalBookingAmount);
+                // Use total amount if breakdown exists, even if it's 0 (they might not have paid yet)
+                holder.tvTotalBookingAmount.setText("₱" + formatAmount(totalBookingAmount));
+                useTotalAmount = true;
+            } catch (NumberFormatException e) {
+                // Will use fallback
+            }
+        } else if (totalBookingAmount != null && !totalBookingAmount.isEmpty() && !totalBookingAmount.equals("0.00")) {
+            // If no breakdown but total amount is provided and > 0, use it
+            try {
+                double totalValue = Double.parseDouble(totalBookingAmount);
+                if (totalValue > 0) {
+                    holder.tvTotalBookingAmount.setText("₱" + formatAmount(totalBookingAmount));
+                    useTotalAmount = true;
+                }
+            } catch (NumberFormatException e) {
+                // Will use fallback
+            }
+        }
+        
+        // Fallback to room amount if total amount is not valid or no breakdown exists
+        if (!useTotalAmount) {
+            if (roomAmount != null && !roomAmount.isEmpty()) {
+                if (!roomAmount.startsWith("₱")) {
+                    holder.tvTotalBookingAmount.setText("₱" + formatAmount(roomAmount));
+                } else {
+                    holder.tvTotalBookingAmount.setText(roomAmount);
+                }
+            } else {
+                holder.tvTotalBookingAmount.setText("₱0.00");
+            }
+        }
+        
         holder.tvRentType.setText(booking.getRentType() != null ? booking.getRentType() : "");
         
         // Hide action buttons for approved bookings
@@ -85,8 +139,18 @@ public class ApprovedBookingsAdapter extends RecyclerView.Adapter<ApprovedBookin
         return bookings.size();
     }
     
+    private String formatAmount(String amount) {
+        try {
+            double amountValue = Double.parseDouble(amount);
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+            return formatter.format(amountValue);
+        } catch (NumberFormatException e) {
+            return amount;
+        }
+    }
+    
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvBoarderName, tvStatus, tvEmail, tvPhone, tvRoomName, tvStartDate, tvEndDate, tvAmount, tvRentType;
+        TextView tvBoarderName, tvStatus, tvEmail, tvPhone, tvRoomName, tvStartDate, tvEndDate, tvAmount, tvTotalBookingAmount, tvRentType;
         View btnApprove, btnDecline, btnViewDetails;
         
         public ViewHolder(@NonNull View itemView) {
@@ -99,6 +163,7 @@ public class ApprovedBookingsAdapter extends RecyclerView.Adapter<ApprovedBookin
             tvStartDate = itemView.findViewById(R.id.tvStartDate);
             tvEndDate = itemView.findViewById(R.id.tvEndDate);
             tvAmount = itemView.findViewById(R.id.tvAmount);
+            tvTotalBookingAmount = itemView.findViewById(R.id.tvTotalBookingAmount);
             tvRentType = itemView.findViewById(R.id.tvRentType);
             btnApprove = itemView.findViewById(R.id.btnApprove);
             btnDecline = itemView.findViewById(R.id.btnDecline);

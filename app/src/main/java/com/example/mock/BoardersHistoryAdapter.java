@@ -6,14 +6,27 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class BoardersHistoryAdapter extends RecyclerView.Adapter<BoardersHistoryAdapter.ViewHolder> {
     
     private List<BoarderHistoryData> boarders;
+    private OnBoarderHistoryClickListener listener;
+
+    public interface OnBoarderHistoryClickListener {
+        void onBoarderHistoryClick(BoarderHistoryData boarder);
+    }
     
     public BoardersHistoryAdapter(List<BoarderHistoryData> boarders) {
         this.boarders = boarders;
+    }
+
+    public void setOnBoarderHistoryClickListener(OnBoarderHistoryClickListener listener) {
+        this.listener = listener;
     }
     
     @NonNull
@@ -41,9 +54,17 @@ public class BoardersHistoryAdapter extends RecyclerView.Adapter<BoardersHistory
         }
         holder.tvRoomName.setText(roomInfo);
         
-        // Set dates
-        holder.tvStartDate.setText(boarder.getStartDate());
-        holder.tvEndDate.setText(boarder.getEndDate());
+        // Set dates with formatting
+        if (boarder.getStartDate() != null && !boarder.getStartDate().isEmpty()) {
+            holder.tvStartDate.setText(formatDate(boarder.getStartDate()));
+        } else {
+            holder.tvStartDate.setText("Not specified");
+        }
+        if (boarder.getEndDate() != null && !boarder.getEndDate().isEmpty()) {
+            holder.tvEndDate.setText(formatDate(boarder.getEndDate()));
+        } else {
+            holder.tvEndDate.setText("Not specified");
+        }
         
         // Set status with appropriate styling
         String status = boarder.getStatus();
@@ -60,11 +81,35 @@ public class BoardersHistoryAdapter extends RecyclerView.Adapter<BoardersHistory
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_orange);
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
         }
+
+        // Set click listener
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onBoarderHistoryClick(boarder);
+            }
+        });
     }
     
     @Override
     public int getItemCount() {
         return boarders.size();
+    }
+
+    private String formatDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "";
+        }
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+            Date date = inputFormat.parse(dateString);
+            if (date != null) {
+                return outputFormat.format(date);
+            }
+        } catch (ParseException e) {
+            // If parsing fails, return original string
+        }
+        return dateString;
     }
     
     public static class ViewHolder extends RecyclerView.ViewHolder {

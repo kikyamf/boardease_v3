@@ -22,6 +22,19 @@ public class PaymentData implements Serializable {
     private String receiptUrl;
     private String createdAt;
     private String updatedAt;
+    
+    // Payment progress fields
+    private int totalPeriods;
+    private int paidPeriods;
+    private int unpaidPeriods;
+    private int totalMonthsForBooking;
+    private int paidMonthsForBooking;
+    private Integer remainingMonthsToPay;
+    private String totalAmountForBooking;
+    private String paidAmountForBooking;
+    private String remainingAmountToPay;
+    private boolean isFullyPaid;
+    private double paymentProgressPercent;
 
     // Constructor for sample data (backward compatibility)
     public PaymentData(String boarderName, String room, String rentType, String amountPaid, 
@@ -70,7 +83,7 @@ public class PaymentData implements Serializable {
                 paymentProofUrl = json.optString("payment_proof", "");
             }
             
-            return new PaymentData(
+            PaymentData paymentData = new PaymentData(
                 json.optInt("payment_id", 0),
                 json.optInt("booking_id", 0),
                 json.optInt("user_id", 0),
@@ -90,6 +103,23 @@ public class PaymentData implements Serializable {
                 json.optString("created_at", ""),
                 json.optString("updated_at", "")
             );
+            
+            // Set payment progress fields
+            paymentData.setTotalPeriods(json.optInt("total_periods", 0));
+            paymentData.setPaidPeriods(json.optInt("paid_periods", 0));
+            paymentData.setUnpaidPeriods(json.optInt("unpaid_periods", 0));
+            paymentData.setTotalMonthsForBooking(json.optInt("total_months_for_booking", 0));
+            paymentData.setPaidMonthsForBooking(json.optInt("paid_months_for_booking", 0));
+            if (!json.isNull("remaining_months_to_pay")) {
+                paymentData.setRemainingMonthsToPay(json.optInt("remaining_months_to_pay", 0));
+            }
+            paymentData.setTotalAmountForBooking(json.optString("total_amount_for_booking", "0.00"));
+            paymentData.setPaidAmountForBooking(json.optString("paid_amount_for_booking", "0.00"));
+            paymentData.setRemainingAmountToPay(json.optString("remaining_amount_to_pay", "0.00"));
+            paymentData.setFullyPaid(json.optBoolean("is_fully_paid", false));
+            paymentData.setPaymentProgressPercent(json.optDouble("payment_progress_percent", 0.0));
+            
+            return paymentData;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -115,6 +145,19 @@ public class PaymentData implements Serializable {
     public String getReceiptUrl() { return receiptUrl; }
     public String getCreatedAt() { return createdAt; }
     public String getUpdatedAt() { return updatedAt; }
+    
+    // Payment progress getters
+    public int getTotalPeriods() { return totalPeriods; }
+    public int getPaidPeriods() { return paidPeriods; }
+    public int getUnpaidPeriods() { return unpaidPeriods; }
+    public int getTotalMonthsForBooking() { return totalMonthsForBooking; }
+    public int getPaidMonthsForBooking() { return paidMonthsForBooking; }
+    public Integer getRemainingMonthsToPay() { return remainingMonthsToPay; }
+    public String getTotalAmountForBooking() { return totalAmountForBooking; }
+    public String getPaidAmountForBooking() { return paidAmountForBooking; }
+    public String getRemainingAmountToPay() { return remainingAmountToPay; }
+    public boolean isFullyPaid() { return isFullyPaid; }
+    public double getPaymentProgressPercent() { return paymentProgressPercent; }
 
     // Setters
     public void setPaymentId(int paymentId) { this.paymentId = paymentId; }
@@ -135,6 +178,19 @@ public class PaymentData implements Serializable {
     public void setReceiptUrl(String receiptUrl) { this.receiptUrl = receiptUrl; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+    
+    // Payment progress setters
+    public void setTotalPeriods(int totalPeriods) { this.totalPeriods = totalPeriods; }
+    public void setPaidPeriods(int paidPeriods) { this.paidPeriods = paidPeriods; }
+    public void setUnpaidPeriods(int unpaidPeriods) { this.unpaidPeriods = unpaidPeriods; }
+    public void setTotalMonthsForBooking(int totalMonthsForBooking) { this.totalMonthsForBooking = totalMonthsForBooking; }
+    public void setPaidMonthsForBooking(int paidMonthsForBooking) { this.paidMonthsForBooking = paidMonthsForBooking; }
+    public void setRemainingMonthsToPay(Integer remainingMonthsToPay) { this.remainingMonthsToPay = remainingMonthsToPay; }
+    public void setTotalAmountForBooking(String totalAmountForBooking) { this.totalAmountForBooking = totalAmountForBooking; }
+    public void setPaidAmountForBooking(String paidAmountForBooking) { this.paidAmountForBooking = paidAmountForBooking; }
+    public void setRemainingAmountToPay(String remainingAmountToPay) { this.remainingAmountToPay = remainingAmountToPay; }
+    public void setFullyPaid(boolean isFullyPaid) { this.isFullyPaid = isFullyPaid; }
+    public void setPaymentProgressPercent(double paymentProgressPercent) { this.paymentProgressPercent = paymentProgressPercent; }
 }
 
 

@@ -11,14 +11,27 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapter.ViewHolder> {
 
     private List<BoarderData> boardersList;
+    private OnBoarderClickListener listener;
+
+    public interface OnBoarderClickListener {
+        void onBoarderClick(BoarderData boarder);
+    }
 
     public BoardersListAdapter(List<BoarderData> boardersList) {
         this.boardersList = boardersList;
+    }
+
+    public void setOnBoarderClickListener(OnBoarderClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -43,8 +56,15 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
         // Set rent type
         holder.tvRentType.setText(boarder.getRentType());
 
-        // Set rental period
-        String rentalPeriod = boarder.getStartDate() + " to " + boarder.getEndDate();
+        // Set rental period with formatted dates
+        String rentalPeriod = "";
+        if (boarder.getStartDate() != null && !boarder.getStartDate().isEmpty() 
+            && boarder.getEndDate() != null && !boarder.getEndDate().isEmpty()) {
+            // Format dates (assuming format is YYYY-MM-DD)
+            rentalPeriod = formatDate(boarder.getStartDate()) + " - " + formatDate(boarder.getEndDate());
+        } else {
+            rentalPeriod = "Dates not specified";
+        }
         holder.tvRentalPeriod.setText(rentalPeriod);
 
         // Set status with appropriate background
@@ -57,23 +77,47 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_orange);
         }
 
-        // Set profile picture
+        // Set profile picture with rounded corners (matching booking card style)
         if (boarder.getProfilePicture() != null && !boarder.getProfilePicture().isEmpty()) {
             String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + boarder.getProfilePicture();
             Glide.with(holder.itemView.getContext())
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
                     .error(R.drawable.btn_profile)
-                    .circleCrop()
+                    .centerCrop()
                     .into(holder.ivProfilePicture);
         } else {
             holder.ivProfilePicture.setImageResource(R.drawable.btn_profile);
         }
+
+        // Set click listener
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onBoarderClick(boarder);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return boardersList.size();
+    }
+
+    private String formatDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "";
+        }
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+            Date date = inputFormat.parse(dateString);
+            if (date != null) {
+                return outputFormat.format(date);
+            }
+        } catch (ParseException e) {
+            // If parsing fails, return original string
+        }
+        return dateString;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

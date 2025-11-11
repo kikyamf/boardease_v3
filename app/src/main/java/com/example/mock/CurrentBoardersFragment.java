@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,6 +23,7 @@ import java.util.List;
 public class CurrentBoardersFragment extends Fragment {
 
     private static final String TAG = "CurrentBoardersFragment";
+    private static final String ARG_USER_ID = "user_id";
 
     private RecyclerView recyclerView;
     private LinearLayout tvNoActiveRentals;
@@ -30,6 +32,15 @@ public class CurrentBoardersFragment extends Fragment {
     private List<BoarderData> currentBoarders;
     private BoarderApiService boarderApiService;
     private int userId;
+    private boolean hasLoaded = false;
+
+    public static CurrentBoardersFragment newInstance(int userId) {
+        CurrentBoardersFragment fragment = new CurrentBoardersFragment();
+        Bundle args = new Bundle();
+        args.putInt(ARG_USER_ID, userId);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -38,7 +49,7 @@ public class CurrentBoardersFragment extends Fragment {
 
         initViews(view);
         setupRecyclerView();
-        loadCurrentBoarders();
+        // Don't load immediately - wait for loadIfNeeded() to be called
 
         return view;
     }
@@ -47,25 +58,104 @@ public class CurrentBoardersFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerView);
         tvNoActiveRentals = view.findViewById(R.id.tvNoActiveRentals);
         
-        // Get userId from ActivityDetailsActivity
-        if (getActivity() != null) {
-            userId = getActivity().getIntent().getIntExtra("user_id", 0);
-            Log.d(TAG, "Received user_id: " + userId);
+        // Get userId from arguments
+        if (getArguments() != null) {
+            userId = getArguments().getInt(ARG_USER_ID, 0);
+            Log.d(TAG, "Received user_id from arguments: " + userId);
+        } else {
+            // Fallback: try to get from activity intent
+            if (getActivity() != null) {
+                userId = getActivity().getIntent().getIntExtra("user_id", 0);
+                Log.d(TAG, "Received user_id from intent: " + userId);
+            }
         }
+        
+        // Fallback to SharedPreferences if userId is still 0
+        if (userId <= 0 && getContext() != null) {
+            android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Got user_id from SharedPreferences: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences", e);
+                    userId = 0;
+                }
+            }
+        }
+        
+        Log.d(TAG, "Final user_id: " + userId);
         
         boarderApiService = new BoarderApiService(getContext());
         currentBoarders = new ArrayList<>();
+    }
+    
+    public void loadIfNeeded() {
+        // Try to get user_id again if it's still 0
+        if (userId <= 0 && getContext() != null) {
+            android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Got user_id from SharedPreferences in loadIfNeeded: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences in loadIfNeeded", e);
+                }
+            }
+        }
+        
+        if (!hasLoaded) {
+            if (userId > 0) {
+                hasLoaded = true;
+                Log.d(TAG, "Loading current boarders with user_id: " + userId);
+                loadCurrentBoarders();
+            } else {
+                Log.e(TAG, "Cannot load current boarders: user_id is still 0");
+            }
+        }
     }
 
     private void setupRecyclerView() {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new BoardersListAdapter(currentBoarders);
+        adapter.setOnBoarderClickListener(boarder -> {
+            // Open stay details activity
+            Intent intent = new Intent(getContext(), BoarderStayDetailsActivity.class);
+            intent.putExtra("boarder_id", boarder.getBoarderId());
+            intent.putExtra("boarder_name", boarder.getBoarderName());
+            intent.putExtra("boarder_email", boarder.getBoarderEmail());
+            intent.putExtra("boarder_phone", boarder.getBoarderPhone());
+            intent.putExtra("boarding_house_name", boarder.getBoardingHouseName());
+            intent.putExtra("room_number", boarder.getRoomNumber());
+            intent.putExtra("rent_type", boarder.getRentType());
+            intent.putExtra("start_date", boarder.getStartDate());
+            intent.putExtra("end_date", boarder.getEndDate());
+            intent.putExtra("status", boarder.getStatus());
+            intent.putExtra("profile_picture", boarder.getProfilePicture());
+            startActivity(intent);
+        });
         recyclerView.setAdapter(adapter);
     }
 
     private void loadCurrentBoarders() {
+        // Final check - try to get user_id from SharedPreferences if still 0
+        if (userId <= 0 && getContext() != null) {
+            android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Got user_id from SharedPreferences in loadCurrentBoarders: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences in loadCurrentBoarders", e);
+                }
+            }
+        }
+        
         if (userId <= 0) {
-            Log.e(TAG, "Invalid user_id: " + userId);
+            Log.e(TAG, "Invalid user_id: " + userId + ". Cannot load current boarders.");
             showEmptyState();
             return;
         }

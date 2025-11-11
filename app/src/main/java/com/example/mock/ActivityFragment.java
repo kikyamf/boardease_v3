@@ -1,7 +1,9 @@
 package com.example.mock;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +15,7 @@ import androidx.fragment.app.Fragment;
 
 public class ActivityFragment extends Fragment {
 
+    private static final String TAG = "ActivityFragment";
     private static final String ARG_USER_ID = "user_id";
     private LinearLayout layoutBookings, layoutPaymentStatus, layoutBoardersRented, layoutMaintenanceRequests, layoutReviews;
     private int userId;
@@ -32,8 +35,25 @@ public class ActivityFragment extends Fragment {
 
         // Get userId from arguments
         if (getArguments() != null) {
-            userId = getArguments().getInt(ARG_USER_ID);
+            userId = getArguments().getInt(ARG_USER_ID, 0);
         }
+        
+        // Fallback to SharedPreferences if userId is 0 or not set
+        if (userId <= 0) {
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Got user_id from SharedPreferences: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences", e);
+                    userId = 0;
+                }
+            }
+        }
+        
+        Log.d(TAG, "Final user_id: " + userId);
 
         // Bind Views
         layoutBookings = view.findViewById(R.id.layoutBookings);
@@ -61,6 +81,7 @@ public class ActivityFragment extends Fragment {
     private void openActivityDetails(String activityType) {
         Intent intent = new Intent(getContext(), ActivityDetailsActivity.class);
         intent.putExtra("activity_type", activityType);
+        intent.putExtra("user_id", userId);
         startActivity(intent);
     }
 

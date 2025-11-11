@@ -76,7 +76,7 @@ public class BoarderBookingFragment extends Fragment {
 
     // API
     private static final String TAG = "BoarderBookingFragment";
-    private static final String BASE_URL = "http://192.168.1.4/boardease_v3/";
+    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
     private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
     private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "BoardEase2/get_unpaid_payment_breakdowns.php";
     
@@ -764,6 +764,22 @@ public class BoarderBookingFragment extends Fragment {
                 TextView tvAmount = breakdownItem.findViewById(R.id.tvAmount);
                 TextView tvDueDate = breakdownItem.findViewById(R.id.tvDueDate);
                 TextView tvStatus = breakdownItem.findViewById(R.id.tvStatus);
+                
+                // Show/hide elements for BoarderBookingFragment usage
+                checkboxPeriod.setVisibility(View.VISIBLE);
+                tvPeriodDates.setVisibility(View.VISIBLE);
+                tvAmount.setVisibility(View.VISIBLE);
+                tvDueDate.setVisibility(View.VISIBLE);
+                tvStatus.setVisibility(View.VISIBLE);
+                
+                // Hide elements not used by BoarderBookingFragment
+                // Hide the LinearLayout containing start/end dates
+                View startDateParent = (View) breakdownItem.findViewById(R.id.tvPeriodStartDate).getParent();
+                if (startDateParent != null && startDateParent.getParent() instanceof View) {
+                    ((View) startDateParent.getParent()).setVisibility(View.GONE);
+                }
+                breakdownItem.findViewById(R.id.tvPeriodAmount).setVisibility(View.GONE);
+                breakdownItem.findViewById(R.id.tvPeriodStatus).setVisibility(View.GONE);
                 
                 // Set period data
                 tvPeriodLabel.setText(breakdown.getPeriodLabel());

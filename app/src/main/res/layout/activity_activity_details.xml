@@ -45,9 +45,13 @@
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:tabMode="scrollable"
+        app:tabGravity="center"
         app:tabTextColor="@color/gray"
         app:tabSelectedTextColor="@color/brown"
         app:tabIndicatorColor="@color/brown"
+        app:tabPaddingStart="16dp"
+        app:tabPaddingEnd="16dp"
         android:background="@android:color/white" />
 
     <!-- ViewPager2 -->

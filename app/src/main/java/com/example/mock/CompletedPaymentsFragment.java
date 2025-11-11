@@ -133,18 +133,20 @@ public class CompletedPaymentsFragment extends Fragment {
 
                 @Override
                 public void onViewDetails(PaymentData payment) {
-                    // Open payment details activity
+                    // Open payment details activity with all payments context (completed is similar to all)
                     android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
                     intent.putExtra("payment", payment);
+                    intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_ALL);
                     startActivity(intent);
                 }
             };
             
             if (adapter == null) {
-                adapter = new PaymentAdapter(completedPayments, listener);
+                adapter = new PaymentAdapter(completedPayments, listener, PaymentAdapter.VIEW_TYPE_ALL);
                 recyclerView.setAdapter(adapter);
             } else {
                 adapter.setActionListener(listener);
+                adapter.setViewType(PaymentAdapter.VIEW_TYPE_ALL);
                 adapter.notifyDataSetChanged();
             }
         }

@@ -36,7 +36,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private ImageView imgProfile;
     private TextView tvBoarderName, tvEmail, tvPhone, tvRoomName, tvBoardingHouseName, 
-                     tvBoardingHouseAddress, tvStartDate, tvEndDate, tvAmount, tvRentType, 
+                     tvBoardingHouseAddress, tvStartDate, tvEndDate, tvAmount, tvTotalBookingAmount, tvRentType, 
                      tvStatus, tvPaymentStatus, tvBookingDate;
     private MaterialButton btnApprove, btnDecline, btnContact, btnViewRoom;
     
@@ -107,6 +107,15 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 intent.getIntExtra("room_id", 0),
                 intent.getIntExtra("boarding_house_id", 0)
             );
+            
+            // Set payment progress fields from intent extras if available
+            if (intent.hasExtra("total_periods")) {
+                bookingData.setTotalPeriods(intent.getIntExtra("total_periods", 0));
+                bookingData.setPaidPeriods(intent.getIntExtra("paid_periods", 0));
+                bookingData.setTotalAmountForBooking(intent.getStringExtra("total_amount_for_booking"));
+                bookingData.setPaidAmountForBooking(intent.getStringExtra("paid_amount_for_booking"));
+                bookingData.setFullyPaid(intent.getBooleanExtra("is_fully_paid", false));
+            }
         } else {
             // Fallback to sample data if intent data is missing
         bookingData = new BookingData(
@@ -145,6 +154,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
         tvStartDate = findViewById(R.id.tvStartDate);
         tvEndDate = findViewById(R.id.tvEndDate);
         tvAmount = findViewById(R.id.tvAmount);
+        tvTotalBookingAmount = findViewById(R.id.tvTotalBookingAmount);
         tvRentType = findViewById(R.id.tvRentType);
         tvStatus = findViewById(R.id.tvStatus);
         tvPaymentStatus = findViewById(R.id.tvPaymentStatus);
@@ -174,7 +184,48 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvBoardingHouseAddress.setText(bookingData.getBoardingHouseAddress() != null ? bookingData.getBoardingHouseAddress() : "");
             tvStartDate.setText(bookingData.getStartDate() != null ? bookingData.getStartDate() : "");
             tvEndDate.setText(bookingData.getEndDate() != null ? bookingData.getEndDate() : "");
-            tvAmount.setText(bookingData.getAmount() != null ? bookingData.getAmount() : "");
+            
+            // Set room amount (monthly price) - this should ALWAYS be the room's monthly price
+            String roomAmount = bookingData.getAmount();
+            if (roomAmount != null && !roomAmount.isEmpty()) {
+                // Format if not already formatted
+                if (!roomAmount.startsWith("₱")) {
+                    tvAmount.setText("₱" + formatAmountForBooking(roomAmount));
+                } else {
+                    tvAmount.setText(roomAmount);
+                }
+            } else {
+                tvAmount.setText("₱0.00");
+            }
+            
+            // Set total booking amount (from payment_breakdowns) - this is the total amount for the entire booking
+            String totalBookingAmount = bookingData.getTotalAmountForBooking();
+            boolean hasValidTotal = false;
+            
+            if (totalBookingAmount != null && !totalBookingAmount.isEmpty() && !totalBookingAmount.equals("0.00")) {
+                try {
+                    double totalValue = Double.parseDouble(totalBookingAmount);
+                    if (totalValue > 0) {
+                        tvTotalBookingAmount.setText("₱" + formatAmountForBooking(totalBookingAmount));
+                        hasValidTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Will use fallback
+                }
+            }
+            
+            // Fallback to room amount if no valid total amount (but this should be rare)
+            if (!hasValidTotal) {
+                // If no breakdown exists, total amount = room amount (for single month bookings)
+                tvTotalBookingAmount.setText(tvAmount.getText());
+            }
+            
+            // Log for debugging
+            Log.d("BookingDetails", "Room Amount (monthly price): " + roomAmount + 
+                  ", Total Booking Amount (from breakdowns): " + totalBookingAmount + 
+                  ", Displayed Room Amount: " + tvAmount.getText() +
+                  ", Displayed Total Amount: " + tvTotalBookingAmount.getText());
+            
             tvRentType.setText(bookingData.getRentType() != null ? bookingData.getRentType() : "");
             
             // Set status with styling
@@ -182,12 +233,63 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvStatus.setText(status);
             applyStatusStyle(tvStatus, status);
             
-            // Set payment status with styling
-            String paymentStatus = bookingData.getPaymentStatus() != null ? bookingData.getPaymentStatus() : "";
-            tvPaymentStatus.setText(paymentStatus);
-            applyPaymentStatusStyle(tvPaymentStatus, paymentStatus);
+            // Set payment status with styling - use payment_status from database (source of truth)
+            // The database payment_status is already calculated and updated correctly by update_payment_status.php
+            // We should use the database value, not recalculate from breakdowns
+            String paymentStatus = bookingData.getPaymentStatus();
+            
+            // If payment_status is null or empty, fallback to "Pending"
+            if (paymentStatus == null || paymentStatus.isEmpty()) {
+                paymentStatus = "Pending";
+            }
+            
+            // Log for debugging
+            int totalPeriods = bookingData.getTotalPeriods();
+            int paidPeriods = bookingData.getPaidPeriods();
+            Log.d("BookingDetails", "Payment Status from database: " + paymentStatus + 
+                  ", Total Periods: " + totalPeriods + 
+                  ", Paid Periods: " + paidPeriods);
+            
+            // Set payment status text and styling
+            if (tvPaymentStatus != null) {
+                // Ensure payment status has a value
+                if (paymentStatus == null || paymentStatus.isEmpty()) {
+                    paymentStatus = "Pending";
+                }
+                
+                // Set text first
+                tvPaymentStatus.setText(paymentStatus);
+                
+                // Clear any default styling from XML first
+                tvPaymentStatus.setBackground(null);
+                
+                // Apply correct styling based on status (this will set both background and text color)
+                applyPaymentStatusStyle(tvPaymentStatus, paymentStatus);
+                
+                // Ensure text is visible
+                tvPaymentStatus.setVisibility(View.VISIBLE);
+                
+                // Log for debugging
+                Log.d("BookingDetails", "Payment Status: " + paymentStatus + 
+                      ", Total Periods: " + totalPeriods + 
+                      ", Paid Periods: " + paidPeriods + 
+                      ", Payment Status Text: " + tvPaymentStatus.getText());
+            }
             
             tvBookingDate.setText(bookingData.getBookingDate() != null ? bookingData.getBookingDate() : "");
+            
+            // NOTE: Do NOT overwrite tvAmount (Room Amount) here - it should always show the room's monthly price
+            // tvAmount is already set correctly above from bookingData.getAmount() (room price)
+            // tvTotalBookingAmount is already set correctly above from bookingData.getTotalAmountForBooking()
+            
+            // Log payment info for debugging
+            String totalAmountForBooking = bookingData.getTotalAmountForBooking();
+            String paidAmountForBooking = bookingData.getPaidAmountForBooking();
+            Log.d("BookingDetails", "Payment Info - Total Periods: " + totalPeriods + 
+                  ", Paid Periods: " + paidPeriods + 
+                  ", Total Amount: " + totalAmountForBooking + 
+                  ", Paid Amount: " + paidAmountForBooking + 
+                  ", Room Amount: " + roomAmount);
             
             // Set profile image (placeholder for now)
             if (imgProfile != null) {
@@ -237,16 +339,32 @@ public class BookingDetailsActivity extends AppCompatActivity {
     }
     
     private void applyPaymentStatusStyle(TextView textView, String paymentStatus) {
-        if (textView == null || paymentStatus == null) return;
+        if (textView == null || paymentStatus == null || paymentStatus.isEmpty()) {
+            Log.w("BookingDetails", "Cannot apply payment status style - textView or paymentStatus is null/empty");
+            return;
+        }
         
         int textColor;
         int backgroundRes;
         
-        switch (paymentStatus.toLowerCase()) {
+        String statusLower = paymentStatus.toLowerCase().trim();
+        Log.d("BookingDetails", "Applying payment status style for: " + statusLower);
+        
+        switch (statusLower) {
+            case "fully paid":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_approved;
+                break;
             case "paid":
             case "confirmed":
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "completed":
+            case "completed/partially":
+            case "completed_partially":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_completed;
                 break;
             case "overdue":
             case "cancelled":
@@ -261,9 +379,33 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         int padding = (int) (12 * getResources().getDisplayMetrics().density);
+        
+        // Ensure text is set before styling
+        if (textView.getText() == null || textView.getText().toString().isEmpty()) {
+            textView.setText(paymentStatus);
+        }
+        
+        // Apply styling
         textView.setTextColor(textColor);
         textView.setBackgroundResource(backgroundRes);
         textView.setPadding(padding, padding / 2, padding, padding / 2);
+        
+        // Ensure visibility
+        textView.setVisibility(View.VISIBLE);
+        
+        Log.d("BookingDetails", "Payment status styled - Text: " + textView.getText() + 
+              ", Background: " + backgroundRes + 
+              ", Text Color: " + textColor);
+    }
+    
+    private String formatAmountForBooking(String amount) {
+        try {
+            double amountValue = Double.parseDouble(amount);
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+            return formatter.format(amountValue);
+        } catch (NumberFormatException e) {
+            return amount;
+        }
     }
     
     private void updateActionButtons() {

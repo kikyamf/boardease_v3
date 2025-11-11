@@ -20,6 +20,19 @@ public class BookingData {
     private int boarderId;
     private int roomId;
     private int boardingHouseId;
+    
+    // Payment progress fields
+    private int totalPeriods;
+    private int paidPeriods;
+    private int unpaidPeriods;
+    private int totalMonthsForBooking;
+    private int paidMonthsForBooking;
+    private Integer remainingMonthsToPay;
+    private String totalAmountForBooking;
+    private String paidAmountForBooking;
+    private String remainingAmountToPay;
+    private boolean isFullyPaid;
+    private double paymentProgressPercent;
 
     // Original constructor for backward compatibility
     public BookingData(String boarderName, String email, String phoneNumber, String roomName, 
@@ -103,6 +116,32 @@ public class BookingData {
     public void setBoarderId(int boarderId) { this.boarderId = boarderId; }
     public void setRoomId(int roomId) { this.roomId = roomId; }
     public void setBoardingHouseId(int boardingHouseId) { this.boardingHouseId = boardingHouseId; }
+    
+    // Payment progress getters
+    public int getTotalPeriods() { return totalPeriods; }
+    public int getPaidPeriods() { return paidPeriods; }
+    public int getUnpaidPeriods() { return unpaidPeriods; }
+    public int getTotalMonthsForBooking() { return totalMonthsForBooking; }
+    public int getPaidMonthsForBooking() { return paidMonthsForBooking; }
+    public Integer getRemainingMonthsToPay() { return remainingMonthsToPay; }
+    public String getTotalAmountForBooking() { return totalAmountForBooking; }
+    public String getPaidAmountForBooking() { return paidAmountForBooking; }
+    public String getRemainingAmountToPay() { return remainingAmountToPay; }
+    public boolean isFullyPaid() { return isFullyPaid; }
+    public double getPaymentProgressPercent() { return paymentProgressPercent; }
+    
+    // Payment progress setters
+    public void setTotalPeriods(int totalPeriods) { this.totalPeriods = totalPeriods; }
+    public void setPaidPeriods(int paidPeriods) { this.paidPeriods = paidPeriods; }
+    public void setUnpaidPeriods(int unpaidPeriods) { this.unpaidPeriods = unpaidPeriods; }
+    public void setTotalMonthsForBooking(int totalMonthsForBooking) { this.totalMonthsForBooking = totalMonthsForBooking; }
+    public void setPaidMonthsForBooking(int paidMonthsForBooking) { this.paidMonthsForBooking = paidMonthsForBooking; }
+    public void setRemainingMonthsToPay(Integer remainingMonthsToPay) { this.remainingMonthsToPay = remainingMonthsToPay; }
+    public void setTotalAmountForBooking(String totalAmountForBooking) { this.totalAmountForBooking = totalAmountForBooking; }
+    public void setPaidAmountForBooking(String paidAmountForBooking) { this.paidAmountForBooking = paidAmountForBooking; }
+    public void setRemainingAmountToPay(String remainingAmountToPay) { this.remainingAmountToPay = remainingAmountToPay; }
+    public void setFullyPaid(boolean isFullyPaid) { this.isFullyPaid = isFullyPaid; }
+    public void setPaymentProgressPercent(double paymentProgressPercent) { this.paymentProgressPercent = paymentProgressPercent; }
 }
 
 

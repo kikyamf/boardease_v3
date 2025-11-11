@@ -143,9 +143,10 @@ public class AllPaymentsFragment extends Fragment {
 
                 @Override
                 public void onViewDetails(PaymentData payment) {
-                    // Open payment details activity
+                    // Open payment details activity with all payments context
                     android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
                     intent.putExtra("payment", payment);
+                    intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_ALL);
                     startActivity(intent);
                 }
             };

@@ -1,6 +1,8 @@
 package com.example.mock;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -16,12 +18,14 @@ import com.google.android.material.tabs.TabLayoutMediator;
 
 public class ActivityDetailsActivity extends AppCompatActivity {
 
+    private static final String TAG = "ActivityDetailsActivity";
     private ImageView ivBack;
     private TextView tvTitle;
     private TabLayout tabLayout;
     private ViewPager2 viewPager;
     private ActivityDetailsPagerAdapter pagerAdapter;
     private String activityType;
+    private int userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +34,26 @@ public class ActivityDetailsActivity extends AppCompatActivity {
 
         // Get activity type from intent
         activityType = getIntent().getStringExtra("activity_type");
+        
+        // Get user_id from intent
+        userId = getIntent().getIntExtra("user_id", 0);
+        
+        // Fallback to SharedPreferences if userId is 0 or not set
+        if (userId <= 0) {
+            SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", null);
+            if (userIdString != null) {
+                try {
+                    userId = Integer.parseInt(userIdString);
+                    Log.d(TAG, "Got user_id from SharedPreferences: " + userId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing user_id from SharedPreferences", e);
+                    userId = 0;
+                }
+            }
+        }
+        
+        Log.d(TAG, "Final user_id: " + userId);
 
         initializeViews();
         setupClickListeners();
@@ -55,9 +79,18 @@ public class ActivityDetailsActivity extends AppCompatActivity {
     }
 
     private void setupViewPager() {
-        // Get user_id from intent
-        int userId = getIntent().getIntExtra("user_id", 0);
+        // Configure tab layout based on activity type BEFORE setting adapter
+        if ("payment_status".equals(activityType)) {
+            // Payment status has 5 tabs - use scrollable mode to prevent text cutoff
+            tabLayout.setTabMode(com.google.android.material.tabs.TabLayout.MODE_SCROLLABLE);
+            tabLayout.setTabGravity(com.google.android.material.tabs.TabLayout.GRAVITY_CENTER);
+        } else if ("boarders_rented".equals(activityType)) {
+            // Boarders rented has 2 tabs - use fixed mode for balanced layout
+            tabLayout.setTabMode(com.google.android.material.tabs.TabLayout.MODE_FIXED);
+            tabLayout.setTabGravity(com.google.android.material.tabs.TabLayout.GRAVITY_FILL);
+        }
         
+        // userId is already set in onCreate
         pagerAdapter = new ActivityDetailsPagerAdapter(this, activityType, userId);
         viewPager.setAdapter(pagerAdapter);
         
@@ -77,6 +110,12 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                     case 2:
                         tab.setText("Pending");
                         break;
+                    case 3:
+                        tab.setText("Fully Paid");
+                        break;
+                    case 4:
+                        tab.setText("Remaining");
+                        break;
                 }
             } else if ("boarders_rented".equals(activityType)) {
                 switch (position) {
@@ -89,6 +128,25 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                 }
             }
         }).attach();
+        
+        // Ensure tab text stays on one line and doesn't get cut
+        tabLayout.post(() -> {
+            for (int i = 0; i < tabLayout.getTabCount(); i++) {
+                com.google.android.material.tabs.TabLayout.Tab tab = tabLayout.getTabAt(i);
+                if (tab != null && tab.view != null) {
+                    // Find the TextView in the tab view
+                    for (int j = 0; j < tab.view.getChildCount(); j++) {
+                        android.view.View child = tab.view.getChildAt(j);
+                        if (child instanceof android.widget.TextView) {
+                            android.widget.TextView textView = (android.widget.TextView) child;
+                            textView.setSingleLine(true);
+                            textView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                            textView.setMaxLines(1);
+                        }
+                    }
+                }
+            }
+        });
         
         // Listen for page changes to trigger load when tab is clicked
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -129,9 +187,22 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                             } else if (position == 2 && fragment instanceof PendingPaymentsFragment) {
                                 // Pending tab
                                 ((PendingPaymentsFragment) fragment).loadIfNeeded();
+                            } else if (position == 3 && fragment instanceof FullyPaidPaymentsFragment) {
+                                // Fully Paid tab
+                                ((FullyPaidPaymentsFragment) fragment).loadIfNeeded();
+                            } else if (position == 4 && fragment instanceof RemainingPaymentsFragment) {
+                                // Remaining tab
+                                ((RemainingPaymentsFragment) fragment).loadIfNeeded();
+                            }
+                        } else if ("boarders_rented".equals(activityType)) {
+                            if (position == 0 && fragment instanceof CurrentBoardersFragment) {
+                                // Current boarders tab
+                                ((CurrentBoardersFragment) fragment).loadIfNeeded();
+                            } else if (position == 1 && fragment instanceof BoardersHistoryFragment) {
+                                // History tab
+                                ((BoardersHistoryFragment) fragment).loadIfNeeded();
                             }
                         }
-                        // Add boarders_rented handling if needed in the future
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -155,34 +226,58 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
+            Bundle args = new Bundle();
+            args.putInt("user_id", userId);
+            
             if ("payment_status".equals(activityType)) {
                 switch (position) {
                     case 0:
-                        return new AllPaymentsFragment();
+                        AllPaymentsFragment allPaymentsFragment = new AllPaymentsFragment();
+                        allPaymentsFragment.setArguments(args);
+                        return allPaymentsFragment;
                     case 1:
-                        return new CompletedPaymentsFragment();
+                        CompletedPaymentsFragment completedFragment = new CompletedPaymentsFragment();
+                        completedFragment.setArguments(args);
+                        return completedFragment;
                     case 2:
-                        return new PendingPaymentsFragment();
+                        PendingPaymentsFragment pendingFragment = new PendingPaymentsFragment();
+                        pendingFragment.setArguments(args);
+                        return pendingFragment;
+                    case 3:
+                        FullyPaidPaymentsFragment fullyPaidFragment = new FullyPaidPaymentsFragment();
+                        fullyPaidFragment.setArguments(args);
+                        return fullyPaidFragment;
+                    case 4:
+                        RemainingPaymentsFragment remainingFragment = new RemainingPaymentsFragment();
+                        remainingFragment.setArguments(args);
+                        return remainingFragment;
                     default:
-                        return new AllPaymentsFragment();
+                        AllPaymentsFragment defaultFragment = new AllPaymentsFragment();
+                        defaultFragment.setArguments(args);
+                        return defaultFragment;
                 }
             } else if ("boarders_rented".equals(activityType)) {
                 switch (position) {
                     case 0:
-                        return new CurrentBoardersFragment();
+                        CurrentBoardersFragment currentFragment = CurrentBoardersFragment.newInstance(userId);
+                        return currentFragment;
                     case 1:
-                        return new BoardersHistoryFragment();
+                        BoardersHistoryFragment historyFragment = BoardersHistoryFragment.newInstance(userId);
+                        return historyFragment;
                     default:
-                        return new CurrentBoardersFragment();
+                        CurrentBoardersFragment defaultFragment = CurrentBoardersFragment.newInstance(userId);
+                        return defaultFragment;
                 }
             }
-            return new AllPaymentsFragment();
+            AllPaymentsFragment defaultFragment = new AllPaymentsFragment();
+            defaultFragment.setArguments(args);
+            return defaultFragment;
         }
 
         @Override
         public int getItemCount() {
             if ("payment_status".equals(activityType)) {
-                return 3; // All Payments, Completed, Pending
+                return 5; // All Payments, Completed, Pending, Fully Paid, Remaining
             } else if ("boarders_rented".equals(activityType)) {
                 return 2; // Current, History
             }

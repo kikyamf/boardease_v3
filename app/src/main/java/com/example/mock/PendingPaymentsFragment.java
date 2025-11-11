@@ -133,18 +133,20 @@ public class PendingPaymentsFragment extends Fragment {
 
                 @Override
                 public void onViewDetails(PaymentData payment) {
-                    // Open payment details activity
+                    // Open payment details activity with remaining context (pending usually has remaining balance)
                     android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
                     intent.putExtra("payment", payment);
+                    intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_REMAINING);
                     startActivity(intent);
                 }
             };
             
             if (adapter == null) {
-                adapter = new PaymentAdapter(pendingPayments, listener);
+                adapter = new PaymentAdapter(pendingPayments, listener, PaymentAdapter.VIEW_TYPE_ALL);
                 recyclerView.setAdapter(adapter);
             } else {
                 adapter.setActionListener(listener);
+                adapter.setViewType(PaymentAdapter.VIEW_TYPE_ALL);
                 adapter.notifyDataSetChanged();
             }
         }

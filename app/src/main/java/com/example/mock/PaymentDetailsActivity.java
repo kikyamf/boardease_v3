@@ -14,11 +14,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.button.MaterialButton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PaymentDetailsActivity extends AppCompatActivity implements PaymentAdapter.PaymentActionListener {
 
@@ -28,11 +37,16 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
     private TextView tvBoarderName, tvEmail, tvPhone, tvRoom, tvRentType, tvAmountPaid, tvTotalAmount;
     private TextView tvPaymentStatus, tvRentalStatus, tvPaymentDate, tvDueDate;
     private TextView tvPaymentMethod, tvNotes, tvCreatedAt, tvUpdatedAt, tvButtonInfo, tvNoProof;
+    private TextView tvNoBreakdown;
     private MaterialButton btnMarkAsPaid, btnMarkAsOverdue;
+    private RecyclerView recyclerViewBreakdown;
+    private PaymentBreakdownAdapter breakdownAdapter;
+    private List<PaymentBreakdownItem> breakdownItems;
     
     private PaymentData payment;
     private PaymentApiService paymentApiService;
     private ProgressDialog progressDialog;
+    private int viewType = PaymentAdapter.VIEW_TYPE_ALL; // Default to all payments view
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +61,19 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             return;
         }
 
+        // Get view type from intent (which tab it came from)
+        viewType = getIntent().getIntExtra("view_type", PaymentAdapter.VIEW_TYPE_ALL);
+
         initializeViews();
         setupClickListeners();
         populateData();
+        adjustUIForViewType();
         
         // Initialize API service
         paymentApiService = new PaymentApiService(this);
+        
+        // Load payment breakdown
+        loadPaymentBreakdown();
     }
 
     private void initializeViews() {
@@ -80,6 +101,14 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         
         btnMarkAsPaid = findViewById(R.id.btnMarkAsPaid);
         btnMarkAsOverdue = findViewById(R.id.btnMarkAsOverdue);
+        
+        // Breakdown views
+        recyclerViewBreakdown = findViewById(R.id.recyclerViewBreakdown);
+        tvNoBreakdown = findViewById(R.id.tvNoBreakdown);
+        breakdownItems = new ArrayList<>();
+        breakdownAdapter = new PaymentBreakdownAdapter(breakdownItems);
+        recyclerViewBreakdown.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewBreakdown.setAdapter(breakdownAdapter);
     }
 
     private void setupClickListeners() {
@@ -123,9 +152,208 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvRoom.setText(payment.getRoom() != null ? payment.getRoom() : "Room N/A");
         tvRentType.setText(payment.getRentType() != null ? payment.getRentType() : "N/A");
         
-        // Set payment amounts
-        tvAmountPaid.setText(payment.getAmountPaid() != null ? payment.getAmountPaid() : "₱0.00");
-        tvTotalAmount.setText(payment.getTotalAmount() != null ? payment.getTotalAmount() : "₱0.00");
+        // Set payment amounts based on view type
+        if (viewType == PaymentAdapter.VIEW_TYPE_FULLY_PAID) {
+            // For fully paid, show both amount paid and total amount
+            tvAmountPaid.setVisibility(View.VISIBLE);
+            
+            // Show amount paid with fallback logic
+            String paidAmount = payment.getPaidAmountForBooking();
+            boolean useBookingPaid = false;
+            if (paidAmount != null && !paidAmount.isEmpty()) {
+                try {
+                    double paidValue = Double.parseDouble(paidAmount);
+                    if (paidValue > 0) {
+                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
+                        useBookingPaid = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will fall back
+                }
+            }
+            
+            if (!useBookingPaid) {
+                // Fall back to regular amount_paid field
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    tvAmountPaid.setText(fallbackPaid);
+                } else {
+                    tvAmountPaid.setText("₱0.00");
+                }
+            }
+            
+            // Show total amount with fallback logic
+            String totalAmount = payment.getTotalAmountForBooking();
+            boolean useBookingTotal = false;
+            if (totalAmount != null && !totalAmount.isEmpty()) {
+                try {
+                    double totalValue = Double.parseDouble(totalAmount);
+                    if (totalValue > 0) {
+                        tvTotalAmount.setText("₱" + formatAmountForDetails(totalAmount));
+                        useBookingTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will fall back
+                }
+            }
+            
+            if (!useBookingTotal) {
+                // Fall back to regular total_amount field
+                String fallbackTotal = payment.getTotalAmount();
+                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
+                    tvTotalAmount.setText(fallbackTotal);
+                } else {
+                    tvTotalAmount.setText("₱0.00");
+                }
+            }
+        } else if (viewType == PaymentAdapter.VIEW_TYPE_REMAINING) {
+            // For remaining, show paid and remaining amounts with fallback logic
+            // Show amount paid with fallback logic
+            String paidAmount = payment.getPaidAmountForBooking();
+            boolean useBookingPaid = false;
+            if (paidAmount != null && !paidAmount.isEmpty()) {
+                try {
+                    double paidValue = Double.parseDouble(paidAmount);
+                    if (paidValue > 0) {
+                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
+                        useBookingPaid = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will fall back
+                }
+            }
+            
+            if (!useBookingPaid) {
+                // Fall back to regular amount_paid field
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    tvAmountPaid.setText(fallbackPaid);
+                } else {
+                    tvAmountPaid.setText("₱0.00");
+                }
+            }
+            
+            // Show remaining amount with fallback logic
+            String remainingAmount = payment.getRemainingAmountToPay();
+            boolean useBookingRemaining = false;
+            if (remainingAmount != null && !remainingAmount.isEmpty()) {
+                try {
+                    double remainingValue = Double.parseDouble(remainingAmount);
+                    if (remainingValue > 0) {
+                        tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(remainingAmount));
+                        useBookingRemaining = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will calculate
+                }
+            }
+            
+            if (!useBookingRemaining) {
+                // Calculate remaining from total and paid if breakdown amounts are not available
+                String totalAmt = payment.getTotalAmountForBooking();
+                String paidAmt = payment.getPaidAmountForBooking();
+                boolean calculated = false;
+                
+                if (totalAmt != null && !totalAmt.isEmpty() && paidAmt != null && !paidAmt.isEmpty()) {
+                    try {
+                        double total = Double.parseDouble(totalAmt);
+                        double paid = Double.parseDouble(paidAmt);
+                        if (total > 0) {
+                            double remaining = total - paid;
+                            if (remaining > 0) {
+                                tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(String.valueOf(remaining)));
+                                calculated = true;
+                            } else {
+                                tvTotalAmount.setText("Remaining: ₱0.00");
+                                calculated = true;
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // Will try fallback
+                    }
+                }
+                
+                if (!calculated) {
+                    // Fall back to calculating from regular amounts
+                    String fallbackTotal = payment.getTotalAmount();
+                    String fallbackPaid = payment.getAmountPaid();
+                    if (fallbackTotal != null && fallbackPaid != null) {
+                        try {
+                            // Remove ₱ and commas, then parse
+                            String totalStr = fallbackTotal.replace("₱", "").replace(",", "").trim();
+                            String paidStr = fallbackPaid.replace("₱", "").replace(",", "").trim();
+                            if (!totalStr.isEmpty() && !paidStr.isEmpty()) {
+                                double total = Double.parseDouble(totalStr);
+                                double paid = Double.parseDouble(paidStr);
+                                double remaining = total - paid;
+                                if (remaining > 0) {
+                                    tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(String.valueOf(remaining)));
+                                } else {
+                                    tvTotalAmount.setText("Remaining: ₱0.00");
+                                }
+                            } else {
+                                tvTotalAmount.setText("Remaining: ₱0.00");
+                            }
+                        } catch (NumberFormatException e) {
+                            tvTotalAmount.setText("Remaining: ₱0.00");
+                        }
+                    } else {
+                        tvTotalAmount.setText("Remaining: ₱0.00");
+                    }
+                }
+            }
+        } else {
+            // For all payments, show standard amounts with fallback logic
+            // Use accurate amounts from payment_breakdowns if available and valid (> 0)
+            // Otherwise fall back to regular payment amounts
+            String paidAmount = payment.getPaidAmountForBooking();
+            boolean useBookingPaid = false;
+            if (paidAmount != null && !paidAmount.isEmpty()) {
+                try {
+                    double paidValue = Double.parseDouble(paidAmount);
+                    if (paidValue > 0) {
+                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
+                        useBookingPaid = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will fall back
+                }
+            }
+            
+            if (!useBookingPaid) {
+                // Fall back to regular amount_paid field
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    tvAmountPaid.setText(fallbackPaid);
+                } else {
+                    tvAmountPaid.setText("₱0.00");
+                }
+            }
+            
+            String totalAmount = payment.getTotalAmountForBooking();
+            boolean useBookingTotal = false;
+            if (totalAmount != null && !totalAmount.isEmpty()) {
+                try {
+                    double totalValue = Double.parseDouble(totalAmount);
+                    if (totalValue > 0) {
+                        tvTotalAmount.setText("₱" + formatAmountForDetails(totalAmount));
+                        useBookingTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number, will fall back
+                }
+            }
+            
+            if (!useBookingTotal) {
+                // Fall back to regular total_amount field
+                String fallbackTotal = payment.getTotalAmount();
+                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
+                    tvTotalAmount.setText(fallbackTotal);
+                } else {
+                    tvTotalAmount.setText("₱0.00");
+                }
+            }
+        }
         
         // Set payment method
         tvPaymentMethod.setText(payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "N/A");
@@ -134,8 +362,24 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvPaymentDate.setText(payment.getPaymentDate() != null ? payment.getPaymentDate() : "N/A");
         tvDueDate.setText(payment.getDueDate() != null && !payment.getDueDate().isEmpty() ? payment.getDueDate() : "N/A");
         
-        // Set status with styling
-        String paymentStatus = payment.getPaymentStatus() != null ? payment.getPaymentStatus() : "";
+        // Set status with styling - determine status based on payment breakdown
+        String paymentStatus;
+        boolean isFullyPaid = payment.isFullyPaid();
+        int totalPeriods = payment.getTotalPeriods();
+        int paidPeriods = payment.getPaidPeriods();
+        
+        // Determine payment status based on payment breakdown
+        if (isFullyPaid && totalPeriods > 0 && paidPeriods >= totalPeriods) {
+            // Fully paid: all periods are paid
+            paymentStatus = "Fully Paid";
+        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+            // Partially paid: some periods paid but not all
+            paymentStatus = "Completed";
+        } else {
+            // Not paid yet or no breakdown data: use original payment status
+            paymentStatus = payment.getPaymentStatus() != null ? payment.getPaymentStatus() : "Pending";
+        }
+        
         tvPaymentStatus.setText(paymentStatus);
         applyPaymentStatusStyle(tvPaymentStatus, paymentStatus);
         
@@ -300,10 +544,18 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         int backgroundRes;
         
         switch (paymentStatus.toLowerCase()) {
-            case "paid":
-            case "completed":
+            case "fully paid":
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "paid":
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "completed":
+                // Completed means paid but may have remaining balance - use blue color
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_completed;
                 break;
             case "overdue":
             case "failed":
@@ -324,6 +576,50 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         textView.setPadding(padding, padding / 2, padding, padding / 2);
     }
 
+    private void adjustUIForViewType() {
+        // Adjust UI based on which tab the payment came from
+        switch (viewType) {
+            case PaymentAdapter.VIEW_TYPE_FULLY_PAID:
+                // Fully Paid: Hide action buttons, show completion message
+                // Payment proof should still be visible if it exists
+                if (btnMarkAsPaid != null) btnMarkAsPaid.setVisibility(View.GONE);
+                if (btnMarkAsOverdue != null) btnMarkAsOverdue.setVisibility(View.GONE);
+                if (tvButtonInfo != null) {
+                    tvButtonInfo.setText("This booking is fully paid. All payment periods have been completed.");
+                    tvButtonInfo.setVisibility(View.VISIBLE);
+                }
+                // Ensure payment proof section is visible (it's loaded in populateData)
+                break;
+            case PaymentAdapter.VIEW_TYPE_REMAINING:
+                // Remaining: Show action buttons for updating payment status
+                // Payment proof should be visible - important for verifying payments
+                updateButtonVisibility();
+                break;
+            case PaymentAdapter.VIEW_TYPE_ALL:
+            default:
+                // All Payments: Check if fully paid first, then show action buttons based on payment status
+                // If fully paid, hide buttons (same as Fully Paid tab)
+                boolean isFullyPaid = payment.isFullyPaid();
+                if (isFullyPaid) {
+                    // Hide buttons for fully paid payments
+                    if (btnMarkAsPaid != null) btnMarkAsPaid.setVisibility(View.GONE);
+                    if (btnMarkAsOverdue != null) btnMarkAsOverdue.setVisibility(View.GONE);
+                    if (tvButtonInfo != null) {
+                        tvButtonInfo.setText("This booking is fully paid. All payment periods have been completed.");
+                        tvButtonInfo.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    // Not fully paid, show buttons based on payment status
+                    updateButtonVisibility();
+                }
+                // Payment proof should be visible
+                break;
+        }
+        
+        // Payment proof section should always be visible if payment has proof
+        // It's already handled in loadPaymentProof() method
+    }
+    
     private void updateButtonVisibility() {
         String status = payment.getPaymentStatus() != null ? payment.getPaymentStatus().toLowerCase() : "";
         String infoText = "";
@@ -446,6 +742,79 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
+    }
+    
+    private String formatAmountForDetails(String amount) {
+        // Format amount with commas (e.g., "1000.00" -> "1,000.00")
+        try {
+            double amountValue = Double.parseDouble(amount);
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+            return formatter.format(amountValue);
+        } catch (NumberFormatException e) {
+            return amount;
+        }
+    }
+
+    private void loadPaymentBreakdown() {
+        if (payment == null) {
+            android.util.Log.e("PaymentDetails", "Payment is null, cannot load breakdown");
+            // Hide breakdown section if no payment
+            if (recyclerViewBreakdown != null) {
+                recyclerViewBreakdown.setVisibility(View.GONE);
+            }
+            if (tvNoBreakdown != null) {
+                tvNoBreakdown.setVisibility(View.VISIBLE);
+                tvNoBreakdown.setText("Payment data not available");
+            }
+            return;
+        }
+        
+        int bookingId = payment.getBookingId();
+        android.util.Log.d("PaymentDetails", "Loading payment breakdown for booking_id: " + bookingId);
+        android.util.Log.d("PaymentDetails", "Payment ID: " + payment.getPaymentId());
+        android.util.Log.d("PaymentDetails", "Payment data - paid_amount_for_booking: " + payment.getPaidAmountForBooking());
+        android.util.Log.d("PaymentDetails", "Payment data - total_amount_for_booking: " + payment.getTotalAmountForBooking());
+        android.util.Log.d("PaymentDetails", "Payment data - amount_paid: " + payment.getAmountPaid());
+        android.util.Log.d("PaymentDetails", "Payment data - total_amount: " + payment.getTotalAmount());
+        
+        if (bookingId == 0) {
+            android.util.Log.w("PaymentDetails", "Booking ID is 0, cannot load breakdown");
+            // Hide breakdown section if no booking ID
+            if (recyclerViewBreakdown != null) {
+                recyclerViewBreakdown.setVisibility(View.GONE);
+            }
+            if (tvNoBreakdown != null) {
+                tvNoBreakdown.setVisibility(View.VISIBLE);
+                tvNoBreakdown.setText("Booking information not available");
+            }
+            return;
+        }
+
+        paymentApiService.getPaymentBreakdown(bookingId, new PaymentApiService.PaymentBreakdownCallback() {
+            @Override
+            public void onSuccess(List<PaymentBreakdownItem> breakdowns) {
+                breakdownItems.clear();
+                breakdownItems.addAll(breakdowns);
+                breakdownAdapter.notifyDataSetChanged();
+                
+                // Show/hide views based on data
+                if (breakdownItems.isEmpty()) {
+                    recyclerViewBreakdown.setVisibility(View.GONE);
+                    tvNoBreakdown.setVisibility(View.VISIBLE);
+                } else {
+                    recyclerViewBreakdown.setVisibility(View.VISIBLE);
+                    tvNoBreakdown.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                android.util.Log.e("PaymentDetails", "Error loading payment breakdown: " + error);
+                recyclerViewBreakdown.setVisibility(View.GONE);
+                tvNoBreakdown.setVisibility(View.VISIBLE);
+                tvNoBreakdown.setText("Unable to load payment breakdown");
+            }
+        });
     }
 
     // PaymentActionListener implementation (for compatibility)

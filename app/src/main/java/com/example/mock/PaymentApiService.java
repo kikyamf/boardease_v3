@@ -214,6 +214,94 @@ public class PaymentApiService {
         requestQueue.add(request);
     }
 
+    // Get fully paid bookings (all periods paid)
+    public void getFullyPaidPayments(int ownerId, PaymentListCallback callback) {
+        String url = BASE_URL + "get_payment_status.php";
+        
+        JSONObject params = new JSONObject();
+        try {
+            params.put("owner_id", ownerId);
+            params.put("status", "fully_paid");
+        } catch (JSONException e) {
+            callback.onError("Error creating request parameters");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            List<PaymentData> payments = parsePaymentList(data.getJSONArray("payments"));
+                            callback.onSuccess(payments);
+                        } else {
+                            callback.onError(response.getString("error"));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing response", e);
+                        callback.onError("Error parsing response");
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Volley error", error);
+                    callback.onError("Network error: " + error.getMessage());
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+
+        requestQueue.add(request);
+    }
+
+    // Get remaining payments (bookings with unpaid periods)
+    public void getRemainingPayments(int ownerId, PaymentListCallback callback) {
+        String url = BASE_URL + "get_payment_status.php";
+        
+        JSONObject params = new JSONObject();
+        try {
+            params.put("owner_id", ownerId);
+            params.put("status", "remaining");
+        } catch (JSONException e) {
+            callback.onError("Error creating request parameters");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            List<PaymentData> payments = parsePaymentList(data.getJSONArray("payments"));
+                            callback.onSuccess(payments);
+                        } else {
+                            callback.onError(response.getString("error"));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing response", e);
+                        callback.onError("Error parsing response");
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Volley error", error);
+                    callback.onError("Network error: " + error.getMessage());
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+
+        requestQueue.add(request);
+    }
+
     // Get overdue payments
     public void getOverduePayments(int ownerId, PaymentListCallback callback) {
         String url = BASE_URL + "get_payment_status.php";
@@ -315,6 +403,85 @@ public class PaymentApiService {
         };
 
         requestQueue.add(request);
+    }
+
+    // Get payment breakdown for a booking
+    public void getPaymentBreakdown(int bookingId, PaymentBreakdownCallback callback) {
+        String url = BASE_URL + "get_payment_breakdown.php";
+        
+        JSONObject params = new JSONObject();
+        try {
+            params.put("booking_id", bookingId);
+        } catch (JSONException e) {
+            callback.onError("Error creating request parameters");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            List<PaymentBreakdownItem> breakdowns = parseBreakdownList(data.getJSONArray("breakdowns"));
+                            callback.onSuccess(breakdowns);
+                        } else {
+                            callback.onError(response.getString("error"));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing response", e);
+                        callback.onError("Error parsing response");
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Volley error", error);
+                    callback.onError("Network error: " + error.getMessage());
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+
+        requestQueue.add(request);
+    }
+
+    // Interface for payment breakdown callback
+    public interface PaymentBreakdownCallback {
+        void onSuccess(List<PaymentBreakdownItem> breakdowns);
+        void onError(String error);
+    }
+
+    // Parse breakdown list from JSON array
+    private List<PaymentBreakdownItem> parseBreakdownList(JSONArray jsonArray) {
+        List<PaymentBreakdownItem> breakdowns = new ArrayList<>();
+        try {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject breakdownJson = jsonArray.getJSONObject(i);
+                PaymentBreakdownItem item = new PaymentBreakdownItem(
+                    breakdownJson.optInt("breakdown_id", 0),
+                    breakdownJson.optInt("booking_id", 0),
+                    breakdownJson.isNull("payment_id") ? null : breakdownJson.optInt("payment_id", 0),
+                    breakdownJson.optString("period_type", ""),
+                    breakdownJson.optInt("period_number", 0),
+                    breakdownJson.optString("period_label", ""),
+                    breakdownJson.optString("period_start_date", ""),
+                    breakdownJson.optString("period_end_date", ""),
+                    breakdownJson.optString("amount", "0.00"),
+                    breakdownJson.optBoolean("is_selected", false),
+                    breakdownJson.optBoolean("is_paid", false),
+                    breakdownJson.optString("due_date", ""),
+                    breakdownJson.optString("payment_status", "Pending"),
+                    breakdownJson.optString("payment_date", "")
+                );
+                breakdowns.add(item);
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing breakdown list", e);
+        }
+        return breakdowns;
     }
 
     // Get payment summary
