@@ -169,4 +169,6 @@
 
     </LinearLayout>
 
+    </LinearLayout>
+
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
