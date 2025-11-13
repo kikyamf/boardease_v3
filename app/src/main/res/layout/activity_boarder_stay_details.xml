@@ -299,6 +299,39 @@
                         android:background="@color/light_gray"
                         android:layout_marginBottom="14dp" />
 
+                    <!-- Days Remaining -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Days Remaining"
+                            android:textSize="12sp"
+                            android:textColor="@color/gray"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvDaysRemaining"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="30 days remaining"
+                            android:textSize="15sp"
+                            android:textColor="@color/brown"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/light_gray"
+                        android:layout_marginBottom="14dp" />
+
                     <!-- Rent Type and Status -->
                     <LinearLayout
                         android:layout_width="match_parent"
