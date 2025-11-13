@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.mock.adapters.BoardingHouseAdapter;
 import com.google.android.material.button.MaterialButton;
@@ -57,6 +58,7 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     private EditText etSearchFavorites;
     private ImageView ivClearSearch;
     private MaterialButton btnExploreNow;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     // Adapter and Data
     private BoardingHouseAdapter favoritesAdapter;
@@ -147,6 +149,16 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             etSearchFavorites = view.findViewById(R.id.etSearchFavorites);
             ivClearSearch = view.findViewById(R.id.ivClearSearch);
             btnExploreNow = view.findViewById(R.id.btnExploreNow);
+            swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+            
+            // Set up pull-to-refresh listener
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setOnRefreshListener(() -> {
+                    loadFavorites();
+                });
+                // Set brown color scheme for pull-to-refresh
+                swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.brown));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -219,13 +231,17 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         try {
             if (userId == 0) {
                 Log.e(TAG, "User ID is 0, cannot load favorites from database");
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 // Fallback to SharedPreferences only
                 loadFavoritesFromSharedPreferences();
                 return;
             }
             
-            // Show loading indicator
-            if (progressBar != null) {
+            // Show loading indicator only if not refreshing (to avoid double indicators)
+            boolean isRefreshing = swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing();
+            if (!isRefreshing && progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
             if (rvFavorites != null) {
@@ -243,6 +259,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
             showError("Error loading favorites");
         }
     }
@@ -256,6 +275,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                 if (progressBar != null) {
                     progressBar.setVisibility(View.GONE);
                 }
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 allFavorites.clear();
                 filteredFavorites.clear();
                 dataLoaded = true;
@@ -268,6 +290,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         } catch (Exception e) {
             Log.e(TAG, "Error loading favorites from SharedPreferences: " + e.getMessage());
             e.printStackTrace();
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 
@@ -316,6 +341,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                                 if (progressBar != null) {
                                     progressBar.setVisibility(View.GONE);
                                 }
+                                if (swipeRefreshLayout != null) {
+                                    swipeRefreshLayout.setRefreshing(false);
+                                }
                                 updateUI();
                             }
                         }
@@ -324,6 +352,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             Log.e(TAG, "Volley error: " + error.getMessage());
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
                             // Fallback to SharedPreferences
                             loadFavoritesFromSharedPreferences();
                         }
@@ -348,6 +379,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
         } catch (Exception e) {
             Log.e(TAG, "Error creating request: " + e.getMessage());
             e.printStackTrace();
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
             // Fallback to SharedPreferences
             loadFavoritesFromSharedPreferences();
         }
@@ -394,6 +428,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                                 if (progressBar != null) {
                                     progressBar.setVisibility(View.GONE);
                                 }
+                                if (swipeRefreshLayout != null) {
+                                    swipeRefreshLayout.setRefreshing(false);
+                                }
                                 updateUI();
                             }
                         }
@@ -404,6 +441,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                             Log.e(TAG, "Volley error: " + error.getMessage());
                             if (progressBar != null) {
                                 progressBar.setVisibility(View.GONE);
+                            }
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
                             }
                             showError("Network error: " + error.getMessage());
                         }
@@ -423,6 +463,9 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
             e.printStackTrace();
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
+            }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
             }
             showError("Error loading favorites");
         }

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="700dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/dialog_background">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Payment Method"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <ImageButton
+                android:id="@+id/btnClosePayment"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Payment Method Selection -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#F9FAFB"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select Payment Method"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="12dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgPaymentMethod"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/rbCash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Cash"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@android:color/black"
+                        app:buttonTint="@color/brown"
+                        android:paddingVertical="8dp"
+                        android:checked="true" />
+
+                    <RadioButton
+                        android:id="@+id/rbGcash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="GCash"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@android:color/black"
+                        app:buttonTint="@color/brown"
+                        android:paddingVertical="8dp" />
+                </RadioGroup>
+
+                <!-- Cash Payment Section (Collapsible) -->
+                <LinearLayout
+                    android:id="@+id/layoutCashPayment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upload Cash Transaction Photo"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/dark_gray"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUploadCash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Select Photo"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="@color/brown"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_camera1"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="8dp"
+                        android:paddingVertical="12dp" />
+
+                    <ImageView
+                        android:id="@+id/ivCashProof"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_marginTop="12dp"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRemoveCash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:text="Remove"
+                        android:textSize="12sp"
+                        android:textColor="@color/red"
+                        android:backgroundTint="@android:color/transparent"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- GCash Payment Section (Collapsible) -->
+                <LinearLayout
+                    android:id="@+id/layoutGcashPayment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Owner's GCash QR Code"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/dark_gray"
+                        android:layout_marginBottom="8dp" />
+
+                    <ImageView
+                        android:id="@+id/ivOwnerQrCode"
+                        android:layout_width="200dp"
+                        android:layout_height="200dp"
+                        android:layout_gravity="center"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/placeholder"
+                        android:background="@drawable/rounded_rectangle_bg"
+                        android:padding="8dp"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- GCash Number Display -->
+                    <TextView
+                        android:id="@+id/tvGcashNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text=""
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:textColor="@color/brown"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upload Payment Screenshot"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/dark_gray"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUploadGcash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Select Screenshot"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="@color/brown"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_camera1"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="8dp"
+                        android:paddingVertical="12dp" />
+
+                    <ImageView
+                        android:id="@+id/ivGcashProof"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_marginTop="12dp"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        app:cornerRadius="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRemoveGcash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:text="Remove"
+                        android:textSize="12sp"
+                        android:textColor="@color/red"
+                        android:backgroundTint="@android:color/transparent"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Submit Payment Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitPayment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Submit Payment"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#2E7D32"
+            app:cornerRadius="20dp"
+            android:paddingVertical="14dp"
+            android:drawableStart="@drawable/ic_payment"
+            android:drawablePadding="8dp" />
+
+    </LinearLayout>
+
+</ScrollView>
+

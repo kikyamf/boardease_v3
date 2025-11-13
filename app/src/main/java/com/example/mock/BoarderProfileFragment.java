@@ -33,6 +33,7 @@ import java.io.InputStream;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 /**
  * BoarderProfileFragment - Profile page for boarders
@@ -66,6 +67,9 @@ public class BoarderProfileFragment extends Fragment {
     private LinearLayout layoutMessages;
     private LinearLayout layoutHelpSupport;
     private LinearLayout layoutAboutApp;
+    
+    // Pull-to-refresh
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     public BoarderProfileFragment() {
         // Required empty public constructor
@@ -120,6 +124,16 @@ public class BoarderProfileFragment extends Fragment {
             // Sign out
             tvSignOut = view.findViewById(R.id.tvSignOut);
             layoutSignOut = view.findViewById(R.id.layoutSignOut);
+            
+            // Pull-to-refresh
+            swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+            
+            // Set up pull-to-refresh listener
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setOnRefreshListener(() -> {
+                    loadUserData();
+                });
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -394,6 +408,11 @@ public class BoarderProfileFragment extends Fragment {
             }
             if (tvBoarderEmail != null) {
                 tvBoarderEmail.setText("user@email.com");
+            }
+        } finally {
+            // Stop refresh indicator
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
             }
         }
     }

@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -53,6 +54,7 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     private LinearLayout layoutEmptyState;
     private TextView tvResultsCount;
     private MaterialButton btnFilter, btnSort;
+    private SwipeRefreshLayout swipeRefreshLayout;
     
     private BoardingHouseAdapter adapter;
     private List<Listing> allBoardingHouses;
@@ -117,6 +119,16 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
         tvResultsCount = view.findViewById(R.id.tvResultsCount);
         btnFilter = view.findViewById(R.id.btnFilter);
         btnSort = view.findViewById(R.id.btnSort);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        
+        // Set up pull-to-refresh listener
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                loadBoardingHouses();
+            });
+            // Set brown color scheme for pull-to-refresh
+            swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.brown));
+        }
     }
     
     private void setupRecyclerView() {
@@ -280,8 +292,11 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
     }
     
     private void loadBoardingHouses() {
-        // Show loading indicator
-        progressBar.setVisibility(View.VISIBLE);
+        // Show loading indicator only if not refreshing (to avoid double indicators)
+        boolean isRefreshing = swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing();
+        if (!isRefreshing) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
         rvBoardingHouses.setVisibility(View.GONE);
         layoutEmptyState.setVisibility(View.GONE);
         
@@ -350,6 +365,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                         } finally {
                             // Hide loading indicator
                             progressBar.setVisibility(View.GONE);
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
                             updateUI();
                         }
                     }
@@ -359,6 +377,9 @@ public class ExploreFragment extends Fragment implements OnFavoriteClickListener
                     public void onErrorResponse(VolleyError error) {
                         Log.e(TAG, "Volley error: " + error.getMessage());
                         progressBar.setVisibility(View.GONE);
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                         showError("Network error: " + error.getMessage());
                     }
                 }) {
