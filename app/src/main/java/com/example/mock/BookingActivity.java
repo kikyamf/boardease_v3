@@ -353,16 +353,12 @@ public class BookingActivity extends AppCompatActivity {
         for (int i = 0; i < roomUnitsList.size(); i++) {
             RoomUnitData unit = roomUnitsList.get(i);
             
-            // Create a container for radio button and availability text
-            LinearLayout container = new LinearLayout(this);
-            container.setOrientation(LinearLayout.VERTICAL);
-            container.setPadding(16, 8, 16, 8);
-            
+            // Create RadioButton and add directly to RadioGroup (required for proper grouping)
             RadioButton radioButton = new RadioButton(this);
             radioButton.setId(View.generateViewId());
             radioButton.setText(unit.roomNumber);
             radioButton.setTextSize(16);
-            radioButton.setPadding(0, 0, 0, 0); // Remove padding since container handles it
+            radioButton.setPadding(16, 8, 16, 8);
             radioButton.setButtonTintList(getResources().getColorStateList(R.color.brown));
             radioButton.setTextColor(getResources().getColor(R.color.black));
             radioButton.setTag(unit.roomId); // Store room_id in tag
@@ -374,7 +370,7 @@ public class BookingActivity extends AppCompatActivity {
                 tvAvailability.setText(String.format(Locale.getDefault(), "%d bed(s) available", unit.availableCapacity));
                 tvAvailability.setTextSize(12);
                 tvAvailability.setTextColor(getResources().getColor(R.color.dark_gray));
-                tvAvailability.setPadding(40, 4, 0, 0); // Indent to align with radio button text
+                tvAvailability.setPadding(40, 0, 16, 8); // Indent to align with radio button text
                 tvAvailability.setVisibility(View.GONE); // Initially hidden, shown when selected
             }
             
@@ -388,11 +384,10 @@ public class BookingActivity extends AppCompatActivity {
                 }
             }
             
-            // Store reference to availability TextView and container in radio button
-            // Use a custom object to store multiple references
+            // Store reference to availability TextView in radio button tag
             if (tvAvailability != null) {
                 // Store both roomId and availability TextView reference
-                Object[] tagData = new Object[]{unit.roomId, tvAvailability, container};
+                Object[] tagData = new Object[]{unit.roomId, tvAvailability};
                 radioButton.setTag(tagData);
             } else {
                 // Just store roomId for Private Room
@@ -403,14 +398,12 @@ public class BookingActivity extends AppCompatActivity {
                 Object tag = buttonView.getTag();
                 int roomIdValue;
                 TextView availabilityText = null;
-                LinearLayout containerLayout = null;
                 
                 // Extract data from tag
                 if (tag instanceof Object[]) {
                     Object[] tagData = (Object[]) tag;
                     roomIdValue = (Integer) tagData[0];
                     availabilityText = (TextView) tagData[1];
-                    containerLayout = (LinearLayout) tagData[2];
                 } else {
                     roomIdValue = (Integer) tag;
                 }
@@ -424,15 +417,9 @@ public class BookingActivity extends AppCompatActivity {
                         // Hide all availability texts first
                         for (int j = 0; j < rgRoomUnits.getChildCount(); j++) {
                             View child = rgRoomUnits.getChildAt(j);
-                            if (child instanceof LinearLayout) {
-                                LinearLayout layout = (LinearLayout) child;
-                                for (int k = 0; k < layout.getChildCount(); k++) {
-                                    View subChild = layout.getChildAt(k);
-                                    // Hide TextViews that are not RadioButtons (these are availability texts)
-                                    if (subChild instanceof TextView && !(subChild instanceof RadioButton)) {
-                                        subChild.setVisibility(View.GONE);
-                                    }
-                                }
+                            // Hide TextViews that are not RadioButtons (these are availability texts)
+                            if (child instanceof TextView && !(child instanceof RadioButton)) {
+                                child.setVisibility(View.GONE);
                             }
                         }
                         
@@ -449,16 +436,13 @@ public class BookingActivity extends AppCompatActivity {
                 }
             });
             
-            // Add radio button to container
-            container.addView(radioButton);
+            // Add radio button directly to RadioGroup (required for proper grouping)
+            rgRoomUnits.addView(radioButton);
             
-            // Add availability text to container if it exists
+            // Add availability text as a separate direct child of RadioGroup (after the radio button)
             if (tvAvailability != null) {
-                container.addView(tvAvailability);
+                rgRoomUnits.addView(tvAvailability);
             }
-            
-            // Add container to RadioGroup
-            rgRoomUnits.addView(container);
         }
     }
     
