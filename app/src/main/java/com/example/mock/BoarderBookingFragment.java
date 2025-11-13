@@ -220,8 +220,8 @@ public class BoarderBookingFragment extends Fragment {
             rvCurrentBookings.setLayoutManager(currentLayoutManager);
             rvCurrentBookings.setAdapter(currentBookingsAdapter);
 
-            // Setup Pending Bookings RecyclerView
-            pendingBookingsAdapter = new BookingAdapter(getContext(), pendingBookings, null);
+            // Setup Pending Bookings RecyclerView with click listener
+            pendingBookingsAdapter = new BookingAdapter(getContext(), pendingBookings, this::showPendingBookingDialog);
             LinearLayoutManager pendingLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvPendingBookings.setLayoutManager(pendingLayoutManager);
             rvPendingBookings.setAdapter(pendingBookingsAdapter);
@@ -592,6 +592,23 @@ public class BoarderBookingFragment extends Fragment {
             Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showPendingBookingDialog(Booking booking) {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setMessage("This application is subject for approval");
+            builder.setPositiveButton("OK", (dialog, which) -> {
+                dialog.dismiss();
+            });
+            
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing pending booking dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing dialog", Toast.LENGTH_SHORT).show();
         }
     }
 
