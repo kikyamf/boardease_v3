@@ -113,7 +113,7 @@
         <!-- Search Bar -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_marginTop="24dp"
             android:backgroundTint="#FFFFFF"
             app:cardCornerRadius="30dp"
@@ -121,7 +121,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:padding="12dp">
@@ -135,15 +135,20 @@
                 <EditText
                     android:id="@+id/etSearch"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:hint="Search for boarding houses by name or location..."
+                    android:hint="Look for BH by name or location..."
                     android:background="@android:color/transparent"
                     android:paddingStart="12dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp"
+                    android:gravity="center_vertical"
                     android:textColor="#000000"
                     android:textColorHint="#999999"
                     android:textSize="16sp"
-                    android:fontFamily="@font/poppins_regular" />
+                    android:fontFamily="@font/poppins_regular"
+                    android:singleLine="true"
+                    android:maxLines="1" />
 
                 <ImageView
                     android:id="@+id/ivClearSearch"
