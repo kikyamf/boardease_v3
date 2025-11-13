@@ -28,6 +28,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -950,10 +951,12 @@ public class BoarderBookingFragment extends Fragment {
             
             // Proceed to Payment button
             btnProceedToPayment.setOnClickListener(v -> {
-                if (selectedBreakdowns.isEmpty()) {
-                    Toast.makeText(getContext(), "Please select at least one period to pay", Toast.LENGTH_SHORT).show();
+                // Validate that at least one payment period is selected
+                if (selectedBreakdowns == null || selectedBreakdowns.isEmpty()) {
+                    Toast.makeText(getContext(), "Please select at least one payment period to proceed", Toast.LENGTH_LONG).show();
                     return;
                 }
+                
                 dialog.dismiss();
                 List<PaymentBreakdown> selectedList = new ArrayList<>(selectedBreakdowns.values());
                 proceedToPayment(selectedList, bookingId);
@@ -969,12 +972,32 @@ public class BoarderBookingFragment extends Fragment {
     private void updateSelectedTotal(Map<Integer, PaymentBreakdown> selectedBreakdowns, TextView tvTotalAmount, 
                                      com.google.android.material.button.MaterialButton btnProceedToPayment) {
         double totalSelected = 0.0;
-        for (PaymentBreakdown breakdown : selectedBreakdowns.values()) {
-            totalSelected += breakdown.getAmount();
+        boolean hasSelection = selectedBreakdowns != null && !selectedBreakdowns.isEmpty();
+        
+        if (hasSelection) {
+            for (PaymentBreakdown breakdown : selectedBreakdowns.values()) {
+                totalSelected += breakdown.getAmount();
+            }
+            tvTotalAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", totalSelected));
+        } else {
+            tvTotalAmount.setText("₱0.00");
         }
         
-        tvTotalAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", totalSelected));
-        btnProceedToPayment.setEnabled(!selectedBreakdowns.isEmpty());
+        // Disable button if no periods are selected
+        btnProceedToPayment.setEnabled(hasSelection);
+        
+        // Update button color based on selection
+        if (getContext() != null) {
+            if (hasSelection) {
+                // Original green color when enabled (#2E7D32)
+                btnProceedToPayment.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    ContextCompat.getColor(getContext(), R.color.green_enabled)));
+            } else {
+                // Disabled/muted green color when no selection (#81C784 - lighter green)
+                btnProceedToPayment.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    ContextCompat.getColor(getContext(), R.color.green_disabled)));
+            }
+        }
     }
     
     private boolean isDateCurrentOrPast(String dateStr) {
