@@ -598,13 +598,18 @@ public class BoarderBookingFragment extends Fragment {
     private void showPendingBookingDialog(Booking booking) {
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            builder.setMessage("This application is subject for approval");
-            builder.setPositiveButton("OK", (dialog, which) -> {
-                dialog.dismiss();
-            });
-            
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_pending_booking_approval, null);
+            builder.setView(dialogView);
+
+            // Initialize dialog views
+            com.google.android.material.button.MaterialButton btnOk = dialogView.findViewById(R.id.btnOkPending);
+
             AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.show();
+
+            // OK button click listener
+            btnOk.setOnClickListener(v -> dialog.dismiss());
         } catch (Exception e) {
             Log.e(TAG, "Error showing pending booking dialog: " + e.getMessage());
             e.printStackTrace();
