@@ -1,8 +1,12 @@
 package com.example.mock;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,12 +15,17 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
 //for updates
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -35,6 +44,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -77,11 +88,21 @@ public class BoarderBookingFragment extends Fragment {
     // API
     private static final String TAG = "BoarderBookingFragment";
     private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
     private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "BoardEase2/get_unpaid_payment_breakdowns.php";
+    private static final String GET_BH_DETAILS_URL = BASE_URL + "BoardEase2/get_boarding_house_details1.php";
+    private static final String SUBMIT_PAYMENT_URL = BOARD_EASE2_URL + "submit_payment.php";
     
     // Request queue
     private RequestQueue requestQueue;
+    
+    // Payment dialog references for image handling
+    private View currentPaymentDialogView;
+    
+    // Activity result launchers for image picking
+    private ActivityResultLauncher<String> cashImagePickerLauncher;
+    private ActivityResultLauncher<String> gcashImagePickerLauncher;
 
     public BoarderBookingFragment() {
         // Required empty public constructor
@@ -108,6 +129,41 @@ public class BoarderBookingFragment extends Fragment {
             }
             
             requestQueue = Volley.newRequestQueue(getContext());
+            
+            // Register activity result launchers for image picking
+            cashImagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null && currentPaymentDialogView != null) {
+                        Object[] tagData = (Object[]) currentPaymentDialogView.getTag();
+                        if (tagData != null && tagData.length >= 6) {
+                            Uri[] cashProofUri = (Uri[]) tagData[0];
+                            ImageView ivCashProof = (ImageView) tagData[2];
+                            MaterialButton btnRemoveCash = (MaterialButton) tagData[4];
+                            cashProofUri[0] = uri;
+                            displayImage(uri, ivCashProof);
+                            btnRemoveCash.setVisibility(View.VISIBLE);
+                        }
+                    }
+                }
+            );
+            
+            gcashImagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null && currentPaymentDialogView != null) {
+                        Object[] tagData = (Object[]) currentPaymentDialogView.getTag();
+                        if (tagData != null && tagData.length >= 6) {
+                            Uri[] gcashProofUri = (Uri[]) tagData[1];
+                            ImageView ivGcashProof = (ImageView) tagData[3];
+                            MaterialButton btnRemoveGcash = (MaterialButton) tagData[5];
+                            gcashProofUri[0] = uri;
+                            displayImage(uri, ivGcashProof);
+                            btnRemoveGcash.setVisibility(View.VISIBLE);
+                        }
+                    }
+                }
+            );
         }
     }
 
@@ -320,9 +376,10 @@ public class BoarderBookingFragment extends Fragment {
                 String roomCategory = bookingJson.optString("room_category", "Private Room");
                 String roomNumber = bookingJson.optString("room_number", "");
                 int roomId = bookingJson.optInt("room_id", 0);
+                int bhId = bookingJson.optInt("bh_id", 0);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId);
                 
                 bookingsList.add(booking);
             }
@@ -525,10 +582,11 @@ public class BoarderBookingFragment extends Fragment {
         private String roomCategory;
         private String roomNumber;
         private int roomId;
+        private int bhId;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
                       String startDate, String endDate, String monthlyDue, String balanceDue, String status,
-                      String roomCategory, String roomNumber, int roomId) {
+                      String roomCategory, String roomNumber, int roomId, int bhId) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
             this.imagePath = imagePath;
@@ -541,6 +599,7 @@ public class BoarderBookingFragment extends Fragment {
             this.roomCategory = roomCategory;
             this.roomNumber = roomNumber;
             this.roomId = roomId;
+            this.bhId = bhId;
         }
 
         // Getters
@@ -556,6 +615,7 @@ public class BoarderBookingFragment extends Fragment {
         public String getRoomCategory() { return roomCategory; }
         public String getRoomNumber() { return roomNumber; }
         public int getRoomId() { return roomId; }
+        public int getBhId() { return bhId; }
     }
     
     // Payment Breakdown data class
@@ -638,7 +698,7 @@ public class BoarderBookingFragment extends Fragment {
                                     if (unpaidBreakdowns.isEmpty()) {
                                         Toast.makeText(getContext(), "No unpaid payments found. All payments are up to date!", Toast.LENGTH_LONG).show();
                                     } else {
-                                        showUnpaidPaymentBreakdownsDialog(unpaidBreakdowns);
+                                        showUnpaidPaymentBreakdownsDialog(unpaidBreakdowns, bookingId);
                                     }
                                 } else {
                                     String error = jsonResponse.optString("error", "Unknown error");
@@ -707,7 +767,7 @@ public class BoarderBookingFragment extends Fragment {
         return breakdowns;
     }
     
-    private void showUnpaidPaymentBreakdownsDialog(List<PaymentBreakdown> unpaidBreakdowns) {
+    private void showUnpaidPaymentBreakdownsDialog(List<PaymentBreakdown> unpaidBreakdowns, int bookingId) {
         try {
             if (getContext() == null) {
                 return;
@@ -895,9 +955,8 @@ public class BoarderBookingFragment extends Fragment {
                     return;
                 }
                 dialog.dismiss();
-                // TODO: Navigate to payment screen with selected breakdowns
                 List<PaymentBreakdown> selectedList = new ArrayList<>(selectedBreakdowns.values());
-                proceedToPayment(selectedList);
+                proceedToPayment(selectedList, bookingId);
             });
             
         } catch (Exception e) {
@@ -946,22 +1005,370 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
     
-    private void proceedToPayment(List<PaymentBreakdown> selectedBreakdowns) {
-        // TODO: Implement payment flow
-        // For now, just show a message
-        double total = 0.0;
-        StringBuilder periods = new StringBuilder();
-        for (PaymentBreakdown breakdown : selectedBreakdowns) {
-            total += breakdown.getAmount();
-            if (periods.length() > 0) periods.append(", ");
-            periods.append(breakdown.getPeriodLabel());
+    private void proceedToPayment(List<PaymentBreakdown> selectedBreakdowns, int bookingId) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            // Find booking to get bh_id
+            int bhId = 0;
+            for (Booking booking : currentBookings) {
+                if (booking.getBookingId() == bookingId) {
+                    bhId = booking.getBhId();
+                    break;
+                }
+            }
+            // If not found in current, check pending
+            if (bhId == 0) {
+                for (Booking booking : pendingBookings) {
+                    if (booking.getBookingId() == bookingId) {
+                        bhId = booking.getBhId();
+                        break;
+                    }
+                }
+            }
+            
+            if (bhId == 0) {
+                Toast.makeText(getContext(), "Error: Could not find booking details", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Calculate total amount
+            double total = 0.0;
+            for (PaymentBreakdown breakdown : selectedBreakdowns) {
+                total += breakdown.getAmount();
+            }
+            
+            // Show payment method dialog
+            showPaymentMethodDialog(selectedBreakdowns, bookingId, bhId, total);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error in proceedToPayment: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error opening payment dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void showPaymentMethodDialog(List<PaymentBreakdown> selectedBreakdowns, int bookingId, int bhId, double totalAmount) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_payment_method, null);
+            builder.setView(dialogView);
+            
+            // Initialize views
+            ImageButton btnClosePayment = dialogView.findViewById(R.id.btnClosePayment);
+            RadioGroup rgPaymentMethod = dialogView.findViewById(R.id.rgPaymentMethod);
+            RadioButton rbCash = dialogView.findViewById(R.id.rbCash);
+            RadioButton rbGcash = dialogView.findViewById(R.id.rbGcash);
+            LinearLayout layoutCashPayment = dialogView.findViewById(R.id.layoutCashPayment);
+            LinearLayout layoutGcashPayment = dialogView.findViewById(R.id.layoutGcashPayment);
+            MaterialButton btnUploadCash = dialogView.findViewById(R.id.btnUploadCash);
+            MaterialButton btnUploadGcash = dialogView.findViewById(R.id.btnUploadGcash);
+            MaterialButton btnRemoveCash = dialogView.findViewById(R.id.btnRemoveCash);
+            MaterialButton btnRemoveGcash = dialogView.findViewById(R.id.btnRemoveGcash);
+            ImageView ivCashProof = dialogView.findViewById(R.id.ivCashProof);
+            ImageView ivGcashProof = dialogView.findViewById(R.id.ivGcashProof);
+            ImageView ivOwnerQrCode = dialogView.findViewById(R.id.ivOwnerQrCode);
+            TextView tvGcashNumber = dialogView.findViewById(R.id.tvGcashNumber);
+            MaterialButton btnSubmitPayment = dialogView.findViewById(R.id.btnSubmitPayment);
+            
+            // Payment method and proof URIs
+            String[] paymentMethod = {"Cash"}; // Use array to allow modification in inner classes
+            Uri[] cashProofUri = {null};
+            Uri[] gcashProofUri = {null};
+            String[] ownerGcashQrPath = {null};
+            String[] ownerGcashNumber = {null};
+            
+            // Create and show dialog
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+            
+            // Close button
+            btnClosePayment.setOnClickListener(v -> {
+                currentPaymentDialogView = null;
+                dialog.dismiss();
+            });
+            
+            // Payment method selection
+            rgPaymentMethod.setOnCheckedChangeListener((group, checkedId) -> {
+                if (checkedId == rbCash.getId()) {
+                    paymentMethod[0] = "Cash";
+                    layoutCashPayment.setVisibility(View.VISIBLE);
+                    layoutGcashPayment.setVisibility(View.GONE);
+                } else if (checkedId == rbGcash.getId()) {
+                    paymentMethod[0] = "GCash";
+                    layoutCashPayment.setVisibility(View.GONE);
+                    layoutGcashPayment.setVisibility(View.VISIBLE);
+                    // Load owner's GCash QR code
+                    loadOwnerGcashQr(bhId, ivOwnerQrCode, tvGcashNumber, ownerGcashQrPath, ownerGcashNumber);
+                }
+            });
+            
+            // Upload buttons
+            btnUploadCash.setOnClickListener(v -> {
+                if (cashImagePickerLauncher != null) {
+                    cashImagePickerLauncher.launch("image/*");
+                }
+            });
+            
+            btnUploadGcash.setOnClickListener(v -> {
+                if (gcashImagePickerLauncher != null) {
+                    gcashImagePickerLauncher.launch("image/*");
+                }
+            });
+            
+            // Remove buttons
+            btnRemoveCash.setOnClickListener(v -> {
+                cashProofUri[0] = null;
+                ivCashProof.setVisibility(View.GONE);
+                btnRemoveCash.setVisibility(View.GONE);
+            });
+            
+            btnRemoveGcash.setOnClickListener(v -> {
+                gcashProofUri[0] = null;
+                ivGcashProof.setVisibility(View.GONE);
+                btnRemoveGcash.setVisibility(View.GONE);
+            });
+            
+            // Store references for image handling
+            currentPaymentDialogView = dialogView;
+            dialogView.setTag(new Object[]{cashProofUri, gcashProofUri, ivCashProof, ivGcashProof, btnRemoveCash, btnRemoveGcash});
+            
+            // Submit payment button
+            btnSubmitPayment.setOnClickListener(v -> {
+                // Validate payment proof
+                if ("Cash".equals(paymentMethod[0]) && cashProofUri[0] == null) {
+                    Toast.makeText(getContext(), "Please upload cash transaction photo", Toast.LENGTH_SHORT).show();
+                    return;
+                } else if ("GCash".equals(paymentMethod[0]) && gcashProofUri[0] == null) {
+                    Toast.makeText(getContext(), "Please upload GCash payment screenshot", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Submit payment
+                submitPayment(selectedBreakdowns, bookingId, totalAmount, paymentMethod[0], 
+                    cashProofUri[0], gcashProofUri[0], dialog);
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing payment method dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing payment dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void loadOwnerGcashQr(int bhId, ImageView ivOwnerQrCode, TextView tvGcashNumber, 
+                                   String[] ownerGcashQrPath, String[] ownerGcashNumber) {
+        if (bhId == 0) {
+            Log.e(TAG, "Cannot load GCash QR - bh_id is 0");
+            return;
         }
         
-        Toast.makeText(getContext(), 
-            String.format(Locale.getDefault(), "Selected: %s\nTotal: ₱%,.2f", periods.toString(), total), 
-            Toast.LENGTH_LONG).show();
+        String url = GET_BH_DETAILS_URL + "?bh_id=" + bhId;
         
-        Log.d(TAG, "Proceed to payment for periods: " + periods.toString() + ", Total: ₱" + total);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            JSONObject data = jsonResponse.getJSONObject("data");
+                            JSONObject bh = data.getJSONObject("boarding_house");
+                            
+                            // Get GCash QR code
+                            if (bh.has("gcash_qr") && !bh.isNull("gcash_qr")) {
+                                String qrPath = bh.optString("gcash_qr", "");
+                                if (qrPath != null && !qrPath.isEmpty() && !qrPath.equals("null")) {
+                                    ownerGcashQrPath[0] = qrPath;
+                                    String fullImageUrl = qrPath;
+                                    if (!qrPath.startsWith("http://") && !qrPath.startsWith("https://")) {
+                                        if (qrPath.startsWith("uploads/")) {
+                                            fullImageUrl = BOARD_EASE2_URL + qrPath;
+                                        } else {
+                                            fullImageUrl = BOARD_EASE2_URL + "uploads/" + qrPath;
+                                        }
+                                    }
+                                    Glide.with(getContext())
+                                        .load(fullImageUrl)
+                                        .placeholder(R.drawable.placeholder)
+                                        .error(R.drawable.placeholder)
+                                        .into(ivOwnerQrCode);
+                                }
+                            }
+                            
+                            // Get GCash number
+                            if (bh.has("gcash_number") && !bh.isNull("gcash_number")) {
+                                String gcashNum = bh.optString("gcash_number", "");
+                                if (gcashNum != null && !gcashNum.isEmpty() && !gcashNum.equals("null")) {
+                                    ownerGcashNumber[0] = gcashNum;
+                                    tvGcashNumber.setText("GCash: " + gcashNum);
+                                    tvGcashNumber.setVisibility(View.VISIBLE);
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing GCash info: " + e.getMessage());
+                    }
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e(TAG, "Error loading GCash info: " + error.getMessage());
+                }
+            }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    private void displayImage(Uri imageUri, ImageView imageView) {
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
+            imageView.setImageBitmap(bitmap);
+            imageView.setVisibility(View.VISIBLE);
+        } catch (IOException e) {
+            Log.e(TAG, "Error displaying image: " + e.getMessage());
+            Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void submitPayment(List<PaymentBreakdown> selectedBreakdowns, int bookingId, double totalAmount,
+                              String paymentMethod, Uri cashProofUri, Uri gcashProofUri, AlertDialog dialog) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+            
+            // Convert image to base64
+            String paymentProofBase64 = "";
+            try {
+                if ("Cash".equals(paymentMethod) && cashProofUri != null) {
+                    paymentProofBase64 = imageToBase64(cashProofUri);
+                } else if ("GCash".equals(paymentMethod) && gcashProofUri != null) {
+                    paymentProofBase64 = imageToBase64(gcashProofUri);
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Error converting image to base64: " + e.getMessage());
+                Toast.makeText(getContext(), "Error processing image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Prepare breakdown IDs
+            List<Integer> breakdownIds = new ArrayList<>();
+            for (PaymentBreakdown breakdown : selectedBreakdowns) {
+                breakdownIds.add(breakdown.getBreakdownId());
+            }
+            
+            // Show loading
+            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+            progressDialog.setMessage("Submitting payment...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            
+            // Create request
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, SUBMIT_PAYMENT_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        progressDialog.dismiss();
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            if (jsonResponse.getBoolean("success")) {
+                                currentPaymentDialogView = null;
+                                dialog.dismiss();
+                                Toast.makeText(getContext(), "Payment submitted successfully!", Toast.LENGTH_LONG).show();
+                                // Refresh bookings
+                                loadBookingData();
+                            } else {
+                                String error = jsonResponse.optString("error", "Failed to submit payment");
+                                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing payment response: " + e.getMessage());
+                            Toast.makeText(getContext(), "Error processing response", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressDialog.dismiss();
+                        Log.e(TAG, "Error submitting payment: " + error.getMessage());
+                        Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("booking_id", String.valueOf(bookingId));
+                    params.put("payment_method", paymentMethod);
+                    params.put("total_amount", String.format(Locale.getDefault(), "%.2f", totalAmount));
+                    params.put("payment_proof", paymentProofBase64);
+                    
+                    // Add breakdown IDs as JSON array
+                    try {
+                        JSONArray breakdownIdsArray = new JSONArray();
+                        for (Integer id : breakdownIds) {
+                            breakdownIdsArray.put(id);
+                        }
+                        params.put("breakdown_ids", breakdownIdsArray.toString());
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error creating breakdown IDs array: " + e.getMessage());
+                    }
+                    
+                    return params;
+                }
+                
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
+                    return headers;
+                }
+            };
+            
+            requestQueue.add(stringRequest);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error submitting payment: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error submitting payment", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private String imageToBase64(Uri imageUri) throws IOException {
+        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
+        
+        // Resize if too large
+        int maxWidth = 800;
+        int maxHeight = 800;
+        if (bitmap.getWidth() > maxWidth || bitmap.getHeight() > maxHeight) {
+            float scale = Math.min((float) maxWidth / bitmap.getWidth(), (float) maxHeight / bitmap.getHeight());
+            int newWidth = Math.round(bitmap.getWidth() * scale);
+            int newHeight = Math.round(bitmap.getHeight() * scale);
+            bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+        }
+        
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+        byte[] imageBytes = baos.toByteArray();
+        return android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP);
     }
     
     /**
