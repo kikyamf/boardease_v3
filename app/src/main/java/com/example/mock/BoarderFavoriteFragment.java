@@ -156,6 +156,8 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
                 swipeRefreshLayout.setOnRefreshListener(() -> {
                     loadFavorites();
                 });
+                // Set brown color scheme for pull-to-refresh
+                swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.brown));
             }
         } catch (Exception e) {
             e.printStackTrace();

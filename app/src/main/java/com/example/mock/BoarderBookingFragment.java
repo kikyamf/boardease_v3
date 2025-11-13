@@ -201,6 +201,8 @@ public class BoarderBookingFragment extends Fragment {
                 swipeRefreshLayout.setOnRefreshListener(() -> {
                     loadBookingData();
                 });
+                // Set brown color scheme for pull-to-refresh
+                swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.brown));
             }
         } catch (Exception e) {
             e.printStackTrace();

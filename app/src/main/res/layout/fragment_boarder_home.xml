@@ -188,7 +188,8 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="24dp"
-                android:visibility="visible" />
+                android:visibility="visible"
+                android:indeterminateTint="@color/brown" />
 
             <!-- Horizontal RecyclerView for Recommended BHs -->
             <androidx.recyclerview.widget.RecyclerView
@@ -267,7 +268,8 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="24dp"
-                android:visibility="visible" />
+                android:visibility="visible"
+                android:indeterminateTint="@color/brown" />
 
             <!-- Vertical RecyclerView for Nearby BHs -->
             <androidx.recyclerview.widget.RecyclerView

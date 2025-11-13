@@ -138,7 +138,7 @@
         android:layout_gravity="center"
         android:layout_marginVertical="24dp"
         android:visibility="gone"
-        android:indeterminateTint="#A18167" />
+        android:indeterminateTint="@color/brown" />
 
     <!-- Empty State -->
     <LinearLayout
