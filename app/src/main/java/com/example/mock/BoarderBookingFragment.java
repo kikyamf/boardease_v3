@@ -1254,13 +1254,13 @@ public class BoarderBookingFragment extends Fragment {
                 return;
             }
             
-            // Convert image to base64
-            String paymentProofBase64 = "";
+            // Convert image to base64 - use final array to allow modification in inner class
+            final String[] paymentProofBase64 = {""};
             try {
                 if ("Cash".equals(paymentMethod) && cashProofUri != null) {
-                    paymentProofBase64 = imageToBase64(cashProofUri);
+                    paymentProofBase64[0] = imageToBase64(cashProofUri);
                 } else if ("GCash".equals(paymentMethod) && gcashProofUri != null) {
-                    paymentProofBase64 = imageToBase64(gcashProofUri);
+                    paymentProofBase64[0] = imageToBase64(gcashProofUri);
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Error converting image to base64: " + e.getMessage());
@@ -1269,13 +1269,13 @@ public class BoarderBookingFragment extends Fragment {
             }
             
             // Prepare breakdown IDs
-            List<Integer> breakdownIds = new ArrayList<>();
+            final List<Integer> breakdownIds = new ArrayList<>();
             for (PaymentBreakdown breakdown : selectedBreakdowns) {
                 breakdownIds.add(breakdown.getBreakdownId());
             }
             
             // Show loading
-            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+            final android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
             progressDialog.setMessage("Submitting payment...");
             progressDialog.setCancelable(false);
             progressDialog.show();
@@ -1318,7 +1318,7 @@ public class BoarderBookingFragment extends Fragment {
                     params.put("booking_id", String.valueOf(bookingId));
                     params.put("payment_method", paymentMethod);
                     params.put("total_amount", String.format(Locale.getDefault(), "%.2f", totalAmount));
-                    params.put("payment_proof", paymentProofBase64);
+                    params.put("payment_proof", paymentProofBase64[0]);
                     
                     // Add breakdown IDs as JSON array
                     try {
