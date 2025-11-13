@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -71,6 +72,7 @@ public class BoarderBookingFragment extends Fragment {
     private LinearLayout layoutPendingBookingsEmpty;
     private LinearLayout layoutBookingHistoryEmpty;
     private ProgressBar progressBar;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     // Adapters
     private BookingAdapter currentBookingsAdapter;
@@ -192,6 +194,14 @@ public class BoarderBookingFragment extends Fragment {
             layoutPendingBookingsEmpty = view.findViewById(R.id.layoutPendingBookingsEmpty);
             layoutBookingHistoryEmpty = view.findViewById(R.id.layoutBookingHistoryEmpty);
             progressBar = view.findViewById(R.id.progressBar);
+            swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+            
+            // Set up pull-to-refresh listener
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setOnRefreshListener(() -> {
+                    loadBookingData();
+                });
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -231,11 +241,15 @@ public class BoarderBookingFragment extends Fragment {
             if (userId == 0) {
                 Log.e(TAG, "User ID is 0, cannot load bookings");
                 Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 return;
             }
 
-            // Show loading indicator
-            if (progressBar != null) {
+            // Show loading indicator only if not refreshing (to avoid double indicators)
+            boolean isRefreshing = swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing();
+            if (!isRefreshing && progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
 
@@ -246,6 +260,9 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
+            }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
             }
             Toast.makeText(getContext(), "Error loading bookings", Toast.LENGTH_SHORT).show();
         }
@@ -303,6 +320,9 @@ public class BoarderBookingFragment extends Fragment {
                                 if (progressBar != null) {
                                     progressBar.setVisibility(View.GONE);
                                 }
+                                if (swipeRefreshLayout != null) {
+                                    swipeRefreshLayout.setRefreshing(false);
+                                }
                                 updateUI();
                             }
                         }
@@ -313,6 +333,9 @@ public class BoarderBookingFragment extends Fragment {
                             Log.e(TAG, "Volley error: " + error.getMessage());
                             if (progressBar != null) {
                                 progressBar.setVisibility(View.GONE);
+                            }
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
                             }
                             showError("Network error: " + error.getMessage());
                         }
@@ -339,6 +362,9 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
+            }
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
             }
             showError("Error loading bookings");
         }
