@@ -137,7 +137,7 @@ public class PendingPaymentsFragment extends Fragment {
                     android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
                     intent.putExtra("payment", payment);
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_REMAINING);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1001);
                 }
             };
             
@@ -175,6 +175,27 @@ public class PendingPaymentsFragment extends Fragment {
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
         loadPendingPayments(true);
+    }
+    
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1001 && resultCode == android.app.Activity.RESULT_OK && data != null) {
+            boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
+            if (paymentUpdated) {
+                // Refresh the payments list
+                refreshData();
+                // Notify parent activity for tab navigation
+                if (getActivity() instanceof ActivityDetailsActivity) {
+                    String newPaymentStatus = data.getStringExtra("new_payment_status");
+                    ActivityDetailsActivity.PaymentStatusUpdateCallback callback = 
+                        ((ActivityDetailsActivity) getActivity()).getPaymentStatusCallback();
+                    if (callback != null && newPaymentStatus != null) {
+                        callback.onPaymentStatusUpdated(newPaymentStatus);
+                    }
+                }
+            }
+        }
     }
 }
 

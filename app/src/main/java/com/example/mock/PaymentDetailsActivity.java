@@ -690,10 +690,17 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                         Toast.makeText(PaymentDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
                         // Update local payment data
                         payment.setPaymentStatus("Paid");
-                        // Refresh the UI
-                        populateData();
-                        // Set result to notify parent activity to refresh
-                        setResult(RESULT_OK);
+                        
+                        // Prepare result intent with updated payment status
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("payment_updated", true);
+                        resultIntent.putExtra("new_payment_status", "paid");
+                        resultIntent.putExtra("payment_id", payment.getPaymentId());
+                        resultIntent.putExtra("view_type", viewType);
+                        setResult(RESULT_OK, resultIntent);
+                        
+                        // Finish activity to go back to card layout
+                        finish();
                     }
 
                     @Override
@@ -715,10 +722,17 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                         Toast.makeText(PaymentDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
                         // Update local payment data
                         payment.setPaymentStatus("Overdue");
-                        // Refresh the UI
-                        populateData();
-                        // Set result to notify parent activity to refresh
-                        setResult(RESULT_OK);
+                        
+                        // Prepare result intent with updated payment status
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("payment_updated", true);
+                        resultIntent.putExtra("new_payment_status", "overdue");
+                        resultIntent.putExtra("payment_id", payment.getPaymentId());
+                        resultIntent.putExtra("view_type", viewType);
+                        setResult(RESULT_OK, resultIntent);
+                        
+                        // Finish activity to go back to card layout
+                        finish();
                     }
 
                     @Override

@@ -1,5 +1,6 @@
 package com.example.mock;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +27,13 @@ public class ActivityDetailsActivity extends AppCompatActivity {
     private ActivityDetailsPagerAdapter pagerAdapter;
     private String activityType;
     private int userId;
+    
+    // Callback interface for payment status updates
+    public interface PaymentStatusUpdateCallback {
+        void onPaymentStatusUpdated(String newStatus);
+    }
+    
+    private PaymentStatusUpdateCallback paymentStatusCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -165,6 +173,106 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         viewPager.post(() -> {
             viewPager.postDelayed(() -> loadFragmentIfNeeded(0), 300);
         });
+        
+        // Set up payment status update callback
+        paymentStatusCallback = newStatus -> {
+            handlePaymentStatusUpdate(newStatus);
+        };
+    }
+    
+    public PaymentStatusUpdateCallback getPaymentStatusCallback() {
+        return paymentStatusCallback;
+    }
+    
+    private void handlePaymentStatusUpdate(String newPaymentStatus) {
+        if (!"payment_status".equals(activityType)) {
+            return;
+        }
+        
+        // Determine which tab to navigate to based on updated payment status
+        // Tab indices: 0=All Payments, 1=Completed, 2=Pending, 3=Fully Paid, 4=Remaining
+        int targetTabValue = 0; // Default to "All Payments" tab
+        
+        if (newPaymentStatus != null) {
+            switch (newPaymentStatus.toLowerCase()) {
+                case "paid":
+                    // If marked as paid, go to "All Payments" tab to see all payments including the updated one
+                    targetTabValue = 0;
+                    break;
+                case "completed":
+                    // If marked as completed, go to "Completed" tab (index 1)
+                    targetTabValue = 1;
+                    break;
+                case "overdue":
+                    // If marked as overdue, go to "Pending" tab (index 2) where overdue payments are shown
+                    targetTabValue = 2;
+                    break;
+                default:
+                    // Default to "All Payments" tab to see the updated payment
+                    targetTabValue = 0;
+                    break;
+            }
+        }
+        
+        // Make final for lambda
+        final int targetTab = targetTabValue;
+        
+        // Navigate to the appropriate tab
+        if (viewPager != null && targetTab < viewPager.getAdapter().getItemCount()) {
+            viewPager.setCurrentItem(targetTab, true);
+            
+            // Refresh all fragments after a short delay to ensure tab is switched
+            viewPager.postDelayed(() -> {
+                refreshAllFragments();
+                // Load the target fragment
+                loadFragmentIfNeeded(targetTab);
+            }, 300);
+        } else {
+            // If navigation fails, just refresh all fragments
+            refreshAllFragments();
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        // Handle result from PaymentDetailsActivity (fallback if fragments don't handle it)
+        if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
+            boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
+            if (paymentUpdated && "payment_status".equals(activityType)) {
+                String newPaymentStatus = data.getStringExtra("new_payment_status");
+                if (newPaymentStatus != null && paymentStatusCallback != null) {
+                    paymentStatusCallback.onPaymentStatusUpdated(newPaymentStatus);
+                }
+            }
+        }
+    }
+    
+    private void refreshAllFragments() {
+        if (!"payment_status".equals(activityType)) {
+            return;
+        }
+        
+        // Refresh all payment fragments
+        for (int i = 0; i < 5; i++) {
+            String tag = "f" + i;
+            Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
+            
+            if (fragment != null && fragment.isAdded()) {
+                if (i == 0 && fragment instanceof AllPaymentsFragment) {
+                    ((AllPaymentsFragment) fragment).refreshData();
+                } else if (i == 1 && fragment instanceof CompletedPaymentsFragment) {
+                    ((CompletedPaymentsFragment) fragment).refreshData();
+                } else if (i == 2 && fragment instanceof PendingPaymentsFragment) {
+                    ((PendingPaymentsFragment) fragment).refreshData();
+                } else if (i == 3 && fragment instanceof FullyPaidPaymentsFragment) {
+                    ((FullyPaidPaymentsFragment) fragment).refreshData();
+                } else if (i == 4 && fragment instanceof RemainingPaymentsFragment) {
+                    ((RemainingPaymentsFragment) fragment).refreshData();
+                }
+            }
+        }
     }
     
     private void loadFragmentIfNeeded(int position) {
