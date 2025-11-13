@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -55,6 +57,7 @@ public class BookingActivity extends AppCompatActivity {
     private ProgressBar progressBarRoomUnits;
     private TextView tvNoRoomUnits;
     
+    // Data
     private int roomId; // This is bhr_id
     private int selectedRoomUnitId; // This is room_units.room_id
     private int userId;
@@ -247,21 +250,12 @@ public class BookingActivity extends AppCompatActivity {
     }
     
     private void loadRoomUnits() {
-        loadRoomUnits(false);
-    }
-    
-    private void loadRoomUnits(boolean isRefresh) {
         if (roomId == 0) {
             Log.e(TAG, "Room ID is 0, cannot load room units");
-            if (isRefresh && swipeRefreshLayout != null) {
-                swipeRefreshLayout.setRefreshing(false);
-            }
             return;
         }
         
-        if (!isRefresh) {
-            progressBarRoomUnits.setVisibility(View.VISIBLE);
-        }
+        progressBarRoomUnits.setVisibility(View.VISIBLE);
         tvNoRoomUnits.setVisibility(View.GONE);
         rgRoomUnits.setVisibility(View.GONE);
         
@@ -269,11 +263,7 @@ public class BookingActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        if (isRefresh && swipeRefreshLayout != null) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        } else {
-                            progressBarRoomUnits.setVisibility(View.GONE);
-                        }
+                        progressBarRoomUnits.setVisibility(View.GONE);
                         try {
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
@@ -332,11 +322,7 @@ public class BookingActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        if (isRefresh && swipeRefreshLayout != null) {
-                            swipeRefreshLayout.setRefreshing(false);
-                        } else {
-                            progressBarRoomUnits.setVisibility(View.GONE);
-                        }
+                        progressBarRoomUnits.setVisibility(View.GONE);
                         Log.e(TAG, "Error loading room units: " + error.getMessage());
                         tvNoRoomUnits.setVisibility(View.VISIBLE);
                         rgRoomUnits.setVisibility(View.GONE);
@@ -359,11 +345,6 @@ public class BookingActivity extends AppCompatActivity {
         };
         
         requestQueue.add(stringRequest);
-    }
-    
-    private void refreshData() {
-        // Reload room units when user pulls to refresh
-        loadRoomUnits(true);
     }
     
     private void populateRoomUnitsRadioGroup() {
