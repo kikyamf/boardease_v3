@@ -233,22 +233,62 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvStatus.setText(status);
             applyStatusStyle(tvStatus, status);
             
-            // Set payment status with styling - use payment_status from database (source of truth)
-            // The database payment_status is already calculated and updated correctly by update_payment_status.php
-            // We should use the database value, not recalculate from breakdowns
-            String paymentStatus = bookingData.getPaymentStatus();
+            // Set payment status with styling - calculate based on payment breakdown data
+            // This ensures the status matches the actual payment progress
+            String paymentStatus;
+            boolean isFullyPaid = bookingData.isFullyPaid();
+            int totalPeriods = bookingData.getTotalPeriods();
+            int paidPeriods = bookingData.getPaidPeriods();
+            String dbPaymentStatus = bookingData.getPaymentStatus();
             
-            // If payment_status is null or empty, fallback to "Pending"
-            if (paymentStatus == null || paymentStatus.isEmpty()) {
-                paymentStatus = "Pending";
+            // Also check payment status string as fallback
+            if (dbPaymentStatus != null && dbPaymentStatus.equalsIgnoreCase("Fully Paid")) {
+                isFullyPaid = true;
+            }
+            
+            // If we have period data, verify fully paid status
+            if (totalPeriods > 0) {
+                isFullyPaid = isFullyPaid && paidPeriods >= totalPeriods;
+            }
+            
+            // Determine payment status based on payment breakdown
+            if (isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods)) {
+                // Fully paid: all periods are paid
+                paymentStatus = "Fully Paid";
+            } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+                // Partially paid: some periods paid but not all - show "Completed/Partially"
+                paymentStatus = "Completed/Partially";
+            } else {
+                // Check if payment status is already "Completed/Partially" or similar
+                if (dbPaymentStatus != null) {
+                    String statusLower = dbPaymentStatus.toLowerCase();
+                    if (statusLower.contains("completed") && statusLower.contains("partially")) {
+                        paymentStatus = "Completed/Partially";
+                    } else if (statusLower.equals("completed") || statusLower.equals("completed/partially") || 
+                              statusLower.equals("completed_partially")) {
+                        // If status is "Completed" but we have some periods paid, show "Completed/Partially"
+                        if (paidPeriods > 0) {
+                            paymentStatus = "Completed/Partially";
+                        } else {
+                            paymentStatus = dbPaymentStatus;
+                        }
+                    } else if (statusLower.equals("fully paid")) {
+                        paymentStatus = "Fully Paid";
+                    } else {
+                        paymentStatus = dbPaymentStatus;
+                    }
+                } else {
+                    // Not paid yet or no breakdown data: use default
+                    paymentStatus = "Pending";
+                }
             }
             
             // Log for debugging
-            int totalPeriods = bookingData.getTotalPeriods();
-            int paidPeriods = bookingData.getPaidPeriods();
-            Log.d("BookingDetails", "Payment Status from database: " + paymentStatus + 
+            Log.d("BookingDetails", "Payment Status from database: " + dbPaymentStatus + 
+                  ", Calculated Status: " + paymentStatus +
                   ", Total Periods: " + totalPeriods + 
-                  ", Paid Periods: " + paidPeriods);
+                  ", Paid Periods: " + paidPeriods +
+                  ", Is Fully Paid: " + isFullyPaid);
             
             // Set payment status text and styling
             if (tvPaymentStatus != null) {
@@ -270,7 +310,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 tvPaymentStatus.setVisibility(View.VISIBLE);
                 
                 // Log for debugging
-                Log.d("BookingDetails", "Payment Status: " + paymentStatus + 
+                Log.d("BookingDetails", "Payment Status Displayed: " + paymentStatus + 
                       ", Total Periods: " + totalPeriods + 
                       ", Paid Periods: " + paidPeriods + 
                       ", Payment Status Text: " + tvPaymentStatus.getText());

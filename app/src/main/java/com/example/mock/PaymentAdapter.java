@@ -111,7 +111,111 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
     }
     
     private void bindFullyPaidViewHolder(ViewHolder holder, PaymentData payment) {
-        holder.tvTotalAmount.setText("₱" + payment.getTotalAmountForBooking());
+        // Check if fully paid
+        int totalPeriods = payment.getTotalPeriods();
+        int paidPeriods = payment.getPaidPeriods();
+        boolean isFullyPaid = payment.isFullyPaid();
+        
+        // If we have period data, verify fully paid status
+        if (totalPeriods > 0) {
+            isFullyPaid = isFullyPaid && paidPeriods >= totalPeriods;
+        }
+        
+        // Also check payment status string as fallback
+        String paymentStatusStr = payment.getPaymentStatus();
+        if (paymentStatusStr != null && paymentStatusStr.equalsIgnoreCase("Fully Paid")) {
+            isFullyPaid = true;
+        }
+        
+        // Total Amount logic (same as All Payments view):
+        // - If fully paid AND only 1 period exists, total = amount paid (166.67)
+        // - If fully paid AND amount paid equals total amount, total = amount paid (166.67)
+        // - Otherwise, total = sum of all periods from payment breakdown
+        String totalAmount = payment.getTotalAmountForBooking();
+        String paidAmount = payment.getPaidAmountForBooking();
+        boolean useBookingTotal = false;
+        
+        // Check if fully paid with only 1 period - then total should equal amount paid
+        if (isFullyPaid && (totalPeriods == 1 || totalPeriods == 0)) {
+            // Only 1 period (or no period data) and fully paid - use amount paid as total
+            String amountToUse = null;
+            if (paidAmount != null && !paidAmount.isEmpty()) {
+                try {
+                    double paidValue = Double.parseDouble(paidAmount);
+                    if (paidValue > 0) {
+                        amountToUse = paidAmount;
+                    }
+                } catch (NumberFormatException e) {
+                    // Will fall through
+                }
+            }
+            
+            // Try regular amount_paid field if breakdown data not available
+            if (amountToUse == null) {
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    // Remove ₱ and commas, then use it
+                    amountToUse = fallbackPaid.replace("₱", "").replace(",", "");
+                }
+            }
+            
+            if (amountToUse != null) {
+                try {
+                    double paidValue = Double.parseDouble(amountToUse);
+                    if (paidValue > 0) {
+                        holder.tvTotalAmount.setText("₱" + formatAmount(amountToUse));
+                        useBookingTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Will fall through to use total amount
+                }
+            }
+        }
+        
+        // Also check if amount paid equals total amount (fully paid single period scenario)
+        if (!useBookingTotal && isFullyPaid && paidAmount != null && totalAmount != null) {
+            try {
+                double paidValue = Double.parseDouble(paidAmount);
+                double totalValue = Double.parseDouble(totalAmount);
+                // If they're equal or very close, it's likely a single period payment
+                if (paidValue > 0 && Math.abs(paidValue - totalValue) < 0.01) {
+                    holder.tvTotalAmount.setText("₱" + formatAmount(paidAmount));
+                    useBookingTotal = true;
+                }
+            } catch (NumberFormatException e) {
+                // Will fall through to use total amount
+            }
+        }
+        
+        // If not handled above, use total amount from booking breakdown
+        if (!useBookingTotal && totalAmount != null && !totalAmount.isEmpty()) {
+            try {
+                double totalValue = Double.parseDouble(totalAmount);
+                if (totalValue > 0) {
+                    holder.tvTotalAmount.setText("₱" + formatAmount(totalAmount));
+                    useBookingTotal = true;
+                }
+            } catch (NumberFormatException e) {
+                // Invalid number, will fall back
+            }
+        }
+        
+        if (!useBookingTotal) {
+            // Fall back to regular total_amount field
+            String fallbackTotal = payment.getTotalAmount();
+            if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
+                holder.tvTotalAmount.setText(fallbackTotal);
+            } else {
+                // Last resort: use paid amount if available
+                String lastResortPaid = payment.getAmountPaid();
+                if (lastResortPaid != null && !lastResortPaid.isEmpty() && !lastResortPaid.equals("₱0.00")) {
+                    holder.tvTotalAmount.setText(lastResortPaid);
+                } else {
+                    holder.tvTotalAmount.setText("₱0.00");
+                }
+            }
+        }
+        
         holder.tvPaymentStatus.setText("FULLY PAID");
         holder.tvPaymentDate.setText("Completed: " + payment.getPaymentDate());
         
@@ -302,9 +406,104 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             }
         }
         
+        // Check if fully paid
+        // First check the isFullyPaid flag from database
+        // Then verify with period data if available
+        int totalPeriods = payment.getTotalPeriods();
+        int paidPeriods = payment.getPaidPeriods();
+        boolean isFullyPaid = payment.isFullyPaid();
+        
+        // If we have period data, verify fully paid status
+        if (totalPeriods > 0) {
+            isFullyPaid = isFullyPaid && paidPeriods >= totalPeriods;
+        }
+        
+        // Also check payment status string as fallback
+        String paymentStatusStr = payment.getPaymentStatus();
+        if (paymentStatusStr != null && paymentStatusStr.equalsIgnoreCase("Fully Paid")) {
+            isFullyPaid = true;
+        }
+        
+        // Total Amount logic:
+        // - If fully paid AND only 1 period exists, total = amount paid (166.67)
+        // - If fully paid AND amount paid equals total amount, total = amount paid (166.67)
+        // - If fully paid AND multiple periods, total = sum of all periods (5000)
+        // - If not fully paid, total = sum of all periods
+        // Note: paidAmount is already declared above (line 281)
         String totalAmount = payment.getTotalAmountForBooking();
         boolean useBookingTotal = false;
-        if (totalAmount != null && !totalAmount.isEmpty()) {
+        
+        // Check if fully paid with only 1 period - then total should equal amount paid
+        if (isFullyPaid && (totalPeriods == 1 || totalPeriods == 0)) {
+            // Only 1 period (or no period data) and fully paid - use amount paid as total
+            String amountToUse = null;
+            if (useBookingPaid && paidAmount != null && !paidAmount.isEmpty()) {
+                amountToUse = paidAmount;
+            } else {
+                // Try regular amount_paid field
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    // Remove ₱ and commas, then use it
+                    amountToUse = fallbackPaid.replace("₱", "").replace(",", "");
+                }
+            }
+            
+            if (amountToUse != null) {
+                try {
+                    double paidValue = Double.parseDouble(amountToUse);
+                    if (paidValue > 0) {
+                        holder.tvTotalAmount.setText("₱" + formatAmount(amountToUse));
+                        useBookingTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Will fall through to use total amount
+                }
+            }
+        }
+        
+        // Also check if amount paid equals total amount (fully paid single period scenario)
+        if (!useBookingTotal && isFullyPaid) {
+            String paidToCompare = null;
+            String totalToCompare = null;
+            
+            // Get paid amount to compare
+            if (useBookingPaid && paidAmount != null && !paidAmount.isEmpty()) {
+                paidToCompare = paidAmount;
+            } else {
+                String fallbackPaid = payment.getAmountPaid();
+                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
+                    paidToCompare = fallbackPaid.replace("₱", "").replace(",", "");
+                }
+            }
+            
+            // Get total amount to compare
+            if (totalAmount != null && !totalAmount.isEmpty()) {
+                totalToCompare = totalAmount;
+            } else {
+                String fallbackTotal = payment.getTotalAmount();
+                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
+                    totalToCompare = fallbackTotal.replace("₱", "").replace(",", "");
+                }
+            }
+            
+            // Compare if both are available
+            if (paidToCompare != null && totalToCompare != null) {
+                try {
+                    double paidValue = Double.parseDouble(paidToCompare);
+                    double totalValue = Double.parseDouble(totalToCompare);
+                    // If they're equal or very close, it's likely a single period payment
+                    if (paidValue > 0 && Math.abs(paidValue - totalValue) < 0.01) {
+                        holder.tvTotalAmount.setText("₱" + formatAmount(paidToCompare));
+                        useBookingTotal = true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Will fall through to use total amount
+                }
+            }
+        }
+        
+        // If not handled above, use total amount from booking breakdown
+        if (!useBookingTotal && totalAmount != null && !totalAmount.isEmpty()) {
             try {
                 double totalValue = Double.parseDouble(totalAmount);
                 if (totalValue > 0) {
@@ -326,7 +525,28 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             }
         }
         
-        holder.tvPaymentStatus.setText(payment.getPaymentStatus());
+        // Hide duplicate status text when we show badge (fully paid or completed/partially)
+        if (holder.tvPaymentStatus != null) {
+            String paymentStatus = payment.getPaymentStatus();
+            if (paymentStatus != null) {
+                String statusLower = paymentStatus.toLowerCase();
+                boolean showBadge = isFullyPaid || "fully paid".equals(statusLower) || 
+                                  "completed".equals(statusLower) || "completed/partially".equals(statusLower) ||
+                                  "completed_partially".equals(statusLower) || statusLower.contains("completed");
+                
+                if (showBadge) {
+                    // Hide the status text when we show badge instead
+                    holder.tvPaymentStatus.setVisibility(View.GONE);
+                } else {
+                    holder.tvPaymentStatus.setVisibility(View.VISIBLE);
+                    holder.tvPaymentStatus.setText(paymentStatus);
+                }
+            } else {
+                holder.tvPaymentStatus.setVisibility(View.VISIBLE);
+                holder.tvPaymentStatus.setText(payment.getPaymentStatus());
+            }
+        }
+        
         holder.tvRentalStatus.setText(payment.getRentalStatus());
         holder.tvPaymentDate.setText(payment.getPaymentDate());
         
@@ -350,30 +570,66 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             }
         }
         
-        // Show "Fully Paid" badge at top right if payment is fully paid
-        boolean isFullyPaid = payment.isFullyPaid();
+        // Show status badge at top right based on payment status
+        // Fully Paid = all periods paid OR isFullyPaid flag is true
+        // Completed/Partially = some periods paid but not all
         if (holder.tvStatusBadge != null) {
-            if (isFullyPaid) {
+            String paymentStatus = payment.getPaymentStatus();
+            String statusLower = paymentStatus != null ? paymentStatus.toLowerCase() : "";
+            
+            // Check if fully paid (from flag or period data or status string)
+            boolean showFullyPaid = isFullyPaid || 
+                                   (totalPeriods > 0 && paidPeriods >= totalPeriods) ||
+                                   "fully paid".equals(statusLower);
+            
+            // Check if completed/partially (some periods paid but not all)
+            boolean showCompletedPartially = (totalPeriods > 0 && paidPeriods > 0 && paidPeriods < totalPeriods) ||
+                                           "completed".equals(statusLower) || 
+                                           "completed/partially".equals(statusLower) ||
+                                           "completed_partially".equals(statusLower) ||
+                                           (statusLower.contains("completed") && !showFullyPaid);
+            
+            if (showFullyPaid) {
+                // Green badge for Fully Paid
                 holder.tvStatusBadge.setText("FULLY PAID");
                 holder.tvStatusBadge.setVisibility(View.VISIBLE);
                 holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
                 holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_approved);
+            } else if (showCompletedPartially) {
+                // Blue badge for Completed/Partially
+                holder.tvStatusBadge.setText("COMPLETED/PARTIALLY");
+                holder.tvStatusBadge.setVisibility(View.VISIBLE);
+                holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
+                holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_completed);
             } else {
                 holder.tvStatusBadge.setVisibility(View.GONE);
             }
         }
         
         // Set payment progress for all payments view
-        int totalPeriods = payment.getTotalPeriods();
-        int paidPeriods = payment.getPaidPeriods();
+        // Always show progress if we have period data OR if payment is fully paid
         int totalMonths = payment.getTotalMonthsForBooking();
         int paidMonths = payment.getPaidMonthsForBooking();
         double progressPercent = payment.getPaymentProgressPercent();
         
-        if (totalPeriods > 0 && holder.progressBarPayment != null) {
+        // Calculate progress percent if not set but we have period data
+        if (progressPercent == 0 && totalPeriods > 0) {
+            progressPercent = (paidPeriods * 100.0) / totalPeriods;
+        }
+        
+        // For fully paid payments without period data, show 100%
+        boolean hasNoPeriodData = totalPeriods == 0;
+        if (isFullyPaid && hasNoPeriodData) {
+            progressPercent = 100.0;
+            totalPeriods = 1; // Set to 1 so progress bar shows
+            paidPeriods = 1;
+        }
+        
+        // Show progress bar if we have period data OR if payment is fully paid
+        if ((totalPeriods > 0 || isFullyPaid) && holder.progressBarPayment != null) {
             // Show "months" only if all periods are exactly monthly (total_periods == total_months)
             // Otherwise show "periods" (use singular "period" if only 1)
-            if (totalMonths > 0 && totalPeriods == totalMonths) {
+            if (totalMonths > 0 && totalPeriods == totalMonths && !hasNoPeriodData) {
                 // All periods are monthly, show as months (use singular "month" if only 1)
                 if (totalMonths == 1) {
                     holder.tvPaymentProgress.setText(
@@ -390,10 +646,15 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
                     holder.tvPaymentProgress.setText(
                         String.format("%d/%d period paid", paidPeriods, totalPeriods)
                     );
-                } else {
+                } else if (totalPeriods > 1) {
                     holder.tvPaymentProgress.setText(
                         String.format("%d/%d periods paid", paidPeriods, totalPeriods)
                     );
+                } else if (isFullyPaid && hasNoPeriodData) {
+                    // Fully paid but no period data - show as fully paid
+                    holder.tvPaymentProgress.setText("Fully Paid");
+                } else {
+                    holder.tvPaymentProgress.setText("No period data");
                 }
             }
             
@@ -424,10 +685,27 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.progressBarPayment.setVisibility(View.VISIBLE);
             holder.tvProgressPercent.setVisibility(View.VISIBLE);
         } else if (holder.progressBarPayment != null) {
-            // Hide progress if no data
-            holder.tvPaymentProgress.setVisibility(View.GONE);
-            holder.progressBarPayment.setVisibility(View.GONE);
-            holder.tvProgressPercent.setVisibility(View.GONE);
+            // If no period data, try to show progress based on payment status
+            // For payments without breakdown, still try to show something
+            if (paidPeriods > 0 || totalPeriods > 0) {
+                // We have some period data, show it
+                holder.tvPaymentProgress.setVisibility(View.VISIBLE);
+                holder.progressBarPayment.setVisibility(View.VISIBLE);
+                holder.tvProgressPercent.setVisibility(View.VISIBLE);
+                
+                // Set default progress
+                if (totalPeriods > 0) {
+                    int defaultProgress = (int) ((paidPeriods * 100.0) / totalPeriods);
+                    holder.progressBarPayment.setProgress(defaultProgress);
+                    holder.tvProgressPercent.setText(defaultProgress + "%");
+                    holder.tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
+                }
+            } else {
+                // Hide progress if no data at all
+                holder.tvPaymentProgress.setVisibility(View.GONE);
+                holder.progressBarPayment.setVisibility(View.GONE);
+                holder.tvProgressPercent.setVisibility(View.GONE);
+            }
         }
         
         // Set status color based on payment status

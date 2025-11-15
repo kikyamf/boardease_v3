@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.TranslateAnimation;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -267,6 +268,270 @@ public class PendingBookingsFragment extends Fragment {
     }
     
     private void approveBooking(BookingData booking) {
+        // Show confirmation dialog with payment information
+        showApproveConfirmationDialog(booking);
+    }
+    
+    private void showApproveConfirmationDialog(BookingData booking) {
+        // Use light theme for dialog
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Light_Dialog);
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_approve_booking_confirmation, null);
+        builder.setView(dialogView);
+        
+        // Get views
+        TextView tvBoarderName = dialogView.findViewById(R.id.tvBoarderName);
+        TextView tvRoomName = dialogView.findViewById(R.id.tvRoomName);
+        TextView tvPaymentStatus = dialogView.findViewById(R.id.tvPaymentStatus);
+        TextView tvAmountPaid = dialogView.findViewById(R.id.tvAmountPaid);
+        TextView tvTotalAmount = dialogView.findViewById(R.id.tvTotalAmount);
+        TextView tvPaymentProgress = dialogView.findViewById(R.id.tvPaymentProgress);
+        TextView tvProgressPercent = dialogView.findViewById(R.id.tvProgressPercent);
+        ProgressBar progressBarPayment = dialogView.findViewById(R.id.progressBarPayment);
+        TextView tvWarning = dialogView.findViewById(R.id.tvWarning);
+        android.widget.ImageView imgPaymentProof = dialogView.findViewById(R.id.imgPaymentProof);
+        TextView tvNoProof = dialogView.findViewById(R.id.tvNoProof);
+        LinearLayout layoutPaymentProof = dialogView.findViewById(R.id.layoutPaymentProof);
+        android.widget.Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+        android.widget.Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        
+        // Set booking information
+        tvBoarderName.setText(booking.getBoarderName() != null ? booking.getBoarderName() : "Unknown");
+        tvRoomName.setText(booking.getRoomName() != null ? booking.getRoomName() : "");
+        
+        // Set payment information
+        int totalPeriods = booking.getTotalPeriods();
+        int paidPeriods = booking.getPaidPeriods();
+        String paidAmount = booking.getPaidAmountForBooking();
+        String totalAmount = booking.getTotalAmountForBooking();
+        boolean isFullyPaid = booking.isFullyPaid();
+        double progressPercent = booking.getPaymentProgressPercent();
+        
+        // Determine payment status
+        String paymentStatusText;
+        int statusColor;
+        int statusBg;
+        
+        if (isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods)) {
+            paymentStatusText = "Fully Paid";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_approved;
+            tvWarning.setVisibility(View.GONE);
+        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+            paymentStatusText = "Completed/Partially";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_completed;
+            tvWarning.setVisibility(View.VISIBLE);
+            tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot and check your GCash account before approving.");
+            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+        } else {
+            paymentStatusText = "Pending - For Confirmation";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_pending;
+            tvWarning.setVisibility(View.VISIBLE);
+            tvWarning.setText("⚠ Payment may have been made but not yet confirmed. Please check payment screenshot above and verify in your GCash account. After approval, payment will be automatically marked as paid.");
+            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+        }
+        
+        tvPaymentStatus.setText(paymentStatusText);
+        tvPaymentStatus.setTextColor(statusColor);
+        tvPaymentStatus.setBackgroundResource(statusBg);
+        
+        // Set amounts
+        if (paidAmount != null && !paidAmount.isEmpty()) {
+            try {
+                double paidValue = Double.parseDouble(paidAmount);
+                if (paidValue > 0) {
+                    tvAmountPaid.setText("₱" + formatAmount(paidAmount));
+                } else {
+                    tvAmountPaid.setText("₱0.00");
+                }
+            } catch (NumberFormatException e) {
+                tvAmountPaid.setText("₱0.00");
+            }
+        } else {
+            tvAmountPaid.setText("₱0.00");
+        }
+        
+        if (totalAmount != null && !totalAmount.isEmpty()) {
+            try {
+                double totalValue = Double.parseDouble(totalAmount);
+                if (totalValue > 0) {
+                    tvTotalAmount.setText("₱" + formatAmount(totalAmount));
+                } else {
+                    tvTotalAmount.setText(booking.getAmount() != null ? booking.getAmount() : "₱0.00");
+                }
+            } catch (NumberFormatException e) {
+                tvTotalAmount.setText(booking.getAmount() != null ? booking.getAmount() : "₱0.00");
+            }
+        } else {
+            tvTotalAmount.setText(booking.getAmount() != null ? booking.getAmount() : "₱0.00");
+        }
+        
+        // Set payment progress
+        if (totalPeriods > 0) {
+            tvPaymentProgress.setVisibility(View.VISIBLE);
+            progressBarPayment.setVisibility(View.VISIBLE);
+            tvProgressPercent.setVisibility(View.VISIBLE);
+            
+            int totalMonths = booking.getTotalMonthsForBooking();
+            int paidMonths = booking.getPaidMonthsForBooking();
+            
+            if (totalMonths > 0 && totalPeriods == totalMonths) {
+                if (totalMonths == 1) {
+                    tvPaymentProgress.setText(String.format("%d/%d month paid", paidMonths, totalMonths));
+                } else {
+                    tvPaymentProgress.setText(String.format("%d/%d months paid", paidMonths, totalMonths));
+                }
+            } else {
+                if (totalPeriods == 1) {
+                    tvPaymentProgress.setText(String.format("%d/%d period paid", paidPeriods, totalPeriods));
+                } else {
+                    tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
+                }
+            }
+            
+            progressBarPayment.setProgress((int) progressPercent);
+            tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
+            
+            // Set progress bar color
+            if (isFullyPaid) {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+            } else if (progressPercent >= 50) {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#FF9800"));
+            } else {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#F44336"));
+            }
+        } else {
+            tvPaymentProgress.setVisibility(View.GONE);
+            progressBarPayment.setVisibility(View.GONE);
+            tvProgressPercent.setVisibility(View.GONE);
+        }
+        
+        // Load payment proof
+        loadPaymentProofForDialog(booking, imgPaymentProof, tvNoProof, layoutPaymentProof);
+        
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            // Ensure light background
+            dialog.getWindow().getDecorView().setBackgroundColor(getResources().getColor(android.R.color.white));
+        }
+        
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss();
+            confirmApproveBooking(booking);
+        });
+        
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    private void loadPaymentProofForDialog(BookingData booking, android.widget.ImageView imgPaymentProof, 
+                                          TextView tvNoProof, LinearLayout layoutPaymentProof) {
+        // Fetch payment proof from the booking's payment record
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_payment_proof_by_booking.php?booking_id=" + booking.getBookingId();
+        
+        com.android.volley.RequestQueue requestQueue = com.android.volley.toolbox.Volley.newRequestQueue(getContext());
+        com.android.volley.toolbox.StringRequest request = new com.android.volley.toolbox.StringRequest(
+            com.android.volley.Request.Method.GET, url,
+            response -> {
+                try {
+                    org.json.JSONObject jsonResponse = new org.json.JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        String paymentProofUrl = jsonResponse.optString("payment_proof_url", "");
+                        String receiptUrl = jsonResponse.optString("receipt_url", "");
+                        
+                        String proofUrl = null;
+                        if (receiptUrl != null && !receiptUrl.isEmpty() && !receiptUrl.equals("null")) {
+                            proofUrl = receiptUrl;
+                        } else if (paymentProofUrl != null && !paymentProofUrl.isEmpty() && !paymentProofUrl.equals("null")) {
+                            proofUrl = paymentProofUrl;
+                        }
+                        
+                        if (proofUrl != null && !proofUrl.isEmpty() && !proofUrl.equals("null")) {
+                            // Show image view and hide "no proof" text
+                            imgPaymentProof.setVisibility(View.VISIBLE);
+                            tvNoProof.setVisibility(View.GONE);
+                            layoutPaymentProof.setVisibility(View.VISIBLE);
+                            
+                            // Build full URL
+                            String baseUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+                            String urlToProcess = proofUrl.trim();
+                            String finalFullUrl;
+                            
+                            if (urlToProcess.startsWith("http://") || urlToProcess.startsWith("https://")) {
+                                finalFullUrl = urlToProcess;
+                            } else {
+                                if (urlToProcess.startsWith("/")) {
+                                    urlToProcess = urlToProcess.substring(1);
+                                }
+                                if (urlToProcess.startsWith("BoardEase2/")) {
+                                    urlToProcess = urlToProcess.substring(11);
+                                }
+                                finalFullUrl = baseUrl + "get_payment_proof.php?path=" + android.net.Uri.encode(urlToProcess, "UTF-8");
+                            }
+                            
+                            // Load image using Glide
+                            try {
+                                com.bumptech.glide.Glide.with(getContext())
+                                    .load(finalFullUrl)
+                                    .placeholder(android.R.drawable.ic_menu_report_image)
+                                    .error(android.R.drawable.ic_dialog_alert)
+                                    .into(imgPaymentProof);
+                                
+                                // Make image clickable to view full size
+                                final String imageUrl = finalFullUrl;
+                                imgPaymentProof.setOnClickListener(v -> {
+                                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+                                    intent.setDataAndType(android.net.Uri.parse(imageUrl), "image/*");
+                                    try {
+                                        startActivity(intent);
+                                    } catch (Exception e) {
+                                        android.widget.Toast.makeText(getContext(), "Cannot open image viewer", android.widget.Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                android.util.Log.e("PendingBookingsFragment", "Error loading payment proof", e);
+                                imgPaymentProof.setVisibility(View.GONE);
+                                tvNoProof.setVisibility(View.VISIBLE);
+                            }
+                        } else {
+                            // No payment proof available
+                            imgPaymentProof.setVisibility(View.GONE);
+                            tvNoProof.setVisibility(View.VISIBLE);
+                            layoutPaymentProof.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        // No payment proof found
+                        imgPaymentProof.setVisibility(View.GONE);
+                        tvNoProof.setVisibility(View.VISIBLE);
+                        layoutPaymentProof.setVisibility(View.VISIBLE);
+                    }
+                } catch (org.json.JSONException e) {
+                    android.util.Log.e("PendingBookingsFragment", "Error parsing payment proof response", e);
+                    imgPaymentProof.setVisibility(View.GONE);
+                    tvNoProof.setVisibility(View.VISIBLE);
+                    layoutPaymentProof.setVisibility(View.VISIBLE);
+                }
+            },
+            error -> {
+                android.util.Log.e("PendingBookingsFragment", "Error fetching payment proof: " + error.getMessage());
+                imgPaymentProof.setVisibility(View.GONE);
+                tvNoProof.setVisibility(View.VISIBLE);
+                layoutPaymentProof.setVisibility(View.VISIBLE);
+            }
+        );
+        
+        requestQueue.add(request);
+    }
+    
+    private void confirmApproveBooking(BookingData booking) {
         showProgressDialog("Approving booking...");
         
         String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/approve_booking.php";
@@ -343,6 +608,16 @@ public class PendingBookingsFragment extends Fragment {
                 });
 
         requestQueue.add(request);
+    }
+    
+    private String formatAmount(String amount) {
+        try {
+            double amountValue = Double.parseDouble(amount);
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+            return formatter.format(amountValue);
+        } catch (NumberFormatException e) {
+            return amount;
+        }
     }
     
     private void showProgressDialog(String message) {
