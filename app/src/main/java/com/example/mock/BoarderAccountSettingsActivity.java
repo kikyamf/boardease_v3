@@ -41,6 +41,12 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
     // Views
     private ImageButton btnBack;
     private ProgressBar progressBar;
+    
+    // Collapsible Privacy Section
+    private android.view.View llPrivacyHeader;
+    private android.view.View llPasswordFields;
+    private ImageView ivExpandCollapse;
+    private boolean isPasswordSectionExpanded = false;
 
     // Personal Information Fields
     private TextInputEditText etFirstName;
@@ -125,6 +131,11 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
             ivToggleCurrentPassword = findViewById(R.id.ivToggleCurrentPassword);
             ivToggleNewPassword = findViewById(R.id.ivToggleNewPassword);
             ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
+            
+            // Collapsible Privacy Section
+            llPrivacyHeader = findViewById(R.id.llPrivacyHeader);
+            llPasswordFields = findViewById(R.id.llPasswordFields);
+            ivExpandCollapse = findViewById(R.id.ivExpandCollapse);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -196,6 +207,17 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
             
             if (ivToggleConfirmPassword != null) {
                 ivToggleConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
+            }
+            
+            // Privacy & Security header click listener (collapsible)
+            if (llPrivacyHeader != null) {
+                llPrivacyHeader.setOnClickListener(v -> {
+                    try {
+                        togglePasswordSection();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -728,6 +750,39 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
             }
             etConfirmPassword.setSelection(etConfirmPassword.getText().length());
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void togglePasswordSection() {
+        try {
+            Log.d(TAG, "togglePasswordSection called, current state: " + isPasswordSectionExpanded);
+            
+            // Double check views are not null
+            if (llPasswordFields == null) {
+                Log.d(TAG, "llPasswordFields is null");
+                return;
+            }
+            if (ivExpandCollapse == null) {
+                Log.d(TAG, "ivExpandCollapse is null");
+                return;
+            }
+            
+            if (isPasswordSectionExpanded) {
+                // Collapse the section
+                llPasswordFields.setVisibility(View.GONE);
+                ivExpandCollapse.setRotation(0f); // Point down
+                isPasswordSectionExpanded = false;
+                Log.d(TAG, "Section collapsed");
+            } else {
+                // Expand the section
+                llPasswordFields.setVisibility(View.VISIBLE);
+                ivExpandCollapse.setRotation(180f); // Point up
+                isPasswordSectionExpanded = true;
+                Log.d(TAG, "Section expanded");
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Error in togglePasswordSection: " + e.getMessage());
             e.printStackTrace();
         }
     }
