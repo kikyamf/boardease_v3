@@ -906,8 +906,8 @@ public class BoarderBookingFragment extends Fragment {
                     isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
                 }
                 
-                // Set checkbox styling - brown border and check when clicked
-                checkboxPeriod.setButtonTintList(getResources().getColorStateList(R.color.checkbox_brown));
+                // Checkbox styling is handled by custom drawable (checkbox_payment_period.xml)
+                // It provides brown border when checked, with visible brown checkmark
                 
                 // Chronological validation: disable checkboxes if previous period is not checked
                 // First period is always enabled, others are disabled by default

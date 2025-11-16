@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                android:buttonTint="@color/checkbox_brown"
+                android:button="@drawable/checkbox_payment_period"
                 android:background="@android:color/transparent" />
 
             <TextView
