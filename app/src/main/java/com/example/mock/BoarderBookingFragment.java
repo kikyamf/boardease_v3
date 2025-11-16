@@ -1982,8 +1982,9 @@ public class BoarderBookingFragment extends Fragment {
             progressDialog.setCancelable(false);
             progressDialog.show();
 
-            // API URL
-            String url = BASE_URL + "BoardEase2/submit_review.php";
+            // API URL - Use localhost for review submission
+            String localhostUrl = "http://192.168.1.5/";
+            String url = localhostUrl + "BoardEase2/submit_review.php";
             Log.d(TAG, "Submitting review to: " + url);
             Log.d(TAG, "Review data - userId: " + userId + ", bhId: " + bhId + ", rating: " + rating);
 
