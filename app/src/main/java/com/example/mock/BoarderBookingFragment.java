@@ -2061,13 +2061,14 @@ public class BoarderBookingFragment extends Fragment {
                         // More specific error messages
                         String errorMessage = "Network error";
                         if (error instanceof com.android.volley.TimeoutError) {
-                            errorMessage = "Request timeout. Please check your connection.";
+                            errorMessage = "Request timeout. Please check if the server is running.";
                         } else if (error instanceof com.android.volley.NoConnectionError) {
-                            errorMessage = "No connection. Please check your internet.";
+                            // For localhost, this might just mean server is not reachable, not necessarily no internet
+                            errorMessage = "Cannot connect to server. Please check:\n1. Server is running\n2. Device is on same network\n3. Firewall allows connections";
                         } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
                             errorMessage = "Error: " + error.getMessage();
                         } else {
-                            errorMessage = "Failed to connect to server. Please try again.";
+                            errorMessage = "Failed to connect to server at 192.168.1.5. Please check server status.";
                         }
                         
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
