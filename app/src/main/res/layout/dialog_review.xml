@@ -201,7 +201,6 @@
                         android:textSize="14sp"
                         android:textColor="#000000"
                         android:textColorHint="#A18167"
-                        android:textCursorDrawable="@drawable/cursor_orange"
                         android:inputType="textCapSentences|textMultiLine"
                         android:minLines="4"
                         android:maxLines="6"
