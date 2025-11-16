@@ -56,9 +56,9 @@
             android:layout_marginBottom="28dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="5dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0"
-            android:backgroundTint="#FFFFFF">
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/brown"
+            android:backgroundTint="#FAF8F6">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -75,13 +75,17 @@
                     android:gravity="center_vertical"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="?attr/selectableItemBackground"
-                    android:paddingBottom="8dp"
-                    android:layout_marginBottom="12dp">
+                    android:background="@drawable/bg_personal_info_header_ripple"
+                    android:padding="12dp"
+                    android:paddingBottom="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginStart="-4dp"
+                    android:layout_marginEnd="-4dp"
+                    android:layout_marginTop="-4dp">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:src="@drawable/ic_person1"
                         android:tint="@color/brown"
                         android:layout_marginEnd="12dp"
@@ -94,14 +98,14 @@
                         android:text="Personal Information"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold"
-                        android:textColor="#000000" />
+                        android:textColor="@color/brown" />
 
                     <ImageView
                         android:id="@+id/ivExpandCollapsePersonal"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_down"
-                        android:tint="#666666"
+                        android:tint="@color/brown"
                         android:contentDescription="Expand/Collapse" />
                 </LinearLayout>
 
@@ -327,8 +331,8 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="5dp"
             app:strokeWidth="2dp"
-            app:strokeColor="@color/brown"
-            android:backgroundTint="#FFF9F5">
+            app:strokeColor="@color/blue"
+            android:backgroundTint="#E3F2FD">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -345,7 +349,7 @@
                     android:gravity="center_vertical"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="@drawable/bg_privacy_header_ripple"
+                    android:background="@drawable/bg_privacy_header_ripple_blue"
                     android:padding="12dp"
                     android:paddingBottom="12dp"
                     android:layout_marginBottom="12dp"
@@ -357,7 +361,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_security"
-                        android:tint="@color/brown"
+                        android:tint="@color/blue"
                         android:layout_marginEnd="12dp"
                         android:contentDescription="Security Icon" />
 
@@ -368,14 +372,14 @@
                         android:text="Privacy &amp; Security"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold"
-                        android:textColor="@color/brown" />
+                        android:textColor="@color/blue" />
 
                     <ImageView
                         android:id="@+id/ivExpandCollapse"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_down"
-                        android:tint="@color/brown"
+                        android:tint="@color/blue"
                         android:contentDescription="Expand/Collapse" />
                 </LinearLayout>
 
