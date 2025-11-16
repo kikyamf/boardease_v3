@@ -6,7 +6,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -39,6 +41,9 @@ public class PendingMaintenanceFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private LinearLayout emptyLayout;
+    private TextView tvCount;
+    private LinearLayout headerLayout;
+    private ImageView ivHeaderIcon;
     private PendingMaintenanceAdapter adapter;
     private ArrayList<MaintenanceRequest> maintenanceRequests;
     private int userId;
@@ -75,6 +80,20 @@ public class PendingMaintenanceFragment extends Fragment {
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyLayout = view.findViewById(R.id.emptyLayout);
+        tvCount = view.findViewById(R.id.tvCount);
+        headerLayout = view.findViewById(R.id.headerLayout);
+        ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        // Set header styling (orange for Pending)
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#FFF3E0")); // Light orange
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#FF9800")); // Orange
+        }
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_orange);
+        }
     }
 
     private void setupRecyclerView() {
@@ -137,6 +156,11 @@ public class PendingMaintenanceFragment extends Fragment {
     }
 
     private void updateEmptyState() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(maintenanceRequests.size()));
+        }
+        
         if (maintenanceRequests.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyLayout.setVisibility(View.VISIBLE);

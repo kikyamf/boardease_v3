@@ -105,10 +105,11 @@ public class BoarderStayDetailsActivity extends AppCompatActivity {
         if (status != null) {
             tvStatus.setText(status);
             // Set status background
+            // Completed - blue
             if ("Active".equals(status)) {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_available);
             } else if ("Completed".equals(status)) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_occupied);
+                tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Completed
             } else {
                 tvStatus.setBackgroundResource(R.drawable.bg_rounded_orange);
             }

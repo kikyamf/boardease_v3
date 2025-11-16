@@ -6,6 +6,7 @@
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white"
     android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
@@ -16,6 +17,7 @@
 
         <!-- Property Image Placeholder -->
         <ImageView
+            android:id="@+id/imgBoardingHouse"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:src="@drawable/ic_home"

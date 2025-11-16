@@ -54,19 +54,20 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
         holder.tvStatus.setText(status);
         
         // Update status color based on status
+        // Pending - orange, Confirmed - blue, Completed - green
         if ("Confirmed".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed
         } else if ("Cancelled".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_red);
         } else if ("Completed".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Completed
         } else {
-            // Pending
+            // Pending - orange
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
         }
         
         holder.tvEmail.setText(booking.getEmail() != null ? booking.getEmail() : "");
@@ -209,23 +210,25 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
             holder.layoutPaymentInfo.setVisibility(View.GONE);
         }
 
-        holder.btnApprove.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onApprove(booking);
-            }
-        });
-
-        holder.btnDecline.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onDecline(booking);
-            }
-        });
-
-        holder.btnViewDetails.setOnClickListener(v -> {
+        // Hide Approve and Decline buttons in the card layout
+        if (holder.btnApprove != null) {
+            holder.btnApprove.setVisibility(View.GONE);
+        }
+        if (holder.btnDecline != null) {
+            holder.btnDecline.setVisibility(View.GONE);
+        }
+        
+        // Make card clickable to open booking details
+        holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onViewDetails(booking);
             }
         });
+        
+        // Hide View Details button
+        if (holder.btnViewDetails != null) {
+            holder.btnViewDetails.setVisibility(View.GONE);
+        }
     }
 
     @Override

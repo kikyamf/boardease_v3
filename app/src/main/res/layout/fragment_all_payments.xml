@@ -7,6 +7,7 @@
 
     <!-- Header -->
     <LinearLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -15,12 +16,14 @@
         android:background="#E8F5E8">
 
         <ImageView
+            android:id="@+id/ivHeaderIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_payment2"
             android:tint="#4CAF50" />
 
         <TextView
+            android:id="@+id/tvHeaderTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -29,6 +32,23 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#000000" />
+
+        <TextView
+            android:id="@+id/tvCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="32dp"
+            android:gravity="center"
+            android:text="0"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_rounded_brown"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:visibility="visible" />
     </LinearLayout>
 
     <!-- SwipeRefreshLayout with RecyclerView -->

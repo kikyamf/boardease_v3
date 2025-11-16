@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,6 +59,17 @@ public class ApprovedBookingsFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_approved_bookings, container, false);
+
+        // Set header styling (blue for Approved Bookings)
+        LinearLayout headerLayout = view.findViewById(R.id.headerLayout);
+        ImageView ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#E3F2FD")); // Light blue
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#2196F3")); // Blue
+        }
 
         // Get userId from arguments
         if (getArguments() != null) {
@@ -214,7 +227,12 @@ public class ApprovedBookingsFragment extends Fragment {
                                     intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
                                     intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
                                     intent.putExtra("is_fully_paid", booking.isFullyPaid());
-                                    startActivity(intent);
+                                    // Use startActivityForResult so parent activity can receive result
+                                    if (getActivity() != null) {
+                                        getActivity().startActivityForResult(intent, 1001);
+                                    } else {
+                                        startActivity(intent);
+                                    }
                                 }
                             });
                             

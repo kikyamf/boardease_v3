@@ -232,17 +232,18 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Engagements -->
+        <!-- Today's Bookings -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Engagements"
+            android:text="Today's Bookings"
             android:textSize="18sp"
             android:layout_marginTop="24dp"
             android:textColor="#333333"
             android:fontFamily="@font/poppins_medium" />
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTodayBookings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -274,7 +275,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="views per day"
+                    android:text="new bookings today"
                     android:textSize="16sp"
                     android:textColor="#555555"
                     android:fontFamily="@font/poppins_regular" />
@@ -292,6 +293,7 @@
             android:fontFamily="@font/poppins_medium" />
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardPopularListing"
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:layout_marginTop="12dp"
@@ -341,7 +343,7 @@
                         android:id="@+id/tvPopularVisits"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0 visits"
+                        android:text="0 bookings"
                         android:textSize="14sp"
                         android:textColor="#FFFFFF"
                         android:fontFamily="@font/poppins_regular" />

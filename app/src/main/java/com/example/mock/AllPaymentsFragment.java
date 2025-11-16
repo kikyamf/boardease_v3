@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +25,7 @@ public class AllPaymentsFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private TextView emptyState;
+    private TextView tvCount;
     private PaymentAdapter adapter;
     private List<PaymentData> allPayments;
     private PaymentApiService paymentApiService;
@@ -36,9 +39,30 @@ public class AllPaymentsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_all_payments, container, false);
 
+        // Set header title and styling (purple for All Payments - same as booking history)
+        TextView tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle);
+        LinearLayout headerLayout = view.findViewById(R.id.headerLayout);
+        ImageView ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("All Payment Records");
+        }
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#F3E5F5")); // Light purple (same as booking history)
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#795548")); // Brown (same as booking history)
+        }
+
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
+        tvCount = view.findViewById(R.id.tvCount);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        // Set count badge background to brown (matching header)
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_brown);
+        }
 
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -121,6 +145,11 @@ public class AllPaymentsFragment extends Fragment {
     }
 
     private void updateUI() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(allPayments.size()));
+        }
+        
         if (allPayments.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);

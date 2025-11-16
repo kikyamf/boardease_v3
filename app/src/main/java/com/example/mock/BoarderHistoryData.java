@@ -2,6 +2,8 @@ package com.example.mock;
 
 public class BoarderHistoryData {
     private String boarderName;
+    private String boarderEmail;
+    private String boarderPhone;
     private String roomName;
     private String startDate;
     private String endDate;
@@ -34,8 +36,25 @@ public class BoarderHistoryData {
         this.profilePicture = profilePicture;
     }
 
+    public BoarderHistoryData(String boarderName, String boarderEmail, String boarderPhone, String roomName, 
+                             String startDate, String endDate, String status, 
+                             String boardingHouseName, String rentType, String profilePicture) {
+        this.boarderName = boarderName;
+        this.boarderEmail = boarderEmail;
+        this.boarderPhone = boarderPhone;
+        this.roomName = roomName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.status = status;
+        this.boardingHouseName = boardingHouseName;
+        this.rentType = rentType;
+        this.profilePicture = profilePicture;
+    }
+
     // Getters
     public String getBoarderName() { return boarderName; }
+    public String getBoarderEmail() { return boarderEmail; }
+    public String getBoarderPhone() { return boarderPhone; }
     public String getRoomName() { return roomName; }
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
@@ -46,6 +65,8 @@ public class BoarderHistoryData {
 
     // Setters
     public void setBoarderName(String boarderName) { this.boarderName = boarderName; }
+    public void setBoarderEmail(String boarderEmail) { this.boarderEmail = boarderEmail; }
+    public void setBoarderPhone(String boarderPhone) { this.boarderPhone = boarderPhone; }
     public void setRoomName(String roomName) { this.roomName = roomName; }
     public void setStartDate(String startDate) { this.startDate = startDate; }
     public void setEndDate(String endDate) { this.endDate = endDate; }

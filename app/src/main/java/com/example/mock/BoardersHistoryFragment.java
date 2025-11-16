@@ -7,6 +7,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +28,9 @@ public class BoardersHistoryFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private TextView emptyState;
+    private TextView tvCount;
+    private LinearLayout headerLayout;
+    private ImageView ivHeaderIcon;
     private ProgressDialog progressDialog;
     private BoardersHistoryAdapter adapter;
     private List<BoarderHistoryData> boardersHistory;
@@ -56,6 +61,20 @@ public class BoardersHistoryFragment extends Fragment {
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
+        tvCount = view.findViewById(R.id.tvCount);
+        headerLayout = view.findViewById(R.id.headerLayout);
+        ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        // Set header styling (blue for History)
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#E3F2FD")); // Light blue
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#2196F3")); // Blue
+        }
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_blue);
+        }
         
         // Get userId from arguments
         if (getArguments() != null) {
@@ -123,6 +142,8 @@ public class BoardersHistoryFragment extends Fragment {
             // Open stay details activity
             Intent intent = new Intent(getContext(), BoarderStayDetailsActivity.class);
             intent.putExtra("boarder_name", boarder.getBoarderName());
+            intent.putExtra("boarder_email", boarder.getBoarderEmail());
+            intent.putExtra("boarder_phone", boarder.getBoarderPhone());
             intent.putExtra("room_name", boarder.getRoomName());
             intent.putExtra("start_date", boarder.getStartDate());
             intent.putExtra("end_date", boarder.getEndDate());
@@ -180,6 +201,11 @@ public class BoardersHistoryFragment extends Fragment {
     }
 
     private void updateEmptyState() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(boardersHistory.size()));
+        }
+        
         if (boardersHistory.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);
@@ -190,6 +216,10 @@ public class BoardersHistoryFragment extends Fragment {
     }
 
     private void showEmptyState() {
+        // Update count to 0
+        if (tvCount != null) {
+            tvCount.setText("0");
+        }
         recyclerView.setVisibility(View.GONE);
         emptyState.setVisibility(View.VISIBLE);
     }

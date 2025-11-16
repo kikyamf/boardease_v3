@@ -140,6 +140,8 @@ public class BoarderApiService {
                                 JSONObject historyObj = historyArray.getJSONObject(i);
                                 BoarderHistoryData boarderHistory = new BoarderHistoryData(
                                     historyObj.optString("boarder_name", ""),
+                                    historyObj.optString("boarder_email", ""),
+                                    historyObj.optString("boarder_phone", ""),
                                     historyObj.optString("room_number", ""),
                                     historyObj.optString("start_date", ""),
                                     historyObj.optString("end_date", ""),

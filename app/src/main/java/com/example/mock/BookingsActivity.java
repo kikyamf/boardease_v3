@@ -45,22 +45,31 @@ public class BookingsActivity extends AppCompatActivity {
         // Refresh fragments when returning from BookingDetailsActivity after approve/decline
         if (resultCode == RESULT_OK) {
             refreshFragments();
+            
+            // Navigate to pending tab if booking was approved
+            if (data != null && data.getBooleanExtra("should_navigate_to_pending", false)) {
+                // Navigate to pending tab (position 0)
+                if (viewPager != null && viewPager.getAdapter() != null && viewPager.getAdapter().getItemCount() > 0) {
+                    viewPager.setCurrentItem(0, true); // Navigate to pending tab (position 0)
+                }
+            }
         }
     }
 
     private void refreshFragments() {
         // Refresh all fragments by finding them through FragmentManager
         // ViewPager2 creates fragments with tags like "f0", "f1", "f2" etc.
+        // Order: 0=Pending, 1=Approved, 2=History
         try {
-            Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
-            Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
+            Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
+            Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
             Fragment historyFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
             
-            if (approvedFragment instanceof ApprovedBookingsFragment) {
-                ((ApprovedBookingsFragment) approvedFragment).refreshBookings();
-            }
             if (pendingFragment instanceof PendingBookingsFragment) {
                 ((PendingBookingsFragment) pendingFragment).refreshBookings();
+            }
+            if (approvedFragment instanceof ApprovedBookingsFragment) {
+                ((ApprovedBookingsFragment) approvedFragment).refreshBookings();
             }
             if (historyFragment instanceof BookingHistoryFragment) {
                 ((BookingHistoryFragment) historyFragment).refreshBookings();
@@ -113,12 +122,12 @@ public class BookingsActivity extends AppCompatActivity {
                 // Wait for fragment to be ready
                 viewPager.post(() -> {
                     try {
-                        if (position == 0 && fragment instanceof ApprovedBookingsFragment) {
-                            // Approved tab
-                            ((ApprovedBookingsFragment) fragment).loadIfNeeded();
-                        } else if (position == 1 && fragment instanceof PendingBookingsFragment) {
+                        if (position == 0 && fragment instanceof PendingBookingsFragment) {
                             // Pending tab
                             ((PendingBookingsFragment) fragment).loadIfNeeded();
+                        } else if (position == 1 && fragment instanceof ApprovedBookingsFragment) {
+                            // Approved tab
+                            ((ApprovedBookingsFragment) fragment).loadIfNeeded();
                         } else if (position == 2 && fragment instanceof BookingHistoryFragment) {
                             // History tab
                             ((BookingHistoryFragment) fragment).loadIfNeeded();
@@ -139,10 +148,10 @@ public class BookingsActivity extends AppCompatActivity {
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             switch (position) {
                 case 0:
-                    tab.setText("Approved");
+                    tab.setText("Pending");
                     break;
                 case 1:
-                    tab.setText("Pending");
+                    tab.setText("Approved");
                     break;
                 case 2:
                     tab.setText("History");
@@ -162,13 +171,13 @@ public class BookingsActivity extends AppCompatActivity {
         public Fragment createFragment(int position) {
             switch (position) {
                 case 0:
-                    return ApprovedBookingsFragment.newInstance(userId);
-                case 1:
                     return PendingBookingsFragment.newInstance(userId);
+                case 1:
+                    return ApprovedBookingsFragment.newInstance(userId);
                 case 2:
                     return BookingHistoryFragment.newInstance(userId);
                 default:
-                    return ApprovedBookingsFragment.newInstance(userId);
+                    return PendingBookingsFragment.newInstance(userId);
             }
         }
 

@@ -46,18 +46,19 @@ public class ApprovedBookingsAdapter extends RecyclerView.Adapter<ApprovedBookin
         holder.tvStatus.setText(status);
         
         // Update status color based on status
+        // Pending - orange, Confirmed - blue, Completed - green
         if ("Confirmed".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed
         } else if ("Cancelled".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_red);
         } else if ("Completed".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Completed
         } else {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
         }
         
         holder.tvEmail.setText(booking.getEmail() != null ? booking.getEmail() : "");
@@ -126,12 +127,17 @@ public class ApprovedBookingsAdapter extends RecyclerView.Adapter<ApprovedBookin
         holder.btnApprove.setVisibility(View.GONE);
         holder.btnDecline.setVisibility(View.GONE);
         
-        // Set click listener for view details
-        holder.btnViewDetails.setOnClickListener(v -> {
+        // Make card clickable to open booking details
+        holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onViewDetails(booking);
             }
         });
+        
+        // Hide View Details button
+        if (holder.btnViewDetails != null) {
+            holder.btnViewDetails.setVisibility(View.GONE);
+        }
     }
     
     @Override

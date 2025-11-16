@@ -71,8 +71,9 @@ public class BoardersHistoryAdapter extends RecyclerView.Adapter<BoardersHistory
         holder.tvStatus.setText(status);
         
         // Set status background color based on status
+        // Completed - blue
         if ("Completed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Completed
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
         } else if ("Confirmed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_available);

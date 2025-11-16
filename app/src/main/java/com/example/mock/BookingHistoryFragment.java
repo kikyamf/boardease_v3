@@ -214,7 +214,12 @@ public class BookingHistoryFragment extends Fragment {
                                     intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
                                     intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
                                     intent.putExtra("is_fully_paid", booking.isFullyPaid());
-                                    startActivity(intent);
+                                    // Use startActivityForResult so parent activity can receive result
+                                    if (getActivity() != null) {
+                                        getActivity().startActivityForResult(intent, 1001);
+                                    } else {
+                                        startActivity(intent);
+                                    }
                                 }
                             });
                             

@@ -43,7 +43,7 @@ public class PaymentApiService {
     }
 
     public interface PaymentUpdateCallback {
-        void onSuccess(String message);
+        void onSuccess(String message, String newStatus);
         void onError(String error);
     }
 
@@ -368,7 +368,17 @@ public class PaymentApiService {
                         Log.d(TAG, "updatePaymentStatus - Response received: " + response.toString());
                         if (response.getBoolean("success")) {
                             String message = response.optString("message", "Payment status updated successfully");
-                            callback.onSuccess(message);
+                            // Get the new payment status from response
+                            String updatedStatus = null;
+                            if (response.has("status")) {
+                                updatedStatus = response.getString("status");
+                            } else if (response.has("data")) {
+                                JSONObject data = response.getJSONObject("data");
+                                if (data.has("new_status")) {
+                                    updatedStatus = data.getString("new_status");
+                                }
+                            }
+                            callback.onSuccess(message, updatedStatus);
                         } else {
                             String errorMsg = response.optString("error", "Unknown error occurred");
                             Log.e(TAG, "updatePaymentStatus - Server returned error: " + errorMsg);

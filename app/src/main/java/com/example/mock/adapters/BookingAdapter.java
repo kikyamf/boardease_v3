@@ -61,16 +61,17 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         holder.tvStatus.setText(displayStatus);
         
         // Set status background based on status (use original status, not display status)
+        // Pending - orange, Confirmed - blue, Completed - green
         if ("Confirmed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed
         } else if ("Completed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Completed
         } else if ("Pending".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
         } else if ("Cancelled".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red background for cancelled bookings
         } else {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending (default)
         }
         
         // Load image with Glide

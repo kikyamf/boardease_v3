@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +28,9 @@ public class CurrentBoardersFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private LinearLayout tvNoActiveRentals;
+    private TextView tvCount;
+    private LinearLayout headerLayout;
+    private ImageView ivHeaderIcon;
     private ProgressDialog progressDialog;
     private BoardersListAdapter adapter;
     private List<BoarderData> currentBoarders;
@@ -57,6 +61,20 @@ public class CurrentBoardersFragment extends Fragment {
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerView);
         tvNoActiveRentals = view.findViewById(R.id.tvNoActiveRentals);
+        tvCount = view.findViewById(R.id.tvCount);
+        headerLayout = view.findViewById(R.id.headerLayout);
+        ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        // Set header styling (green for Current Boarders)
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#E8F5E8")); // Light green
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#4CAF50")); // Green
+        }
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_green);
+        }
         
         // Get userId from arguments
         if (getArguments() != null) {
@@ -184,6 +202,11 @@ public class CurrentBoardersFragment extends Fragment {
     }
 
     private void updateEmptyState() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(currentBoarders.size()));
+        }
+        
         if (currentBoarders.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             tvNoActiveRentals.setVisibility(View.VISIBLE);
@@ -194,6 +217,10 @@ public class CurrentBoardersFragment extends Fragment {
     }
 
     private void showEmptyState() {
+        // Update count to 0
+        if (tvCount != null) {
+            tvCount.setText("0");
+        }
         recyclerView.setVisibility(View.GONE);
         tvNoActiveRentals.setVisibility(View.VISIBLE);
     }

@@ -145,6 +145,12 @@
             android:name=".BoardersListActivity"
             android:exported="false" />
         <activity
+            android:name=".TodayBookingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PopularListingBookingsActivity"
+            android:exported="false" />
+        <activity
             android:name=".MaintenanceRequestsActivity"
             android:exported="false" />
         <activity

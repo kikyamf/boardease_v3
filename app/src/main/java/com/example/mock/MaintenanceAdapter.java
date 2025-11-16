@@ -41,16 +41,24 @@ public class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAdapter.
         holder.tvDescription.setText(maintenance.getDescription());
         
         // Set status with appropriate color
-        holder.tvStatus.setText(maintenance.getStatus());
-        switch (maintenance.getStatus().toLowerCase()) {
+        String status = maintenance.getStatus();
+        holder.tvStatus.setText(status);
+        
+        // Handle maintenance statuses: Pending (orange), In Progress (blue), Completed (green)
+        switch (status.toLowerCase()) {
             case "new":
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            case "pending":
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange
                 break;
             case "in progress":
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            case "in_progress":
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue
                 break;
             case "completed":
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green
+                break;
+            default:
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange
                 break;
         }
         

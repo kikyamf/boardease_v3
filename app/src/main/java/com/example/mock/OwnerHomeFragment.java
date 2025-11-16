@@ -48,6 +48,9 @@ public class OwnerHomeFragment extends Fragment {
     private TextView badgeCount, badgeNotifCount;
     private LinearLayout numofListings, layoutTotalBoarders;
     
+    // Store popular listing data for navigation
+    private int popularListingBhId = -1;
+    
     // Broadcast receiver for badge updates
     private BroadcastReceiver badgeUpdateReceiver;
     
@@ -231,6 +234,7 @@ public class OwnerHomeFragment extends Fragment {
         view.findViewById(R.id.cardTransactionsLogs).setOnClickListener(v -> {
             if (getContext() != null) {
                 Intent intent = new Intent(getContext(), TransactionsLogsActivity.class);
+                intent.putExtra("user_id", userId);
                 startActivity(intent);
             }
         });
@@ -273,7 +277,26 @@ public class OwnerHomeFragment extends Fragment {
             }
         });
 
+        // Click listener for Today's Bookings card
+        view.findViewById(R.id.cardTodayBookings).setOnClickListener(v -> {
+            if (getContext() != null) {
+                Intent intent = new Intent(getContext(), TodayBookingsActivity.class);
+                intent.putExtra("user_id", userId);
+                startActivity(intent);
+            }
+        });
 
+        // Click listener for Popular Listing card
+        view.findViewById(R.id.cardPopularListing).setOnClickListener(v -> {
+            if (getContext() != null && popularListingBhId != -1) {
+                Intent intent = new Intent(getContext(), PopularListingBookingsActivity.class);
+                intent.putExtra("user_id", userId);
+                intent.putExtra("bh_id", popularListingBhId);
+                startActivity(intent);
+            } else if (popularListingBhId == -1) {
+                Toast.makeText(getContext(), "No popular listing available", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Only load data if it hasn't been loaded yet (first time only)
         if (userId != -1 && !dataLoaded) {
@@ -325,8 +348,9 @@ public class OwnerHomeFragment extends Fragment {
                         // Popular listing
                         JSONObject popular = obj.optJSONObject("popular_listing");
                         if (popular != null) {
+                            popularListingBhId = popular.optInt("bh_id", -1);
                             tvPopularTitle.setText(popular.optString("bh_name", "No Listing"));
-                            tvPopularVisits.setText(popular.optInt("visits", 0) + " visits");
+                            tvPopularVisits.setText(popular.optInt("visits", 0) + " bookings");
 
                             String imageUrl = popular.optString("image_path", "");
                             if (!imageUrl.isEmpty()) {
@@ -339,8 +363,9 @@ public class OwnerHomeFragment extends Fragment {
                                 imgPopularListing.setImageResource(R.drawable.sample_listing);
                             }
                         } else {
+                            popularListingBhId = -1;
                             tvPopularTitle.setText("No Popular Listing");
-                            tvPopularVisits.setText("0 visits");
+                            tvPopularVisits.setText("0 bookings");
                             imgPopularListing.setImageResource(R.drawable.sample_listing);
                         }
                         

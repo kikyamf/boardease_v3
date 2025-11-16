@@ -89,7 +89,7 @@ public class ActivityDetailsActivity extends AppCompatActivity {
     private void setupViewPager() {
         // Configure tab layout based on activity type BEFORE setting adapter
         if ("payment_status".equals(activityType)) {
-            // Payment status has 5 tabs - use scrollable mode to prevent text cutoff
+            // Payment status has 4 tabs - use scrollable mode to prevent text cutoff
             tabLayout.setTabMode(com.google.android.material.tabs.TabLayout.MODE_SCROLLABLE);
             tabLayout.setTabGravity(com.google.android.material.tabs.TabLayout.GRAVITY_CENTER);
         } else if ("boarders_rented".equals(activityType)) {
@@ -113,16 +113,13 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                         tab.setText("All Payments");
                         break;
                     case 1:
-                        tab.setText("Completed");
-                        break;
-                    case 2:
                         tab.setText("Pending");
                         break;
-                    case 3:
-                        tab.setText("Fully Paid");
+                    case 2:
+                        tab.setText("Remaining / Partially Paid");
                         break;
-                    case 4:
-                        tab.setText("Remaining");
+                    case 3:
+                        tab.setText("Completed / Fully Paid");
                         break;
                 }
             } else if ("boarders_rented".equals(activityType)) {
@@ -190,27 +187,30 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         }
         
         // Determine which tab to navigate to based on updated payment status
-        // Tab indices: 0=All Payments, 1=Completed, 2=Pending, 3=Fully Paid, 4=Remaining
+        // Tab indices: 0=All Payments, 1=Pending, 2=Remaining/Partially Paid, 3=Completed/Fully Paid
         int targetTabValue = 0; // Default to "All Payments" tab
         
         if (newPaymentStatus != null) {
-            switch (newPaymentStatus.toLowerCase()) {
-                case "paid":
-                    // If marked as paid, go to "All Payments" tab to see all payments including the updated one
-                    targetTabValue = 0;
-                    break;
-                case "completed":
-                    // If marked as completed, go to "Completed" tab (index 1)
-                    targetTabValue = 1;
-                    break;
-                case "overdue":
-                    // If marked as overdue, go to "Pending" tab (index 2) where overdue payments are shown
-                    targetTabValue = 2;
-                    break;
-                default:
-                    // Default to "All Payments" tab to see the updated payment
-                    targetTabValue = 0;
-                    break;
+            String statusLower = newPaymentStatus.toLowerCase();
+            if (statusLower.equals("fully paid") || statusLower.equals("fully_paid")) {
+                // If marked as fully paid, go to "Completed / Fully Paid" tab (index 3)
+                targetTabValue = 3;
+            } else if (statusLower.equals("partially paid") || statusLower.equals("partially_paid") ||
+                      (statusLower.contains("partially") && statusLower.contains("paid")) ||
+                      // Legacy support for old "Completed/Partially" status
+                      statusLower.equals("completed/partially") || statusLower.equals("completed_partially") || 
+                      (statusLower.contains("completed") && statusLower.contains("partially"))) {
+                // If marked as partially paid, go to "Remaining / Partially Paid" tab (index 2)
+                targetTabValue = 2;
+            } else if (statusLower.equals("overdue")) {
+                // If marked as overdue, go to "Pending" tab (index 1) where overdue payments are shown
+                targetTabValue = 1;
+            } else if (statusLower.equals("pending")) {
+                // If marked as pending, go to "Pending" tab (index 1)
+                targetTabValue = 1;
+            } else {
+                // Default to "All Payments" tab to see the updated payment
+                targetTabValue = 0;
             }
         }
         
@@ -242,9 +242,37 @@ public class ActivityDetailsActivity extends AppCompatActivity {
             boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
             if (paymentUpdated && "payment_status".equals(activityType)) {
                 String newPaymentStatus = data.getStringExtra("new_payment_status");
-                if (newPaymentStatus != null && paymentStatusCallback != null) {
+                
+                // Check if original tab (view_type) was passed back - navigate to original tab if provided
+                int originalViewType = data.getIntExtra("view_type", -1);
+                if (originalViewType != -1) {
+                    // Map view_type to tab index
+                    // VIEW_TYPE_ALL = 0 → tab 0 (All Payments)
+                    // VIEW_TYPE_FULLY_PAID = 1 → tab 3 (Completed/Fully Paid)
+                    // VIEW_TYPE_REMAINING = 2 → tab 2 (Remaining/Partially Paid)
+                    // VIEW_TYPE_PENDING = 3 → tab 1 (Pending)
+                    int targetTab = 0; // Default to All Payments
+                    if (originalViewType == PaymentAdapter.VIEW_TYPE_ALL) {
+                        targetTab = 0; // All Payments
+                    } else if (originalViewType == PaymentAdapter.VIEW_TYPE_PENDING) {
+                        targetTab = 1; // Pending
+                    } else if (originalViewType == PaymentAdapter.VIEW_TYPE_REMAINING) {
+                        targetTab = 2; // Remaining/Partially Paid
+                    } else if (originalViewType == PaymentAdapter.VIEW_TYPE_FULLY_PAID) {
+                        targetTab = 3; // Completed/Fully Paid
+                    }
+                    
+                    // Navigate to the original tab
+                    if (viewPager != null && targetTab < viewPager.getAdapter().getItemCount()) {
+                        viewPager.setCurrentItem(targetTab, true);
+                    }
+                } else if (newPaymentStatus != null && paymentStatusCallback != null) {
+                    // If no original tab provided, navigate based on new payment status
                     paymentStatusCallback.onPaymentStatusUpdated(newPaymentStatus);
                 }
+                
+                // Refresh all fragments
+                refreshAllFragments();
             }
         }
     }
@@ -255,21 +283,19 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         }
         
         // Refresh all payment fragments
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             String tag = "f" + i;
             Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
             
             if (fragment != null && fragment.isAdded()) {
                 if (i == 0 && fragment instanceof AllPaymentsFragment) {
                     ((AllPaymentsFragment) fragment).refreshData();
-                } else if (i == 1 && fragment instanceof CompletedPaymentsFragment) {
-                    ((CompletedPaymentsFragment) fragment).refreshData();
-                } else if (i == 2 && fragment instanceof PendingPaymentsFragment) {
+                } else if (i == 1 && fragment instanceof PendingPaymentsFragment) {
                     ((PendingPaymentsFragment) fragment).refreshData();
+                } else if (i == 2 && fragment instanceof RemainingPaymentsFragment) {
+                    ((RemainingPaymentsFragment) fragment).refreshData();
                 } else if (i == 3 && fragment instanceof FullyPaidPaymentsFragment) {
                     ((FullyPaidPaymentsFragment) fragment).refreshData();
-                } else if (i == 4 && fragment instanceof RemainingPaymentsFragment) {
-                    ((RemainingPaymentsFragment) fragment).refreshData();
                 }
             }
         }
@@ -289,18 +315,15 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                             if (position == 0 && fragment instanceof AllPaymentsFragment) {
                                 // All Payments tab
                                 ((AllPaymentsFragment) fragment).loadIfNeeded();
-                            } else if (position == 1 && fragment instanceof CompletedPaymentsFragment) {
-                                // Completed tab
-                                ((CompletedPaymentsFragment) fragment).loadIfNeeded();
-                            } else if (position == 2 && fragment instanceof PendingPaymentsFragment) {
+                            } else if (position == 1 && fragment instanceof PendingPaymentsFragment) {
                                 // Pending tab
                                 ((PendingPaymentsFragment) fragment).loadIfNeeded();
-                            } else if (position == 3 && fragment instanceof FullyPaidPaymentsFragment) {
-                                // Fully Paid tab
-                                ((FullyPaidPaymentsFragment) fragment).loadIfNeeded();
-                            } else if (position == 4 && fragment instanceof RemainingPaymentsFragment) {
-                                // Remaining tab
+                            } else if (position == 2 && fragment instanceof RemainingPaymentsFragment) {
+                                // Remaining / Partially Paid tab
                                 ((RemainingPaymentsFragment) fragment).loadIfNeeded();
+                            } else if (position == 3 && fragment instanceof FullyPaidPaymentsFragment) {
+                                // Completed / Fully Paid tab
+                                ((FullyPaidPaymentsFragment) fragment).loadIfNeeded();
                             }
                         } else if ("boarders_rented".equals(activityType)) {
                             if (position == 0 && fragment instanceof CurrentBoardersFragment) {
@@ -344,21 +367,17 @@ public class ActivityDetailsActivity extends AppCompatActivity {
                         allPaymentsFragment.setArguments(args);
                         return allPaymentsFragment;
                     case 1:
-                        CompletedPaymentsFragment completedFragment = new CompletedPaymentsFragment();
-                        completedFragment.setArguments(args);
-                        return completedFragment;
-                    case 2:
                         PendingPaymentsFragment pendingFragment = new PendingPaymentsFragment();
                         pendingFragment.setArguments(args);
                         return pendingFragment;
+                    case 2:
+                        RemainingPaymentsFragment remainingFragment = new RemainingPaymentsFragment();
+                        remainingFragment.setArguments(args);
+                        return remainingFragment;
                     case 3:
                         FullyPaidPaymentsFragment fullyPaidFragment = new FullyPaidPaymentsFragment();
                         fullyPaidFragment.setArguments(args);
                         return fullyPaidFragment;
-                    case 4:
-                        RemainingPaymentsFragment remainingFragment = new RemainingPaymentsFragment();
-                        remainingFragment.setArguments(args);
-                        return remainingFragment;
                     default:
                         AllPaymentsFragment defaultFragment = new AllPaymentsFragment();
                         defaultFragment.setArguments(args);
@@ -385,7 +404,7 @@ public class ActivityDetailsActivity extends AppCompatActivity {
         @Override
         public int getItemCount() {
             if ("payment_status".equals(activityType)) {
-                return 5; // All Payments, Completed, Pending, Fully Paid, Remaining
+                return 4; // All Payments, Pending, Remaining / Partially Paid, Completed / Fully Paid
             } else if ("boarders_rented".equals(activityType)) {
                 return 2; // Current, History
             }

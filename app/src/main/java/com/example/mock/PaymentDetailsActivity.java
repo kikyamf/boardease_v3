@@ -362,22 +362,73 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvPaymentDate.setText(payment.getPaymentDate() != null ? payment.getPaymentDate() : "N/A");
         tvDueDate.setText(payment.getDueDate() != null && !payment.getDueDate().isEmpty() ? payment.getDueDate() : "N/A");
         
-        // Set status with styling - determine status based on payment breakdown
+        // Set status with styling - prioritize database status from payments table
+        // The payment status should directly reflect what's in the payments table
+        // Logic: payment_status in payments table is the source of truth
+        // It's calculated based on payment_breakdowns: 
+        // - "Fully Paid" if all periods paid (is_paid = 1)
+        // - "Partially Paid" if some periods paid
+        // - "Pending" if no periods paid
         String paymentStatus;
-        boolean isFullyPaid = payment.isFullyPaid();
         int totalPeriods = payment.getTotalPeriods();
         int paidPeriods = payment.getPaidPeriods();
+        String dbPaymentStatus = payment.getPaymentStatus();
         
-        // Determine payment status based on payment breakdown
-        if (isFullyPaid && totalPeriods > 0 && paidPeriods >= totalPeriods) {
-            // Fully paid: all periods are paid
-            paymentStatus = "Fully Paid";
-        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
-            // Partially paid: some periods paid but not all
-            paymentStatus = "Completed";
+        // Always use the database status from payments table as the source of truth
+        // The backend already calculates this correctly based on payment_breakdowns
+        // CRITICAL: Do NOT calculate from periods - always trust the database status
+        if (dbPaymentStatus != null && !dbPaymentStatus.trim().isEmpty() && 
+            !dbPaymentStatus.trim().equalsIgnoreCase("null") && 
+            !dbPaymentStatus.trim().equalsIgnoreCase("")) {
+            
+            String statusLower = dbPaymentStatus.toLowerCase().trim();
+            
+            // Normalize the status format to match expected display format
+            if (statusLower.equals("fully paid") || statusLower.equals("fully_paid")) {
+                paymentStatus = "Fully Paid";
+            } else if (statusLower.equals("partially paid") || 
+                      statusLower.equals("partially_paid") ||
+                      (statusLower.contains("partially") && statusLower.contains("paid")) ||
+                      // Legacy support for old "Completed/Partially" status
+                      statusLower.equals("completed/partially") || 
+                      statusLower.equals("completed_partially") ||
+                      (statusLower.contains("completed") && statusLower.contains("partially")) ||
+                      // "Completed" status means partially paid when periods show partial payment
+                      (statusLower.equals("completed") && paidPeriods > 0 && paidPeriods < totalPeriods)) {
+                paymentStatus = "Partially Paid";
+            } else if (statusLower.equals("completed") && paidPeriods >= totalPeriods && totalPeriods > 0) {
+                // If database says "Completed" but all periods are paid, use "Fully Paid"
+                paymentStatus = "Fully Paid";
+            } else {
+                // Use database status as-is (capitalize first letter properly)
+                if (dbPaymentStatus.length() > 1) {
+                    // Capitalize first letter, rest lowercase
+                    paymentStatus = dbPaymentStatus.substring(0, 1).toUpperCase() + 
+                                   dbPaymentStatus.substring(1).toLowerCase();
+                } else if (dbPaymentStatus.length() == 1) {
+                    paymentStatus = dbPaymentStatus.toUpperCase();
+                } else {
+                    paymentStatus = dbPaymentStatus;
+                }
+            }
         } else {
-            // Not paid yet or no breakdown data: use original payment status
-            paymentStatus = payment.getPaymentStatus() != null ? payment.getPaymentStatus() : "Pending";
+            // Only if database status is completely missing, calculate from period data
+            // This should rarely happen since backend always sets payment_status
+            if (totalPeriods > 0) {
+                if (paidPeriods >= totalPeriods) {
+                    // All periods paid
+                    paymentStatus = "Fully Paid";
+                } else if (paidPeriods > 0) {
+                    // Some periods paid but not all
+                    paymentStatus = "Partially Paid";
+                } else {
+                    // No periods paid
+                    paymentStatus = "Pending";
+                }
+            } else {
+                // No breakdown data - default to pending
+                paymentStatus = "Pending";
+            }
         }
         
         tvPaymentStatus.setText(paymentStatus);
@@ -543,14 +594,25 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         int textColor;
         int backgroundRes;
         
-        switch (paymentStatus.toLowerCase()) {
+        String statusLower = paymentStatus.toLowerCase().trim();
+        
+        switch (statusLower) {
             case "fully paid":
+            case "fully_paid":
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_approved;
                 break;
             case "paid":
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_approved;
+                break;
+            case "partially paid":
+            case "partially_paid":
+            case "completed/partially":
+            case "completed_partially":
+                // Partially paid - use blue color
+                textColor = getResources().getColor(android.R.color.white);
+                backgroundRes = R.drawable.bg_status_completed;
                 break;
             case "completed":
                 // Completed means paid but may have remaining balance - use blue color
@@ -685,15 +747,25 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         paymentApiService.updatePaymentStatus(payment.getPaymentId(), "paid", "Marked as paid by owner", 
                 new PaymentApiService.PaymentUpdateCallback() {
                     @Override
-                    public void onSuccess(String message) {
+                    public void onSuccess(String message, String newStatus) {
                         hideProgressDialog();
                         Toast.makeText(PaymentDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
                         // Update local payment data
-                        payment.setPaymentStatus("Paid");
+                        if (newStatus != null && !newStatus.isEmpty()) {
+                            payment.setPaymentStatus(newStatus);
+                        } else {
+                            payment.setPaymentStatus("Paid");
+                        }
                         // Refresh the UI
                         populateData();
-                        // Set result to notify parent activity to refresh
-                        setResult(RESULT_OK);
+                        // Set result to notify parent activity to refresh and navigate back to original tab
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("payment_updated", true);
+                        resultIntent.putExtra("new_payment_status", newStatus != null ? newStatus : "Paid");
+                        resultIntent.putExtra("view_type", viewType); // Pass back the original tab
+                        resultIntent.putExtra("payment_id", payment.getPaymentId());
+                        setResult(RESULT_OK, resultIntent);
+                        finish(); // Navigate back to the original tab
                     }
 
                     @Override
@@ -710,15 +782,25 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         paymentApiService.updatePaymentStatus(payment.getPaymentId(), "overdue", "Marked as overdue by owner", 
                 new PaymentApiService.PaymentUpdateCallback() {
                     @Override
-                    public void onSuccess(String message) {
+                    public void onSuccess(String message, String newStatus) {
                         hideProgressDialog();
                         Toast.makeText(PaymentDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
                         // Update local payment data
-                        payment.setPaymentStatus("Overdue");
+                        if (newStatus != null && !newStatus.isEmpty()) {
+                            payment.setPaymentStatus(newStatus);
+                        } else {
+                            payment.setPaymentStatus("Overdue");
+                        }
                         // Refresh the UI
                         populateData();
-                        // Set result to notify parent activity to refresh
-                        setResult(RESULT_OK);
+                        // Set result to notify parent activity to refresh and navigate back to original tab
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("payment_updated", true);
+                        resultIntent.putExtra("new_payment_status", newStatus != null ? newStatus : "Overdue");
+                        resultIntent.putExtra("view_type", viewType); // Pass back the original tab
+                        resultIntent.putExtra("payment_id", payment.getPaymentId());
+                        setResult(RESULT_OK, resultIntent);
+                        finish(); // Navigate back to the original tab
                     }
 
                     @Override

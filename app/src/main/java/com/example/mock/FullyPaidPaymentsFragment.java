@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +25,7 @@ public class FullyPaidPaymentsFragment extends Fragment {
     
     private RecyclerView recyclerView;
     private TextView emptyState;
+    private TextView tvCount;
     private PaymentAdapter adapter;
     private List<PaymentData> fullyPaidPayments;
     private PaymentApiService paymentApiService;
@@ -36,9 +39,31 @@ public class FullyPaidPaymentsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_all_payments, container, false);
         
+        // Set header title and styling (green for Completed / Fully Paid)
+        TextView tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle);
+        LinearLayout headerLayout = view.findViewById(R.id.headerLayout);
+        ImageView ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("Completed / Fully Paid Payment Records");
+        }
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#E8F5E8")); // Light green
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setImageResource(R.drawable.ic_check); // Check icon for completed/fully paid
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#4CAF50")); // Green
+        }
+        
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
+        tvCount = view.findViewById(R.id.tvCount);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        // Set count badge background to green (matching header)
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_green);
+        }
         
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -111,6 +136,11 @@ public class FullyPaidPaymentsFragment extends Fragment {
     }
     
     private void updateUI() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(fullyPaidPayments.size()));
+        }
+        
         if (fullyPaidPayments.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);

@@ -6,9 +6,12 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -116,6 +119,13 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 bookingData.setPaidAmountForBooking(intent.getStringExtra("paid_amount_for_booking"));
                 bookingData.setFullyPaid(intent.getBooleanExtra("is_fully_paid", false));
             }
+            
+            // Log payment status from Intent for debugging
+            String intentPaymentStatus = intent.getStringExtra("payment_status");
+            Log.d("BookingDetails", "Payment Status from Intent: " + intentPaymentStatus + 
+                  ", Total Periods: " + bookingData.getTotalPeriods() + 
+                  ", Paid Periods: " + bookingData.getPaidPeriods() +
+                  ", Is Fully Paid (flag): " + bookingData.isFullyPaid());
         } else {
             // Fallback to sample data if intent data is missing
         bookingData = new BookingData(
@@ -233,62 +243,101 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvStatus.setText(status);
             applyStatusStyle(tvStatus, status);
             
-            // Set payment status with styling - calculate based on payment breakdown data
-            // This ensures the status matches the actual payment progress
+            // Set payment status with styling - prioritize database status from payments table
+            // The payment status should directly reflect what's in the payments table
+            // Logic: payment_status in payments table is the source of truth
+            // It's calculated based on payment_breakdowns: 
+            // - "Fully Paid" if all periods paid (is_paid = 1)
+            // - "Partially Paid" if some periods paid
+            // - "Pending" if no periods paid
             String paymentStatus;
-            boolean isFullyPaid = bookingData.isFullyPaid();
             int totalPeriods = bookingData.getTotalPeriods();
             int paidPeriods = bookingData.getPaidPeriods();
             String dbPaymentStatus = bookingData.getPaymentStatus();
             
-            // Also check payment status string as fallback
-            if (dbPaymentStatus != null && dbPaymentStatus.equalsIgnoreCase("Fully Paid")) {
-                isFullyPaid = true;
-            }
+            // Log what we received for debugging
+            Log.d("BookingDetails", "Raw payment_status from BookingData: '" + dbPaymentStatus + "'");
             
-            // If we have period data, verify fully paid status
-            if (totalPeriods > 0) {
-                isFullyPaid = isFullyPaid && paidPeriods >= totalPeriods;
-            }
-            
-            // Determine payment status based on payment breakdown
-            if (isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods)) {
-                // Fully paid: all periods are paid
-                paymentStatus = "Fully Paid";
-            } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
-                // Partially paid: some periods paid but not all - show "Completed/Partially"
-                paymentStatus = "Completed/Partially";
-            } else {
-                // Check if payment status is already "Completed/Partially" or similar
-                if (dbPaymentStatus != null) {
-                    String statusLower = dbPaymentStatus.toLowerCase();
-                    if (statusLower.contains("completed") && statusLower.contains("partially")) {
-                        paymentStatus = "Completed/Partially";
-                    } else if (statusLower.equals("completed") || statusLower.equals("completed/partially") || 
-                              statusLower.equals("completed_partially")) {
-                        // If status is "Completed" but we have some periods paid, show "Completed/Partially"
-                        if (paidPeriods > 0) {
-                            paymentStatus = "Completed/Partially";
-                        } else {
-                            paymentStatus = dbPaymentStatus;
-                        }
-                    } else if (statusLower.equals("fully paid")) {
-                        paymentStatus = "Fully Paid";
+            // Always use the database status from payments table as the source of truth
+            // The backend already calculates this correctly based on payment_breakdowns
+            // CRITICAL: Do NOT calculate from periods - always trust the database status
+            // The database status is the single source of truth - it's calculated from payment_breakdowns
+            if (dbPaymentStatus != null && !dbPaymentStatus.trim().isEmpty() && 
+                !dbPaymentStatus.trim().equalsIgnoreCase("null") && 
+                !dbPaymentStatus.trim().equalsIgnoreCase("")) {
+                
+                String statusLower = dbPaymentStatus.toLowerCase().trim();
+                Log.d("BookingDetails", "Normalizing payment status: '" + dbPaymentStatus + "' -> lowercase: '" + statusLower + "'");
+                
+                // Normalize the status format to match expected display format
+                if (statusLower.equals("fully paid") || statusLower.equals("fully_paid")) {
+                    paymentStatus = "Fully Paid";
+                    Log.d("BookingDetails", "Status normalized to: Fully Paid");
+                } else if (statusLower.equals("partially paid") || 
+                          statusLower.equals("partially_paid") ||
+                          (statusLower.contains("partially") && statusLower.contains("paid")) ||
+                          // Legacy support for old "Completed/Partially" status
+                          statusLower.equals("completed/partially") || 
+                          statusLower.equals("completed_partially") ||
+                          (statusLower.contains("completed") && statusLower.contains("partially"))) {
+                    paymentStatus = "Partially Paid";
+                    Log.d("BookingDetails", "Status normalized to: Partially Paid");
+                } else if (statusLower.equals("completed") && paidPeriods > 0 && paidPeriods < totalPeriods) {
+                    // If database says "Completed" but periods show partial payment, use "Partially Paid"
+                    paymentStatus = "Partially Paid";
+                    Log.d("BookingDetails", "Status 'Completed' with partial periods -> normalized to: Partially Paid");
+                } else {
+                    // Use database status as-is (capitalize first letter properly)
+                    if (dbPaymentStatus.length() > 1) {
+                        // Capitalize first letter, rest lowercase
+                        paymentStatus = dbPaymentStatus.substring(0, 1).toUpperCase() + 
+                                       dbPaymentStatus.substring(1).toLowerCase();
+                    } else if (dbPaymentStatus.length() == 1) {
+                        paymentStatus = dbPaymentStatus.toUpperCase();
                     } else {
                         paymentStatus = dbPaymentStatus;
                     }
+                    Log.d("BookingDetails", "Status used as-is (capitalized): " + paymentStatus);
+                }
+            } else {
+                // Database status is missing - this should not happen, but calculate as fallback
+                // WARNING: This calculation might not match database if periods are incorrectly counted
+                // The database status is the source of truth, so this is only a fallback
+                // CRITICAL: Do NOT use isFullyPaid flag - only use period counts for calculation
+                Log.w("BookingDetails", "WARNING: Database payment_status is missing or empty! " +
+                      "dbPaymentStatus='" + dbPaymentStatus + "', " +
+                      "Falling back to calculation. This should not happen. " +
+                      "Total Periods: " + totalPeriods + ", Paid Periods: " + paidPeriods);
+                if (totalPeriods > 0) {
+                    // Calculate based on periods ONLY - ignore isFullyPaid flag
+                    // This ensures we calculate correctly even if flag is wrong
+                    if (paidPeriods >= totalPeriods) {
+                        // All periods paid
+                        paymentStatus = "Fully Paid";
+                        Log.d("BookingDetails", "Calculated status: Fully Paid (paidPeriods >= totalPeriods: " + paidPeriods + " >= " + totalPeriods + ")");
+                    } else if (paidPeriods > 0) {
+                        // Some periods paid but not all
+                        paymentStatus = "Partially Paid";
+                        Log.d("BookingDetails", "Calculated status: Partially Paid (paidPeriods > 0 && < totalPeriods: " + paidPeriods + " < " + totalPeriods + ")");
+                    } else {
+                        // No periods paid
+                paymentStatus = "Pending";
+                        Log.d("BookingDetails", "Calculated status: Pending (paidPeriods = 0)");
+                    }
                 } else {
-                    // Not paid yet or no breakdown data: use default
+                    // No breakdown data - default to pending
                     paymentStatus = "Pending";
+                    Log.d("BookingDetails", "Calculated status: Pending (no breakdown data, totalPeriods = 0)");
                 }
             }
             
             // Log for debugging
-            Log.d("BookingDetails", "Payment Status from database: " + dbPaymentStatus + 
-                  ", Calculated Status: " + paymentStatus +
+            boolean isFullyPaidCalculated = totalPeriods > 0 && paidPeriods >= totalPeriods;
+            Log.d("BookingDetails", "Payment Status - Database: " + dbPaymentStatus + 
+                  ", Displayed: " + paymentStatus +
                   ", Total Periods: " + totalPeriods + 
                   ", Paid Periods: " + paidPeriods +
-                  ", Is Fully Paid: " + isFullyPaid);
+                  ", Is Fully Paid (calculated from periods): " + isFullyPaidCalculated);
             
             // Set payment status text and styling
             if (tvPaymentStatus != null) {
@@ -353,8 +402,9 @@ public class BookingDetailsActivity extends AppCompatActivity {
         switch (status) {
             case "Confirmed":
             case "Approved":
+                // Confirmed - blue
                 textColor = getResources().getColor(android.R.color.white);
-                backgroundRes = R.drawable.bg_status_approved;
+                backgroundRes = R.drawable.bg_status_completed;
                 break;
             case "Cancelled":
             case "Declined":
@@ -362,11 +412,13 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 backgroundRes = R.drawable.bg_rounded_red;
                 break;
             case "Completed":
+                // Completed - green
                 textColor = getResources().getColor(android.R.color.white);
-                backgroundRes = R.drawable.bg_status_completed;
+                backgroundRes = R.drawable.bg_status_approved;
                 break;
             case "Pending":
             default:
+                // Pending - orange
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_pending;
                 break;
@@ -401,8 +453,11 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 backgroundRes = R.drawable.bg_status_approved;
                 break;
             case "completed":
+            case "partially paid":
+            case "partially_paid":
             case "completed/partially":
             case "completed_partially":
+                // Partially Paid means paid but may have remaining balance - use blue color
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_completed;
                 break;
@@ -490,12 +545,277 @@ public class BookingDetailsActivity extends AppCompatActivity {
     }
     
     private void showApprovalDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Approve Booking")
-                .setMessage("Are you sure you want to approve this booking?")
-                .setPositiveButton("Approve", (dialog, which) -> approveBooking())
-                .setNegativeButton("Cancel", null)
-                .show();
+        // Use comprehensive approval dialog with payment information (same as PendingBookingsFragment)
+        showApproveConfirmationDialog();
+    }
+    
+    private void showApproveConfirmationDialog() {
+        // Use light theme for dialog
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_approve_booking_confirmation, null);
+        builder.setView(dialogView);
+        
+        // Get views
+        TextView tvBoarderName = dialogView.findViewById(R.id.tvBoarderName);
+        TextView tvRoomName = dialogView.findViewById(R.id.tvRoomName);
+        TextView tvPaymentStatus = dialogView.findViewById(R.id.tvPaymentStatus);
+        TextView tvAmountPaid = dialogView.findViewById(R.id.tvAmountPaid);
+        TextView tvTotalAmount = dialogView.findViewById(R.id.tvTotalAmount);
+        TextView tvPaymentProgress = dialogView.findViewById(R.id.tvPaymentProgress);
+        TextView tvProgressPercent = dialogView.findViewById(R.id.tvProgressPercent);
+        ProgressBar progressBarPayment = dialogView.findViewById(R.id.progressBarPayment);
+        TextView tvWarning = dialogView.findViewById(R.id.tvWarning);
+        android.widget.ImageView imgPaymentProof = dialogView.findViewById(R.id.imgPaymentProof);
+        TextView tvNoProof = dialogView.findViewById(R.id.tvNoProof);
+        LinearLayout layoutPaymentProof = dialogView.findViewById(R.id.layoutPaymentProof);
+        android.widget.Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+        android.widget.Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        
+        // Set booking information
+        tvBoarderName.setText(bookingData.getBoarderName() != null ? bookingData.getBoarderName() : "Unknown");
+        tvRoomName.setText(bookingData.getRoomName() != null ? bookingData.getRoomName() : "");
+        
+        // Set payment information
+        int totalPeriods = bookingData.getTotalPeriods();
+        int paidPeriods = bookingData.getPaidPeriods();
+        String paidAmount = bookingData.getPaidAmountForBooking();
+        String totalAmount = bookingData.getTotalAmountForBooking();
+        boolean isFullyPaid = bookingData.isFullyPaid();
+        double paymentProgressPercent = bookingData.getPaymentProgressPercent();
+        
+        // Determine payment status
+        String paymentStatusText;
+        int statusColor;
+        int statusBg;
+        
+        if (isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods)) {
+            paymentStatusText = "Fully Paid";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_approved;
+            tvWarning.setVisibility(View.GONE);
+        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+            paymentStatusText = "Partially Paid";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_completed;
+            tvWarning.setVisibility(View.VISIBLE);
+            tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot and check your GCash account before approving.");
+            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+        } else {
+            paymentStatusText = "Pending - For Confirmation";
+            statusColor = getResources().getColor(android.R.color.white);
+            statusBg = R.drawable.bg_status_pending;
+            tvWarning.setVisibility(View.VISIBLE);
+            tvWarning.setText("⚠ Payment may have been made but not yet confirmed. Please check payment screenshot above and verify in your GCash account. After approval, payment will be automatically marked as paid.");
+            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+        }
+        
+        tvPaymentStatus.setText(paymentStatusText);
+        tvPaymentStatus.setTextColor(statusColor);
+        tvPaymentStatus.setBackgroundResource(statusBg);
+        
+        // Set amounts
+        if (paidAmount != null && !paidAmount.isEmpty()) {
+            try {
+                double paidValue = Double.parseDouble(paidAmount);
+                if (paidValue > 0) {
+                    tvAmountPaid.setText("₱" + formatAmount(paidAmount));
+                } else {
+                    tvAmountPaid.setText("₱0.00");
+                }
+            } catch (NumberFormatException e) {
+                tvAmountPaid.setText("₱0.00");
+            }
+        } else {
+            tvAmountPaid.setText("₱0.00");
+        }
+        
+        if (totalAmount != null && !totalAmount.isEmpty()) {
+            try {
+                double totalValue = Double.parseDouble(totalAmount);
+                if (totalValue > 0) {
+                    tvTotalAmount.setText("₱" + formatAmount(totalAmount));
+                } else {
+                    tvTotalAmount.setText(bookingData.getAmount() != null ? bookingData.getAmount() : "₱0.00");
+                }
+            } catch (NumberFormatException e) {
+                tvTotalAmount.setText(bookingData.getAmount() != null ? bookingData.getAmount() : "₱0.00");
+            }
+        } else {
+            tvTotalAmount.setText(bookingData.getAmount() != null ? bookingData.getAmount() : "₱0.00");
+        }
+        
+        // Set payment progress
+        if (totalPeriods > 0) {
+            tvPaymentProgress.setVisibility(View.VISIBLE);
+            progressBarPayment.setVisibility(View.VISIBLE);
+            tvProgressPercent.setVisibility(View.VISIBLE);
+            
+            int totalMonths = bookingData.getTotalMonthsForBooking();
+            int paidMonths = bookingData.getPaidMonthsForBooking();
+            
+            if (totalMonths > 0 && totalPeriods == totalMonths) {
+                if (totalMonths == 1) {
+                    tvPaymentProgress.setText(String.format("%d/%d month paid", paidMonths, totalMonths));
+                } else {
+                    tvPaymentProgress.setText(String.format("%d/%d months paid", paidMonths, totalMonths));
+                }
+            } else {
+                if (totalPeriods == 1) {
+                    tvPaymentProgress.setText(String.format("%d/%d period paid", paidPeriods, totalPeriods));
+                } else {
+                    tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
+                }
+            }
+            
+            progressBarPayment.setProgress((int) paymentProgressPercent);
+            tvProgressPercent.setText(String.format("%.0f%%", paymentProgressPercent));
+            
+            // Set progress bar color
+            if (isFullyPaid) {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+            } else if (paymentProgressPercent >= 50) {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#FF9800"));
+            } else {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                tvPaymentProgress.setTextColor(android.graphics.Color.parseColor("#F44336"));
+            }
+        } else {
+            tvPaymentProgress.setVisibility(View.GONE);
+            progressBarPayment.setVisibility(View.GONE);
+            tvProgressPercent.setVisibility(View.GONE);
+        }
+        
+        // Load payment proof
+        loadPaymentProofForDialog(imgPaymentProof, tvNoProof, layoutPaymentProof);
+        
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            // Ensure light background
+            dialog.getWindow().getDecorView().setBackgroundColor(getResources().getColor(android.R.color.white));
+        }
+        
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss();
+            approveBooking();
+        });
+        
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    private void loadPaymentProofForDialog(android.widget.ImageView imgPaymentProof, 
+                                          TextView tvNoProof, LinearLayout layoutPaymentProof) {
+        // Fetch payment proof from the booking's payment record
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_payment_proof_by_booking.php?booking_id=" + bookingData.getBookingId();
+        
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        com.android.volley.toolbox.StringRequest stringRequest = new com.android.volley.toolbox.StringRequest(
+            Request.Method.GET, url,
+            response -> {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        String paymentProofUrl = jsonResponse.optString("payment_proof_url", "");
+                        String receiptUrl = jsonResponse.optString("receipt_url", "");
+                        
+                        String proofUrl = null;
+                        if (receiptUrl != null && !receiptUrl.isEmpty() && !receiptUrl.equals("null")) {
+                            proofUrl = receiptUrl;
+                        } else if (paymentProofUrl != null && !paymentProofUrl.isEmpty() && !paymentProofUrl.equals("null")) {
+                            proofUrl = paymentProofUrl;
+                        }
+                        
+                        if (proofUrl != null && !proofUrl.isEmpty() && !proofUrl.equals("null")) {
+                            // Show image view and hide "no proof" text
+                            imgPaymentProof.setVisibility(View.VISIBLE);
+                            tvNoProof.setVisibility(View.GONE);
+                            layoutPaymentProof.setVisibility(View.VISIBLE);
+                            
+                            // Build full URL
+                            String baseUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+                            String urlToProcess = proofUrl.trim();
+                            String finalFullUrl;
+                            
+                            if (urlToProcess.startsWith("http://") || urlToProcess.startsWith("https://")) {
+                                finalFullUrl = urlToProcess;
+                            } else {
+                                if (urlToProcess.startsWith("/")) {
+                                    urlToProcess = urlToProcess.substring(1);
+                                }
+                                if (urlToProcess.startsWith("BoardEase2/")) {
+                                    urlToProcess = urlToProcess.substring(11);
+                                }
+                                finalFullUrl = baseUrl + "get_payment_proof.php?path=" + Uri.encode(urlToProcess, "UTF-8");
+                            }
+                            
+                            // Load image using Glide
+                            try {
+                                com.bumptech.glide.Glide.with(this)
+                                    .load(finalFullUrl)
+                                    .placeholder(android.R.drawable.ic_menu_report_image)
+                                    .error(android.R.drawable.ic_dialog_alert)
+                                    .into(imgPaymentProof);
+                                
+                                // Make image clickable to view full size
+                                final String imageUrl = finalFullUrl;
+                                imgPaymentProof.setOnClickListener(v -> {
+                                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                                    intent.setDataAndType(Uri.parse(imageUrl), "image/*");
+                                    try {
+                                        startActivity(intent);
+                                    } catch (Exception e) {
+                                        Toast.makeText(this, "Cannot open image viewer", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Log.e("BookingDetails", "Error loading payment proof", e);
+                                imgPaymentProof.setVisibility(View.GONE);
+                                tvNoProof.setVisibility(View.VISIBLE);
+                            }
+                        } else {
+                            // No payment proof available
+                            imgPaymentProof.setVisibility(View.GONE);
+                            tvNoProof.setVisibility(View.VISIBLE);
+                            layoutPaymentProof.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        // No payment proof found
+                        imgPaymentProof.setVisibility(View.GONE);
+                        tvNoProof.setVisibility(View.VISIBLE);
+                        layoutPaymentProof.setVisibility(View.VISIBLE);
+                    }
+                } catch (JSONException e) {
+                    Log.e("BookingDetails", "Error parsing payment proof response", e);
+                    imgPaymentProof.setVisibility(View.GONE);
+                    tvNoProof.setVisibility(View.VISIBLE);
+                    layoutPaymentProof.setVisibility(View.VISIBLE);
+                }
+            },
+            error -> {
+                Log.e("BookingDetails", "Error fetching payment proof: " + error.getMessage());
+                imgPaymentProof.setVisibility(View.GONE);
+                tvNoProof.setVisibility(View.VISIBLE);
+                layoutPaymentProof.setVisibility(View.VISIBLE);
+            }
+        );
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    private String formatAmount(String amount) {
+        try {
+            double amountValue = Double.parseDouble(amount);
+            java.text.DecimalFormat formatter = new java.text.DecimalFormat("#,##0.00");
+            return formatter.format(amountValue);
+        } catch (NumberFormatException e) {
+            return amount;
+        }
     }
     
     private void showDeclineDialog() {
@@ -557,8 +877,14 @@ public class BookingDetailsActivity extends AppCompatActivity {
                                 loadBookingData(); // Reload to update status display
                                 updateActionButtons(); // Update buttons after status change
                                 Toast.makeText(BookingDetailsActivity.this, "Booking approved successfully!", Toast.LENGTH_SHORT).show();
-                                setResult(RESULT_OK);
-                                // Don't finish immediately - let user see updated status, they can go back manually
+                                
+                                // Set result and finish to navigate back to pending tab
+                                Intent resultIntent = new Intent();
+                                resultIntent.putExtra("booking_updated", true);
+                                resultIntent.putExtra("booking_id", bookingId);
+                                resultIntent.putExtra("should_navigate_to_pending", true);
+                                setResult(RESULT_OK, resultIntent);
+                                finish(); // Navigate back to bookings activity
                             } else {
                                 String errorMsg = response.optString("error", "Unknown error occurred");
                                 Log.e("BookingDetails", "Approve error from server: " + errorMsg);

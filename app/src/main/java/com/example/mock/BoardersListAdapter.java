@@ -68,11 +68,12 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
         holder.tvRentalPeriod.setText(rentalPeriod);
 
         // Set status with appropriate background
+        // Completed - blue
         holder.tvStatus.setText(boarder.getStatus());
         if ("Active".equals(boarder.getStatus())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_available);
         } else if ("Completed".equals(boarder.getStatus())) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_occupied);
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Completed
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_orange);
         }

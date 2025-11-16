@@ -231,7 +231,12 @@ public class PendingBookingsFragment extends Fragment {
                                     intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
                                     intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
                                     intent.putExtra("is_fully_paid", booking.isFullyPaid());
-                                    startActivity(intent);
+                                    // Use startActivityForResult so parent activity can receive result and navigate to pending tab
+                                    if (getActivity() != null) {
+                                        getActivity().startActivityForResult(intent, 1001);
+                                    } else {
+                                        startActivity(intent);
+                                    }
                                 }
                             });
                             
@@ -316,8 +321,8 @@ public class PendingBookingsFragment extends Fragment {
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_approved;
             tvWarning.setVisibility(View.GONE);
-        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
-            paymentStatusText = "Completed/Partially";
+           } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+               paymentStatusText = "Partially Paid";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_completed;
             tvWarning.setVisibility(View.VISIBLE);

@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +25,7 @@ public class PendingPaymentsFragment extends Fragment {
     
     private RecyclerView recyclerView;
     private TextView emptyState;
+    private TextView tvCount;
     private PaymentAdapter adapter;
     private List<PaymentData> pendingPayments;
     private PaymentApiService paymentApiService;
@@ -36,9 +39,31 @@ public class PendingPaymentsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_all_payments, container, false);
         
+        // Set header title and styling (orange for Pending)
+        TextView tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle);
+        LinearLayout headerLayout = view.findViewById(R.id.headerLayout);
+        ImageView ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("Pending Payment Records");
+        }
+        if (headerLayout != null) {
+            headerLayout.setBackgroundColor(android.graphics.Color.parseColor("#FFF3E0")); // Light orange
+        }
+        if (ivHeaderIcon != null) {
+            ivHeaderIcon.setImageResource(R.drawable.ic_clock); // Clock icon for pending
+            ivHeaderIcon.setColorFilter(android.graphics.Color.parseColor("#FF9800")); // Orange
+        }
+        
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
+        tvCount = view.findViewById(R.id.tvCount);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        // Set count badge background to orange (matching header)
+        if (tvCount != null) {
+            tvCount.setBackgroundResource(R.drawable.bg_rounded_orange);
+        }
         
         // Initialize SwipeRefreshLayout
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -111,6 +136,11 @@ public class PendingPaymentsFragment extends Fragment {
     }
     
     private void updateUI() {
+        // Update count
+        if (tvCount != null) {
+            tvCount.setText(String.valueOf(pendingPayments.size()));
+        }
+        
         if (pendingPayments.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);
@@ -142,11 +172,11 @@ public class PendingPaymentsFragment extends Fragment {
             };
             
             if (adapter == null) {
-                adapter = new PaymentAdapter(pendingPayments, listener, PaymentAdapter.VIEW_TYPE_ALL);
+                adapter = new PaymentAdapter(pendingPayments, listener, PaymentAdapter.VIEW_TYPE_PENDING);
                 recyclerView.setAdapter(adapter);
             } else {
                 adapter.setActionListener(listener);
-                adapter.setViewType(PaymentAdapter.VIEW_TYPE_ALL);
+                adapter.setViewType(PaymentAdapter.VIEW_TYPE_PENDING);
                 adapter.notifyDataSetChanged();
             }
         }
