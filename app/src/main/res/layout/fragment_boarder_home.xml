@@ -248,15 +248,15 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="See All"
-                    android:textSize="14sp"
+                    android:textSize="10.5sp"
                     android:textColor="@color/brown"
                     android:fontFamily="@font/poppins_medium"
                     android:backgroundTint="@android:color/transparent"
-                    app:cornerRadius="20dp"
+                    app:cornerRadius="15dp"
                     app:strokeColor="@color/brown"
                     app:strokeWidth="1dp"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp" />
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp" />
 
             </LinearLayout>
 
