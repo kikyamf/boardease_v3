@@ -1984,6 +1984,8 @@ public class BoarderBookingFragment extends Fragment {
 
             // API URL
             String url = BASE_URL + "BoardEase2/submit_review.php";
+            Log.d(TAG, "Submitting review to: " + url);
+            Log.d(TAG, "Review data - userId: " + userId + ", bhId: " + bhId + ", rating: " + rating);
 
             // Create JSON request body
             JSONObject requestBody = new JSONObject();
@@ -1992,6 +1994,7 @@ public class BoarderBookingFragment extends Fragment {
                 requestBody.put("bh_id", bhId);
                 requestBody.put("rating", rating);
                 requestBody.put("comment", comments);
+                Log.d(TAG, "Request body: " + requestBody.toString());
             } catch (JSONException e) {
                 Log.e(TAG, "Error creating request body: " + e.getMessage());
                 progressDialog.dismiss();
@@ -2008,6 +2011,7 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         progressDialog.dismiss();
+                        Log.d(TAG, "Review submission response: " + response.toString());
                         try {
                             if (response.getBoolean("success")) {
                                 // Close the review dialog
@@ -2016,10 +2020,12 @@ public class BoarderBookingFragment extends Fragment {
                                 Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
                             } else {
                                 String error = response.optString("error", "Failed to submit review");
+                                Log.e(TAG, "Review submission failed: " + error);
                                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing response: " + e.getMessage());
+                            e.printStackTrace();
                             Toast.makeText(getContext(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -2028,17 +2034,41 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        Log.e(TAG, "Volley error: " + error.getMessage());
-                        String errorMessage = "Network error";
-                        if (error.networkResponse != null && error.networkResponse.data != null) {
-                            try {
-                                String responseBody = new String(error.networkResponse.data, "utf-8");
-                                JSONObject errorJson = new JSONObject(responseBody);
-                                errorMessage = errorJson.optString("error", "Network error");
-                            } catch (Exception e) {
-                                errorMessage = "Network error: " + error.getMessage();
+                        
+                        // Enhanced error logging
+                        Log.e(TAG, "Volley error type: " + error.getClass().getSimpleName());
+                        Log.e(TAG, "Volley error message: " + (error.getMessage() != null ? error.getMessage() : "null"));
+                        
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Network response status code: " + error.networkResponse.statusCode);
+                            if (error.networkResponse.data != null) {
+                                try {
+                                    String responseBody = new String(error.networkResponse.data, "utf-8");
+                                    Log.e(TAG, "Error response body: " + responseBody);
+                                    JSONObject errorJson = new JSONObject(responseBody);
+                                    String errorMsg = errorJson.optString("error", "Network error");
+                                    Toast.makeText(getContext(), errorMsg, Toast.LENGTH_LONG).show();
+                                    return;
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Error parsing error response: " + e.getMessage());
+                                }
                             }
+                        } else {
+                            Log.e(TAG, "No network response - connection failed or timeout");
                         }
+                        
+                        // More specific error messages
+                        String errorMessage = "Network error";
+                        if (error instanceof com.android.volley.TimeoutError) {
+                            errorMessage = "Request timeout. Please check your connection.";
+                        } else if (error instanceof com.android.volley.NoConnectionError) {
+                            errorMessage = "No connection. Please check your internet.";
+                        } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
+                            errorMessage = "Error: " + error.getMessage();
+                        } else {
+                            errorMessage = "Failed to connect to server. Please try again.";
+                        }
+                        
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }
@@ -2049,9 +2079,16 @@ public class BoarderBookingFragment extends Fragment {
                     headers.put("Content-Type", "application/json");
                     headers.put("User-Agent", "BoardEase-Android-App");
                     headers.put("Accept", "application/json");
+                    headers.put("ngrok-skip-browser-warning", "true");
                     return headers;
                 }
             };
+            
+            // Set retry policy
+            jsonRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                10000, // 10 seconds timeout
+                com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
             // Add request to queue
             RequestQueue requestQueue = Volley.newRequestQueue(getContext());
