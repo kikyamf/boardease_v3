@@ -6,10 +6,17 @@
         <domain includeSubdomains="true">192.168.137.11</domain>
         <domain includeSubdomains="true">192.168.254.121</domain>
         <domain includeSubdomains="true">192.168.1.4</domain>
+        <domain includeSubdomains="true">192.168.1.5</domain>
         <domain includeSubdomains="true">192.168.137.1</domain>
-
-
-
         <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
+    
+    <!-- Allow cleartext for local development (all private IP ranges) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>

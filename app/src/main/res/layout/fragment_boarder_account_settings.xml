@@ -56,9 +56,9 @@
             android:layout_marginBottom="28dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="5dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0"
-            android:backgroundTint="#FFFFFF">
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/brown"
+            android:backgroundTint="#FAF8F6">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -66,16 +66,57 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Personal Information Header (Clickable) -->
+                <LinearLayout
+                    android:id="@+id/llPersonalInfoHeader"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Personal Information"
-                    android:textSize="18sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:textColor="#000000"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/bg_personal_info_header_ripple"
+                    android:padding="12dp"
+                    android:paddingBottom="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginStart="-4dp"
+                    android:layout_marginEnd="-4dp"
+                    android:layout_marginTop="-4dp">
 
-                <!-- Each field spaced properly -->
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/ic_person1"
+                        android:tint="@color/brown"
+                        android:layout_marginEnd="12dp"
+                        android:contentDescription="Personal Info Icon" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Personal Information"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:textColor="@color/brown" />
+
+                    <ImageView
+                        android:id="@+id/ivExpandCollapsePersonal"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_arrow_down"
+                        android:tint="@color/brown"
+                        android:contentDescription="Expand/Collapse" />
+                </LinearLayout>
+
+                <!-- Personal Information Fields Container -->
+                <LinearLayout
+                    android:id="@+id/llPersonalInfoFields"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Each field spaced properly -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -268,17 +309,18 @@
                         android:fontFamily="@font/poppins_regular" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSaveChanges"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Save Changes"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    android:fontFamily="@font/poppins_medium"
-                    android:backgroundTint="#A18167"
-                    app:cornerRadius="10dp"
-                    android:paddingVertical="12dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveChanges"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Save Changes"
+                        android:textSize="16sp"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="#A18167"
+                        app:cornerRadius="10dp"
+                        android:paddingVertical="12dp" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -288,9 +330,9 @@
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
             app:cardElevation="5dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0"
-            android:backgroundTint="#FFFFFF">
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/blue"
+            android:backgroundTint="#E3F2FD">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -298,23 +340,65 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Privacy & Security Header (Clickable) -->
+                <LinearLayout
+                    android:id="@+id/llPrivacyHeader"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Privacy &amp; Security"
-                    android:textSize="18sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:textColor="#000000"
-                    android:layout_marginBottom="12dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/bg_privacy_header_ripple_blue"
+                    android:padding="12dp"
+                    android:paddingBottom="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:layout_marginStart="-4dp"
+                    android:layout_marginEnd="-4dp"
+                    android:layout_marginTop="-4dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/ic_security"
+                        android:tint="@color/blue"
+                        android:layout_marginEnd="12dp"
+                        android:contentDescription="Security Icon" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Privacy &amp; Security"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:textColor="@color/blue" />
+
+                    <ImageView
+                        android:id="@+id/ivExpandCollapse"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_arrow_down"
+                        android:tint="@color/blue"
+                        android:contentDescription="Expand/Collapse" />
+                </LinearLayout>
+
+                <!-- Password Fields Container (Initially Hidden) -->
+                <LinearLayout
+                    android:id="@+id/llPasswordFields"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Change Password"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/poppins_medium"
-                    android:textColor="#333333"
-                    android:layout_marginBottom="10dp" />
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Change Password"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/blue"
+                        android:layout_marginBottom="10dp" />
 
                 <!-- Current Password Field -->
                 <LinearLayout
@@ -323,7 +407,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -331,6 +415,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -364,7 +449,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -372,6 +457,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -405,7 +491,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -413,6 +499,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -441,17 +528,18 @@
 
                 <!-- Password fields -->
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnUpdatePassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Update Password"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    android:fontFamily="@font/poppins_medium"
-                    android:backgroundTint="#A18167"
-                    app:cornerRadius="10dp"
-                    android:paddingVertical="12dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUpdatePassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Update Password"
+                        android:textSize="16sp"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="@color/blue"
+                        app:cornerRadius="10dp"
+                        android:paddingVertical="12dp" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -462,6 +550,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:indeterminateTint="@color/brown" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

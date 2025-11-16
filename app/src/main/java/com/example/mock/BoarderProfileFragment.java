@@ -60,11 +60,7 @@ public class BoarderProfileFragment extends Fragment {
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
-    private LinearLayout layoutMyBookings;
-    private LinearLayout layoutMyFavorites;
     private LinearLayout layoutPaymentMethods;
-    private LinearLayout layoutNotifications;
-    private LinearLayout layoutMessages;
     private LinearLayout layoutHelpSupport;
     private LinearLayout layoutAboutApp;
     
@@ -113,11 +109,7 @@ public class BoarderProfileFragment extends Fragment {
             
             // Menu items
             layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
-            layoutMyBookings = view.findViewById(R.id.layoutMyBookings);
-            layoutMyFavorites = view.findViewById(R.id.layoutMyFavorites);
             layoutPaymentMethods = view.findViewById(R.id.layoutPaymentMethods);
-            layoutNotifications = view.findViewById(R.id.layoutNotifications);
-            layoutMessages = view.findViewById(R.id.layoutMessages);
             layoutHelpSupport = view.findViewById(R.id.layoutHelpSupport);
             layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
             
@@ -234,85 +226,42 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutAccountSettings != null) {
                 layoutAccountSettings.setOnClickListener(v -> {
                     try {
-                        // Navigate to account settings fragment
-                        if (getActivity() != null) {
-                            BoarderAccountSettingsFragment accountSettingsFragment = BoarderAccountSettingsFragment.newInstance();
-                            getActivity().getSupportFragmentManager()
-                                    .beginTransaction()
-                                    .replace(R.id.fragment_container, accountSettingsFragment)
-                                    .addToBackStack(null)
-                                    .commit();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-            // My Bookings
-            if (layoutMyBookings != null) {
-                layoutMyBookings.setOnClickListener(v -> {
-                    try {
-                        // Navigate to bookings fragment
-                        if (getActivity() instanceof BoarderDashboard) {
-                            BoarderDashboard dashboard = (BoarderDashboard) getActivity();
-                            dashboard.switchToTab(R.id.nav_activity);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-            // My Favorites
-            if (layoutMyFavorites != null) {
-                layoutMyFavorites.setOnClickListener(v -> {
-                    try {
-                        // Navigate to favorites fragment
-                        if (getActivity() instanceof BoarderDashboard) {
-                            BoarderDashboard dashboard = (BoarderDashboard) getActivity();
-                            dashboard.switchToTab(R.id.nav_manage);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-            // Payment Methods
-            if (layoutPaymentMethods != null) {
-                layoutPaymentMethods.setOnClickListener(v -> {
-                    try {
-                        // Navigate to PaymentMethodsActivity
-                        Intent intent = new Intent(getActivity(), PaymentMethodsActivity.class);
+                        // Navigate to account settings activity
+                        Intent intent = new Intent(getActivity(), BoarderAccountSettingsActivity.class);
                         startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening payment methods", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
 
-            // Notifications
-            if (layoutNotifications != null) {
-                layoutNotifications.setOnClickListener(v -> {
+            // Gcash Information (Payment Methods)
+            if (layoutPaymentMethods != null) {
+                layoutPaymentMethods.setOnClickListener(v -> {
                     try {
-                        Toast.makeText(getContext(), "Notifications - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Navigate to notifications settings
+                        // Navigate to GcashInfoActivity (reused from owner side)
+                        String userIdString = Login.getCurrentUserId(getContext());
+                        if (userIdString == null || userIdString.isEmpty()) {
+                            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // Parse user ID to int
+                        int userId;
+                        try {
+                            userId = Integer.parseInt(userIdString);
+                        } catch (NumberFormatException e) {
+                            Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        Intent intent = new Intent(getActivity(), GcashInfoActivity.class);
+                        intent.putExtra("user_id", userId);
+                        startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
-                    }
-                });
-            }
-
-            // Messages
-            if (layoutMessages != null) {
-                layoutMessages.setOnClickListener(v -> {
-                    try {
-                        Toast.makeText(getContext(), "Messages - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Navigate to messages
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening Gcash Information", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

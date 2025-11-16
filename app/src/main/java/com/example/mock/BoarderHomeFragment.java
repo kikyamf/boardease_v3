@@ -68,8 +68,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private TextView tvRecommendedEmpty;
     private TextView tvNearbyEmpty;
     private MaterialButton btnSeeAll;
-    private MaterialCardView btnMyBookings;
-    private MaterialCardView btnFavorites;
     private ImageView ivNotification;
     private ImageView ivMessage;
     private TextView tvBoarderName;
@@ -268,8 +266,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             }
             
             btnSeeAll = view.findViewById(R.id.btnSeeAll);
-            btnMyBookings = (MaterialCardView) view.findViewById(R.id.cardMyBookings);
-            btnFavorites = (MaterialCardView) view.findViewById(R.id.cardFavorites);
             ivNotification = view.findViewById(R.id.ivNotification);
             ivMessage = view.findViewById(R.id.ivMessage);
             tvBoarderName = view.findViewById(R.id.tvBoarderName);
@@ -485,22 +481,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                     e.printStackTrace();
                     Toast.makeText(getContext(), "Navigation error", Toast.LENGTH_SHORT).show();
                 }
-            });
-        }
-
-        // My Bookings button
-        if (btnMyBookings != null) {
-            btnMyBookings.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "My Bookings - Coming Soon!", Toast.LENGTH_SHORT).show();
-                // TODO: Navigate to bookings fragment
-            });
-        }
-
-        // Favorites button
-        if (btnFavorites != null) {
-            btnFavorites.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "Favorites - Coming Soon!", Toast.LENGTH_SHORT).show();
-                // TODO: Navigate to favorites fragment
             });
         }
 
