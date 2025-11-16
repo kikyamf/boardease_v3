@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
+
 import java.util.ArrayList;
 
 public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaintenanceAdapter.ViewHolder> {
@@ -58,8 +60,13 @@ public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaint
             holder.tvPriority.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
         }
 
-        // Set status color for pending
-        holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.holo_blue_dark));
+        // Set status badge for pending - Orange background
+        holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+        holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.white));
+        
+        // Set card border color - Orange (#FF9800)
+        holder.cardView.setStrokeColor(context.getResources().getColor(android.R.color.holo_orange_dark));
+        holder.cardView.setStrokeWidth((int) (2 * context.getResources().getDisplayMetrics().density));
 
         // Set up action buttons
         holder.btnApprove.setOnClickListener(v -> {
@@ -81,12 +88,14 @@ public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaint
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardView;
         TextView tvBoarderName, tvBoardingHouse, tvRoomNumber, tvMaintenanceType, 
                 tvDescription, tvRequestDate, tvStatus, tvPriority;
         Button btnApprove, btnReject;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardView = itemView.findViewById(R.id.cardView);
             tvBoarderName = itemView.findViewById(R.id.tvBoarderName);
             tvBoardingHouse = itemView.findViewById(R.id.tvBoardingHouse);
             tvRoomNumber = itemView.findViewById(R.id.tvRoomNumber);

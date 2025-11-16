@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
+
 import java.util.ArrayList;
 
 public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedMaintenanceAdapter.ViewHolder> {
@@ -51,8 +53,27 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
             holder.tvPriority.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
         }
 
-        // Set status color for completed
-        holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+        // Set status badge and card border based on status
+        String status = request.getStatus().toLowerCase();
+        if ("resolved".equals(status) || "completed".equals(status)) {
+            // Green badge and border
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green
+            holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.white));
+            holder.cardView.setStrokeColor(context.getResources().getColor(android.R.color.holo_green_dark));
+            holder.cardView.setStrokeWidth((int) (2 * context.getResources().getDisplayMetrics().density));
+        } else if ("in progress".equals(status)) {
+            // Blue badge and border
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue
+            holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.white));
+            holder.cardView.setStrokeColor(context.getResources().getColor(android.R.color.holo_blue_dark));
+            holder.cardView.setStrokeWidth((int) (2 * context.getResources().getDisplayMetrics().density));
+        } else if ("pending".equals(status)) {
+            // Orange badge and border
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange
+            holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.white));
+            holder.cardView.setStrokeColor(context.getResources().getColor(android.R.color.holo_orange_dark));
+            holder.cardView.setStrokeWidth((int) (2 * context.getResources().getDisplayMetrics().density));
+        }
     }
 
     @Override
@@ -61,11 +82,13 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardView;
         TextView tvBoarderName, tvBoardingHouse, tvRoomNumber, tvMaintenanceType, 
                 tvDescription, tvRequestDate, tvStatus, tvPriority;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardView = itemView.findViewById(R.id.cardView);
             tvBoarderName = itemView.findViewById(R.id.tvBoarderName);
             tvBoardingHouse = itemView.findViewById(R.id.tvBoardingHouse);
             tvRoomNumber = itemView.findViewById(R.id.tvRoomNumber);

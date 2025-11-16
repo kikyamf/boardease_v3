@@ -44,7 +44,7 @@ public class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAdapter.
         String status = maintenance.getStatus();
         holder.tvStatus.setText(status);
         
-        // Handle maintenance statuses: Pending (orange), In Progress (blue), Completed (green)
+        // Handle maintenance statuses: Pending (orange), In Progress (blue), Resolved/Completed (green)
         switch (status.toLowerCase()) {
             case "new":
             case "pending":
@@ -54,6 +54,7 @@ public class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAdapter.
             case "in_progress":
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue
                 break;
+            case "resolved":
             case "completed":
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green
                 break;
