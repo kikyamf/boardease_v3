@@ -29,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -1811,13 +1812,17 @@ public class BoarderBookingFragment extends Fragment {
             Runnable updateStars = () -> {
                 for (int i = 0; i < stars.length; i++) {
                     if (i < currentRating[0]) {
-                        // Fill the star (gold color from drawable)
+                        // Fill the star (gold/yellow color)
                         stars[i].setImageResource(R.drawable.ic_star_filled);
-                        stars[i].clearColorFilter();
+                        // Use ImageViewCompat to properly tint vector drawables
+                        ImageViewCompat.setImageTintList(stars[i], 
+                            android.content.res.ColorStateList.valueOf(0xFFFFC107)); // Gold color #FFC107
                     } else {
-                        // Empty star (gray color from drawable)
+                        // Empty star (gray color)
                         stars[i].setImageResource(R.drawable.ic_star_empty);
-                        stars[i].clearColorFilter();
+                        // Use ImageViewCompat to properly tint vector drawables
+                        ImageViewCompat.setImageTintList(stars[i], 
+                            android.content.res.ColorStateList.valueOf(0xFFCCCCCC)); // Gray color
                     }
                 }
                 
