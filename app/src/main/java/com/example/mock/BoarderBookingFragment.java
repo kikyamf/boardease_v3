@@ -31,6 +31,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -1808,6 +1810,26 @@ public class BoarderBookingFragment extends Fragment {
             // Rating state (0 = no rating, 1-5 = rating)
             final int[] currentRating = {0};
 
+            // Function to validate and update button state
+            Runnable updateSubmitButtonState = () -> {
+                boolean hasRating = currentRating[0] > 0;
+                String comments = etReviewComments.getText() != null ? 
+                    etReviewComments.getText().toString().trim() : "";
+                boolean hasComments = !comments.isEmpty();
+                
+                boolean isEnabled = hasRating && hasComments;
+                btnSubmitReview.setEnabled(isEnabled);
+                
+                // Update button color based on enabled state
+                if (isEnabled) {
+                    btnSubmitReview.setBackgroundTintList(
+                        ContextCompat.getColorStateList(getContext(), R.color.brown));
+                } else {
+                    btnSubmitReview.setBackgroundTintList(
+                        ContextCompat.getColorStateList(getContext(), R.color.brown_disabled));
+                }
+            };
+
             // Function to update stars based on rating
             Runnable updateStars = () -> {
                 for (int i = 0; i < stars.length; i++) {
@@ -1849,6 +1871,9 @@ public class BoarderBookingFragment extends Fragment {
                         break;
                 }
                 tvRatingText.setText(ratingText);
+                
+                // Update submit button state after rating change
+                updateSubmitButtonState.run();
             };
 
             // Set click listeners for each star
@@ -1863,19 +1888,37 @@ public class BoarderBookingFragment extends Fragment {
             // Initialize stars to empty state
             updateStars.run();
 
+            // Add text watcher to comments field to validate button state
+            etReviewComments.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    updateSubmitButtonState.run();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+            });
+
             // Create and show dialog
             AlertDialog dialog = builder.create();
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.show();
+
+            // Initialize button state (disabled by default)
+            updateSubmitButtonState.run();
 
             // Close button click listener
             btnClose.setOnClickListener(v -> dialog.dismiss());
 
             // Submit Review button click listener
             btnSubmitReview.setOnClickListener(v -> {
-                if (currentRating[0] == 0) {
-                    Toast.makeText(getContext(), "Please select a rating", Toast.LENGTH_SHORT).show();
-                    return;
+                if (!btnSubmitReview.isEnabled()) {
+                    return; // Prevent action if button is disabled
                 }
 
                 String comments = etReviewComments.getText() != null ? 
