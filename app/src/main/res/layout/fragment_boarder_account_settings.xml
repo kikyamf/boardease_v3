@@ -397,7 +397,7 @@
                         android:text="Change Password"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_medium"
-                        android:textColor="#333333"
+                        android:textColor="@color/blue"
                         android:layout_marginBottom="10dp" />
 
                 <!-- Current Password Field -->
@@ -407,7 +407,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -415,6 +415,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -448,7 +449,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -456,6 +457,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -489,7 +491,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background"
+                    android:background="@drawable/edittext_background_blue"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -497,6 +499,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/key"
+                        android:tint="@color/blue"
                         android:contentDescription="Password Icon"/>
 
                     <EditText
@@ -533,7 +536,7 @@
                         android:textSize="16sp"
                         android:textColor="#FFFFFF"
                         android:fontFamily="@font/poppins_medium"
-                        android:backgroundTint="#A18167"
+                        android:backgroundTint="@color/blue"
                         app:cornerRadius="10dp"
                         android:paddingVertical="12dp" />
                 </LinearLayout>
