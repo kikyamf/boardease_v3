@@ -240,8 +240,24 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutPaymentMethods != null) {
                 layoutPaymentMethods.setOnClickListener(v -> {
                     try {
-                        // Navigate to PaymentMethodsActivity
-                        Intent intent = new Intent(getActivity(), PaymentMethodsActivity.class);
+                        // Navigate to GcashInfoActivity (reused from owner side)
+                        String userIdString = Login.getCurrentUserId(getContext());
+                        if (userIdString == null || userIdString.isEmpty()) {
+                            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // Parse user ID to int
+                        int userId;
+                        try {
+                            userId = Integer.parseInt(userIdString);
+                        } catch (NumberFormatException e) {
+                            Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        Intent intent = new Intent(getActivity(), GcashInfoActivity.class);
+                        intent.putExtra("user_id", userId);
                         startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
