@@ -225,10 +225,7 @@
             android:fontFamily="@font/poppins_medium"
             android:backgroundTint="@color/brown"
             app:cornerRadius="12dp"
-            android:paddingVertical="14dp"
-            android:drawableStart="@drawable/ic_star_filled"
-            android:drawablePadding="8dp"
-            android:drawableTint="#FFFFFF" />
+            android:paddingVertical="14dp" />
 
     </LinearLayout>
 
