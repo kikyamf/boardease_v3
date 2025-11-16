@@ -1823,10 +1823,10 @@ public class BoarderBookingFragment extends Fragment {
                 // Update button color based on enabled state
                 if (isEnabled) {
                     btnSubmitReview.setBackgroundTintList(
-                        ContextCompat.getColorStateList(getContext(), R.color.brown));
+                        ContextCompat.getColorStateList(getContext(), R.color.blue));
                 } else {
                     btnSubmitReview.setBackgroundTintList(
-                        ContextCompat.getColorStateList(getContext(), R.color.brown_disabled));
+                        ContextCompat.getColorStateList(getContext(), R.color.blue_disabled));
                 }
             };
 

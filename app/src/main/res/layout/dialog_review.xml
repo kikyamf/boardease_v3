@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:text="Your stay has ended in this Boarding House."
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/blue"
                 android:fontFamily="@font/poppins_regular"
                 android:layout_marginStart="44dp"
                 android:layout_marginTop="4dp" />
@@ -234,7 +234,7 @@
             android:textSize="16sp"
             android:textColor="#FFFFFF"
             android:fontFamily="@font/poppins_medium"
-            android:backgroundTint="@color/brown"
+            android:backgroundTint="@color/blue"
             app:cornerRadius="12dp"
             android:paddingVertical="14dp" />
 
