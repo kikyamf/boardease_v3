@@ -17,33 +17,50 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:layout_marginBottom="20dp">
 
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_star_filled"
-                android:tint="#FFC107"
-                android:layout_marginEnd="12dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_star_filled"
+                    android:tint="#FFC107"
+                    android:layout_marginEnd="12dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Write a Review"
+                    android:textSize="20sp"
+                    android:textColor="#000000"
+                    android:fontFamily="@font/poppins_bold" />
+
+                <ImageButton
+                    android:id="@+id/btnCloseReview"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_close"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close" />
+
+            </LinearLayout>
 
             <TextView
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Write a Review"
-                android:textSize="20sp"
-                android:textColor="#000000"
-                android:fontFamily="@font/poppins_bold" />
-
-            <ImageButton
-                android:id="@+id/btnCloseReview"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_close"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Close" />
+                android:text="Your stay has ended in this Boarding House."
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginStart="44dp"
+                android:layout_marginTop="4dp" />
 
         </LinearLayout>
 
