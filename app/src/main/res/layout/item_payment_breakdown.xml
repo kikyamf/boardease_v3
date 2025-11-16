@@ -6,7 +6,8 @@
     android:layout_marginBottom="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp"
-    app:cardBackgroundColor="@android:color/white">
+    app:cardBackgroundColor="@android:color/white"
+    android:background="@drawable/card_border_all_sides">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +27,9 @@
                 android:id="@+id/checkboxPeriod"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:buttonTint="@color/checkbox_brown"
+                android:background="@android:color/transparent" />
 
             <TextView
                 android:id="@+id/tvPeriodLabel"

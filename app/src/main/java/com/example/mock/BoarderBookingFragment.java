@@ -906,10 +906,27 @@ public class BoarderBookingFragment extends Fragment {
                     isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
                 }
                 
-                // Set checkbox - check current/overdue periods by default
-                checkboxPeriod.setChecked(isCurrentOrOverdue);
-                if (isCurrentOrOverdue) {
-                    selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                // Set checkbox styling - brown border and check when clicked
+                checkboxPeriod.setButtonTintList(getResources().getColorStateList(R.color.checkbox_brown));
+                
+                // Chronological validation: disable checkboxes if previous period is not checked
+                // First period is always enabled, others are disabled by default
+                if (i == 0) {
+                    // First checkbox is always enabled
+                    checkboxPeriod.setEnabled(true);
+                    checkboxPeriod.setAlpha(1.0f);
+                    // Check first period if it's current/overdue
+                    if (isCurrentOrOverdue) {
+                        checkboxPeriod.setChecked(true);
+                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                    } else {
+                        checkboxPeriod.setChecked(false);
+                    }
+                } else {
+                    // Later periods are disabled by default until previous one is checked
+                    checkboxPeriod.setEnabled(false);
+                    checkboxPeriod.setAlpha(0.5f); // Visual indication that it's disabled
+                    checkboxPeriod.setChecked(false);
                 }
                 
                 // Set status and colors
@@ -929,12 +946,19 @@ public class BoarderBookingFragment extends Fragment {
                     // Keep default color for future periods
                 }
                 
-                // Set checkbox listener
+                // Set checkbox listener with chronological validation
+                int periodIndex = i; // Capture index for lambda
                 checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
                         selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                        // Enable the next period if this one is checked
+                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
                     } else {
                         selectedBreakdowns.remove(breakdown.getBreakdownId());
+                        // Disable and uncheck all later periods if this one is unchecked
+                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
                     }
                     updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
                 });
@@ -970,6 +994,11 @@ public class BoarderBookingFragment extends Fragment {
             } else {
                 btnToggleAllPayments.setVisibility(View.GONE);
             }
+            
+            // Initialize checkbox states after all checkboxes are created
+            // This ensures the second checkbox is enabled if the first one is checked by default
+            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
             
             // Toggle button click listener
             btnToggleAllPayments.setOnClickListener(v -> {
@@ -1048,6 +1077,56 @@ public class BoarderBookingFragment extends Fragment {
                     ContextCompat.getColor(getContext(), R.color.green_disabled)));
             }
         }
+    }
+    
+    /**
+     * Updates checkbox states based on chronological validation.
+     * Enables/disables checkboxes and unchecks later periods if earlier ones are unchecked.
+     */
+    private void updateCheckboxStates(List<android.widget.CheckBox> checkboxes,
+                                      Map<Integer, PaymentBreakdown> selectedBreakdowns,
+                                      List<PaymentBreakdown> filteredBreakdowns,
+                                      List<View> breakdownItemViews,
+                                      TextView tvTotalAmount,
+                                      com.google.android.material.button.MaterialButton btnProceedToPayment) {
+        // Enable/disable checkboxes based on sequential logic
+        for (int i = 0; i < checkboxes.size(); i++) {
+            android.widget.CheckBox checkBox = checkboxes.get(i);
+            PaymentBreakdown breakdown = filteredBreakdowns.get(i);
+            
+            if (i == 0) {
+                // First checkbox is always enabled
+                checkBox.setEnabled(true);
+                checkBox.setAlpha(1.0f);
+            } else {
+                // Can only check if previous is checked
+                android.widget.CheckBox previousCheckBox = checkboxes.get(i - 1);
+                boolean canEnable = previousCheckBox.isChecked();
+                checkBox.setEnabled(canEnable);
+                
+                // Update alpha based on enabled state
+                checkBox.setAlpha(canEnable ? 1.0f : 0.5f);
+                
+                // If previous is unchecked, uncheck this one too and remove from selected
+                if (!canEnable && checkBox.isChecked()) {
+                    checkBox.setChecked(false);
+                    selectedBreakdowns.remove(breakdown.getBreakdownId());
+                    // Recursively uncheck all subsequent periods
+                    for (int j = i + 1; j < checkboxes.size(); j++) {
+                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
+                        if (laterCheckBox.isChecked()) {
+                            laterCheckBox.setChecked(false);
+                            selectedBreakdowns.remove(filteredBreakdowns.get(j).getBreakdownId());
+                        }
+                        laterCheckBox.setEnabled(false);
+                        laterCheckBox.setAlpha(0.5f);
+                    }
+                }
+            }
+        }
+        
+        // Update total after state changes
+        updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
     }
     
     private boolean isDateCurrentOrPast(String dateStr) {
