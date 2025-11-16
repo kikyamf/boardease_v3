@@ -1924,7 +1924,7 @@ public class BoarderBookingFragment extends Fragment {
                 String comments = etReviewComments.getText() != null ? 
                     etReviewComments.getText().toString().trim() : "";
 
-                // Submit review (placeholder - can be connected to API later)
+                // Submit review to database
                 submitReview(booking.getBookingId(), currentRating[0], comments, dialog);
             });
 
@@ -1944,22 +1944,118 @@ public class BoarderBookingFragment extends Fragment {
                 return;
             }
 
-            // TODO: Implement API call to submit review
-            // For now, just show success message
-            Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
-            
-            // Example API call structure (commented out for now):
-            /*
-            JSONObject reviewData = new JSONObject();
-            reviewData.put("booking_id", bookingId);
-            reviewData.put("user_id", userId);
-            reviewData.put("rating", rating);
-            reviewData.put("comments", comments);
-            
-            // Make API call to submit review
-            // Similar structure to submitMaintenanceRequest method
-            */
+            // Get user ID from SharedPreferences
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", getContext().MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", "0");
+            int userId = 0;
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid user_id in SharedPreferences: " + userIdString);
+                Toast.makeText(getContext(), "Error: Invalid user session", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (userId == 0) {
+                Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Get boarding house ID from the booking
+            // We need to find the booking in our lists to get bh_id
+            int bhId = 0;
+            for (Booking booking : bookingHistory) {
+                if (booking.getBookingId() == bookingId) {
+                    bhId = booking.getBhId();
+                    break;
+                }
+            }
+
+            if (bhId == 0) {
+                Toast.makeText(getContext(), "Error: Could not find boarding house information", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show loading indicator
+            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+            progressDialog.setMessage("Submitting review...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
+            // API URL
+            String url = BASE_URL + "BoardEase2/submit_review.php";
+
+            // Create JSON request body
+            JSONObject requestBody = new JSONObject();
+            try {
+                requestBody.put("user_id", userId);
+                requestBody.put("bh_id", bhId);
+                requestBody.put("rating", rating);
+                requestBody.put("comment", comments);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error creating request body: " + e.getMessage());
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error preparing request", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Create request
+            com.android.volley.toolbox.JsonObjectRequest jsonRequest = new com.android.volley.toolbox.JsonObjectRequest(
+                com.android.volley.Request.Method.POST,
+                url,
+                requestBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        progressDialog.dismiss();
+                        try {
+                            if (response.getBoolean("success")) {
+                                // Close the review dialog
+                                dialog.dismiss();
+                                // Show success message
+                                Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String error = response.optString("error", "Failed to submit review");
+                                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing response: " + e.getMessage());
+                            Toast.makeText(getContext(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressDialog.dismiss();
+                        Log.e(TAG, "Volley error: " + error.getMessage());
+                        String errorMessage = "Network error";
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            try {
+                                String responseBody = new String(error.networkResponse.data, "utf-8");
+                                JSONObject errorJson = new JSONObject(responseBody);
+                                errorMessage = errorJson.optString("error", "Network error");
+                            } catch (Exception e) {
+                                errorMessage = "Network error: " + error.getMessage();
+                            }
+                        }
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
+            ) {
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Content-Type", "application/json");
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
+                    return headers;
+                }
+            };
+
+            // Add request to queue
+            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            requestQueue.add(jsonRequest);
 
         } catch (Exception e) {
             Log.e(TAG, "Error submitting review: " + e.getMessage());
