@@ -226,17 +226,12 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutAccountSettings != null) {
                 layoutAccountSettings.setOnClickListener(v -> {
                     try {
-                        // Navigate to account settings fragment
-                        if (getActivity() != null) {
-                            BoarderAccountSettingsFragment accountSettingsFragment = BoarderAccountSettingsFragment.newInstance();
-                            getActivity().getSupportFragmentManager()
-                                    .beginTransaction()
-                                    .replace(R.id.fragment_container, accountSettingsFragment)
-                                    .addToBackStack(null)
-                                    .commit();
-                        }
+                        // Navigate to account settings activity
+                        Intent intent = new Intent(getActivity(), BoarderAccountSettingsActivity.class);
+                        startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
