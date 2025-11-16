@@ -42,6 +42,12 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private ProgressBar progressBar;
     
+    // Collapsible Personal Information Section
+    private android.view.View llPersonalInfoHeader;
+    private android.view.View llPersonalInfoFields;
+    private ImageView ivExpandCollapsePersonal;
+    private boolean isPersonalInfoSectionExpanded = false;
+    
     // Collapsible Privacy Section
     private android.view.View llPrivacyHeader;
     private android.view.View llPasswordFields;
@@ -100,7 +106,28 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
         initializeViews();
         initializeSharedPreferences();
         setupClickListeners();
+        initializeCollapsibleSections();
         loadUserData();
+    }
+    
+    private void initializeCollapsibleSections() {
+        // Personal Information starts expanded (visible by default)
+        if (llPersonalInfoFields != null) {
+            llPersonalInfoFields.setVisibility(View.VISIBLE);
+            isPersonalInfoSectionExpanded = true;
+            if (ivExpandCollapsePersonal != null) {
+                ivExpandCollapsePersonal.setRotation(180f); // Point up when expanded
+            }
+        }
+        
+        // Privacy & Security starts collapsed (hidden by default)
+        if (llPasswordFields != null) {
+            llPasswordFields.setVisibility(View.GONE);
+            isPasswordSectionExpanded = false;
+            if (ivExpandCollapse != null) {
+                ivExpandCollapse.setRotation(0f); // Point down when collapsed
+            }
+        }
     }
 
     private void initializeViews() {
@@ -131,6 +158,11 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
             ivToggleCurrentPassword = findViewById(R.id.ivToggleCurrentPassword);
             ivToggleNewPassword = findViewById(R.id.ivToggleNewPassword);
             ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
+            
+            // Collapsible Personal Information Section
+            llPersonalInfoHeader = findViewById(R.id.llPersonalInfoHeader);
+            llPersonalInfoFields = findViewById(R.id.llPersonalInfoFields);
+            ivExpandCollapsePersonal = findViewById(R.id.ivExpandCollapsePersonal);
             
             // Collapsible Privacy Section
             llPrivacyHeader = findViewById(R.id.llPrivacyHeader);
@@ -207,6 +239,17 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
             
             if (ivToggleConfirmPassword != null) {
                 ivToggleConfirmPassword.setOnClickListener(v -> toggleConfirmPasswordVisibility());
+            }
+            
+            // Personal Information header click listener (collapsible)
+            if (llPersonalInfoHeader != null) {
+                llPersonalInfoHeader.setOnClickListener(v -> {
+                    try {
+                        togglePersonalInfoSection();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
             
             // Privacy & Security header click listener (collapsible)
@@ -754,6 +797,39 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
         }
     }
     
+    private void togglePersonalInfoSection() {
+        try {
+            Log.d(TAG, "togglePersonalInfoSection called, current state: " + isPersonalInfoSectionExpanded);
+            
+            // Double check views are not null
+            if (llPersonalInfoFields == null) {
+                Log.d(TAG, "llPersonalInfoFields is null");
+                return;
+            }
+            if (ivExpandCollapsePersonal == null) {
+                Log.d(TAG, "ivExpandCollapsePersonal is null");
+                return;
+            }
+            
+            if (isPersonalInfoSectionExpanded) {
+                // Collapse the section
+                llPersonalInfoFields.setVisibility(View.GONE);
+                ivExpandCollapsePersonal.setRotation(0f); // Point down
+                isPersonalInfoSectionExpanded = false;
+                Log.d(TAG, "Personal Info section collapsed");
+            } else {
+                // Expand the section
+                llPersonalInfoFields.setVisibility(View.VISIBLE);
+                ivExpandCollapsePersonal.setRotation(180f); // Point up
+                isPersonalInfoSectionExpanded = true;
+                Log.d(TAG, "Personal Info section expanded");
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Error in togglePersonalInfoSection: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     private void togglePasswordSection() {
         try {
             Log.d(TAG, "togglePasswordSection called, current state: " + isPasswordSectionExpanded);
@@ -773,13 +849,13 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
                 llPasswordFields.setVisibility(View.GONE);
                 ivExpandCollapse.setRotation(0f); // Point down
                 isPasswordSectionExpanded = false;
-                Log.d(TAG, "Section collapsed");
+                Log.d(TAG, "Password section collapsed");
             } else {
                 // Expand the section
                 llPasswordFields.setVisibility(View.VISIBLE);
                 ivExpandCollapse.setRotation(180f); // Point up
                 isPasswordSectionExpanded = true;
-                Log.d(TAG, "Section expanded");
+                Log.d(TAG, "Password section expanded");
             }
         } catch (Exception e) {
             Log.d(TAG, "Error in togglePasswordSection: " + e.getMessage());
