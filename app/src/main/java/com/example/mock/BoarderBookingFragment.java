@@ -228,8 +228,8 @@ public class BoarderBookingFragment extends Fragment {
             rvPendingBookings.setLayoutManager(pendingLayoutManager);
             rvPendingBookings.setAdapter(pendingBookingsAdapter);
 
-            // Setup Booking History RecyclerView
-            bookingHistoryAdapter = new BookingAdapter(getContext(), bookingHistory, null);
+            // Setup Booking History RecyclerView with click listener for review
+            bookingHistoryAdapter = new BookingAdapter(getContext(), bookingHistory, this::showReviewDialog);
             LinearLayoutManager historyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
             rvBookingHistory.setLayoutManager(historyLayoutManager);
             rvBookingHistory.setAdapter(bookingHistoryAdapter);
@@ -1774,6 +1774,149 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             // Fallback to toast if dialog fails
             Toast.makeText(getContext(), "Maintenance request submitted successfully", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Show review dialog when clicking on a booking history card
+     */
+    private void showReviewDialog(Booking booking) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_review, null);
+            builder.setView(dialogView);
+
+            // Initialize dialog views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseReview);
+            ImageView ivStar1 = dialogView.findViewById(R.id.ivStar1);
+            ImageView ivStar2 = dialogView.findViewById(R.id.ivStar2);
+            ImageView ivStar3 = dialogView.findViewById(R.id.ivStar3);
+            ImageView ivStar4 = dialogView.findViewById(R.id.ivStar4);
+            ImageView ivStar5 = dialogView.findViewById(R.id.ivStar5);
+            TextView tvRatingText = dialogView.findViewById(R.id.tvRatingText);
+            com.google.android.material.textfield.TextInputEditText etReviewComments = dialogView.findViewById(R.id.etReviewComments);
+            com.google.android.material.button.MaterialButton btnSubmitReview = dialogView.findViewById(R.id.btnSubmitReview);
+
+            // Array of star ImageViews for easier management
+            ImageView[] stars = {ivStar1, ivStar2, ivStar3, ivStar4, ivStar5};
+            
+            // Rating state (0 = no rating, 1-5 = rating)
+            final int[] currentRating = {0};
+
+            // Function to update stars based on rating
+            Runnable updateStars = () -> {
+                for (int i = 0; i < stars.length; i++) {
+                    if (i < currentRating[0]) {
+                        // Fill the star (gold color from drawable)
+                        stars[i].setImageResource(R.drawable.ic_star_filled);
+                        stars[i].clearColorFilter();
+                    } else {
+                        // Empty star (gray color from drawable)
+                        stars[i].setImageResource(R.drawable.ic_star_empty);
+                        stars[i].clearColorFilter();
+                    }
+                }
+                
+                // Update rating text based on rating
+                String ratingText;
+                switch (currentRating[0]) {
+                    case 1:
+                        ratingText = "Poor";
+                        break;
+                    case 2:
+                        ratingText = "Fair";
+                        break;
+                    case 3:
+                        ratingText = "Good";
+                        break;
+                    case 4:
+                        ratingText = "Very Good";
+                        break;
+                    case 5:
+                        ratingText = "Excellent";
+                        break;
+                    default:
+                        ratingText = "Tap to rate";
+                        break;
+                }
+                tvRatingText.setText(ratingText);
+            };
+
+            // Set click listeners for each star
+            for (int i = 0; i < stars.length; i++) {
+                final int rating = i + 1;
+                stars[i].setOnClickListener(v -> {
+                    currentRating[0] = rating;
+                    updateStars.run();
+                });
+            }
+
+            // Initialize stars to empty state
+            updateStars.run();
+
+            // Create and show dialog
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Close button click listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Submit Review button click listener
+            btnSubmitReview.setOnClickListener(v -> {
+                if (currentRating[0] == 0) {
+                    Toast.makeText(getContext(), "Please select a rating", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String comments = etReviewComments.getText() != null ? 
+                    etReviewComments.getText().toString().trim() : "";
+
+                // Submit review (placeholder - can be connected to API later)
+                submitReview(booking.getBookingId(), currentRating[0], comments, dialog);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing review dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing review dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Submit review to server
+     */
+    private void submitReview(int bookingId, int rating, String comments, AlertDialog dialog) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+
+            // TODO: Implement API call to submit review
+            // For now, just show success message
+            Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+            
+            // Example API call structure (commented out for now):
+            /*
+            JSONObject reviewData = new JSONObject();
+            reviewData.put("booking_id", bookingId);
+            reviewData.put("user_id", userId);
+            reviewData.put("rating", rating);
+            reviewData.put("comments", comments);
+            
+            // Make API call to submit review
+            // Similar structure to submitMaintenanceRequest method
+            */
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error submitting review: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error submitting review", Toast.LENGTH_SHORT).show();
         }
     }
 }
