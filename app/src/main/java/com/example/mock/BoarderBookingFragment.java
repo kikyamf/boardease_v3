@@ -1983,10 +1983,27 @@ public class BoarderBookingFragment extends Fragment {
             progressDialog.show();
 
             // API URL - Use localhost for review submission
+            // Try multiple possible IPs - user can update this based on their network
+            // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php"
+            // If your XAMPP document root is boardease_v3, use: "http://192.168.1.5/BoardEase2/submit_review.php"
             String localhostUrl = "http://192.168.1.5/";
-            String url = localhostUrl + "BoardEase2/submit_review.php";
+            String url = localhostUrl + "boardease_v3/BoardEase2/submit_review.php";
+            
+            Log.d(TAG, "=== REVIEW SUBMISSION DEBUG ===");
             Log.d(TAG, "Submitting review to: " + url);
             Log.d(TAG, "Review data - userId: " + userId + ", bhId: " + bhId + ", rating: " + rating);
+            Log.d(TAG, "Comment length: " + (comments != null ? comments.length() : 0));
+            
+            // Check if we can reach the server (basic test)
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) 
+                getContext().getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            Log.d(TAG, "Network connected: " + isConnected);
+            if (activeNetwork != null) {
+                Log.d(TAG, "Network type: " + activeNetwork.getTypeName());
+                Log.d(TAG, "Network state: " + activeNetwork.getDetailedState());
+            }
 
             // Create JSON request body
             JSONObject requestBody = new JSONObject();
@@ -2061,15 +2078,22 @@ public class BoarderBookingFragment extends Fragment {
                         // More specific error messages
                         String errorMessage = "Network error";
                         if (error instanceof com.android.volley.TimeoutError) {
-                            errorMessage = "Request timeout. Please check if the server is running.";
+                            errorMessage = "Connection timeout. Server might be slow or unreachable.\n\nPlease verify:\n• XAMPP Apache is running\n• URL: http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php\n• Device is on same WiFi network";
                         } else if (error instanceof com.android.volley.NoConnectionError) {
                             // For localhost, this might just mean server is not reachable, not necessarily no internet
-                            errorMessage = "Cannot connect to server. Please check:\n1. Server is running\n2. Device is on same network\n3. Firewall allows connections";
+                            errorMessage = "Cannot connect to server.\n\nTroubleshooting:\n1. Test in browser: http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php\n2. Ensure device & PC are on same WiFi\n3. Check Windows Firewall allows port 80\n4. Verify XAMPP Apache is running\n5. Try accessing from device browser first";
                         } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
                             errorMessage = "Error: " + error.getMessage();
                         } else {
-                            errorMessage = "Failed to connect to server at 192.168.1.5. Please check server status.";
+                            String testUrl = "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php";
+                            errorMessage = "Failed to connect to server.\n\nTest this URL in your device's browser:\n" + testUrl + "\n\nIf browser can't access it, check:\n• Same WiFi network\n• XAMPP running\n• Firewall settings";
                         }
+                        
+                        // Show detailed error in Logcat and user-friendly message
+                        Log.e(TAG, "=== CONNECTION FAILED ===");
+                        Log.e(TAG, "URL attempted: " + url);
+                        Log.e(TAG, "Error class: " + error.getClass().getSimpleName());
+                        Log.e(TAG, "Full error: " + error.toString());
                         
                         Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
