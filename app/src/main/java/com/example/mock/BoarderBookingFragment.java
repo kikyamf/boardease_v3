@@ -1986,8 +1986,8 @@ public class BoarderBookingFragment extends Fragment {
             // Try multiple possible IPs - user can update this based on their network
             // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php"
             // If your XAMPP document root is boardease_v3, use: "http://192.168.1.5/BoardEase2/submit_review.php"
-            String localhostUrl = "http://192.168.1.5/";
-            String url = localhostUrl + "boardease_v3/BoardEase2/submit_review.php";
+            String localhostUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+            String url = localhostUrl + "BoardEase2/submit_review.php";
             
             Log.d(TAG, "=== REVIEW SUBMISSION DEBUG ===");
             Log.d(TAG, "Submitting review to: " + url);
@@ -2085,7 +2085,7 @@ public class BoarderBookingFragment extends Fragment {
                         } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
                             errorMessage = "Error: " + error.getMessage();
                         } else {
-                            String testUrl = "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php";
+                            String testUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/submit_review.php";
                             errorMessage = "Failed to connect to server.\n\nTest this URL in your device's browser:\n" + testUrl + "\n\nIf browser can't access it, check:\n• Same WiFi network\n• XAMPP running\n• Firewall settings";
                         }
                         

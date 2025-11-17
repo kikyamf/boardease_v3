@@ -26,12 +26,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
-    private static final String CHANNEL_ID = "default_channel";
+    private static final String CHANNEL_ID = NotificationUtils.CHANNEL_ID;
+    
+    // Track recent notifications to prevent duplicates (stores notification hash)
+    private static final Set<String> recentNotifications = new HashSet<>();
+    private static final long DUPLICATE_CHECK_WINDOW_MS = 60000; // 60 seconds (increased for better duplicate detection)
+    private static final String PREFS_NOTIFICATIONS = "recent_notifications";
+    private static final String PREFS_NOTIFICATION_TIMESTAMPS = "notification_timestamps";
 
     @Override
     public void onNewToken(String token) {
@@ -46,24 +54,85 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
+        Log.d(TAG, "=== onMessageReceived START ===");
         Log.d(TAG, "From: " + remoteMessage.getFrom());
+        boolean isForeground = isAppInForeground();
+        Log.d(TAG, "App state: " + (isForeground ? "Foreground" : "Background/Closed"));
+        Log.d(TAG, "Has notification payload: " + (remoteMessage.getNotification() != null));
+        Log.d(TAG, "Data payload size: " + remoteMessage.getData().size());
 
-        // Check if message contains a data payload
+        // IMPORTANT Firebase behavior:
+        // - App FOREGROUND + "notification" payload: onMessageReceived called, Firebase does NOT auto-show → WE show it
+        // - App BACKGROUND + "notification" payload: Firebase auto-shows, onMessageReceived also called → WE skip to avoid duplicate
+        // - App CLOSED + "notification" payload: Firebase auto-shows, onMessageReceived NOT called → No duplicate
+        // - App ANY STATE + "data" only payload: onMessageReceived called, Firebase does NOT show → WE show it
+        
+        // CRITICAL: If app is in BACKGROUND and message has "notification" payload,
+        // Firebase already automatically showed it, so we should NOT show it again to avoid duplicates
+        if (!isForeground && remoteMessage.getNotification() != null) {
+            Log.d(TAG, "App is in background with notification payload - Firebase already auto-displayed, skipping duplicate");
+            return; // Don't show notification again, Firebase already handled it
+        }
+        
+        // Extract message_id FIRST for duplicate detection (most reliable)
+        String messageId = null;
+        String senderId = null;
+        String receiverId = null;
+        String messageText = null;
+        
+        if (remoteMessage.getData().size() > 0) {
+            Log.d(TAG, "Data payload: " + remoteMessage.getData().toString());
+            
+            if (remoteMessage.getData().containsKey("message_id")) {
+                messageId = remoteMessage.getData().get("message_id");
+                Log.d(TAG, "Message ID from data: " + messageId);
+            }
+            if (remoteMessage.getData().containsKey("sender_id")) {
+                senderId = remoteMessage.getData().get("sender_id");
+            }
+            if (remoteMessage.getData().containsKey("receiver_id")) {
+                receiverId = remoteMessage.getData().get("receiver_id");
+            }
+            if (remoteMessage.getData().containsKey("message_text")) {
+                messageText = remoteMessage.getData().get("message_text");
+            }
+            
+            // Create unique identifier for duplicate detection
+            String duplicateKey = createDuplicateKey(messageId, senderId, receiverId, messageText);
+            Log.d(TAG, "Duplicate key: " + duplicateKey);
+            
+            // Check for duplicate using persistent storage + in-memory cache
+            if (isDuplicateNotification(duplicateKey)) {
+                Log.d(TAG, "❌ DUPLICATE notification detected, skipping: " + duplicateKey);
+                return; // Skip duplicate notification completely
+            }
+            
+            // Mark as processed immediately
+            markNotificationAsProcessed(duplicateKey);
+            Log.d(TAG, "✅ Notification marked as processed: " + duplicateKey);
+        }
+        
+        // Check if message contains a data payload (after duplicate check)
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
             handleDataMessage(remoteMessage.getData());
         }
 
-        // Always show notification, even when app is in foreground
-        String title = "New Message";
-        String body = "You have a new message";
+        // Extract title and body
+        String title = "BoardEase";
+        String body = "You have a new notification";
         
         if (remoteMessage.getNotification() != null) {
-            title = remoteMessage.getNotification().getTitle();
-            body = remoteMessage.getNotification().getBody();
+            // Notification payload exists
+            title = remoteMessage.getNotification().getTitle() != null ? 
+                    remoteMessage.getNotification().getTitle() : title;
+            body = remoteMessage.getNotification().getBody() != null ? 
+                   remoteMessage.getNotification().getBody() : body;
             Log.d(TAG, "Message Notification Body: " + body);
-        } else if (remoteMessage.getData().size() > 0) {
-            // If no notification payload, create one from data
+        }
+        
+        // Also check data payload for title/body (in case notification payload is missing)
+        if (remoteMessage.getData().size() > 0) {
             if (remoteMessage.getData().containsKey("title")) {
                 title = remoteMessage.getData().get("title");
             }
@@ -72,11 +141,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
         
-        // Always send notification with heads-up display
-        sendHeadsUpNotification(title, body);
-        
-        // Also create a banner notification to ensure it shows up at top of screen
-        createBannerNotification(title, body);
+        // Show notification in notification center (only if not duplicate - already checked above)
+        // This works in ALL app states:
+        // - App is OPEN/FOREGROUND with "data" only: Show notification
+        // - App is in BACKGROUND: Show notification
+        // - App is CLOSED with "notification" payload: Firebase automatically shows it (onMessageReceived not called)
+        // - App is CLOSED with "data" payload only: Show notification
+        Log.d(TAG, "=== Sending notification to center ===");
+        sendHeadsUpNotification(title, body, messageId, senderId);
+        Log.d(TAG, "=== onMessageReceived END ===");
     }
 
     private void handleDataMessage(java.util.Map<String, String> data) {
@@ -122,7 +195,23 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
     }
 
+    /**
+     * Send notification to notification center
+     * This notification will appear in the system notification center
+     * regardless of app state (open, background, or closed)
+     * Prevents duplicate notifications using content hash
+     */
     private void sendHeadsUpNotification(String title, String messageBody) {
+        sendHeadsUpNotification(title, messageBody, null, null);
+    }
+    
+    /**
+     * Send notification to notification center with message ID
+     * Prevents duplicate notifications
+     */
+    private void sendHeadsUpNotification(String title, String messageBody, String messageId, String senderId) {
+        // Duplicate check was already done in onMessageReceived, so we can proceed directly
+        Log.d(TAG, "sendHeadsUpNotification called - duplicate already checked");
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         
@@ -133,7 +222,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         
-        // Create banner notification that appears at top of screen
+        // Create notification that appears in notification center
+        // Works when app is: OPEN, BACKGROUND, or CLOSED
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_notification)
@@ -153,33 +243,141 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                         .setTicker(messageBody) // Ticker text for heads-up
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody)); // Big text style
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Since Android 8.0 (API level 26) and above, notification channels are required
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "BoardEase Notifications",
-                NotificationManager.IMPORTANCE_HIGH // High importance for banner
-            );
-            channel.setDescription("Notifications for BoardEase app");
-            channel.enableLights(true);
-            channel.setLightColor(0xFF0000FF);
-            channel.enableVibration(true);
-            channel.setVibrationPattern(new long[]{1000, 1000, 1000});
-            channel.setShowBadge(true);
-            channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
-            channel.setBypassDnd(true); // Bypass Do Not Disturb
-            channel.setImportance(NotificationManager.IMPORTANCE_HIGH); // Ensure high importance
-            notificationManager.createNotificationChannel(channel);
+        // Ensure notification channel exists
+        NotificationUtils.createNotificationChannel(this);
+        
+        // Check if notifications are enabled
+        if (!NotificationUtils.canPostNotifications(this)) {
+            Log.w(TAG, "Notifications are disabled - cannot show notification in notification center");
+            return;
+        }
+        
+        NotificationManager notificationManager = NotificationUtils.getNotificationManager(this);
+        if (notificationManager == null) {
+            Log.e(TAG, "NotificationManager is null - cannot show notification");
+            return;
         }
 
         // Use a unique ID for each notification
-        int notificationId = (int) System.currentTimeMillis();
-        notificationManager.notify(notificationId, notificationBuilder.build());
+        // CRITICAL: Same message_id = same notification ID = Android replaces old notification
+        int notificationId;
+        if (messageId != null && !messageId.isEmpty()) {
+            // Use message_id if available for consistent notification ID
+            // This ensures same message replaces old notification instead of creating duplicate
+            notificationId = Math.abs(messageId.hashCode());
+            Log.d(TAG, "Using message_id for notification ID: " + notificationId + " (message_id: " + messageId + ")");
+        } else {
+            // Use hash of title + body + sender for unique ID (if available)
+            String uniqueContent = title + messageBody;
+            if (senderId != null) {
+                uniqueContent += senderId;
+            }
+            notificationId = Math.abs(uniqueContent.hashCode());
+            Log.d(TAG, "Using content hash for notification ID: " + notificationId);
+        }
         
-        Log.d(TAG, "Heads-up notification sent: " + title + " - " + messageBody);
+        try {
+            // This will add the notification to the system notification center
+            // It will appear whether the app is open, in background, or closed
+        notificationManager.notify(notificationId, notificationBuilder.build());
+            Log.d(TAG, "Notification sent to notification center (ID: " + notificationId + 
+                  ", app state: " + (isAppInForeground() ? "OPEN" : "BACKGROUND/CLOSED") + 
+                  "): " + title + " - " + messageBody);
+        } catch (SecurityException e) {
+            Log.e(TAG, "SecurityException when showing notification - permission may be denied: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing notification: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Create a unique key for duplicate detection
+     */
+    private String createDuplicateKey(String messageId, String senderId, String receiverId, String messageText) {
+        if (messageId != null && !messageId.isEmpty()) {
+            return "msg_" + messageId;
+        }
+        // Fallback: use sender + receiver + message text hash
+        if (senderId != null && receiverId != null && messageText != null) {
+            return "msg_" + senderId + "_" + receiverId + "_" + Math.abs(messageText.hashCode());
+        }
+        // Last resort: use timestamp (less reliable)
+        return "notif_" + System.currentTimeMillis() / 1000;
+    }
+    
+    /**
+     * Check if notification is duplicate using persistent storage
+     */
+    private boolean isDuplicateNotification(String duplicateKey) {
+        // Check in-memory cache first (fast)
+        synchronized (recentNotifications) {
+            if (recentNotifications.contains(duplicateKey)) {
+                Log.d(TAG, "Duplicate found in memory cache: " + duplicateKey);
+                return true;
+            }
+        }
+        
+        // Check persistent storage (SharedPreferences)
+        SharedPreferences prefs = getSharedPreferences(PREFS_NOTIFICATIONS, Context.MODE_PRIVATE);
+        SharedPreferences timestamps = getSharedPreferences(PREFS_NOTIFICATION_TIMESTAMPS, Context.MODE_PRIVATE);
+        
+        long lastTimestamp = timestamps.getLong(duplicateKey, 0);
+        long currentTime = System.currentTimeMillis();
+        
+        if (lastTimestamp > 0 && (currentTime - lastTimestamp) < DUPLICATE_CHECK_WINDOW_MS) {
+            Log.d(TAG, "Duplicate found in persistent storage: " + duplicateKey + " (age: " + (currentTime - lastTimestamp) + "ms)");
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Mark notification as processed
+     */
+    private void markNotificationAsProcessed(String duplicateKey) {
+        long currentTime = System.currentTimeMillis();
+        
+        // Add to in-memory cache
+        synchronized (recentNotifications) {
+            recentNotifications.add(duplicateKey);
+            
+            // Clean up after window expires
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                synchronized (recentNotifications) {
+                    recentNotifications.remove(duplicateKey);
+                }
+            }, DUPLICATE_CHECK_WINDOW_MS);
+        }
+        
+        // Store in persistent storage
+        SharedPreferences timestamps = getSharedPreferences(PREFS_NOTIFICATION_TIMESTAMPS, Context.MODE_PRIVATE);
+        timestamps.edit().putLong(duplicateKey, currentTime).apply();
+        
+        // Clean up old entries from persistent storage
+        SharedPreferences.Editor editor = timestamps.edit();
+        java.util.Map<String, ?> allTimestamps = timestamps.getAll();
+        for (java.util.Map.Entry<String, ?> entry : allTimestamps.entrySet()) {
+            if (entry.getValue() instanceof Long) {
+                long timestamp = (Long) entry.getValue();
+                if (currentTime - timestamp > DUPLICATE_CHECK_WINDOW_MS) {
+                    editor.remove(entry.getKey());
+                }
+            }
+        }
+        editor.apply();
+    }
+    
+    /**
+     * Create a unique hash for notification to detect duplicates (legacy method)
+     */
+    private String createNotificationHash(String title, String body, String messageId) {
+        if (messageId != null && !messageId.isEmpty()) {
+            return "msg_" + messageId;
+        }
+        // Use title + body + current second (to allow same notification after 1 second)
+        long currentSecond = System.currentTimeMillis() / 1000;
+        return "notif_" + title + "_" + body + "_" + currentSecond;
     }
     
     /**
@@ -197,29 +395,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         return false;
     }
     
-    /**
-     * Create a banner notification that appears at the top of the screen
-     */
-    private void createBannerNotification(String title, String message) {
-        // Create a banner notification that appears at top of screen
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_HIGH) // High priority for banner
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setAutoCancel(true)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setTicker(message) // Ticker text for banner
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message)) // Big text style
-                .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE));
-        
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify((int) System.currentTimeMillis(), builder.build());
-        
-        Log.d(TAG, "Banner notification created: " + title + " - " + message);
-    }
+    // Removed createBannerNotification() - using sendHeadsUpNotification() instead to prevent duplicates
 
     private void saveTokenToPreferences(String token) {
         SharedPreferences prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE);

@@ -1,10 +1,16 @@
 package com.example.mock;
 
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -45,12 +51,24 @@ public class MainActivity extends AppCompatActivity {
     private OwnerProfileFragment profileFragment;
     private ActivityFragment activityFragment;
     private ManageFragment manageFragment;
+    
+    // Notification permission launcher for Android 13+
+    private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        
+        // Create notification channel early
+        NotificationUtils.createNotificationChannel(this);
+        
+        // Setup notification permission launcher for Android 13+
+        setupNotificationPermissionLauncher();
+        
+        // Request notification permission if needed (Android 13+)
+        requestNotificationPermissionIfNeeded();
 
         // Get user_id from SharedPreferences (actual logged-in user)
         SharedPreferences sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
@@ -293,6 +311,38 @@ public class MainActivity extends AppCompatActivity {
         
         // Add request to queue
         Volley.newRequestQueue(this).add(stringRequest);
+    }
+    
+    /**
+     * Setup notification permission launcher for Android 13+
+     */
+    private void setupNotificationPermissionLauncher() {
+        requestNotificationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    Log.d("MainActivity", "Notification permission granted");
+                } else {
+                    Log.w("MainActivity", "Notification permission denied - notifications may not appear in notification center");
+                }
+            }
+        );
+    }
+    
+    /**
+     * Request notification permission if needed (Android 13+)
+     */
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Permission not granted, request it
+                Log.d("MainActivity", "Requesting notification permission");
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            } else {
+                Log.d("MainActivity", "Notification permission already granted");
+            }
+        }
     }
 
 }

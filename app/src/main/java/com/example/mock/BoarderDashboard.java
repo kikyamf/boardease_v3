@@ -1,9 +1,15 @@
 package com.example.mock;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -11,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.util.Log;
 
 public class BoarderDashboard extends AppCompatActivity {
 
@@ -23,12 +30,24 @@ public class BoarderDashboard extends AppCompatActivity {
     private BoarderFavoriteFragment favoriteFragment;
     private BoarderBookingFragment bookingFragment;
     private BoarderProfileFragment profileFragment;
+    
+    // Notification permission launcher for Android 13+
+    private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_boarder_dashboard);
+        
+        // Create notification channel early
+        NotificationUtils.createNotificationChannel(this);
+        
+        // Setup notification permission launcher for Android 13+
+        setupNotificationPermissionLauncher();
+        
+        // Request notification permission if needed (Android 13+)
+        requestNotificationPermissionIfNeeded();
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -220,6 +239,38 @@ public class BoarderDashboard extends AppCompatActivity {
     public void switchToTab(int tabId) {
         if (bottomNavigationView != null) {
             bottomNavigationView.setSelectedItemId(tabId);
+        }
+    }
+    
+    /**
+     * Setup notification permission launcher for Android 13+
+     */
+    private void setupNotificationPermissionLauncher() {
+        requestNotificationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    Log.d("BoarderDashboard", "Notification permission granted");
+                } else {
+                    Log.w("BoarderDashboard", "Notification permission denied - notifications may not appear in notification center");
+                }
+            }
+        );
+    }
+    
+    /**
+     * Request notification permission if needed (Android 13+)
+     */
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Permission not granted, request it
+                Log.d("BoarderDashboard", "Requesting notification permission");
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            } else {
+                Log.d("BoarderDashboard", "Notification permission already granted");
+            }
         }
     }
 }

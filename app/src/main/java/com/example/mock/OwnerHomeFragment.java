@@ -30,6 +30,7 @@ import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -526,7 +527,8 @@ public class OwnerHomeFragment extends Fragment {
         }
         
         android.util.Log.d("NotificationBadge", "Checking unread notifications for user: " + userId);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_notif_count.php?user_id=" + userId;
+        // Use get_notifications.php to get full list and filter duplicates
+        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + userId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
             response -> {
@@ -534,9 +536,13 @@ public class OwnerHomeFragment extends Fragment {
                     android.util.Log.d("NotificationBadge", "API Response: " + response.toString());
                     if (response.getBoolean("success")) {
                         JSONObject data = response.getJSONObject("data");
-                        int unreadCount = data.getInt("total_unread");
-                        android.util.Log.d("NotificationBadge", "Unread count: " + unreadCount);
-                        showNotificationBadge(unreadCount);
+                        JSONArray notifications = data.getJSONArray("notifications");
+                        
+                        // Calculate unique unread count by filtering duplicates
+                        int uniqueUnreadCount = calculateUniqueUnreadCount(notifications);
+                        android.util.Log.d("NotificationBadge", "Total notifications: " + notifications.length() + 
+                                          ", Unique unread count: " + uniqueUnreadCount);
+                        showNotificationBadge(uniqueUnreadCount);
                     } else {
                         android.util.Log.d("NotificationBadge", "API returned success: false");
                         hideNotificationBadge();
@@ -559,6 +565,88 @@ public class OwnerHomeFragment extends Fragment {
             RequestQueue queue = Volley.newRequestQueue(getContext());
             queue.add(request);
         }
+    }
+    
+    /**
+     * Calculate unique unread notification count by filtering duplicates
+     */
+    private int calculateUniqueUnreadCount(JSONArray notifications) {
+        int uniqueUnreadCount = 0;
+        java.util.Set<String> seenNotifications = new java.util.HashSet<>();
+        
+        try {
+            for (int i = 0; i < notifications.length(); i++) {
+                JSONObject notif = notifications.getJSONObject(i);
+                
+                // Create unique key for duplicate detection
+                String uniqueKey = createNotificationUniqueKey(notif);
+                
+                // Skip if duplicate
+                if (seenNotifications.contains(uniqueKey)) {
+                    continue;
+                }
+                
+                // Mark as seen
+                seenNotifications.add(uniqueKey);
+                
+                // Count if unread
+                String status = notif.optString("notif_status", "unread");
+                if ("unread".equals(status)) {
+                    uniqueUnreadCount++;
+                }
+            }
+        } catch (JSONException e) {
+            android.util.Log.e("NotificationBadge", "Error calculating unique unread count", e);
+        }
+        
+        return uniqueUnreadCount;
+    }
+    
+    /**
+     * Create unique key for notification (same logic as Notification.java)
+     */
+    private String createNotificationUniqueKey(JSONObject notif) throws JSONException {
+        String type = notif.optString("notif_type", "");
+        String title = notif.optString("notif_title", "");
+        String message = notif.optString("notif_message", "");
+        String createdAt = notif.optString("notif_created_at", "");
+        
+        // For message notifications
+        if ("message".equals(type) || (title != null && title.contains("New Message")) || 
+            (message != null && message.contains("New message from"))) {
+            
+            if (message != null && message.contains("New message from")) {
+                String[] parts = message.split(": ", 2);
+                if (parts.length == 2) {
+                    String senderPart = parts[0].replace("New message from ", "");
+                    String messageContent = parts[1];
+                    return "msg_" + senderPart.hashCode() + "_" + messageContent.hashCode();
+                }
+            }
+            
+            return "msg_" + title.hashCode() + "_" + message.hashCode();
+        }
+        
+        // For other notifications, use notif_id
+        if (notif.has("notif_id")) {
+            int notifId = notif.getInt("notif_id");
+            return "notif_" + notifId;
+        }
+        
+        // Last resort: use title + message + timestamp
+        String timestampKey = "";
+        if (!createdAt.isEmpty()) {
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                java.util.Date date = inputFormat.parse(createdAt);
+                long timeInMinutes = date.getTime() / 60000;
+                timestampKey = "_" + timeInMinutes;
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+        
+        return "notif_" + title.hashCode() + "_" + message.hashCode() + timestampKey;
     }
 
     private void showNotificationBadge(int count) {

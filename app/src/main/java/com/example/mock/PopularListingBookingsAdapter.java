@@ -52,3 +52,4 @@ public class PopularListingBookingsAdapter extends RecyclerView.Adapter<PopularL
     }
 }
 
+
