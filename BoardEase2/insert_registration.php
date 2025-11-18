@@ -1,13 +1,31 @@
 <?php
 // insert_registration.php
 
-// Include email configuration
-require_once '../email_config.php';
+// Start output buffering to catch any unwanted output
+ob_start();
 
 // Disable error display to prevent HTML output
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
+
+// Set content type to JSON
+header('Content-Type: application/json');
+
+// Include email configuration (with error handling)
+$emailConfigPath = '../email_config.php';
+if (!file_exists($emailConfigPath)) {
+    error_log("Warning: email_config.php not found at: " . $emailConfigPath);
+    // Define a fallback function if email config doesn't exist
+    if (!function_exists('sendEmail')) {
+        function sendEmail($email, $subject, $message) {
+            error_log("sendEmail called but email_config.php not loaded");
+            return false;
+        }
+    }
+} else {
+    require_once $emailConfigPath;
+}
 
 // Log the request for debugging
 error_log("Registration request received at " . date('Y-m-d H:i:s'));
@@ -25,7 +43,15 @@ $dbname     = "boardease2"; // adjust if needed
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-    die("DB Connection failed: " . $conn->connect_error);
+    error_log("Database connection failed: " . $conn->connect_error);
+    $response = array(
+        "success" => false,
+        "message" => "Database connection failed. Please try again later.",
+        "permits_received" => 0
+    );
+    ob_clean();
+    echo json_encode($response);
+    exit;
 }
 
 // Collect POST data
@@ -79,8 +105,10 @@ $isAgreed   = $_POST['isAgreed'] ?? "0";
 if (!$firstName || !$lastName || !$email || !$password) {
     $response = array(
         "success" => false,
-        "message" => "Error: Missing required fields."
+        "message" => "Error: Missing required fields.",
+        "permits_received" => 0
     );
+    ob_clean();
     echo json_encode($response);
     exit;
 }
@@ -263,6 +291,9 @@ if ($stmt->execute()) {
     $verificationStmt->close();
     error_log("Registration submitted for verification - user: " . $email);
     error_log("Sending response: " . json_encode($response));
+    
+    // Clear any buffered output and send JSON
+    ob_clean();
     echo json_encode($response);
     
     // Close resources after successful response
@@ -276,6 +307,8 @@ if ($stmt->execute()) {
         "success" => false,
         "message" => $errorMsg
     );
+    // Clear any buffered output and send JSON
+    ob_clean();
     echo json_encode($response);
     
     // Close resources after error response
@@ -289,9 +322,13 @@ if ($stmt->execute()) {
     error_log("Registration error trace: " . $e->getTraceAsString());
     $response = array(
         "success" => false,
-        "message" => "Server error: " . $e->getMessage()
+        "message" => "Server error: " . $e->getMessage(),
+        "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
     );
+    // Clear any buffered output and send JSON
+    ob_clean();
     echo json_encode($response);
+    exit;
 }
 
 function sendVerificationEmail($email, $firstName, $verificationCode) {
