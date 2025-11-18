@@ -418,6 +418,7 @@ if ($executeResult && $userId > 0) {
                 "success" => true, // Registration succeeded, verification failed
                 "message" => "Registration successful! However, verification code could not be created. Please contact support.",
                 "requires_verification" => false,
+                "reg_id" => $userId,
                 "permits_received" => count($permitFiles),
                 "permits_inserted" => $permitsInserted
             );
@@ -442,6 +443,7 @@ if ($executeResult && $userId > 0) {
                         "success" => true,
                         "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
                         "requires_verification" => true,
+                        "reg_id" => $userId,
                         "permits_received" => count($permitFiles),
                         "permits_inserted" => $permitsInserted
                     );
@@ -450,6 +452,7 @@ if ($executeResult && $userId > 0) {
                         "success" => true, // Registration succeeded, email failed
                         "message" => "Registration successful! However, verification email could not be sent. Please contact support.",
                         "requires_verification" => false,
+                        "reg_id" => $userId,
                         "permits_received" => count($permitFiles),
                         "permits_inserted" => $permitsInserted
                     );
@@ -460,6 +463,7 @@ if ($executeResult && $userId > 0) {
                     "success" => true, // Registration succeeded, verification record failed
                     "message" => "Registration successful! However, verification code could not be created. Please contact support.",
                     "requires_verification" => false,
+                    "reg_id" => $userId,
                     "permits_received" => count($permitFiles),
                     "permits_inserted" => $permitsInserted
                 );

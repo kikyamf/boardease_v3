@@ -422,22 +422,7 @@ public class Registration2Activity extends AppCompatActivity {
                             Log.d("Registration2", "Message: " + message);
                             Log.d("Registration2", "Has requires_verification: " + obj.has("requires_verification"));
                             
-                            // Log permit information if available
-                            if (obj.has("permits_received")) {
-                                int permitsReceived = obj.optInt("permits_received", 0);
-                                int permitsInserted = obj.optInt("permits_inserted", 0);
-                                
-                                // Show toast with permit status
-                                if (permitsReceived > 0) {
-                                    if (permitsInserted == permitsReceived) {
-                                        Toast.makeText(Registration2Activity.this, "✅ " + permitsInserted + " business permit(s) saved successfully", Toast.LENGTH_LONG).show();
-                                    } else {
-                                        Toast.makeText(Registration2Activity.this, "⚠️ " + permitsReceived + " permit(s) received, but only " + permitsInserted + " saved", Toast.LENGTH_LONG).show();
-                                    }
-                                } else {
-                                    Toast.makeText(Registration2Activity.this, "⚠️ No business permits received by server", Toast.LENGTH_LONG).show();
-                                }
-                            }
+                            // Business permits are now saved separately, so we don't check permits_received here
                             
                             // Re-enable button
                             isRegistering = false;
@@ -447,26 +432,31 @@ public class Registration2Activity extends AppCompatActivity {
                             if (success) {
                                 Log.d("Registration2", "Registration successful");
                                 
-                                // Check if verification is required
-                                boolean requiresVerification = obj.optBoolean("requires_verification", false);
-                                Log.d("Registration2", "Requires verification: " + requiresVerification);
+                                // Get registration ID from response
+                                int regId = obj.optInt("reg_id", 0);
+                                Log.d("Registration2", "Registration ID: " + regId);
                                 
-                                if (requiresVerification) {
-                                    // Navigate to email verification
-                                    Log.d("Registration2", "Navigating to EmailVerificationActivity");
-                                    Intent intent = new Intent(Registration2Activity.this, EmailVerificationActivity.class);
-                                    intent.putExtra("email", email);
-                                    startActivity(intent);
-                                    finish();
-                                } else {
-                                    // Navigate to login (old flow)
-                                    Log.d("Registration2", "Navigating to Login");
-                                    Intent intent = new Intent(Registration2Activity.this, Login.class);
-                                    startActivity(intent);
-                                    finish();
+                                // Check if user is BH Owner and has business permits to save
+                                boolean isBHOwner = role != null && !role.equals("Boarder");
+                                boolean hasPermits = false;
+                                for (PermitUploadItem item : permitUploadItems) {
+                                    if (item.bitmap != null) {
+                                        hasPermits = true;
+                                        break;
+                                    }
                                 }
                                 
-                                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                                if (isBHOwner && hasPermits && regId > 0) {
+                                    // Save business permits separately using direct IP
+                                    Log.d("Registration2", "Saving business permits separately for reg_id: " + regId);
+                                    saveBusinessPermits(regId, () -> {
+                                        // After permits are saved, proceed with verification flow
+                                        proceedToVerification(obj, message);
+                                    });
+                                } else {
+                                    // No permits to save, proceed directly to verification
+                                    proceedToVerification(obj, message);
+                                }
                             } else {
                                 Log.d("Registration2", "Registration failed: " + message);
                                 // Handle specific error messages
@@ -668,34 +658,9 @@ public class Registration2Activity extends AppCompatActivity {
                         params.put("idFrontFile", new DataPart("front.jpg", frontData));
                         params.put("idBackFile", new DataPart("back.jpg", backData));
                         
-                        // Add business permit files (for BH Owner only)
-                        int permitsAdded = 0;
-                        if (!isBoarder && !permitUploadItems.isEmpty()) {
-                            int permitIndex = 1;
-                            for (PermitUploadItem permitItem : permitUploadItems) {
-                                if (permitItem.bitmap != null) {
-                                    try {
-                                        byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
-                                        if (permitData != null && permitData.length > 0) {
-                                            String permitKey = "permitFile" + permitIndex;
-                                            params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
-                                            permitsAdded++;
-                                            permitIndex++;
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Store permit count for later logging
-                        final int finalPermitsAdded = permitsAdded;
-                        runOnUiThread(() -> {
-                            if (finalPermitsAdded > 0) {
-                                Toast.makeText(Registration2Activity.this, "Sending " + finalPermitsAdded + " business permit(s)...", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        // Business permits are now saved separately after registration
+                        // Removed from initial registration request to avoid conflicts
+                        Log.d("REGISTRATION", "Business permits will be saved separately after registration");
                         
                         Log.d("REGISTRATION", "File data added successfully. Total files in request: " + params.size());
                         // Log all file keys for debugging
@@ -1111,6 +1076,117 @@ public class Registration2Activity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Error removing permit: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+    
+    private void proceedToVerification(JSONObject obj, String message) {
+        try {
+            // Check if verification is required
+            boolean requiresVerification = obj.optBoolean("requires_verification", false);
+            Log.d("Registration2", "Requires verification: " + requiresVerification);
+            
+            if (requiresVerification) {
+                // Navigate to email verification
+                Log.d("Registration2", "Navigating to EmailVerificationActivity");
+                Intent intent = new Intent(Registration2Activity.this, EmailVerificationActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+                finish();
+            } else {
+                // Navigate to login (old flow)
+                Log.d("Registration2", "Navigating to Login");
+                Intent intent = new Intent(Registration2Activity.this, Login.class);
+                startActivity(intent);
+                finish();
+            }
+            
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e("Registration2", "Error in proceedToVerification: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void saveBusinessPermits(int regId, Runnable onComplete) {
+        Log.d("REGISTRATION", "=== SAVING BUSINESS PERMITS SEPARATELY ===");
+        Log.d("REGISTRATION", "Registration ID: " + regId);
+        
+        // Use direct IP for saving business permits
+        String PERMITS_URL = "http://192.168.1.6/BoardEase2/save_business_permits.php";
+        Log.d("REGISTRATION", "Permits URL: " + PERMITS_URL);
+        
+        VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, PERMITS_URL,
+                response -> {
+                    Log.d("REGISTRATION", "=== BUSINESS PERMITS RESPONSE RECEIVED ===");
+                    String responseString = new String(response.data);
+                    Log.d("REGISTRATION", "Permits response: " + responseString);
+                    
+                    try {
+                        if (responseString.trim().startsWith("<")) {
+                            Log.e("REGISTRATION", "ERROR: Server returned HTML instead of JSON for permits");
+                            Toast.makeText(Registration2Activity.this, "Warning: Business permits may not have been saved. Please contact support.", Toast.LENGTH_LONG).show();
+                            if (onComplete != null) onComplete.run();
+                            return;
+                        }
+                        
+                        JSONObject obj = new JSONObject(responseString);
+                        boolean success = obj.getBoolean("success");
+                        String message = obj.optString("message", "");
+                        int permitsInserted = obj.optInt("permits_inserted", 0);
+                        
+                        if (success) {
+                            Log.d("REGISTRATION", "Business permits saved successfully: " + permitsInserted);
+                            Toast.makeText(Registration2Activity.this, "✅ " + permitsInserted + " business permit(s) saved successfully", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.e("REGISTRATION", "Failed to save business permits: " + message);
+                            Toast.makeText(Registration2Activity.this, "⚠️ Business permits could not be saved: " + message, Toast.LENGTH_LONG).show();
+                        }
+                        
+                        if (onComplete != null) onComplete.run();
+                    } catch (JSONException e) {
+                        Log.e("REGISTRATION", "JSON parsing error for permits: " + e.getMessage());
+                        Toast.makeText(Registration2Activity.this, "Warning: Business permits response error. Please contact support.", Toast.LENGTH_LONG).show();
+                        if (onComplete != null) onComplete.run();
+                    }
+                },
+                error -> {
+                    Log.e("REGISTRATION", "Network error saving business permits: " + error.getMessage());
+                    Toast.makeText(Registration2Activity.this, "⚠️ Could not save business permits. Please contact support.", Toast.LENGTH_LONG).show();
+                    if (onComplete != null) onComplete.run();
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("reg_id", String.valueOf(regId));
+                Log.d("REGISTRATION", "Permits params - reg_id: " + regId);
+                return params;
+            }
+            
+            @Override
+            protected Map<String, DataPart> getByteData() {
+                Map<String, DataPart> params = new HashMap<>();
+                
+                if (!permitUploadItems.isEmpty()) {
+                    int permitIndex = 1;
+                    for (PermitUploadItem permitItem : permitUploadItems) {
+                        if (permitItem.bitmap != null) {
+                            byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
+                            if (permitData != null && permitData.length > 0) {
+                                String permitKey = "permitFile" + permitIndex;
+                                params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                Log.d("REGISTRATION", "Added permit " + permitIndex + " to request (size: " + permitData.length + " bytes)");
+                                permitIndex++;
+                            }
+                        }
+                    }
+                    Log.d("REGISTRATION", "Total permits being sent: " + (permitIndex - 1));
+                }
+                
+                return params;
+            }
+        };
+        
+        Volley.newRequestQueue(this).add(request);
     }
     
     /**
