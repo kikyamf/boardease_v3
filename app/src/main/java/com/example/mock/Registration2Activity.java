@@ -354,6 +354,18 @@ public class Registration2Activity extends AppCompatActivity {
             }
             
             Log.d("REGISTRATION", "✅ All required bitmaps loaded successfully");
+            
+            // Log permit status before sending
+            if (!isBoarder) {
+                int permitCount = 0;
+                for (PermitUploadItem item : permitUploadItems) {
+                    if (item.bitmap != null) {
+                        permitCount++;
+                        Log.d("REGISTRATION", "Permit " + permitCount + " ready - bitmap size: " + (item.bitmap.getWidth() + "x" + item.bitmap.getHeight()));
+                    }
+                }
+                Log.d("REGISTRATION", "Total permits ready to send: " + permitCount);
+            }
 
             // Set registering flag and disable button
             isRegistering = true;
