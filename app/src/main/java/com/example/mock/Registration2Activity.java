@@ -81,7 +81,8 @@ public class Registration2Activity extends AppCompatActivity {
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
     private ActivityResultLauncher<String> pickBackImageLauncher;
-    private Map<Integer, ActivityResultLauncher<String>> permitImageLaunchers = new HashMap<>();
+    private List<ActivityResultLauncher<String>> permitImageLaunchers = new ArrayList<>();
+    private PermitUploadItem currentPermitItemForLauncher = null; // Track which permit item is being edited
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -135,6 +136,21 @@ public class Registration2Activity extends AppCompatActivity {
         boolean isBHOwner = role != null && !role.equals("Boarder");
         if (isBHOwner) {
             businessPermitSection.setVisibility(View.VISIBLE);
+            
+            // Pre-register all permit image launchers (must be done during onCreate)
+            for (int i = 0; i < MAX_PERMITS; i++) {
+                ActivityResultLauncher<String> permitLauncher = registerForActivityResult(
+                        new ActivityResultContracts.GetContent(),
+                        uri -> {
+                            if (uri != null && currentPermitItemForLauncher != null) {
+                                handlePermitImageSelection(currentPermitItemForLauncher, uri);
+                                currentPermitItemForLauncher = null; // Reset after handling
+                            }
+                        }
+                );
+                permitImageLaunchers.add(permitLauncher);
+            }
+            
             // Create first permit upload item
             createPermitUploadItem();
             // Setup add permit button
@@ -876,21 +892,20 @@ public class Registration2Activity extends AppCompatActivity {
         item.imageView = permitImageView;
         item.removeButton = removeButton;
         
-        // Setup image picker launcher for this permit
-        ActivityResultLauncher<String> permitLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        handlePermitImageSelection(item, uri);
-                    }
-                }
-        );
-        permitImageLaunchers.put(permitIndex, permitLauncher);
-        
-        // Setup click listener for image view
-        permitImageView.setOnClickListener(v -> {
-            permitLauncher.launch("image/*");
-        });
+        // Get the launcher for this permit item (use index from list size)
+        int launcherIndex = permitUploadItems.size();
+        if (launcherIndex < permitImageLaunchers.size()) {
+            ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(launcherIndex);
+            
+            // Setup click listener for image view
+            permitImageView.setOnClickListener(v -> {
+                currentPermitItemForLauncher = item; // Set which item is being edited
+                permitLauncher.launch("image/*");
+            });
+        } else {
+            Log.e("PERMIT_UPLOAD", "No launcher available for permit item " + launcherIndex);
+            Toast.makeText(this, "Error: Cannot add more permits", Toast.LENGTH_SHORT).show();
+        }
         
         // Setup remove button
         removeButton.setOnClickListener(v -> {
@@ -948,21 +963,35 @@ public class Registration2Activity extends AppCompatActivity {
      */
     private void removePermitUploadItem(PermitUploadItem item) {
         try {
+            // Find the index of the item to remove
+            int itemIndex = permitUploadItems.indexOf(item);
+            if (itemIndex == -1) {
+                Log.e("PERMIT_UPLOAD", "Item not found in list");
+                return;
+            }
+            
             // Remove from container
             businessPermitContainer.removeView(item.itemView);
             
             // Remove from list
             permitUploadItems.remove(item);
             
-            // Remove launcher
-            permitImageLaunchers.remove(item.index);
-            
-            // Update labels
+            // Update labels and reassign launchers for remaining items
             for (int i = 0; i < permitUploadItems.size(); i++) {
                 PermitUploadItem permitItem = permitUploadItems.get(i);
                 ViewGroup itemLayout = (ViewGroup) permitItem.itemView;
                 TextView label = (TextView) itemLayout.getChildAt(0);
                 label.setText("Business Permit " + (i + 1));
+                
+                // Reassign launcher to the correct index
+                ImageView imageView = permitItem.imageView;
+                if (i < permitImageLaunchers.size()) {
+                    ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(i);
+                    imageView.setOnClickListener(v -> {
+                        currentPermitItemForLauncher = permitItem;
+                        permitLauncher.launch("image/*");
+                    });
+                }
             }
             
             // Update remove button visibility
@@ -978,6 +1007,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("PERMIT_UPLOAD", "Removed permit upload item " + item.index + ", remaining: " + permitUploadItems.size());
         } catch (Exception e) {
             Log.e("PERMIT_UPLOAD", "Error removing permit item: " + e.getMessage());
+            e.printStackTrace();
             Toast.makeText(this, "Error removing permit: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
