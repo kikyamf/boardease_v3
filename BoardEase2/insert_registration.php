@@ -186,13 +186,15 @@ $idFrontPath = saveFile("idFrontFile", $uploadDir);
 $idBackPath  = saveFile("idBackFile", $uploadDir);
 $gcashQRPath = saveFile("qrFile", $uploadDir);
 
-// Handle business permit uploads (for BH Owner only, up to 3 permits)
+// TEMPORARILY DISABLED: Handle business permit uploads (for BH Owner only, up to 3 permits)
 $permitUploadDir = "../uploads/business_permits/";
 if (!is_dir($permitUploadDir)) {
     mkdir($permitUploadDir, 0777, true);
 }
 
 $permitFiles = array();
+// TEMPORARILY DISABLED - Business permit file saving
+/*
 for ($i = 1; $i <= 3; $i++) {
     $permitKey = "permitFile" . $i;
     error_log("Checking for permit file key: " . $permitKey);
@@ -209,6 +211,8 @@ for ($i = 1; $i <= 3; $i++) {
         error_log("Failed to save permit file " . $i);
     }
 }
+*/
+error_log("Business permit file saving temporarily disabled for debugging");
 
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
 error_log("Business permit files uploaded: " . count($permitFiles));
@@ -328,6 +332,7 @@ try {
 
 if ($executeResult && $userId > 0) {
     
+    // TEMPORARILY DISABLED: Business permit insertion (for debugging)
     // Insert business permits if any were uploaded (for BH Owner)
     // Check if role is NOT Boarder (could be "BH Owner" or other values)
     $isBHOwner = ($role !== "Boarder" && $role !== null);
@@ -335,6 +340,8 @@ if ($executeResult && $userId > 0) {
     error_log("Permit files count: " . count($permitFiles));
     
     $permitsInserted = 0;
+    // TEMPORARILY DISABLED - Business permit insertion
+    /*
     if (!empty($permitFiles) && $isBHOwner) {
         error_log("Attempting to insert " . count($permitFiles) . " business permit(s) for user " . $userId);
         $permitSql = "INSERT INTO bs_permits (reg_id, permit_file, permit_number, created_at) VALUES (?, ?, ?, NOW())";
@@ -364,6 +371,8 @@ if ($executeResult && $userId > 0) {
             error_log("User is not a BH Owner (role: '" . $role . "'), skipping permit insertion");
         }
     }
+    */
+    error_log("Business permit insertion temporarily disabled for debugging");
     
     // Generate and send verification code
     $verificationCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
