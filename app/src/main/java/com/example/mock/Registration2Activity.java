@@ -414,11 +414,18 @@ public class Registration2Activity extends AppCompatActivity {
                             // Log permit information if available
                             if (obj.has("permits_received")) {
                                 int permitsReceived = obj.optInt("permits_received", 0);
-                                Log.d("Registration2", "Permits received by server: " + permitsReceived);
-                            }
-                            if (obj.has("permits_inserted")) {
                                 int permitsInserted = obj.optInt("permits_inserted", 0);
-                                Log.d("Registration2", "Permits inserted into database: " + permitsInserted);
+                                
+                                // Show toast with permit status
+                                if (permitsReceived > 0) {
+                                    if (permitsInserted == permitsReceived) {
+                                        Toast.makeText(Registration2Activity.this, "✅ " + permitsInserted + " business permit(s) saved successfully", Toast.LENGTH_LONG).show();
+                                    } else {
+                                        Toast.makeText(Registration2Activity.this, "⚠️ " + permitsReceived + " permit(s) received, but only " + permitsInserted + " saved", Toast.LENGTH_LONG).show();
+                                    }
+                                } else {
+                                    Toast.makeText(Registration2Activity.this, "⚠️ No business permits received by server", Toast.LENGTH_LONG).show();
+                                }
                             }
                             
                             // Re-enable button
@@ -640,39 +647,33 @@ public class Registration2Activity extends AppCompatActivity {
                         params.put("idBackFile", new DataPart("back.jpg", backData));
                         
                         // Add business permit files (for BH Owner only)
-                        Log.d("REGISTRATION", "Checking permits - isBoarder: " + isBoarder + ", permitUploadItems size: " + permitUploadItems.size());
+                        int permitsAdded = 0;
                         if (!isBoarder && !permitUploadItems.isEmpty()) {
-                            Log.d("REGISTRATION", "Processing " + permitUploadItems.size() + " permit upload items");
                             int permitIndex = 1;
                             for (PermitUploadItem permitItem : permitUploadItems) {
-                                Log.d("REGISTRATION", "Checking permit item " + permitIndex + " - bitmap: " + (permitItem.bitmap != null));
                                 if (permitItem.bitmap != null) {
                                     try {
                                         byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
                                         if (permitData != null && permitData.length > 0) {
                                             String permitKey = "permitFile" + permitIndex;
                                             params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
-                                            Log.d("REGISTRATION", "✅ Business permit " + permitIndex + " added with key '" + permitKey + "', file data size: " + permitData.length + " bytes");
+                                            permitsAdded++;
                                             permitIndex++;
-                                        } else {
-                                            Log.e("REGISTRATION", "❌ Permit data is null or empty for permit " + permitIndex);
                                         }
                                     } catch (Exception e) {
-                                        Log.e("REGISTRATION", "❌ Error creating permit file data for permit " + permitIndex + ": " + e.getMessage());
                                         e.printStackTrace();
                                     }
-                                } else {
-                                    Log.d("REGISTRATION", "⚠️ Permit item " + permitIndex + " has null bitmap, skipping");
                                 }
                             }
-                            Log.d("REGISTRATION", "Total business permits added to request: " + (permitIndex - 1));
-                        } else {
-                            if (isBoarder) {
-                                Log.d("REGISTRATION", "Skipping permits - user is Boarder");
-                            } else if (permitUploadItems.isEmpty()) {
-                                Log.d("REGISTRATION", "Skipping permits - permitUploadItems is empty");
-                            }
                         }
+                        
+                        // Store permit count for later logging
+                        final int finalPermitsAdded = permitsAdded;
+                        runOnUiThread(() -> {
+                            if (finalPermitsAdded > 0) {
+                                Toast.makeText(Registration2Activity.this, "Sending " + finalPermitsAdded + " business permit(s)...", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         
                         Log.d("REGISTRATION", "File data added successfully. Total files in request: " + params.size());
                         // Log all file keys for debugging
