@@ -618,26 +618,46 @@ public class Registration2Activity extends AppCompatActivity {
                         params.put("idBackFile", new DataPart("back.jpg", backData));
                         
                         // Add business permit files (for BH Owner only)
+                        Log.d("REGISTRATION", "Checking permits - isBoarder: " + isBoarder + ", permitUploadItems size: " + permitUploadItems.size());
                         if (!isBoarder && !permitUploadItems.isEmpty()) {
+                            Log.d("REGISTRATION", "Processing " + permitUploadItems.size() + " permit upload items");
                             int permitIndex = 1;
                             for (PermitUploadItem permitItem : permitUploadItems) {
+                                Log.d("REGISTRATION", "Checking permit item " + permitIndex + " - bitmap: " + (permitItem.bitmap != null));
                                 if (permitItem.bitmap != null) {
                                     try {
                                         byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
-                                        if (permitData != null) {
-                                            params.put("permitFile" + permitIndex, new DataPart("permit" + permitIndex + ".jpg", permitData));
-                                            Log.d("REGISTRATION", "Business permit " + permitIndex + " file data size: " + permitData.length);
+                                        if (permitData != null && permitData.length > 0) {
+                                            String permitKey = "permitFile" + permitIndex;
+                                            params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                            Log.d("REGISTRATION", "✅ Business permit " + permitIndex + " added with key '" + permitKey + "', file data size: " + permitData.length + " bytes");
                                             permitIndex++;
+                                        } else {
+                                            Log.e("REGISTRATION", "❌ Permit data is null or empty for permit " + permitIndex);
                                         }
                                     } catch (Exception e) {
-                                        Log.e("REGISTRATION", "Error creating permit file data for permit " + permitIndex + ": " + e.getMessage());
+                                        Log.e("REGISTRATION", "❌ Error creating permit file data for permit " + permitIndex + ": " + e.getMessage());
+                                        e.printStackTrace();
                                     }
+                                } else {
+                                    Log.d("REGISTRATION", "⚠️ Permit item " + permitIndex + " has null bitmap, skipping");
                                 }
                             }
-                            Log.d("REGISTRATION", "Total business permits added: " + (permitIndex - 1));
+                            Log.d("REGISTRATION", "Total business permits added to request: " + (permitIndex - 1));
+                        } else {
+                            if (isBoarder) {
+                                Log.d("REGISTRATION", "Skipping permits - user is Boarder");
+                            } else if (permitUploadItems.isEmpty()) {
+                                Log.d("REGISTRATION", "Skipping permits - permitUploadItems is empty");
+                            }
                         }
                         
-                        Log.d("REGISTRATION", "File data added successfully");
+                        Log.d("REGISTRATION", "File data added successfully. Total files in request: " + params.size());
+                        // Log all file keys for debugging
+                        for (String key : params.keySet()) {
+                            DataPart dataPart = params.get(key);
+                            Log.d("REGISTRATION", "File in request: " + key + " -> " + (dataPart != null ? dataPart.getFileName() + " (" + dataPart.getContent().length + " bytes)" : "null"));
+                        }
                     } catch (Exception e) {
                         Log.e("REGISTRATION", "Error creating file data: " + e.getMessage());
                         e.printStackTrace();
