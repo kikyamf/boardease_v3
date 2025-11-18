@@ -251,6 +251,16 @@ public class Registration2Activity extends AppCompatActivity {
                 roles
         ) {
             @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 if (view instanceof TextView) {
