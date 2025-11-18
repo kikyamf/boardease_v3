@@ -188,10 +188,10 @@ public class PaymentsFragment extends Fragment {
     }
     
     private String formatDateTime(String dateTime) {
-        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY HH:MM"
+        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
         try {
             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
-            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
             java.util.Date date = inputFormat.parse(dateTime);
             return outputFormat.format(date);
         } catch (Exception e) {

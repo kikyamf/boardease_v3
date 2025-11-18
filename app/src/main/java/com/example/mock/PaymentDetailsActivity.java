@@ -358,9 +358,20 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         // Set payment method
         tvPaymentMethod.setText(payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "N/A");
         
-        // Set dates
-        tvPaymentDate.setText(payment.getPaymentDate() != null ? payment.getPaymentDate() : "N/A");
-        tvDueDate.setText(payment.getDueDate() != null && !payment.getDueDate().isEmpty() ? payment.getDueDate() : "N/A");
+        // Set dates with formatting
+        String paymentDate = payment.getPaymentDate();
+        if (paymentDate != null && !paymentDate.isEmpty() && !paymentDate.equals("N/A")) {
+            tvPaymentDate.setText(formatDateTime(paymentDate));
+        } else {
+            tvPaymentDate.setText("N/A");
+        }
+        
+        String dueDate = payment.getDueDate();
+        if (dueDate != null && !dueDate.isEmpty() && !dueDate.equals("N/A")) {
+            tvDueDate.setText(formatDateTime(dueDate));
+        } else {
+            tvDueDate.setText("N/A");
+        }
         
         // Set status with styling - prioritize database status from payments table
         // The payment status should directly reflect what's in the payments table
@@ -442,9 +453,20 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         String notes = payment.getNotes() != null && !payment.getNotes().isEmpty() ? payment.getNotes() : "No notes available";
         tvNotes.setText(notes);
         
-        // Set timestamps
-        tvCreatedAt.setText(payment.getCreatedAt() != null ? payment.getCreatedAt() : "N/A");
-        tvUpdatedAt.setText(payment.getUpdatedAt() != null ? payment.getUpdatedAt() : "N/A");
+        // Set timestamps with formatting
+        String createdAt = payment.getCreatedAt();
+        if (createdAt != null && !createdAt.isEmpty() && !createdAt.equals("N/A")) {
+            tvCreatedAt.setText(formatDateTime(createdAt));
+        } else {
+            tvCreatedAt.setText("N/A");
+        }
+        
+        String updatedAt = payment.getUpdatedAt();
+        if (updatedAt != null && !updatedAt.isEmpty() && !updatedAt.equals("N/A")) {
+            tvUpdatedAt.setText(formatDateTime(updatedAt));
+        } else {
+            tvUpdatedAt.setText("N/A");
+        }
         
         // Load payment proof image
         loadPaymentProof();
@@ -834,6 +856,26 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             return formatter.format(amountValue);
         } catch (NumberFormatException e) {
             return amount;
+        }
+    }
+    
+    private String formatDateTime(String dateTime) {
+        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateTime);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, try date-only format
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                java.util.Date date = inputFormat.parse(dateTime);
+                return outputFormat.format(date);
+            } catch (Exception e2) {
+                return dateTime; // Return original if parsing fails
+            }
         }
     }
 

@@ -97,18 +97,30 @@ public class BoardersHistoryAdapter extends RecyclerView.Adapter<BoardersHistory
     }
 
     private String formatDate(String dateString) {
+        // Format from "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY" or "MMM DD, YYYY hh:mm a"
         if (dateString == null || dateString.isEmpty()) {
             return "";
         }
         try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            SimpleDateFormat outputFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+            // Try date-time format first
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault());
             Date date = inputFormat.parse(dateString);
             if (date != null) {
                 return outputFormat.format(date);
             }
         } catch (ParseException e) {
-            // If parsing fails, return original string
+            // If parsing fails, try date-only format
+            try {
+                SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+                Date date = inputFormat.parse(dateString);
+                if (date != null) {
+                    return outputFormat.format(date);
+                }
+            } catch (ParseException e2) {
+                // If parsing fails, return original string
+            }
         }
         return dateString;
     }

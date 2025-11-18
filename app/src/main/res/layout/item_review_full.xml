@@ -1,38 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
     android:layout_marginBottom="12dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="@android:color/white"
-    android:background="@drawable/review_card_border"
-    android:padding="0dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="8dp"
+    app:strokeWidth="0dp"
+    android:backgroundTint="#FFFFFF"
+    android:padding="0dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="#FFFFFF">
 
         <!-- Header Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
             android:layout_marginBottom="12dp">
 
             <!-- Profile Picture -->
-            <ImageView
-                android:id="@+id/ivProfilePicture"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_person"
-                android:scaleType="centerCrop"
-                android:background="@drawable/circle_background1"
-                android:padding="2dp" />
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="2dp"
+                android:background="@drawable/circle_profile_border">
+
+                <com.example.mock.CircularImageView
+                    android:id="@+id/ivProfilePicture"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/btn_profile"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Boarder Profile" />
+            </FrameLayout>
 
             <!-- Name and Location -->
             <LinearLayout
@@ -42,56 +52,79 @@
                 android:layout_marginStart="12dp"
                 android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvBoarderName"
-                    android:layout_width="wrap_content"
+                <!-- Boarder Name Row with Date -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="John Doe"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
+                    <TextView
+                        android:id="@+id/tvBoarderName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="John Doe"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                    <!-- Review Date - aligned with boarder name -->
+                    <TextView
+                        android:id="@+id/tvReviewDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dec 15, 2024"
+                        android:textSize="11sp"
+                        android:textColor="#999999"
+                        android:maxLines="1"
+                        android:layout_marginStart="8dp" />
+
+                </LinearLayout>
+
+                <!-- Boarding House Name -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="2dp">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="4dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/location"
+                        android:contentDescription="Location"
+                        android:tint="#666666" />
 
                     <TextView
                         android:id="@+id/tvBoardingHouse"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Sunset Boarding House"
+                        android:text="Kikyam BH"
                         android:textSize="12sp"
-                        android:textColor="#666666" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=" • "
-                        android:textSize="12sp"
-                        android:textColor="#666666" />
-
-                    <TextView
-                        android:id="@+id/tvRoomNumber"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Room 101"
-                        android:textSize="12sp"
-                        android:textColor="#666666" />
-
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginStart="4dp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
                 </LinearLayout>
 
-            </LinearLayout>
+                <!-- Room Info -->
+                <TextView
+                    android:id="@+id/tvRoomInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Private Room 01: Room PR0-7"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginTop="4dp"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
 
-            <!-- Review Date -->
-            <TextView
-                android:id="@+id/tvReviewDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Dec 15, 2024"
-                android:textSize="12sp"
-                android:textColor="#999999" />
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -111,9 +144,10 @@
             android:text="Great boarding house! The facilities are clean and well-maintained. The owner is very responsive to any concerns."
             android:textSize="14sp"
             android:textColor="#333333"
+            android:fontFamily="@font/poppins_regular"
             android:lineSpacingExtra="2dp" />
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
 

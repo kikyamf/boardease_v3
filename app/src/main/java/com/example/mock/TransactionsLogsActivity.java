@@ -73,7 +73,7 @@ public class TransactionsLogsActivity extends AppCompatActivity {
         viewPager.setAdapter(pagerAdapter);
 
         // Connect TabLayout with ViewPager2
-        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+        TabLayoutMediator mediator = new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             switch (position) {
                 case 0:
                     tab.setText("Bookings");
@@ -88,7 +88,47 @@ public class TransactionsLogsActivity extends AppCompatActivity {
                     tab.setText("Maintenance");
                     break;
             }
-        }).attach();
+        });
+        mediator.attach();
+        
+        // Ensure tab text displays full words without truncation and adjust tabbed pane
+        tabLayout.post(() -> {
+            try {
+                for (int i = 0; i < tabLayout.getTabCount(); i++) {
+                    TabLayout.Tab tab = tabLayout.getTabAt(i);
+                    if (tab != null && tab.view != null) {
+                        // Remove any width constraints from tab view to allow expansion
+                        tab.view.setMinimumWidth(0);
+                        tab.view.setPadding(
+                            (int) (16 * getResources().getDisplayMetrics().density), // 16dp padding start
+                            tab.view.getPaddingTop(),
+                            (int) (16 * getResources().getDisplayMetrics().density), // 16dp padding end
+                            tab.view.getPaddingBottom()
+                        );
+                        
+                        // Find the TextView in the tab view
+                        for (int j = 0; j < tab.view.getChildCount(); j++) {
+                            View child = tab.view.getChildAt(j);
+                            if (child instanceof TextView) {
+                                TextView textView = (TextView) child;
+                                textView.setSingleLine(true);
+                                textView.setMaxLines(1);
+                                textView.setEllipsize(null); // No ellipsize - show full text
+                                textView.setMaxWidth(Integer.MAX_VALUE); // Allow text to expand fully
+                                // Make sure text wraps to content width
+                                android.view.ViewGroup.LayoutParams params = textView.getLayoutParams();
+                                if (params != null) {
+                                    params.width = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+                                    textView.setLayoutParams(params);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error setting tab text properties: " + e.getMessage());
+            }
+        });
     }
 }
 

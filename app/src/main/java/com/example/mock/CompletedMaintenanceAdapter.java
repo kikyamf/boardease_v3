@@ -11,7 +11,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedMaintenanceAdapter.ViewHolder> {
 
@@ -39,7 +43,45 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
         holder.tvRoomNumber.setText("Room " + request.getRoomNumber());
         holder.tvMaintenanceType.setText(request.getMaintenanceType());
         holder.tvDescription.setText(request.getDescription());
-        holder.tvRequestDate.setText(request.getRequestDate());
+        
+        // Format date as "Nov 18, 2025 02:00 PM" (with time)
+        String formattedDate = formatDate(request.getRequestDate());
+        // Use tvDateReported if available, otherwise tvRequestDate
+        if (holder.tvDateReported != null) {
+            holder.tvDateReported.setText("Date Reported: " + formattedDate);
+        } else if (holder.tvRequestDate != null) {
+            holder.tvRequestDate.setText("Requested: " + formattedDate);
+        }
+        
+        // Format and set Date Approved
+        String approvedDate = request.getApprovedDate();
+        if (holder.tvDateApproved != null) {
+            if (approvedDate != null && !approvedDate.isEmpty()) {
+                holder.tvDateApproved.setText("Date Approved: " + formatDate(approvedDate));
+                holder.tvDateApproved.setVisibility(android.view.View.VISIBLE);
+            } else {
+                // Hide if no approved date
+                holder.tvDateApproved.setVisibility(android.view.View.GONE);
+            }
+        }
+        
+        // Format and set Date Completed
+        String completedDate = request.getWorkCompletedDate();
+        if (holder.tvApprovedOn != null) {
+            if (completedDate != null && !completedDate.isEmpty()) {
+                holder.tvApprovedOn.setText("Date Completed: " + formatDate(completedDate));
+                holder.tvApprovedOn.setVisibility(android.view.View.VISIBLE);
+            } else {
+                // Hide if no completed date
+                holder.tvApprovedOn.setVisibility(android.view.View.GONE);
+            }
+        }
+        
+        // Hide the button for completed status
+        if (holder.btnMarkAsCompleted != null) {
+            holder.btnMarkAsCompleted.setVisibility(android.view.View.GONE);
+        }
+        
         holder.tvStatus.setText(request.getStatus());
         holder.tvPriority.setText(request.getPriority());
 
@@ -76,6 +118,41 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
         }
     }
 
+    private String formatDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "N/A";
+        }
+        try {
+            // Try to parse various date formats
+            SimpleDateFormat[] inputFormats = {
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
+                new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()),
+                new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()),
+                new SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault()),
+                new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            };
+            
+            Date date = null;
+            for (SimpleDateFormat format : inputFormats) {
+                try {
+                    date = format.parse(dateString);
+                    break;
+                } catch (ParseException e) {
+                    // Try next format
+                }
+            }
+            
+            if (date != null) {
+                // Format as "Nov 18, 2025 02:00 PM" (with time for completed cards)
+                SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault());
+                return outputFormat.format(date);
+            }
+        } catch (Exception e) {
+            // If parsing fails, return original string
+        }
+        return dateString;
+    }
+
     @Override
     public int getItemCount() {
         return maintenanceRequests.size();
@@ -84,7 +161,8 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
     public static class ViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView cardView;
         TextView tvBoarderName, tvBoardingHouse, tvRoomNumber, tvMaintenanceType, 
-                tvDescription, tvRequestDate, tvStatus, tvPriority;
+                tvDescription, tvRequestDate, tvStatus, tvPriority, tvDateReported, tvDateApproved, tvApprovedOn;
+        com.google.android.material.button.MaterialButton btnMarkAsCompleted;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -95,6 +173,10 @@ public class CompletedMaintenanceAdapter extends RecyclerView.Adapter<CompletedM
             tvMaintenanceType = itemView.findViewById(R.id.tvMaintenanceType);
             tvDescription = itemView.findViewById(R.id.tvDescription);
             tvRequestDate = itemView.findViewById(R.id.tvRequestDate);
+            tvDateReported = itemView.findViewById(R.id.tvDateReported);
+            tvDateApproved = itemView.findViewById(R.id.tvDateApproved);
+            tvApprovedOn = itemView.findViewById(R.id.tvApprovedOn);
+            btnMarkAsCompleted = itemView.findViewById(R.id.btnMarkAsCompleted);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvPriority = itemView.findViewById(R.id.tvPriority);
         }

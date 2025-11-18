@@ -9,6 +9,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -65,6 +66,9 @@ public class OwnerHomeFragment extends Fragment {
     
     // Flag to track if data has been loaded (to prevent reloading on navigation)
     private boolean dataLoaded = false;
+    
+    // SwipeRefreshLayout for pull-to-refresh
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     public OwnerHomeFragment() {
         // Required empty public constructor
@@ -102,6 +106,20 @@ public class OwnerHomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_owner_home, container, false);
+
+        // Initialize SwipeRefreshLayout
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            // Refresh dashboard data when pulled
+            if (userId != -1) {
+                fetchOwnerDashboardData();
+                // Also refresh badge counts
+                checkUnreadMessages();
+                checkUnreadNotifications();
+            } else {
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
 
         // Check if views are already initialized (fragment was hidden/shown, not recreated)
         if (tvOwnerName == null) {
@@ -377,11 +395,20 @@ public class OwnerHomeFragment extends Fragment {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "JSON Parsing error", Toast.LENGTH_SHORT).show();
                         Log.e("OwnerHomeFragment", "JSON Parse Error: " + e.getMessage());
+                    } finally {
+                        // Stop refresh indicator
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                     }
                 },
                 error -> {
                     Toast.makeText(getContext(), "Error fetching dashboard", Toast.LENGTH_SHORT).show();
                     Log.e("OwnerHomeFragment", "Volley Error: " + error.getMessage(), error);
+                    // Stop refresh indicator on error
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
                 }) {
             @Override
             protected Map<String, String> getParams() {

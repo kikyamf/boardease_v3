@@ -91,6 +91,12 @@ public class BoarderBookingFragment extends Fragment {
     private SharedPreferences userSessionPrefs;
     private int userId;
 
+    // Flag to prevent duplicate submissions
+    private boolean isSubmittingMaintenanceRequest = false;
+    
+    // Request tag for maintenance submission (to cancel if needed)
+    private static final String TAG_MAINTENANCE_SUBMIT = "maintenance_submit";
+
     // API
     private static final String TAG = "BoarderBookingFragment";
     private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
@@ -1569,6 +1575,22 @@ public class BoarderBookingFragment extends Fragment {
             // Create and show dialog
             android.app.AlertDialog dialog = builder.create();
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
+            // Reset flag and clear form when dialog is dismissed
+            dialog.setOnDismissListener(d -> {
+                isSubmittingMaintenanceRequest = false;
+                // Clear form fields when dialog is dismissed
+                if (etTitle != null) {
+                    etTitle.setText("");
+                }
+                if (etDescription != null) {
+                    etDescription.setText("");
+                }
+                if (radioGroupArea != null) {
+                    radioGroupArea.clearCheck();
+                }
+            });
+            
             dialog.show();
             
             // Close button click listener
@@ -1579,6 +1601,18 @@ public class BoarderBookingFragment extends Fragment {
             
             // Submit button click listener
             btnSubmit.setOnClickListener(v -> {
+                // Prevent double submission - check flag first
+                if (isSubmittingMaintenanceRequest) {
+                    return; // Already submitting, ignore this click
+                }
+                
+                // Set flag immediately to prevent any other clicks
+                isSubmittingMaintenanceRequest = true;
+                
+                // Disable submit button to prevent double submission
+                btnSubmit.setEnabled(false);
+                btnSubmit.setText("Submitting...");
+                
                 // Validate form
                 String subject = etTitle.getText() != null ? etTitle.getText().toString().trim() : "";
                 String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
@@ -1600,22 +1634,34 @@ public class BoarderBookingFragment extends Fragment {
                 if (subject.isEmpty()) {
                     etTitle.setError("Subject is required");
                     etTitle.requestFocus();
+                    // Re-enable button and reset flag on validation error
+                    isSubmittingMaintenanceRequest = false;
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
                     return;
                 }
                 
                 if (areaForMaintenance.isEmpty()) {
                     Toast.makeText(getContext(), "Please select an area for maintenance", Toast.LENGTH_SHORT).show();
+                    // Re-enable button and reset flag on validation error
+                    isSubmittingMaintenanceRequest = false;
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
                     return;
                 }
                 
                 if (description.isEmpty()) {
                     etDescription.setError("Description is required");
                     etDescription.requestFocus();
+                    // Re-enable button and reset flag on validation error
+                    isSubmittingMaintenanceRequest = false;
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
                     return;
                 }
                 
                 // Submit maintenance request
-                submitMaintenanceRequest(booking, subject, areaForMaintenance, description, dialog);
+                submitMaintenanceRequest(booking, subject, areaForMaintenance, description, dialog, btnSubmit, etTitle, etDescription, radioGroupArea);
             });
             
         } catch (Exception e) {
@@ -1628,9 +1674,15 @@ public class BoarderBookingFragment extends Fragment {
     /**
      * Submit maintenance request to server
      */
-    private void submitMaintenanceRequest(Booking booking, String subject, String areaForMaintenance, String description, android.app.AlertDialog dialog) {
+    private void submitMaintenanceRequest(Booking booking, String subject, String areaForMaintenance, String description, android.app.AlertDialog dialog, com.google.android.material.button.MaterialButton btnSubmit, com.google.android.material.textfield.TextInputEditText etTitle, com.google.android.material.textfield.TextInputEditText etDescription, android.widget.RadioGroup radioGroupArea) {
         try {
             if (getContext() == null) {
+                // Reset flag if context is null
+                isSubmittingMaintenanceRequest = false;
+                if (btnSubmit != null) {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
+                }
                 return;
             }
             
@@ -1647,8 +1699,19 @@ public class BoarderBookingFragment extends Fragment {
             }
             
             if (userId == 0) {
+                // Reset flag
+                isSubmittingMaintenanceRequest = false;
+                if (btnSubmit != null) {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
+                }
                 Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
                 return;
+            }
+            
+            // Ensure requestQueue is initialized
+            if (requestQueue == null && getContext() != null) {
+                requestQueue = Volley.newRequestQueue(getContext());
             }
             
             // Show loading indicator
@@ -1656,6 +1719,11 @@ public class BoarderBookingFragment extends Fragment {
             progressDialog.setMessage("Submitting maintenance request...");
             progressDialog.setCancelable(false);
             progressDialog.show();
+            
+            // Cancel any pending maintenance submission requests first
+            if (requestQueue != null) {
+                requestQueue.cancelAll(TAG_MAINTENANCE_SUBMIT);
+            }
             
             // Get room ID from booking
             int roomId = booking.getRoomId();
@@ -1677,6 +1745,12 @@ public class BoarderBookingFragment extends Fragment {
             } catch (JSONException e) {
                 Log.e(TAG, "Error creating request body: " + e.getMessage());
                 progressDialog.dismiss();
+                // Reset flag on error
+                isSubmittingMaintenanceRequest = false;
+                if (btnSubmit != null) {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
+                }
                 Toast.makeText(getContext(), "Error preparing request", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -1690,15 +1764,49 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         progressDialog.dismiss();
+                        // Reset flag and re-enable submit button
+                        isSubmittingMaintenanceRequest = false;
+                        if (btnSubmit != null) {
+                            btnSubmit.setEnabled(true);
+                            btnSubmit.setText("Submit");
+                        }
                         try {
                             if (response.getBoolean("success")) {
+                                // Clear form fields
+                                if (etTitle != null) {
+                                    etTitle.setText("");
+                                }
+                                if (etDescription != null) {
+                                    etDescription.setText("");
+                                }
+                                if (radioGroupArea != null) {
+                                    radioGroupArea.clearCheck();
+                                }
+                                
                                 // Close the maintenance report dialog
                                 dialog.dismiss();
                                 // Show success dialog
                                 showMaintenanceReportSuccessDialog();
                             } else {
                                 String error = response.optString("error", "Failed to submit maintenance request");
-                                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                                // If it's a duplicate error, still clear the form and show success
+                                if (error.contains("duplicate") || error.contains("Duplicate") || error.contains("wait a moment")) {
+                                    // Clear form fields even on duplicate (user already submitted)
+                                    if (etTitle != null) {
+                                        etTitle.setText("");
+                                    }
+                                    if (etDescription != null) {
+                                        etDescription.setText("");
+                                    }
+                                    if (radioGroupArea != null) {
+                                        radioGroupArea.clearCheck();
+                                    }
+                                    // Close dialog and show success (request was already submitted)
+                                    dialog.dismiss();
+                                    showMaintenanceReportSuccessDialog();
+                                } else {
+                                    Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                                }
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing response: " + e.getMessage());
@@ -1710,6 +1818,12 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
+                        // Reset flag and re-enable submit button on error
+                        isSubmittingMaintenanceRequest = false;
+                        if (btnSubmit != null) {
+                            btnSubmit.setEnabled(true);
+                            btnSubmit.setText("Submit");
+                        }
                         Log.e(TAG, "Volley error: " + error.getMessage());
                         String errorMessage = "Network error";
                         if (error.networkResponse != null && error.networkResponse.data != null) {
@@ -1735,12 +1849,20 @@ public class BoarderBookingFragment extends Fragment {
                 }
             };
             
-            // Add request to queue
-            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            // Set tag for this request so we can cancel it if needed
+            jsonRequest.setTag(TAG_MAINTENANCE_SUBMIT);
+            
+            // Use existing requestQueue (already initialized above)
             requestQueue.add(jsonRequest);
             
         } catch (Exception e) {
             Log.e(TAG, "Error submitting maintenance request: " + e.getMessage());
+            // Reset flag on exception
+            isSubmittingMaintenanceRequest = false;
+            if (btnSubmit != null) {
+                btnSubmit.setEnabled(true);
+                btnSubmit.setText("Submit");
+            }
             e.printStackTrace();
             Toast.makeText(getContext(), "Error submitting maintenance request", Toast.LENGTH_SHORT).show();
         }

@@ -111,17 +111,61 @@
             android:text="Water leak in the bathroom sink"
             android:textSize="14sp"
             android:textColor="#333333"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="12dp"
             android:lineSpacingExtra="2dp" />
 
-        <!-- Request Date -->
-        <TextView
-            android:id="@+id/tvRequestDate"
-            android:layout_width="wrap_content"
+        <!-- Date Information Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Requested: Dec 15, 2024"
-            android:textSize="12sp"
-            android:textColor="#999999" />
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_rounded_light_gray"
+            android:padding="12dp">
+
+            <!-- Date Reported -->
+            <TextView
+                android:id="@+id/tvDateReported"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date Reported: Nov 3, 2025"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Date Approved -->
+            <TextView
+                android:id="@+id/tvDateApproved"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date Approved: Nov 4, 2025"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Approved On / Date Completed -->
+            <TextView
+                android:id="@+id/tvApprovedOn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Approved On: Nov 4, 2025"
+                android:textSize="13sp"
+                android:textColor="#666666" />
+        </LinearLayout>
+
+        <!-- Mark as Completed Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMarkAsCompleted"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mark as Completed"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="#2196F3"
+            android:textColor="@android:color/white"
+            android:paddingVertical="12dp"
+            app:cornerRadius="8dp"
+            app:strokeWidth="0dp" />
 
     </LinearLayout>
 

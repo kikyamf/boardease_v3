@@ -13,21 +13,22 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="16dp"
-        android:background="#E8F5E8">
+        android:background="#FFEBEE">
 
         <ImageView
             android:id="@+id/ivHeaderIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_check"
-            android:tint="#4CAF50" />
+            android:src="@drawable/ic_close"
+            android:tint="#F44336" />
 
         <TextView
+            android:id="@+id/tvHeaderText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:text="Completed Maintenance Requests"
+            android:text="Rejected Maintenance Requests"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#000000" />
@@ -42,7 +43,7 @@
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:background="@drawable/bg_rounded_green"
+            android:background="@drawable/bg_rounded_red"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
             android:paddingTop="6dp"
@@ -80,14 +81,14 @@
                 <ImageView
                     android:layout_width="80dp"
                     android:layout_height="80dp"
-                    android:src="@drawable/ic_check"
-                    android:tint="#4CAF50"
+                    android:src="@drawable/ic_close"
+                    android:tint="#CCCCCC"
                     android:layout_marginBottom="16dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No Completed Maintenance Requests"
+                    android:text="No Rejected Maintenance Requests"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#666666"
@@ -97,7 +98,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No maintenance requests have been completed yet."
+                    android:text="No maintenance requests have been rejected yet."
                     android:textSize="14sp"
                     android:textColor="#999999"
                     android:gravity="center"
@@ -110,33 +111,4 @@
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

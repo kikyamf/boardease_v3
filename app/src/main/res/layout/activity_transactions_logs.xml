@@ -47,15 +47,19 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
         android:background="@color/white"
         android:elevation="2dp"
+        android:paddingVertical="8dp"
         app:tabTextColor="@color/gray"
         app:tabSelectedTextColor="@color/brown"
         app:tabIndicatorColor="@color/brown"
         app:tabIndicatorHeight="3dp"
         app:tabMode="scrollable"
-        app:tabGravity="fill" />
+        app:tabGravity="center"
+        app:tabPaddingStart="16dp"
+        app:tabPaddingEnd="16dp" />
 
     <!-- ViewPager -->
     <androidx.viewpager2.widget.ViewPager2

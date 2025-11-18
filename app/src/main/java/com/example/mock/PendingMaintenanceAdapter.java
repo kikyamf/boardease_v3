@@ -4,15 +4,19 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaintenanceAdapter.ViewHolder> {
 
@@ -46,7 +50,11 @@ public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaint
         holder.tvRoomNumber.setText("Room " + request.getRoomNumber());
         holder.tvMaintenanceType.setText(request.getMaintenanceType());
         holder.tvDescription.setText(request.getDescription());
-        holder.tvRequestDate.setText(request.getRequestDate());
+        
+        // Format date with time: "Nov 18, 2025 02:00 PM"
+        String formattedDate = formatDateTime(request.getRequestDate());
+        holder.tvRequestDate.setText("Requested: " + formattedDate);
+        
         holder.tvStatus.setText(request.getStatus());
         holder.tvPriority.setText(request.getPriority());
 
@@ -82,6 +90,39 @@ public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaint
         });
     }
 
+    private String formatDateTime(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "N/A";
+        }
+        try {
+            // Try to parse various date formats
+            SimpleDateFormat[] inputFormats = {
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
+                new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()),
+                new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            };
+            
+            Date date = null;
+            for (SimpleDateFormat format : inputFormats) {
+                try {
+                    date = format.parse(dateString);
+                    break;
+                } catch (ParseException e) {
+                    // Try next format
+                }
+            }
+            
+            if (date != null) {
+                // Format as "Nov 18, 2025 02:00 PM"
+                SimpleDateFormat outputFormat = new SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault());
+                return outputFormat.format(date);
+            }
+        } catch (Exception e) {
+            // If parsing fails, return original string
+        }
+        return dateString;
+    }
+
     @Override
     public int getItemCount() {
         return maintenanceRequests.size();
@@ -91,7 +132,7 @@ public class PendingMaintenanceAdapter extends RecyclerView.Adapter<PendingMaint
         MaterialCardView cardView;
         TextView tvBoarderName, tvBoardingHouse, tvRoomNumber, tvMaintenanceType, 
                 tvDescription, tvRequestDate, tvStatus, tvPriority;
-        Button btnApprove, btnReject;
+        MaterialButton btnApprove, btnReject;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);

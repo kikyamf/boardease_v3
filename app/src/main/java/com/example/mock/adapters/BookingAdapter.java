@@ -46,8 +46,12 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set location
         holder.tvLocation.setText(booking.getLocation());
         
-        // Set booking dates
-        holder.tvBookingDates.setText(booking.getStartDate() + " - " + booking.getEndDate());
+        // Set booking dates with formatting
+        String startDate = booking.getStartDate();
+        String endDate = booking.getEndDate();
+        String formattedStartDate = startDate != null ? formatDate(startDate) : "";
+        String formattedEndDate = endDate != null ? formatDate(endDate) : "";
+        holder.tvBookingDates.setText(formattedStartDate + " - " + formattedEndDate);
         
         // Set monthly due
         holder.tvMonthlyDue.setText(booking.getMonthlyDue());
@@ -104,6 +108,30 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
     public void updateList(List<BoarderBookingFragment.Booking> newList) {
         this.bookingList = newList;
         notifyDataSetChanged();
+    }
+    
+    private String formatDate(String dateString) {
+        // Format from "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY" or "MMM DD, YYYY hh:mm a"
+        if (dateString == null || dateString.isEmpty()) {
+            return "";
+        }
+        try {
+            // Try date-time format first
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateString);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, try date-only format
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                java.util.Date date = inputFormat.parse(dateString);
+                return outputFormat.format(date);
+            } catch (Exception e2) {
+                return dateString; // Return original if parsing fails
+            }
+        }
     }
     
     public static class BookingViewHolder extends RecyclerView.ViewHolder {

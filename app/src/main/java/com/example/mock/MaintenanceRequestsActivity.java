@@ -41,6 +41,33 @@ public class MaintenanceRequestsActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
     }
+    
+    public void refreshAllFragments() {
+        // Refresh all fragments by finding them through FragmentManager
+        // ViewPager2 creates fragments with tags like "f0", "f1", "f2", "f3" etc.
+        // Order: 0=Pending, 1=In Progress, 2=Completed, 3=Rejected
+        try {
+            Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
+            Fragment inProgressFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
+            Fragment completedFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
+            Fragment rejectedFragment = getSupportFragmentManager().findFragmentByTag("f" + 3);
+            
+            if (pendingFragment instanceof PendingMaintenanceFragment) {
+                ((PendingMaintenanceFragment) pendingFragment).refreshMaintenanceRequests();
+            }
+            if (inProgressFragment instanceof InProgressMaintenanceFragment) {
+                ((InProgressMaintenanceFragment) inProgressFragment).refreshMaintenanceRequests();
+            }
+            if (completedFragment instanceof CompletedMaintenanceFragment) {
+                ((CompletedMaintenanceFragment) completedFragment).refreshMaintenanceRequests();
+            }
+            if (rejectedFragment instanceof RejectedMaintenanceFragment) {
+                ((RejectedMaintenanceFragment) rejectedFragment).refreshMaintenanceRequests();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error refreshing fragments", e);
+        }
+    }
 
     private void setupViewPager() {
         MaintenanceRequestsPagerAdapter adapter = new MaintenanceRequestsPagerAdapter(this);
@@ -56,6 +83,9 @@ public class MaintenanceRequestsActivity extends AppCompatActivity {
                     break;
                 case 2:
                     tab.setText("Completed");
+                    break;
+                case 3:
+                    tab.setText("Rejected");
                     break;
             }
         }).attach();
@@ -76,6 +106,8 @@ public class MaintenanceRequestsActivity extends AppCompatActivity {
                     return InProgressMaintenanceFragment.newInstance(userId);
                 case 2:
                     return CompletedMaintenanceFragment.newInstance(userId);
+                case 3:
+                    return RejectedMaintenanceFragment.newInstance(userId);
                 default:
                     return PendingMaintenanceFragment.newInstance(userId);
             }
@@ -83,7 +115,7 @@ public class MaintenanceRequestsActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 3;
+            return 4;
         }
     }
 }

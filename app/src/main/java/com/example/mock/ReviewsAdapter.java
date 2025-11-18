@@ -19,10 +19,19 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ViewHold
 
     private ArrayList<Review> reviews;
     private Context context;
+    private OnReviewClickListener clickListener;
+
+    public interface OnReviewClickListener {
+        void onReviewClick(int position, Review review);
+    }
 
     public ReviewsAdapter(ArrayList<Review> reviews, Context context) {
         this.reviews = reviews;
         this.context = context;
+    }
+
+    public void setOnReviewClickListener(OnReviewClickListener listener) {
+        this.clickListener = listener;
     }
 
     @NonNull
@@ -36,25 +45,66 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Review review = reviews.get(position);
 
-        holder.tvBoarderName.setText(review.getBoarderName());
-        holder.tvBoardingHouse.setText(review.getBoardingHouseName());
-        holder.tvRoomNumber.setText("Room " + review.getRoomNumber());
-        holder.tvComment.setText(review.getComment());
-        holder.tvReviewDate.setText(review.getReviewDate());
+        // Set boarder name
+        String boarderName = review.getBoarderName();
+        if (boarderName == null || boarderName.trim().isEmpty()) {
+            boarderName = "Anonymous";
+        }
+        holder.tvBoarderName.setText(boarderName);
 
-        // Set rating stars
-        setRatingStars(holder.ratingContainer, review.getRating());
+        // Set boarding house name
+        String boardingHouseName = review.getBoardingHouseName();
+        if (boardingHouseName == null || boardingHouseName.trim().isEmpty()) {
+            boardingHouseName = "Boarding House";
+        }
+        holder.tvBoardingHouse.setText(boardingHouseName);
+
+        // Set room info - API already formats it as "Room Name: Room Number"
+        String roomInfo = review.getRoomNumber(); // Contains formatted room info from API
+        if (roomInfo != null && !roomInfo.trim().isEmpty()) {
+            holder.tvRoomInfo.setText(roomInfo);
+            holder.tvRoomInfo.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvRoomInfo.setVisibility(View.GONE);
+        }
+
+        // Set comment
+        String comment = review.getComment();
+        if (comment == null || comment.trim().isEmpty()) {
+            comment = "No comment provided.";
+        }
+        holder.tvComment.setText(comment);
+
+        // Set review date
+        String reviewDate = review.getReviewDate();
+        if (reviewDate == null || reviewDate.trim().isEmpty()) {
+            reviewDate = "N/A";
+        }
+        holder.tvReviewDate.setText(reviewDate);
+
+        // Set rating stars (ensure rating is between 1-5)
+        int rating = review.getRating();
+        if (rating < 1) rating = 1;
+        if (rating > 5) rating = 5;
+        setRatingStars(holder.ratingContainer, rating);
 
         // Load profile picture
         if (review.getProfilePicture() != null && !review.getProfilePicture().isEmpty()) {
             Glide.with(context)
                     .load(review.getProfilePicture())
-                    .placeholder(R.drawable.ic_person)
-                    .error(R.drawable.ic_person)
+                    .placeholder(R.drawable.btn_profile)
+                    .error(R.drawable.btn_profile)
                     .into(holder.ivProfilePicture);
         } else {
-            holder.ivProfilePicture.setImageResource(R.drawable.ic_person);
+            holder.ivProfilePicture.setImageResource(R.drawable.btn_profile);
         }
+
+        // Set click listener for the card
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onReviewClick(position, review);
+            }
+        });
     }
 
     private void setRatingStars(LinearLayout container, int rating) {
@@ -87,8 +137,8 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivProfilePicture;
-        TextView tvBoarderName, tvBoardingHouse, tvRoomNumber, tvComment, tvReviewDate;
+        CircularImageView ivProfilePicture;
+        TextView tvBoarderName, tvBoardingHouse, tvRoomInfo, tvComment, tvReviewDate;
         LinearLayout ratingContainer;
 
         public ViewHolder(@NonNull View itemView) {
@@ -96,7 +146,7 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ViewHold
             ivProfilePicture = itemView.findViewById(R.id.ivProfilePicture);
             tvBoarderName = itemView.findViewById(R.id.tvBoarderName);
             tvBoardingHouse = itemView.findViewById(R.id.tvBoardingHouse);
-            tvRoomNumber = itemView.findViewById(R.id.tvRoomNumber);
+            tvRoomInfo = itemView.findViewById(R.id.tvRoomInfo);
             tvComment = itemView.findViewById(R.id.tvComment);
             tvReviewDate = itemView.findViewById(R.id.tvReviewDate);
             ratingContainer = itemView.findViewById(R.id.ratingContainer);

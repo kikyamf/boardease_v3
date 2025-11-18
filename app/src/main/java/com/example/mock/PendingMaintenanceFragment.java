@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -44,6 +45,7 @@ public class PendingMaintenanceFragment extends Fragment {
     private TextView tvCount;
     private LinearLayout headerLayout;
     private ImageView ivHeaderIcon;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private PendingMaintenanceAdapter adapter;
     private ArrayList<MaintenanceRequest> maintenanceRequests;
     private int userId;
@@ -83,6 +85,7 @@ public class PendingMaintenanceFragment extends Fragment {
         tvCount = view.findViewById(R.id.tvCount);
         headerLayout = view.findViewById(R.id.headerLayout);
         ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         
         // Set header styling (orange for Pending)
         if (headerLayout != null) {
@@ -94,6 +97,13 @@ public class PendingMaintenanceFragment extends Fragment {
         if (tvCount != null) {
             tvCount.setBackgroundResource(R.drawable.bg_rounded_orange);
         }
+        
+        // Setup swipe refresh
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                loadMaintenanceRequests(true);
+            });
+        }
     }
 
     private void setupRecyclerView() {
@@ -101,7 +111,22 @@ public class PendingMaintenanceFragment extends Fragment {
         adapter = new PendingMaintenanceAdapter(maintenanceRequests, getContext(), new PendingMaintenanceAdapter.OnStatusUpdateListener() {
             @Override
             public void onStatusUpdate(int requestId, String newStatus) {
-                updateMaintenanceStatus(requestId, newStatus);
+                // Show confirmation dialog before updating
+                String action = "Approve";
+                String message = "Are you sure you want to approve this maintenance request?";
+                if ("Rejected".equals(newStatus) || "Declined".equals(newStatus)) {
+                    action = "Reject";
+                    message = "Are you sure you want to reject this maintenance request?";
+                }
+                
+                new android.app.AlertDialog.Builder(getContext())
+                    .setTitle(action + " Maintenance Request")
+                    .setMessage(message)
+                    .setPositiveButton("Yes", (dialog, which) -> {
+                        updateMaintenanceStatus(requestId, newStatus);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
             }
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -109,13 +134,32 @@ public class PendingMaintenanceFragment extends Fragment {
     }
 
     private void loadMaintenanceRequests() {
-        showProgressDialog("Loading pending maintenance requests...");
+        loadMaintenanceRequests(false);
+    }
+    
+    private void loadMaintenanceRequests(boolean isRefresh) {
+        if (isRefresh) {
+            // Show swipe refresh indicator only (no loading dialog)
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        } else {
+            // Only show progress dialog if NOT refreshing
+            showProgressDialog("Loading pending maintenance requests...");
+        }
 
         MaintenanceApiService apiService = new MaintenanceApiService(getContext());
         apiService.getMaintenanceRequests(userId, "owner", "pending", "all", "all", new MaintenanceApiService.MaintenanceApiCallback() {
             @Override
             public void onSuccess(List<MaintenanceRequest> requests) {
-                hideProgressDialog();
+                // Only hide progress dialog if it was shown (not during refresh)
+                if (!isRefresh) {
+                    hideProgressDialog();
+                }
+                // Always hide swipe refresh indicator
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 maintenanceRequests.clear();
                 maintenanceRequests.addAll(requests);
                 adapter.notifyDataSetChanged();
@@ -125,7 +169,14 @@ public class PendingMaintenanceFragment extends Fragment {
 
             @Override
             public void onError(String error) {
-                hideProgressDialog();
+                // Only hide progress dialog if it was shown (not during refresh)
+                if (!isRefresh) {
+                    hideProgressDialog();
+                }
+                // Always hide swipe refresh indicator
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 Log.e(TAG, "Error loading pending maintenance requests: " + error);
                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
                 updateEmptyState();
@@ -134,25 +185,53 @@ public class PendingMaintenanceFragment extends Fragment {
     }
 
     private void updateMaintenanceStatus(int requestId, String newStatus) {
-        showProgressDialog("Updating status...");
+        // Trigger pull-to-refresh instead of showing progress dialog
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(true);
+        }
 
         MaintenanceApiService apiService = new MaintenanceApiService(getContext());
         apiService.updateMaintenanceStatus(requestId, newStatus, "", "", "", "", "", "", userId, new MaintenanceApiService.SimpleCallback() {
             @Override
             public void onSuccess(String message) {
-                hideProgressDialog();
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                // Reload the list to reflect changes
-                loadMaintenanceRequests();
+                // Show success dialog
+                String action = "approved";
+                String title = "Successfully Approved";
+                if ("Rejected".equals(newStatus) || "Declined".equals(newStatus)) {
+                    action = "rejected";
+                    title = "Successfully Rejected";
+                }
+                
+                new android.app.AlertDialog.Builder(getContext())
+                    .setTitle(title)
+                    .setMessage("Maintenance request has been " + action + " successfully.")
+                    .setPositiveButton("OK", (dialog, which) -> {
+                        dialog.dismiss();
+                        // Keep refresh indicator showing while reloading
+                        loadMaintenanceRequests(true); // Pass true to use swipe refresh indicator
+                        // Refresh all fragments in the activity
+                        if (getActivity() instanceof MaintenanceRequestsActivity) {
+                            ((MaintenanceRequestsActivity) getActivity()).refreshAllFragments();
+                        }
+                    })
+                    .setCancelable(false)
+                    .show();
             }
 
             @Override
             public void onError(String error) {
-                hideProgressDialog();
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 Log.e(TAG, "Error updating maintenance status: " + error);
                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    public void refreshMaintenanceRequests() {
+        // Always use pull-to-refresh when refreshing (no loading dialog)
+        loadMaintenanceRequests(true);
     }
 
     private void updateEmptyState() {

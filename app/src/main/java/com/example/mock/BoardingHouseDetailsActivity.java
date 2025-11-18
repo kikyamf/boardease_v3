@@ -169,6 +169,10 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         // Setup reviews recycler view - horizontal scrolling
         reviewsAdapter = new ReviewsAdapter((ArrayList<Review>) reviews, this);
+        reviewsAdapter.setOnReviewClickListener((position, review) -> {
+            // Navigate to AllReviewsActivity when review card is clicked
+            openAllReviewsActivity();
+        });
         rvReviews.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvReviews.setAdapter(reviewsAdapter);
         
@@ -825,43 +829,27 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     }
     
     private void setupReviews() {
-        // Add sample reviews for preview (show first 3 for horizontal scroll)
+        // Load real reviews from API for this boarding house
         reviews.clear();
+        reviewsAdapter.notifyDataSetChanged();
         
-        // Sample Review 1
-        Review review1 = new Review();
-        review1.setBoarderName("Maria Santos");
-        review1.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
-        review1.setRoomNumber("101");
-        review1.setRating(5);
-        review1.setComment("Excellent boarding house! The facilities are very clean and well-maintained. The owner is very responsive and helpful. Highly recommended!");
-        review1.setReviewDate("Nov 15, 2024");
-        review1.setProfilePicture("");
-        reviews.add(review1);
+        // Show loading state
+        rvReviews.setVisibility(View.GONE);
+        tvNoReviews.setVisibility(View.GONE);
+        tvSeeAllReviews.setVisibility(View.GONE);
         
-        // Sample Review 2
-        Review review2 = new Review();
-        review2.setBoarderName("John Dela Cruz");
-        review2.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
-        review2.setRoomNumber("205");
-        review2.setRating(4);
-        review2.setComment("Good value for money. The location is convenient and the room is spacious. The only minor issue is the WiFi can be slow during peak hours.");
-        review2.setReviewDate("Nov 10, 2024");
-        review2.setProfilePicture("");
-        reviews.add(review2);
-        
-        // Sample Review 3
-        Review review3 = new Review();
-        review3.setBoarderName("Sarah Garcia");
-        review3.setBoardingHouseName(boardingHouseDetails != null ? boardingHouseDetails.getBhName() : "Boarding House");
-        review3.setRoomNumber("302");
-        review3.setRating(5);
-        review3.setComment("Amazing experience! The place is peaceful and safe. The owner is very accommodating and the other boarders are friendly. Will definitely stay here again!");
-        review3.setReviewDate("Nov 5, 2024");
-        review3.setProfilePicture("");
-        reviews.add(review3);
-        
-        // Update adapter
+        ReviewApiService apiService = new ReviewApiService(this);
+        // Get reviews for this specific boarding house (show first 3 for preview)
+        apiService.getReviews(boardingHouseId, 0, 0, "all", "published", "newest", new ReviewApiService.ReviewApiCallback() {
+            @Override
+            public void onSuccess(List<Review> reviewList) {
+                reviews.clear();
+                // Show only first 3 reviews for preview in horizontal scroll
+                int maxReviews = Math.min(reviewList.size(), 3);
+                for (int i = 0; i < maxReviews; i++) {
+                    reviews.add(reviewList.get(i));
+                }
+                
         reviewsAdapter.notifyDataSetChanged();
         
         // Show reviews if available
@@ -874,9 +862,23 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             rvReviews.setVisibility(View.VISIBLE);
             tvNoReviews.setVisibility(View.GONE);
             tvSeeAllReviews.setVisibility(View.VISIBLE);
-            // Show total count (for now using sample count, later from API)
-            tvReviewCount.setText(String.valueOf(reviews.size()));
-        }
+                    // Show total count from API
+                    tvReviewCount.setText(String.valueOf(reviewList.size()));
+                }
+                
+                Log.d(TAG, "Loaded " + reviews.size() + " reviews (showing " + maxReviews + " for preview)");
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error loading reviews: " + error);
+                // Show empty state on error
+                rvReviews.setVisibility(View.GONE);
+                tvNoReviews.setVisibility(View.VISIBLE);
+                tvSeeAllReviews.setVisibility(View.GONE);
+                tvReviewCount.setText("0");
+            }
+        });
     }
     
     private void openAllReviewsActivity() {

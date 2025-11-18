@@ -20,6 +20,7 @@ public class MaintenanceRequest {
     private String actualCost;
     private String workStartedDate;
     private String workCompletedDate;
+    private String approvedDate;
     private String notes;
     private String images;
     private String feedbackRating;
@@ -95,6 +96,7 @@ public class MaintenanceRequest {
     public String getActualCost() { return actualCost; }
     public String getWorkStartedDate() { return workStartedDate; }
     public String getWorkCompletedDate() { return workCompletedDate; }
+    public String getApprovedDate() { return approvedDate; }
     public String getNotes() { return notes; }
     public String getImages() { return images; }
     public String getFeedbackRating() { return feedbackRating; }
@@ -120,6 +122,7 @@ public class MaintenanceRequest {
     public void setActualCost(String actualCost) { this.actualCost = actualCost; }
     public void setWorkStartedDate(String workStartedDate) { this.workStartedDate = workStartedDate; }
     public void setWorkCompletedDate(String workCompletedDate) { this.workCompletedDate = workCompletedDate; }
+    public void setApprovedDate(String approvedDate) { this.approvedDate = approvedDate; }
     public void setNotes(String notes) { this.notes = notes; }
     public void setImages(String images) { this.images = images; }
     public void setFeedbackRating(String feedbackRating) { this.feedbackRating = feedbackRating; }

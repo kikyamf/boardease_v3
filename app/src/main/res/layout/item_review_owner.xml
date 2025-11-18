@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="280dp"
-    android:layout_height="200dp"
-    android:layout_marginEnd="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="8dp"
@@ -16,7 +16,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
         android:background="#FFFFFF">
@@ -26,6 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginBottom="12dp">
 
             <!-- Profile Picture -->
@@ -52,38 +53,15 @@
                 android:layout_marginStart="12dp"
                 android:orientation="vertical">
 
-                <!-- Boarder Name Row with Date -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
                 <TextView
                     android:id="@+id/tvBoarderName"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:text="John Doe"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#000000"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                    <!-- Review Date - aligned with boarder name -->
-                    <TextView
-                        android:id="@+id/tvReviewDate"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Dec 15, 2024"
-                        android:textSize="11sp"
-                        android:textColor="#999999"
-                        android:maxLines="1"
-                        android:layout_marginStart="8dp" />
-
-                </LinearLayout>
+                    android:fontFamily="@font/poppins_semibold" />
 
                 <!-- Boarding House Name -->
                 <LinearLayout
@@ -116,7 +94,7 @@
                 <!-- Room Info -->
                 <TextView
                     android:id="@+id/tvRoomInfo"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Private Room 01: Room PR0-7"
                     android:textSize="12sp"
@@ -127,6 +105,15 @@
                     android:ellipsize="end" />
 
             </LinearLayout>
+
+            <!-- Review Date -->
+            <TextView
+                android:id="@+id/tvReviewDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dec 15, 2024"
+                android:textSize="12sp"
+                android:textColor="#999999" />
 
         </LinearLayout>
 
@@ -147,10 +134,9 @@
             android:textSize="14sp"
             android:textColor="#333333"
             android:fontFamily="@font/poppins_regular"
-            android:lineSpacingExtra="2dp"
-            android:maxLines="3"
-            android:ellipsize="end" />
+            android:lineSpacingExtra="2dp" />
 
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
+

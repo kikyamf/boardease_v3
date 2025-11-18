@@ -15,8 +15,9 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- Property Image Placeholder -->
+        <!-- Property Image -->
         <ImageView
+            android:id="@+id/ivPropertyImage"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:src="@drawable/ic_home"

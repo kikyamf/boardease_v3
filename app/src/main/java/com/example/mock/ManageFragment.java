@@ -15,6 +15,7 @@ import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
@@ -40,6 +41,7 @@ public class ManageFragment extends Fragment {
     private TextView textViewListingCount;
     private ProgressDialog progressDialog;
     private LinearLayout layoutEmptyState;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private static final String ARG_USER_ID = "user_id";
 
@@ -73,11 +75,17 @@ public class ManageFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_manage, container, false);
 
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         recyclerView = view.findViewById(R.id.recyclerViewListings);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         textViewListingCount = view.findViewById(R.id.tvListingCount);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
+
+        // Set up pull-to-refresh
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            fetchBoardingHouses(false); // Don't show loading dialog when pulling to refresh
+        });
 
         adapter = new ListingAdapter(getContext(), listingList, new ListingAdapter.OnItemActionListener() {
             @Override
@@ -202,12 +210,20 @@ public class ManageFragment extends Fragment {
                     } finally {
                         // Hide loading dialog
                         hideProgressDialog();
+                        // Stop refresh indicator
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                     }
                 },
                 error -> {
                     Toast.makeText(getContext(), "Error fetching data", Toast.LENGTH_SHORT).show();
                     // Hide loading dialog on error
                     hideProgressDialog();
+                    // Stop refresh indicator on error
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
                 }) {
 
             @Override

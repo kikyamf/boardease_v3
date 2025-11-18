@@ -15,12 +15,12 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 
-public class AllReviewsAdapter extends RecyclerView.Adapter<AllReviewsAdapter.ViewHolder> {
+public class OwnerReviewsAdapter extends RecyclerView.Adapter<OwnerReviewsAdapter.ViewHolder> {
 
     private ArrayList<Review> reviews;
     private Context context;
 
-    public AllReviewsAdapter(ArrayList<Review> reviews, Context context) {
+    public OwnerReviewsAdapter(ArrayList<Review> reviews, Context context) {
         this.reviews = reviews;
         this.context = context;
     }
@@ -28,7 +28,7 @@ public class AllReviewsAdapter extends RecyclerView.Adapter<AllReviewsAdapter.Vi
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_review_full, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_review_owner, parent, false);
         return new ViewHolder(view);
     }
 
@@ -137,10 +137,4 @@ public class AllReviewsAdapter extends RecyclerView.Adapter<AllReviewsAdapter.Vi
         }
     }
 }
-
-
-
-
-
-
 

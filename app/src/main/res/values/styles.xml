@@ -38,5 +38,12 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
+    <!-- Style for TabLayout to ensure equal font sizes -->
+    <style name="TabTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
 
 </resources>

@@ -225,7 +225,12 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         }
         
         holder.tvPaymentStatus.setText("FULLY PAID");
-        holder.tvPaymentDate.setText("Completed: " + payment.getPaymentDate());
+        String paymentDate = payment.getPaymentDate();
+        if (paymentDate != null && !paymentDate.isEmpty()) {
+            holder.tvPaymentDate.setText("Completed: " + formatDateTime(paymentDate));
+        } else {
+            holder.tvPaymentDate.setText("Completed: N/A");
+        }
         
         // Hide elements not used in fully paid view
         if (holder.tvAmountPaid != null) holder.tvAmountPaid.setVisibility(View.GONE);
@@ -481,7 +486,12 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         }
         
         holder.tvRentalStatus.setText(payment.getRentalStatus());
-        holder.tvPaymentDate.setText(payment.getPaymentDate());
+        String paymentDate = payment.getPaymentDate();
+        if (paymentDate != null && !paymentDate.isEmpty()) {
+            holder.tvPaymentDate.setText(formatDateTime(paymentDate));
+        } else {
+            holder.tvPaymentDate.setText("N/A");
+        }
         
         // Set card background color based on rental status
         String rentalStatus = payment.getRentalStatus();
@@ -737,7 +747,12 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         }
         
         holder.tvRentalStatus.setText(payment.getRentalStatus());
-        holder.tvPaymentDate.setText(payment.getPaymentDate());
+        String paymentDate = payment.getPaymentDate();
+        if (paymentDate != null && !paymentDate.isEmpty()) {
+            holder.tvPaymentDate.setText(formatDateTime(paymentDate));
+        } else {
+            holder.tvPaymentDate.setText("N/A");
+        }
         
         // Set card background color based on rental status
         String rentalStatus = payment.getRentalStatus();
@@ -943,6 +958,26 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             return formatter.format(amountValue);
         } catch (NumberFormatException e) {
             return amount;
+        }
+    }
+    
+    private String formatDateTime(String dateTime) {
+        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateTime);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, try date-only format
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                java.util.Date date = inputFormat.parse(dateTime);
+                return outputFormat.format(date);
+            } catch (Exception e2) {
+                return dateTime; // Return original if parsing fails
+            }
         }
     }
     

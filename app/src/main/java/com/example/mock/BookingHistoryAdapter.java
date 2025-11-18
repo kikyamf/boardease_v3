@@ -64,8 +64,12 @@ public class BookingHistoryAdapter extends RecyclerView.Adapter<BookingHistoryAd
         holder.tvEmail.setText(booking.getEmail() != null ? booking.getEmail() : "");
         holder.tvPhone.setText(booking.getPhoneNumber() != null ? booking.getPhoneNumber() : "");
         holder.tvRoomName.setText(booking.getRoomName() != null ? booking.getRoomName() : "");
-        holder.tvStartDate.setText(booking.getStartDate() != null ? booking.getStartDate() : "");
-        holder.tvEndDate.setText(booking.getEndDate() != null ? booking.getEndDate() : "");
+        
+        // Format dates with time
+        String startDate = booking.getStartDate();
+        String endDate = booking.getEndDate();
+        holder.tvStartDate.setText(startDate != null && !startDate.isEmpty() ? formatDateTime(startDate) : "");
+        holder.tvEndDate.setText(endDate != null && !endDate.isEmpty() ? formatDateTime(endDate) : "");
         
         // Set room amount (monthly price)
         String roomAmount = booking.getAmount();
@@ -152,6 +156,29 @@ public class BookingHistoryAdapter extends RecyclerView.Adapter<BookingHistoryAd
             return formatter.format(amountValue);
         } catch (NumberFormatException e) {
             return amount;
+        }
+    }
+    
+    private String formatDateTime(String dateTime) {
+        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        if (dateTime == null || dateTime.isEmpty()) {
+            return "";
+        }
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateTime);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, try date-only format
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                java.util.Date date = inputFormat.parse(dateTime);
+                return outputFormat.format(date);
+            } catch (Exception e2) {
+                return dateTime; // Return original if parsing fails
+            }
         }
     }
     

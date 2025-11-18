@@ -192,8 +192,11 @@ public class BookingDetailsActivity extends AppCompatActivity {
             tvRoomName.setText(bookingData.getRoomName() != null ? bookingData.getRoomName() : "");
             tvBoardingHouseName.setText(bookingData.getBoardingHouseName() != null ? bookingData.getBoardingHouseName() : "");
             tvBoardingHouseAddress.setText(bookingData.getBoardingHouseAddress() != null ? bookingData.getBoardingHouseAddress() : "");
-            tvStartDate.setText(bookingData.getStartDate() != null ? bookingData.getStartDate() : "");
-            tvEndDate.setText(bookingData.getEndDate() != null ? bookingData.getEndDate() : "");
+            // Format start and end dates with time
+            String startDate = bookingData.getStartDate();
+            String endDate = bookingData.getEndDate();
+            tvStartDate.setText(startDate != null && !startDate.isEmpty() ? formatDateTime(startDate) : "");
+            tvEndDate.setText(endDate != null && !endDate.isEmpty() ? formatDateTime(endDate) : "");
             
             // Set room amount (monthly price) - this should ALWAYS be the room's monthly price
             String roomAmount = bookingData.getAmount();
@@ -365,7 +368,13 @@ public class BookingDetailsActivity extends AppCompatActivity {
                       ", Payment Status Text: " + tvPaymentStatus.getText());
             }
             
-            tvBookingDate.setText(bookingData.getBookingDate() != null ? bookingData.getBookingDate() : "");
+            // Format booking date with time in "02:00 PM" format
+            String bookingDate = bookingData.getBookingDate();
+            if (bookingDate != null && !bookingDate.isEmpty()) {
+                tvBookingDate.setText(formatDateTime(bookingDate));
+            } else {
+                tvBookingDate.setText("");
+            }
             
             // NOTE: Do NOT overwrite tvAmount (Room Amount) here - it should always show the room's monthly price
             // tvAmount is already set correctly above from bookingData.getAmount() (room price)
@@ -500,6 +509,26 @@ public class BookingDetailsActivity extends AppCompatActivity {
             return formatter.format(amountValue);
         } catch (NumberFormatException e) {
             return amount;
+        }
+    }
+    
+    private String formatDateTime(String dateTime) {
+        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateTime);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, try date-only format
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                java.util.Date date = inputFormat.parse(dateTime);
+                return outputFormat.format(date);
+            } catch (Exception e2) {
+                return dateTime; // Return original if parsing fails
+            }
         }
     }
     

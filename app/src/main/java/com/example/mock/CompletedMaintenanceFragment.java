@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ public class CompletedMaintenanceFragment extends Fragment {
     private TextView tvCount;
     private LinearLayout headerLayout;
     private ImageView ivHeaderIcon;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private CompletedMaintenanceAdapter adapter;
     private ArrayList<MaintenanceRequest> maintenanceRequests;
     private int userId;
@@ -68,6 +70,7 @@ public class CompletedMaintenanceFragment extends Fragment {
         tvCount = view.findViewById(R.id.tvCount);
         headerLayout = view.findViewById(R.id.headerLayout);
         ivHeaderIcon = view.findViewById(R.id.ivHeaderIcon);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         
         // Set header styling (green for Completed)
         if (headerLayout != null) {
@@ -79,6 +82,13 @@ public class CompletedMaintenanceFragment extends Fragment {
         if (tvCount != null) {
             tvCount.setBackgroundResource(R.drawable.bg_rounded_green);
         }
+        
+        // Setup swipe refresh
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                loadMaintenanceRequests(true);
+            });
+        }
     }
 
     private void setupRecyclerView() {
@@ -89,13 +99,32 @@ public class CompletedMaintenanceFragment extends Fragment {
     }
 
     private void loadMaintenanceRequests() {
-        showProgressDialog("Loading completed maintenance requests...");
+        loadMaintenanceRequests(false);
+    }
+    
+    private void loadMaintenanceRequests(boolean isRefresh) {
+        if (isRefresh) {
+            // Show swipe refresh indicator only (no loading dialog)
+            if (swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        } else {
+            // Only show progress dialog if NOT refreshing
+            showProgressDialog("Loading completed maintenance requests...");
+        }
 
         MaintenanceApiService apiService = new MaintenanceApiService(getContext());
         apiService.getMaintenanceRequests(userId, "owner", "resolved", "all", "all", new MaintenanceApiService.MaintenanceApiCallback() {
             @Override
             public void onSuccess(List<MaintenanceRequest> requests) {
-                hideProgressDialog();
+                // Only hide progress dialog if it was shown (not during refresh)
+                if (!isRefresh) {
+                    hideProgressDialog();
+                }
+                // Always hide swipe refresh indicator
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 maintenanceRequests.clear();
                 maintenanceRequests.addAll(requests);
                 adapter.notifyDataSetChanged();
@@ -105,7 +134,14 @@ public class CompletedMaintenanceFragment extends Fragment {
 
             @Override
             public void onError(String error) {
-                hideProgressDialog();
+                // Only hide progress dialog if it was shown (not during refresh)
+                if (!isRefresh) {
+                    hideProgressDialog();
+                }
+                // Always hide swipe refresh indicator
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
                 Log.e(TAG, "Error loading completed maintenance requests: " + error);
                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
                 updateEmptyState();
@@ -141,6 +177,11 @@ public class CompletedMaintenanceFragment extends Fragment {
         if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
+    }
+    
+    public void refreshMaintenanceRequests() {
+        // Always use pull-to-refresh when refreshing (no loading dialog)
+        loadMaintenanceRequests(true);
     }
 }
 

@@ -131,28 +131,36 @@
             android:orientation="horizontal"
             android:gravity="end">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReject"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:text="Reject"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:textColor="@android:color/white"
-                android:background="@drawable/button_reject_background"
+                android:backgroundTint="#F44336"
                 android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
                 android:layout_marginEnd="8dp"
-                android:minWidth="80dp" />
+                android:minWidth="80dp"
+                app:cornerRadius="8dp"
+                app:strokeWidth="0dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnApprove"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:text="Approve"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:textColor="@android:color/white"
-                android:background="@drawable/button_approve_background"
+                android:backgroundTint="#FF9800"
                 android:paddingHorizontal="16dp"
-                android:minWidth="80dp" />
+                android:paddingVertical="8dp"
+                android:minWidth="80dp"
+                app:cornerRadius="8dp"
+                app:strokeWidth="0dp" />
 
         </LinearLayout>
 

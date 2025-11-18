@@ -37,7 +37,7 @@ public class ReviewsActivity extends AppCompatActivity {
     private LinearLayout emptyLayout;
 
     private ImageButton btnBack;
-    private ReviewsAdapter adapter;
+    private OwnerReviewsAdapter adapter;
     private ArrayList<Review> reviews;
     private int userId;
     private ProgressDialog progressDialog;
@@ -66,7 +66,7 @@ public class ReviewsActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         reviews = new ArrayList<>();
-        adapter = new ReviewsAdapter(reviews, this);
+        adapter = new OwnerReviewsAdapter(reviews, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }

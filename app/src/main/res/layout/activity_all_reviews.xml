@@ -52,7 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp">
 
             <!-- Boarding House Name -->
             <TextView
@@ -64,7 +64,7 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:fontFamily="@font/poppins_semibold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="4dp" />
 
             <!-- Review Count -->
             <TextView
@@ -75,14 +75,26 @@
                 android:textColor="#666666"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="16dp" />
+
+            <!-- Loading Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="40dp"
+                android:layout_marginBottom="40dp"
+                android:indeterminateTint="@color/brown"
+                android:visibility="visible" />
 
             <!-- Reviews List -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvAllReviews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false" />
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone" />
 
             <!-- No Reviews Message -->
             <TextView

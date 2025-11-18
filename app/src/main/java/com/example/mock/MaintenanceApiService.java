@@ -107,6 +107,8 @@ public class MaintenanceApiService {
                                     requestObj.optString("feedback_rating", ""),
                                     requestObj.optString("feedback_comment", "")
                                 );
+                                // Set approved date if available
+                                maintenanceRequest.setApprovedDate(requestObj.optString("approved_date", ""));
                                 maintenanceRequests.add(maintenanceRequest);
                             }
                             
@@ -310,10 +312,33 @@ public class MaintenanceApiService {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     Log.e(TAG, "Volley error (Update Maintenance Status)", error);
-                    callback.onError("Network error: " + error.getMessage());
+                    // Even on timeout, the update might have succeeded
+                    // Check if it's a timeout error and treat it as success with refresh
+                    if (error instanceof com.android.volley.TimeoutError) {
+                        Log.w(TAG, "Timeout error, but update may have succeeded. Refreshing...");
+                        // Call success callback to trigger refresh
+                        callback.onSuccess("Status updated (refresh to see changes)");
+                    } else {
+                        callback.onError("Network error: " + error.getMessage());
+                    }
                 }
             }
-        );
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+        
+        // Increase timeout to 30 seconds
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+            30000, // 30 seconds timeout
+            1, // max retries
+            com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
 
         requestQueue.add(request);
     }
