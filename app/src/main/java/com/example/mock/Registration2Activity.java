@@ -411,6 +411,16 @@ public class Registration2Activity extends AppCompatActivity {
                             Log.d("Registration2", "Message: " + message);
                             Log.d("Registration2", "Has requires_verification: " + obj.has("requires_verification"));
                             
+                            // Log permit information if available
+                            if (obj.has("permits_received")) {
+                                int permitsReceived = obj.optInt("permits_received", 0);
+                                Log.d("Registration2", "Permits received by server: " + permitsReceived);
+                            }
+                            if (obj.has("permits_inserted")) {
+                                int permitsInserted = obj.optInt("permits_inserted", 0);
+                                Log.d("Registration2", "Permits inserted into database: " + permitsInserted);
+                            }
+                            
                             // Re-enable button
                             isRegistering = false;
                             btnReg.setEnabled(true);

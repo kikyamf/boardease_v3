@@ -192,6 +192,7 @@ if ($stmt->execute()) {
     error_log("Is BH Owner check - Role: '" . $role . "', isBHOwner: " . ($isBHOwner ? "true" : "false"));
     error_log("Permit files count: " . count($permitFiles));
     
+    $permitsInserted = 0;
     if (!empty($permitFiles) && $isBHOwner) {
         error_log("Attempting to insert " . count($permitFiles) . " business permit(s) for user " . $userId);
         $permitSql = "INSERT INTO bs_permits (reg_id, permit_file, permit_number, created_at) VALUES (?, ?, ?, NOW())";
@@ -205,6 +206,7 @@ if ($stmt->execute()) {
                 if (!$permitStmt->execute()) {
                     error_log("Failed to insert business permit " . $permitNumber . ": " . $permitStmt->error);
                 } else {
+                    $permitsInserted++;
                     error_log("Successfully inserted business permit " . $permitNumber . " for user " . $userId . " (permit_id: " . $conn->insert_id . ")");
                 }
                 $permitStmt->close();
@@ -239,18 +241,22 @@ if ($stmt->execute()) {
             $response = array(
                 "success" => true,
                 "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
-                "requires_verification" => true
+                "requires_verification" => true,
+                "permits_received" => count($permitFiles),
+                "permits_inserted" => $permitsInserted
             );
         } else {
             $response = array(
                 "success" => false,
-                "message" => "Registration created but failed to send verification email. Please contact support."
+                "message" => "Registration created but failed to send verification email. Please contact support.",
+                "permits_received" => count($permitFiles)
             );
         }
     } else {
         $response = array(
             "success" => false,
-            "message" => "Registration failed to create verification record."
+            "message" => "Registration failed to create verification record.",
+            "permits_received" => count($permitFiles)
         );
     }
     
