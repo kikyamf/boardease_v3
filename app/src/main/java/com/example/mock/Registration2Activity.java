@@ -33,7 +33,9 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Registration2Activity extends AppCompatActivity {
@@ -49,6 +51,10 @@ public class Registration2Activity extends AppCompatActivity {
     TextView tvLogin;
     private boolean isRegistering = false; // Flag to prevent multiple registrations
 
+    // Business Permit Views
+    private View businessPermitSection;
+    private ViewGroup businessPermitContainer;
+    private Button btnAddPermit;
 
     // File paths for ID images
     private String idFrontPath = null;
@@ -57,9 +63,24 @@ public class Registration2Activity extends AppCompatActivity {
     // Get data from first registration screen
     String role, firstName, middleName, lastName, suffix, birthDate, phone, address, email, password, gcashNum, qrPath;
 
+    // Business Permit data
+    private static class PermitUploadItem {
+        View itemView;
+        ImageView imageView;
+        Button removeButton;
+        Bitmap bitmap;
+        Uri uri;
+        int index;
+    }
+    
+    private List<PermitUploadItem> permitUploadItems = new ArrayList<>();
+    private static final int MAX_PERMITS = 3;
+    private int nextPermitIndex = 0;
+
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
     private ActivityResultLauncher<String> pickBackImageLauncher;
+    private Map<Integer, ActivityResultLauncher<String>> permitImageLaunchers = new HashMap<>();
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -77,6 +98,11 @@ public class Registration2Activity extends AppCompatActivity {
         btnReg = findViewById(R.id.btnReg);
 
         tvLogin = findViewById(R.id.tvLogin);
+        
+        // Initialize Business Permit Views
+        businessPermitSection = findViewById(R.id.businessPermitSection);
+        businessPermitContainer = findViewById(R.id.businessPermitContainer);
+        btnAddPermit = findViewById(R.id.btnAddPermit);
 
         // Retrieve data passed from RegistrationActivity
         role = getIntent().getStringExtra("role");
@@ -102,6 +128,25 @@ public class Registration2Activity extends AppCompatActivity {
                 e.printStackTrace();
                 Toast.makeText(this, "Error loading QR image", Toast.LENGTH_SHORT).show();
             }
+        }
+        
+        // Setup Business Permit Section (only for BH Owner)
+        boolean isBHOwner = role != null && !role.equals("Boarder");
+        if (isBHOwner) {
+            businessPermitSection.setVisibility(View.VISIBLE);
+            // Create first permit upload item
+            createPermitUploadItem();
+            // Setup add permit button
+            btnAddPermit.setOnClickListener(v -> {
+                if (permitUploadItems.size() < MAX_PERMITS) {
+                    createPermitUploadItem();
+                    updateAddPermitButtonVisibility();
+                } else {
+                    Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            businessPermitSection.setVisibility(View.GONE);
         }
 
         // Prepare image pickers
@@ -753,6 +798,206 @@ public class Registration2Activity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("ID_CAPTURE", "Error handling back ID result: " + e.getMessage());
             Toast.makeText(this, "Error processing back ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Creates a new business permit upload item
+     */
+    private void createPermitUploadItem() {
+        if (permitUploadItems.size() >= MAX_PERMITS) {
+            Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        int permitIndex = nextPermitIndex++;
+        PermitUploadItem item = new PermitUploadItem();
+        item.index = permitIndex;
+        
+        // Create the layout for the permit upload item
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.VERTICAL);
+        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        
+        // Label
+        TextView label = new TextView(this);
+        label.setText("Business Permit " + (permitUploadItems.size() + 1));
+        label.setTextColor(getResources().getColor(android.R.color.black));
+        label.setTextSize(14);
+        label.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        label.setPadding(0, 0, 0, 8);
+        itemLayout.addView(label);
+        
+        // ImageView for permit
+        ImageView permitImageView = new ImageView(this);
+        permitImageView.setId(View.generateViewId());
+        // Convert 200dp to pixels
+        float density = getResources().getDisplayMetrics().density;
+        int heightInPixels = (int) (200 * density);
+        permitImageView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                heightInPixels
+        ));
+        permitImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        permitImageView.setAdjustViewBounds(true);
+        permitImageView.setBackgroundResource(R.drawable.edittext_background);
+        permitImageView.setImageResource(R.drawable.upload);
+        permitImageView.setPadding(0, 0, 0, 8);
+        itemLayout.addView(permitImageView);
+        
+        // Remove button (only show if more than one permit)
+        Button removeButton = new Button(this);
+        removeButton.setText("Remove");
+        removeButton.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        removeButton.setBackgroundTintList(getResources().getColorStateList(android.R.color.holo_red_dark));
+        removeButton.setTextColor(getResources().getColor(android.R.color.white));
+        removeButton.setVisibility(View.GONE); // Initially hidden, shown when multiple permits exist
+        itemLayout.addView(removeButton);
+        
+        // Add margin between items
+        if (permitUploadItems.size() > 0) {
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) itemLayout.getLayoutParams();
+            params.topMargin = 16;
+            itemLayout.setLayoutParams(params);
+        }
+        
+        // Store references
+        item.itemView = itemLayout;
+        item.imageView = permitImageView;
+        item.removeButton = removeButton;
+        
+        // Setup image picker launcher for this permit
+        ActivityResultLauncher<String> permitLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        handlePermitImageSelection(item, uri);
+                    }
+                }
+        );
+        permitImageLaunchers.put(permitIndex, permitLauncher);
+        
+        // Setup click listener for image view
+        permitImageView.setOnClickListener(v -> {
+            permitLauncher.launch("image/*");
+        });
+        
+        // Setup remove button
+        removeButton.setOnClickListener(v -> {
+            removePermitUploadItem(item);
+        });
+        
+        // Add to container and list
+        businessPermitContainer.addView(itemLayout);
+        permitUploadItems.add(item);
+        
+        // Update add button visibility
+        updateAddPermitButtonVisibility();
+        
+        Log.d("PERMIT_UPLOAD", "Created permit upload item " + (permitUploadItems.size()));
+    }
+    
+    /**
+     * Handles when a permit image is selected
+     */
+    private void handlePermitImageSelection(PermitUploadItem item, Uri imageUri) {
+        try {
+            ContentResolver resolver = getContentResolver();
+            Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+            
+            if (bitmap != null) {
+                item.bitmap = bitmap;
+                item.uri = imageUri;
+                item.imageView.setImageBitmap(bitmap);
+                item.imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                
+                // Show remove buttons for all items if there are multiple permits
+                if (permitUploadItems.size() > 1) {
+                    for (PermitUploadItem permitItem : permitUploadItems) {
+                        permitItem.removeButton.setVisibility(View.VISIBLE);
+                    }
+                }
+                
+                // Show add button if not at max
+                updateAddPermitButtonVisibility();
+                
+                Toast.makeText(this, "Business permit uploaded successfully", Toast.LENGTH_SHORT).show();
+                Log.d("PERMIT_UPLOAD", "Permit image loaded successfully for item " + item.index);
+            } else {
+                Toast.makeText(this, "Failed to load permit image", Toast.LENGTH_SHORT).show();
+                Log.e("PERMIT_UPLOAD", "Failed to decode permit image");
+            }
+        } catch (Exception e) {
+            Log.e("PERMIT_UPLOAD", "Error loading permit image: " + e.getMessage());
+            Toast.makeText(this, "Error loading permit image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Removes a permit upload item
+     */
+    private void removePermitUploadItem(PermitUploadItem item) {
+        try {
+            // Remove from container
+            businessPermitContainer.removeView(item.itemView);
+            
+            // Remove from list
+            permitUploadItems.remove(item);
+            
+            // Remove launcher
+            permitImageLaunchers.remove(item.index);
+            
+            // Update labels
+            for (int i = 0; i < permitUploadItems.size(); i++) {
+                PermitUploadItem permitItem = permitUploadItems.get(i);
+                ViewGroup itemLayout = (ViewGroup) permitItem.itemView;
+                TextView label = (TextView) itemLayout.getChildAt(0);
+                label.setText("Business Permit " + (i + 1));
+            }
+            
+            // Update remove button visibility
+            if (permitUploadItems.size() <= 1) {
+                for (PermitUploadItem permitItem : permitUploadItems) {
+                    permitItem.removeButton.setVisibility(View.GONE);
+                }
+            }
+            
+            // Update add button visibility
+            updateAddPermitButtonVisibility();
+            
+            Log.d("PERMIT_UPLOAD", "Removed permit upload item " + item.index + ", remaining: " + permitUploadItems.size());
+        } catch (Exception e) {
+            Log.e("PERMIT_UPLOAD", "Error removing permit item: " + e.getMessage());
+            Toast.makeText(this, "Error removing permit: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Updates the visibility of the add permit button
+     */
+    private void updateAddPermitButtonVisibility() {
+        // Show button if there are permits uploaded and not at max
+        boolean hasUploadedPermits = false;
+        for (PermitUploadItem item : permitUploadItems) {
+            if (item.bitmap != null) {
+                hasUploadedPermits = true;
+                break;
+            }
+        }
+        
+        if (hasUploadedPermits && permitUploadItems.size() < MAX_PERMITS) {
+            btnAddPermit.setVisibility(View.VISIBLE);
+        } else {
+            btnAddPermit.setVisibility(View.GONE);
         }
     }
 }
