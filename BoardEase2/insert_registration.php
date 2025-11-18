@@ -96,17 +96,36 @@ if (!is_dir($uploadDir)) {
 }
 
 function saveFile($fileKey, $uploadDir) {
-    if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
+    if (!isset($_FILES[$fileKey])) {
+        error_log("File key '" . $fileKey . "' not found in FILES array");
         return null;
     }
+    
+    if ($_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
+        error_log("File upload error for '" . $fileKey . "': " . $_FILES[$fileKey]['error']);
+        return null;
+    }
+    
     $fileTmp  = $_FILES[$fileKey]['tmp_name'];
     $fileName = uniqid() . "_" . basename($_FILES[$fileKey]['name']);
     $filePath = $uploadDir . $fileName;
+    
+    error_log("Attempting to save file: " . $fileKey . " from " . $fileTmp . " to " . $filePath);
 
     if (move_uploaded_file($fileTmp, $filePath)) {
-        return $filePath;
+        error_log("File successfully moved to: " . $filePath);
+        // Verify file exists after move
+        if (file_exists($filePath)) {
+            error_log("File verified to exist at: " . $filePath . " (size: " . filesize($filePath) . " bytes)");
+            return $filePath;
+        } else {
+            error_log("ERROR: File was moved but does not exist at: " . $filePath);
+            return null;
+        }
+    } else {
+        error_log("ERROR: Failed to move uploaded file from " . $fileTmp . " to " . $filePath);
+        return null;
     }
-    return null;
 }
 
 $idFrontPath = saveFile("idFrontFile", $uploadDir);
@@ -122,14 +141,25 @@ if (!is_dir($permitUploadDir)) {
 $permitFiles = array();
 for ($i = 1; $i <= 3; $i++) {
     $permitKey = "permitFile" . $i;
+    error_log("Checking for permit file key: " . $permitKey);
+    if (isset($_FILES[$permitKey])) {
+        error_log("Permit file " . $i . " found in FILES array. Error code: " . ($_FILES[$permitKey]['error'] ?? 'not set'));
+    } else {
+        error_log("Permit file " . $i . " NOT found in FILES array");
+    }
     $permitPath = saveFile($permitKey, $permitUploadDir);
     if ($permitPath) {
         $permitFiles[$i] = $permitPath;
+        error_log("Successfully saved permit file " . $i . " to: " . $permitPath);
+    } else {
+        error_log("Failed to save permit file " . $i);
     }
 }
 
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
 error_log("Business permit files uploaded: " . count($permitFiles));
+error_log("Role received: '" . $role . "'");
+error_log("Permit files array: " . print_r($permitFiles, true));
 
 // Insert into DB with unverified status (requires email verification first)
 $sql = "INSERT INTO registrations
@@ -154,24 +184,40 @@ if (!$bindResult) {
 }
 if ($stmt->execute()) {
     $userId = $conn->insert_id;
+    error_log("Registration inserted successfully. User ID: " . $userId);
     
     // Insert business permits if any were uploaded (for BH Owner)
-    if (!empty($permitFiles) && $role !== "Boarder") {
+    // Check if role is NOT Boarder (could be "BH Owner" or other values)
+    $isBHOwner = ($role !== "Boarder" && $role !== null);
+    error_log("Is BH Owner check - Role: '" . $role . "', isBHOwner: " . ($isBHOwner ? "true" : "false"));
+    error_log("Permit files count: " . count($permitFiles));
+    
+    if (!empty($permitFiles) && $isBHOwner) {
+        error_log("Attempting to insert " . count($permitFiles) . " business permit(s) for user " . $userId);
         $permitSql = "INSERT INTO bs_permits (reg_id, permit_file, permit_number, created_at) VALUES (?, ?, ?, NOW())";
-        $permitStmt = $conn->prepare($permitSql);
         
-        if ($permitStmt) {
-            foreach ($permitFiles as $permitNumber => $permitPath) {
+        foreach ($permitFiles as $permitNumber => $permitPath) {
+            error_log("Inserting permit " . $permitNumber . " with path: " . $permitPath);
+            $permitStmt = $conn->prepare($permitSql);
+            
+            if ($permitStmt) {
                 $permitStmt->bind_param("isi", $userId, $permitPath, $permitNumber);
                 if (!$permitStmt->execute()) {
                     error_log("Failed to insert business permit " . $permitNumber . ": " . $permitStmt->error);
                 } else {
-                    error_log("Successfully inserted business permit " . $permitNumber . " for user " . $userId);
+                    error_log("Successfully inserted business permit " . $permitNumber . " for user " . $userId . " (permit_id: " . $conn->insert_id . ")");
                 }
+                $permitStmt->close();
+            } else {
+                error_log("Failed to prepare permit insert statement for permit " . $permitNumber . ": " . $conn->error);
             }
-            $permitStmt->close();
-        } else {
-            error_log("Failed to prepare permit insert statement: " . $conn->error);
+        }
+    } else {
+        if (empty($permitFiles)) {
+            error_log("No permit files to insert (empty array)");
+        }
+        if (!$isBHOwner) {
+            error_log("User is not a BH Owner (role: '" . $role . "'), skipping permit insertion");
         }
     }
     
