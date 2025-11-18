@@ -28,6 +28,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.toolbox.Volley;
 
@@ -387,7 +388,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("REGISTRATION", "File paths - Front: " + idFrontPath + ", Back: " + idBackPath);
             Log.d("REGISTRATION", "BirthDate being sent: '" + birthDate + "'");
 
-            String UPLOAD_URL = "http://192.168.1.6/BoardEase2/insert_registration.php";
+            String UPLOAD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/insert_registration.php";
             Log.d("REGISTRATION", "Upload URL: " + UPLOAD_URL);
             Log.d("REGISTRATION", "Creating VolleyMultipartRequest...");
 
@@ -582,6 +583,17 @@ public class Registration2Activity extends AppCompatActivity {
                         Toast.makeText(this, "Registration failed: " + detailedErrorMessage, Toast.LENGTH_LONG).show();
                     }
             ) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> headers = super.getHeaders();
+                    if (headers == null) {
+                        headers = new HashMap<>();
+                    }
+                    // Add ngrok skip browser warning header
+                    headers.put("ngrok-skip-browser-warning", "true");
+                    return headers;
+                }
+                
                 @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<>();
