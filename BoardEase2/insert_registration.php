@@ -55,6 +55,7 @@ if ($conn->connect_error) {
         "permits_received" => 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
@@ -73,8 +74,11 @@ if ($tableCheck->num_rows == 0) {
         "permits_received" => 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
-    $conn->close();
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit;
 } else {
     error_log("'registrations' table exists");
@@ -135,6 +139,7 @@ if (!$firstName || !$lastName || !$email || !$password) {
         "permits_received" => 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
@@ -244,8 +249,11 @@ try {
         "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
-    $conn->close();
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit;
 }
 
@@ -264,9 +272,14 @@ if (!$bindResult) {
         "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
-    $stmt->close();
-    $conn->close();
+    if (isset($stmt) && $stmt) {
+        $stmt->close();
+    }
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit;
 }
 
@@ -282,9 +295,14 @@ try {
             "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
         );
         ob_clean();
+        header('Content-Type: application/json');
         echo json_encode($response);
-        $stmt->close();
-        $conn->close();
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+        if (isset($conn) && $conn) {
+            $conn->close();
+        }
         exit;
     }
     
@@ -300,9 +318,14 @@ try {
             "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
         );
         ob_clean();
+        header('Content-Type: application/json');
         echo json_encode($response);
-        $stmt->close();
-        $conn->close();
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+        if (isset($conn) && $conn) {
+            $conn->close();
+        }
         exit;
     }
     
@@ -324,9 +347,14 @@ try {
         "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
     );
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
-    $stmt->close();
-    $conn->close();
+    if (isset($stmt) && $stmt) {
+        $stmt->close();
+    }
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit;
 }
 
@@ -378,40 +406,77 @@ if ($executeResult && $userId > 0) {
     $verificationCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
     $expiryTime = date('Y-m-d H:i:s', strtotime('+30 minutes'));
     
-    // Insert verification record
-    $verificationSql = "INSERT INTO email_verifications (user_id, email, verification_code, expiry_time, created_at) 
-                       VALUES (?, ?, ?, ?, NOW())";
-    $verificationStmt = $conn->prepare($verificationSql);
-    $verificationStmt->bind_param("isss", $userId, $email, $verificationCode, $expiryTime);
-    
-    if ($verificationStmt->execute()) {
-        // Send verification email
-        $emailSent = sendVerificationEmail($email, $firstName, $verificationCode);
+    // Insert verification record (with error handling)
+    try {
+        $verificationSql = "INSERT INTO email_verifications (user_id, email, verification_code, expiry_time, created_at) 
+                           VALUES (?, ?, ?, ?, NOW())";
+        $verificationStmt = $conn->prepare($verificationSql);
         
-        if ($emailSent) {
+        if (!$verificationStmt) {
+            error_log("Failed to prepare verification SQL: " . $conn->error);
             $response = array(
-                "success" => true,
-                "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
-                "requires_verification" => true,
+                "success" => true, // Registration succeeded, verification failed
+                "message" => "Registration successful! However, verification code could not be created. Please contact support.",
+                "requires_verification" => false,
                 "permits_received" => count($permitFiles),
                 "permits_inserted" => $permitsInserted
             );
         } else {
-            $response = array(
-                "success" => false,
-                "message" => "Registration created but failed to send verification email. Please contact support.",
-                "permits_received" => count($permitFiles)
-            );
+            $verificationStmt->bind_param("isss", $userId, $email, $verificationCode, $expiryTime);
+            
+            if ($verificationStmt->execute()) {
+                // Send verification email (with error handling)
+                $emailSent = false;
+                try {
+                    if (function_exists('sendVerificationEmail')) {
+                        $emailSent = sendVerificationEmail($email, $firstName, $verificationCode);
+                    } else {
+                        error_log("sendVerificationEmail function not found");
+                    }
+                } catch (Exception $e) {
+                    error_log("Error sending verification email: " . $e->getMessage());
+                }
+                
+                if ($emailSent) {
+                    $response = array(
+                        "success" => true,
+                        "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
+                        "requires_verification" => true,
+                        "permits_received" => count($permitFiles),
+                        "permits_inserted" => $permitsInserted
+                    );
+                } else {
+                    $response = array(
+                        "success" => true, // Registration succeeded, email failed
+                        "message" => "Registration successful! However, verification email could not be sent. Please contact support.",
+                        "requires_verification" => false,
+                        "permits_received" => count($permitFiles),
+                        "permits_inserted" => $permitsInserted
+                    );
+                }
+            } else {
+                error_log("Failed to execute verification SQL: " . $verificationStmt->error);
+                $response = array(
+                    "success" => true, // Registration succeeded, verification record failed
+                    "message" => "Registration successful! However, verification code could not be created. Please contact support.",
+                    "requires_verification" => false,
+                    "permits_received" => count($permitFiles),
+                    "permits_inserted" => $permitsInserted
+                );
+            }
+            
+            $verificationStmt->close();
         }
-    } else {
+    } catch (Exception $e) {
+        error_log("Exception in verification process: " . $e->getMessage());
         $response = array(
-            "success" => false,
-            "message" => "Registration failed to create verification record.",
-            "permits_received" => count($permitFiles)
+            "success" => true, // Registration succeeded, verification process failed
+            "message" => "Registration successful! However, verification setup encountered an error. Please contact support.",
+            "requires_verification" => false,
+            "permits_received" => count($permitFiles),
+            "permits_inserted" => $permitsInserted
         );
     }
-    
-    $verificationStmt->close();
     error_log("Registration submitted for verification - user: " . $email);
     error_log("Sending response: " . json_encode($response));
     
@@ -440,11 +505,16 @@ if ($executeResult && $userId > 0) {
     
     // Clear any buffered output and send JSON
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
     
     // Close resources after successful response
-    $stmt->close();
-    $conn->close();
+    if (isset($stmt) && $stmt) {
+        $stmt->close();
+    }
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit; // Exit to prevent further execution
 } else {
     $errorMsg = "Database insert error: " . ($stmt->error ?? "Unknown error");
@@ -457,11 +527,16 @@ if ($executeResult && $userId > 0) {
     );
     // Clear any buffered output and send JSON
     ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
     
     // Close resources after error response
-    $stmt->close();
-    $conn->close();
+    if (isset($stmt) && $stmt) {
+        $stmt->close();
+    }
+    if (isset($conn) && $conn) {
+        $conn->close();
+    }
     exit; // Exit to prevent further execution
 }
 
@@ -475,13 +550,30 @@ if ($executeResult && $userId > 0) {
     );
     // Clear any buffered output and send JSON
     ob_clean();
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+} catch (Error $e) {
+    error_log("Fatal error: " . $e->getMessage());
+    error_log("Fatal error trace: " . $e->getTraceAsString());
+    $response = array(
+        "success" => false,
+        "message" => "Server error: " . $e->getMessage(),
+        "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+    );
+    // Clear any buffered output and send JSON
+    ob_clean();
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
 
-function sendVerificationEmail($email, $firstName, $verificationCode) {
-    $subject = "Email Verification - BoardEase";
-    $message = "
+// Define sendVerificationEmail function if not already defined
+if (!function_exists('sendVerificationEmail')) {
+    function sendVerificationEmail($email, $firstName, $verificationCode) {
+        try {
+            $subject = "Email Verification - BoardEase";
+            $message = "
     <html>
     <head>
         <style>
@@ -534,9 +626,19 @@ function sendVerificationEmail($email, $firstName, $verificationCode) {
     </body>
     </html>
     ";
-    
-    // Use the configured email system (Gmail SMTP)
-    return sendEmail($email, $subject, $message);
+            
+            // Use the configured email system (Gmail SMTP)
+            if (function_exists('sendEmail')) {
+                return sendEmail($email, $subject, $message);
+            } else {
+                error_log("sendEmail function not available");
+                return false;
+            }
+        } catch (Exception $e) {
+            error_log("Error in sendVerificationEmail: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>
 
