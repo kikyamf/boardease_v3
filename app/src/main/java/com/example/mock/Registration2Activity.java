@@ -337,6 +337,22 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
             
+            // Business permits are required for BH Owner (at least one)
+            if (!isBoarder) {
+                boolean hasPermits = false;
+                for (PermitUploadItem item : permitUploadItems) {
+                    if (item.bitmap != null) {
+                        hasPermits = true;
+                        break;
+                    }
+                }
+                if (!hasPermits) {
+                    Log.d("REGISTRATION", "❌ Validation failed: No business permits uploaded (required for BH Owner)");
+                    Toast.makeText(this, "At least one business permit is required for BH Owner. Please upload your business permit(s).", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+            
             Log.d("REGISTRATION", "✅ All required bitmaps loaded successfully");
 
             // Set registering flag and disable button
@@ -349,7 +365,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("REGISTRATION", "File paths - Front: " + idFrontPath + ", Back: " + idBackPath);
             Log.d("REGISTRATION", "BirthDate being sent: '" + birthDate + "'");
 
-            String UPLOAD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/insert_registration.php";
+            String UPLOAD_URL = "http://192.168.1.6/BoardEase2/insert_registration.php";
             Log.d("REGISTRATION", "Upload URL: " + UPLOAD_URL);
             Log.d("REGISTRATION", "Creating VolleyMultipartRequest...");
 
@@ -600,6 +616,26 @@ public class Registration2Activity extends AppCompatActivity {
                         
                         params.put("idFrontFile", new DataPart("front.jpg", frontData));
                         params.put("idBackFile", new DataPart("back.jpg", backData));
+                        
+                        // Add business permit files (for BH Owner only)
+                        if (!isBoarder && !permitUploadItems.isEmpty()) {
+                            int permitIndex = 1;
+                            for (PermitUploadItem permitItem : permitUploadItems) {
+                                if (permitItem.bitmap != null) {
+                                    try {
+                                        byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
+                                        if (permitData != null) {
+                                            params.put("permitFile" + permitIndex, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                            Log.d("REGISTRATION", "Business permit " + permitIndex + " file data size: " + permitData.length);
+                                            permitIndex++;
+                                        }
+                                    } catch (Exception e) {
+                                        Log.e("REGISTRATION", "Error creating permit file data for permit " + permitIndex + ": " + e.getMessage());
+                                    }
+                                }
+                            }
+                            Log.d("REGISTRATION", "Total business permits added: " + (permitIndex - 1));
+                        }
                         
                         Log.d("REGISTRATION", "File data added successfully");
                     } catch (Exception e) {

@@ -2,7 +2,7 @@
 // insert_registration.php
 
 // Include email configuration
-require_once 'email_config.php';
+require_once '../email_config.php';
 
 // Disable error display to prevent HTML output
 error_reporting(E_ALL);
@@ -89,7 +89,7 @@ if (!$firstName || !$lastName || !$email || !$password) {
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 // Handle file uploads
-$uploadDir = "uploads/registrations/"; // make sure this folder exists and is writable
+$uploadDir = "../uploads/registrations/"; // make sure this folder exists and is writable
 
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
@@ -114,7 +114,7 @@ $idBackPath  = saveFile("idBackFile", $uploadDir);
 $gcashQRPath = saveFile("qrFile", $uploadDir);
 
 // Handle business permit uploads (for BH Owner only, up to 3 permits)
-$permitUploadDir = "uploads/business_permits/";
+$permitUploadDir = "../uploads/business_permits/";
 if (!is_dir($permitUploadDir)) {
     mkdir($permitUploadDir, 0777, true);
 }
@@ -302,3 +302,4 @@ function sendVerificationEmail($email, $firstName, $verificationCode) {
     return sendEmail($email, $subject, $message);
 }
 ?>
+
