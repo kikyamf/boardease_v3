@@ -40,6 +40,9 @@ $username   = "boardease"; // adjust if needed
 $password   = "boardease";     // adjust if needed
 $dbname     = "boardease2"; // adjust if needed
 
+// Enable mysqli exception mode
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
@@ -193,10 +196,24 @@ error_log("Permit files array: " . print_r($permitFiles, true));
 $sql = "INSERT INTO registrations
     (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr, status, created_at) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unverified', NOW())";
-$stmt = $conn->prepare($sql);
-if (!$stmt) {
-    error_log("SQL prepare error: " . $conn->error);
-    throw new Exception("SQL prepare error: " . $conn->error);
+
+try {
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("SQL prepare error: " . $conn->error);
+        throw new Exception("SQL prepare error: " . $conn->error);
+    }
+} catch (mysqli_sql_exception $e) {
+    error_log("SQL prepare exception: " . $e->getMessage());
+    $response = array(
+        "success" => false,
+        "message" => "Database error: " . $e->getMessage(),
+        "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+    );
+    ob_clean();
+    echo json_encode($response);
+    $conn->close();
+    exit;
 }
 
 $bindResult = $stmt->bind_param("ssssssssssssssss",
@@ -208,9 +225,42 @@ $bindResult = $stmt->bind_param("ssssssssssssssss",
 
 if (!$bindResult) {
     error_log("Bind param error: " . $stmt->error);
-    throw new Exception("Bind param error: " . $stmt->error);
+    $response = array(
+        "success" => false,
+        "message" => "Database error: " . $stmt->error,
+        "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+    );
+    ob_clean();
+    echo json_encode($response);
+    $stmt->close();
+    $conn->close();
+    exit;
 }
-if ($stmt->execute()) {
+
+try {
+    $executeResult = $stmt->execute();
+} catch (mysqli_sql_exception $e) {
+    error_log("SQL execution error: " . $e->getMessage());
+    $errorMessage = $e->getMessage();
+    
+    // Handle specific error cases
+    if (strpos($errorMessage, "Duplicate entry") !== false && strpos($errorMessage, "unique_email") !== false) {
+        $errorMessage = "This email is already registered. Please use a different email or try logging in.";
+    }
+    
+    $response = array(
+        "success" => false,
+        "message" => $errorMessage,
+        "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+    );
+    ob_clean();
+    echo json_encode($response);
+    $stmt->close();
+    $conn->close();
+    exit;
+}
+
+if ($executeResult) {
     $userId = $conn->insert_id;
     error_log("Registration inserted successfully. User ID: " . $userId);
     
