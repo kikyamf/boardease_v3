@@ -119,10 +119,16 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
                                 
                                 notifList.clear();
                                 
-                                // Add notifications with date headers
-                                addNotificationsWithHeaders(notifications);
+                                // Add notifications with date headers (filters duplicates)
+                                int uniqueUnreadCount = addNotificationsWithHeaders(notifications);
                                 
                                 android.util.Log.d("Notification", "After processing, notifList size: " + notifList.size());
+                                android.util.Log.d("Notification", "Unique unread count: " + uniqueUnreadCount);
+                                
+                                // Broadcast the unique unread count to update badges
+                                Intent badgeUpdateIntent = new Intent("com.example.mock.UPDATE_NOTIFICATION_BADGE");
+                                badgeUpdateIntent.putExtra("unread_count", uniqueUnreadCount);
+                                sendBroadcast(badgeUpdateIntent);
                                 
                                 // Update UI
                                 updateUI();
@@ -156,14 +162,40 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
         requestQueue.add(request);
     }
 
-    private void addNotificationsWithHeaders(JSONArray notifications) throws JSONException {
+    /**
+     * Add notifications with date headers and filter duplicates
+     * @return unique unread count (for badge)
+     */
+    private int addNotificationsWithHeaders(JSONArray notifications) throws JSONException {
         String currentDate = "";
+        int uniqueUnreadCount = 0;
+        
+        // Use a Set to track unique notifications and prevent duplicates
+        java.util.Set<String> seenNotifications = new java.util.HashSet<>();
         
         for (int i = 0; i < notifications.length(); i++) {
             JSONObject notif = notifications.getJSONObject(i);
             
+            // Create unique key for duplicate detection
+            String uniqueKey = createNotificationUniqueKey(notif);
+            
+            // Skip if we've already seen this notification
+            if (seenNotifications.contains(uniqueKey)) {
+                android.util.Log.d("Notification", "Skipping duplicate notification: " + uniqueKey);
+                continue;
+            }
+            
+            // Mark as seen
+            seenNotifications.add(uniqueKey);
+            
             String createdAt = notif.getString("notif_created_at");
             String notificationDate = getDateFromTimestamp(createdAt);
+            String status = notif.optString("notif_status", "unread");
+            
+            // Count unique unread notifications
+            if ("unread".equals(status)) {
+                uniqueUnreadCount++;
+            }
             
             // Add date header if date changed
             if (!notificationDate.equals(currentDate)) {
@@ -177,12 +209,73 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
                     notif.getString("notif_title"),
                     notif.getString("notif_message"),
                     notif.getString("notif_type"),
-                    notif.getString("notif_status"),
+                    status,
                     createdAt
             );
             
             notifList.add(notification);
         }
+        
+        android.util.Log.d("Notification", "Filtered duplicates. Final count: " + notifList.size() + 
+                          " (from " + notifications.length() + " total), Unique unread: " + uniqueUnreadCount);
+        
+        return uniqueUnreadCount;
+    }
+    
+    /**
+     * Create a unique key for notification to detect duplicates
+     * For message notifications, use message_id if available
+     * Otherwise use title + message + timestamp (rounded to minute)
+     */
+    private String createNotificationUniqueKey(JSONObject notif) throws JSONException {
+        String type = notif.getString("notif_type");
+        String title = notif.optString("notif_title", "");
+        String message = notif.optString("notif_message", "");
+        String createdAt = notif.optString("notif_created_at", "");
+        
+        // For message notifications, try to extract message_id from the message content
+        // or use sender + receiver info if available
+        if ("message".equals(type) || (title != null && title.contains("New Message")) || 
+            (message != null && message.contains("New message from"))) {
+            
+            // Try to extract message_id from message content or use content hash
+            // Format: "New message from [Sender]: [Message]"
+            if (message != null && message.contains("New message from")) {
+                // Extract sender name and message content
+                String[] parts = message.split(": ", 2);
+                if (parts.length == 2) {
+                    String senderPart = parts[0].replace("New message from ", "");
+                    String messageContent = parts[1];
+                    // Use sender + message content as unique key
+                    return "msg_" + senderPart.hashCode() + "_" + messageContent.hashCode();
+                }
+            }
+            
+            // Fallback: use title + message content
+            return "msg_" + title.hashCode() + "_" + message.hashCode();
+        }
+        
+        // For other notifications, use notif_id if available
+        if (notif.has("notif_id")) {
+            int notifId = notif.getInt("notif_id");
+            return "notif_" + notifId;
+        }
+        
+        // Last resort: use title + message + timestamp (rounded to minute to catch rapid duplicates)
+        String timestampKey = "";
+        if (!createdAt.isEmpty()) {
+            try {
+                java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                java.util.Date date = inputFormat.parse(createdAt);
+                // Round to nearest minute
+                long timeInMinutes = date.getTime() / 60000;
+                timestampKey = "_" + timeInMinutes;
+            } catch (Exception e) {
+                // Ignore parsing errors
+            }
+        }
+        
+        return "notif_" + title.hashCode() + "_" + message.hashCode() + timestampKey;
     }
 
     private String getDateFromTimestamp(String timestamp) {
