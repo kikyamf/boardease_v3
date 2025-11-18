@@ -43,10 +43,12 @@ $dbname     = "boardease2"; // adjust if needed
 // Enable mysqli exception mode
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+error_log("Attempting database connection - Server: " . $servername . ", Database: " . $dbname);
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
     error_log("Database connection failed: " . $conn->connect_error);
+    error_log("Connection error number: " . $conn->connect_errno);
     $response = array(
         "success" => false,
         "message" => "Database connection failed. Please try again later.",
@@ -55,6 +57,27 @@ if ($conn->connect_error) {
     ob_clean();
     echo json_encode($response);
     exit;
+}
+
+error_log("Database connection successful!");
+error_log("Current database: " . $conn->query("SELECT DATABASE()")->fetch_row()[0]);
+error_log("Auto-commit status: " . ($conn->autocommit(true) ? "enabled" : "disabled"));
+
+// Verify the registrations table exists
+$tableCheck = $conn->query("SHOW TABLES LIKE 'registrations'");
+if ($tableCheck->num_rows == 0) {
+    error_log("ERROR: 'registrations' table does not exist!");
+    $response = array(
+        "success" => false,
+        "message" => "Database error: 'registrations' table not found.",
+        "permits_received" => 0
+    );
+    ob_clean();
+    echo json_encode($response);
+    $conn->close();
+    exit;
+} else {
+    error_log("'registrations' table exists");
 }
 
 // Collect POST data
@@ -197,12 +220,18 @@ $sql = "INSERT INTO registrations
     (role, first_name, middle_name, last_name, birth_date, phone, address, email, password, gcash_num, valid_id_type, id_number, cb_agreed, idFrontFile, idBackFile, gcash_qr, status, created_at) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unverified', NOW())";
 
+error_log("Preparing SQL statement...");
+error_log("SQL: " . $sql);
+error_log("Data to insert - Role: " . ($role ?? "null") . ", Email: " . ($email ?? "null") . ", FirstName: " . ($firstName ?? "null"));
+
 try {
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         error_log("SQL prepare error: " . $conn->error);
+        error_log("Error number: " . $conn->errno);
         throw new Exception("SQL prepare error: " . $conn->error);
     }
+    error_log("SQL statement prepared successfully");
 } catch (mysqli_sql_exception $e) {
     error_log("SQL prepare exception: " . $e->getMessage());
     $response = array(
@@ -239,6 +268,43 @@ if (!$bindResult) {
 
 try {
     $executeResult = $stmt->execute();
+    
+    // Verify the insert actually happened
+    if (!$executeResult) {
+        error_log("Execute returned false. Error: " . $stmt->error);
+        $response = array(
+            "success" => false,
+            "message" => "Database insert failed: " . $stmt->error,
+            "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+        );
+        ob_clean();
+        echo json_encode($response);
+        $stmt->close();
+        $conn->close();
+        exit;
+    }
+    
+    $userId = $conn->insert_id;
+    
+    // Verify we got a valid insert ID
+    if ($userId <= 0) {
+        error_log("ERROR: Insert ID is invalid: " . $userId);
+        error_log("Affected rows: " . $conn->affected_rows);
+        $response = array(
+            "success" => false,
+            "message" => "Registration failed: No record was inserted into the database.",
+            "permits_received" => isset($permitFiles) ? count($permitFiles) : 0
+        );
+        ob_clean();
+        echo json_encode($response);
+        $stmt->close();
+        $conn->close();
+        exit;
+    }
+    
+    error_log("Registration inserted successfully. User ID: " . $userId);
+    error_log("Affected rows: " . $conn->affected_rows);
+    
 } catch (mysqli_sql_exception $e) {
     error_log("SQL execution error: " . $e->getMessage());
     $errorMessage = $e->getMessage();
@@ -260,9 +326,7 @@ try {
     exit;
 }
 
-if ($executeResult) {
-    $userId = $conn->insert_id;
-    error_log("Registration inserted successfully. User ID: " . $userId);
+if ($executeResult && $userId > 0) {
     
     // Insert business permits if any were uploaded (for BH Owner)
     // Check if role is NOT Boarder (could be "BH Owner" or other values)
@@ -342,6 +406,29 @@ if ($executeResult) {
     error_log("Registration submitted for verification - user: " . $email);
     error_log("Sending response: " . json_encode($response));
     
+    // Verify the record exists in the database before sending success
+    $verifySql = "SELECT reg_id, email, status FROM registrations WHERE reg_id = ?";
+    $verifyStmt = $conn->prepare($verifySql);
+    if ($verifyStmt) {
+        $verifyStmt->bind_param("i", $userId);
+        $verifyStmt->execute();
+        $verifyResult = $verifyStmt->get_result();
+        if ($verifyResult->num_rows > 0) {
+            $verifyRow = $verifyResult->fetch_assoc();
+            error_log("VERIFIED: Record exists in database - ID: " . $verifyRow['reg_id'] . ", Email: " . $verifyRow['email'] . ", Status: " . $verifyRow['status']);
+        } else {
+            error_log("ERROR: Record NOT found in database after insert! User ID: " . $userId);
+            $response = array(
+                "success" => false,
+                "message" => "Registration failed: Record was not saved to database.",
+                "permits_received" => count($permitFiles)
+            );
+        }
+        $verifyStmt->close();
+    } else {
+        error_log("WARNING: Could not prepare verification query: " . $conn->error);
+    }
+    
     // Clear any buffered output and send JSON
     ob_clean();
     echo json_encode($response);
@@ -351,8 +438,10 @@ if ($executeResult) {
     $conn->close();
     exit; // Exit to prevent further execution
 } else {
-    $errorMsg = "Database insert error: " . $stmt->error;
+    $errorMsg = "Database insert error: " . ($stmt->error ?? "Unknown error");
     error_log("Registration failed: " . $errorMsg);
+    error_log("Insert ID: " . ($conn->insert_id ?? "null"));
+    error_log("Affected rows: " . ($conn->affected_rows ?? "null"));
     $response = array(
         "success" => false,
         "message" => $errorMsg
