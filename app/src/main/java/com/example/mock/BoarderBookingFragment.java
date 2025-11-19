@@ -742,6 +742,11 @@ public class BoarderBookingFragment extends Fragment {
                         @Override
                         public void onResponse(String response) {
                             Log.d(TAG, "Unpaid breakdowns response: " + response);
+                            Log.d(TAG, "Response length: " + response.length());
+                            // Log first 500 chars to see the structure
+                            if (response.length() > 500) {
+                                Log.d(TAG, "Response preview: " + response.substring(0, 500));
+                            }
                             try {
                                 JSONObject jsonResponse = new JSONObject(response);
                                 if (jsonResponse.getBoolean("success")) {
@@ -755,10 +760,14 @@ public class BoarderBookingFragment extends Fragment {
                                     // Log each breakdown for debugging
                                     for (PaymentBreakdown breakdown : unpaidBreakdowns) {
                                         Log.d(TAG, "Breakdown: " + breakdown.getPeriodLabel() + 
-                                            " - Status: " + breakdown.getPaymentStatus() + 
+                                            " - Status: [" + breakdown.getPaymentStatus() + "]" + 
                                             " - Due: " + breakdown.getDueDate() + 
                                             " - Selected: " + breakdown.isSelected() + 
                                             " - Paid: " + breakdown.isPaid());
+                                        // Specifically check for "For Approval"
+                                        if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                                            Log.d(TAG, "✓ Found 'For Approval' status for: " + breakdown.getPeriodLabel());
+                                        }
                                     }
                                     
                                     if (unpaidBreakdowns.isEmpty()) {
@@ -933,44 +942,58 @@ public class BoarderBookingFragment extends Fragment {
                 tvAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", breakdown.getAmount()));
                 tvDueDate.setText("Due: " + breakdown.getDueDate());
                 
-                // Determine if this is current/overdue period (should be checked by default)
-                boolean isCurrentOrOverdue = false;
-                if ("Overdue".equals(breakdown.getPaymentStatus())) {
-                    isCurrentOrOverdue = true;
-                } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
-                    isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
-                }
-                
                 // Set checkbox styling - brown border and check when clicked
                 checkboxPeriod.setButtonTintList(getResources().getColorStateList(R.color.checkbox_brown));
                 
-                // Chronological validation: disable checkboxes if previous period is not checked
-                // First period is always enabled, others are disabled by default
-                if (i == 0) {
-                    // First checkbox is always enabled
-                    checkboxPeriod.setEnabled(true);
-                    checkboxPeriod.setAlpha(1.0f);
-                    // Check first period if it's current/overdue
-                    if (isCurrentOrOverdue) {
-                        checkboxPeriod.setChecked(true);
-                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                // Disable checkbox if status is "For Approval" (payment already submitted, waiting for owner approval)
+                if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                    checkboxPeriod.setEnabled(false);
+                    checkboxPeriod.setAlpha(0.5f);
+                    checkboxPeriod.setChecked(false);
+                    // Don't add to selected breakdowns - payment already submitted
+                } else {
+                    // Determine if this is current/overdue period (should be checked by default)
+                    boolean isCurrentOrOverdue = false;
+                    if ("Overdue".equals(breakdown.getPaymentStatus())) {
+                        isCurrentOrOverdue = true;
+                    } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
+                        isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
+                    }
+                    
+                    // Chronological validation: disable checkboxes if previous period is not checked
+                    // First period is always enabled, others are disabled by default
+                    if (i == 0) {
+                        // First checkbox is always enabled
+                        checkboxPeriod.setEnabled(true);
+                        checkboxPeriod.setAlpha(1.0f);
+                        // Check first period if it's current/overdue
+                        if (isCurrentOrOverdue) {
+                            checkboxPeriod.setChecked(true);
+                            selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                        } else {
+                            checkboxPeriod.setChecked(false);
+                        }
                     } else {
+                        // Later periods are disabled by default until previous one is checked
+                        checkboxPeriod.setEnabled(false);
+                        checkboxPeriod.setAlpha(0.5f); // Visual indication that it's disabled
                         checkboxPeriod.setChecked(false);
                     }
-                } else {
-                    // Later periods are disabled by default until previous one is checked
-                    checkboxPeriod.setEnabled(false);
-                    checkboxPeriod.setAlpha(0.5f); // Visual indication that it's disabled
-                    checkboxPeriod.setChecked(false);
                 }
                 
                 // Set status and colors
-                if ("Overdue".equals(breakdown.getPaymentStatus())) {
+                String status = breakdown.getPaymentStatus();
+                Log.d(TAG, "Setting status for " + breakdown.getPeriodLabel() + ": [" + status + "]");
+                if ("Overdue".equals(status)) {
                     tvStatus.setText("Overdue");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
                     if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
                         tvDueDate.setTextColor(getResources().getColor(R.color.red));
                     }
+                } else if ("For Approval".equals(status)) {
+                    tvStatus.setText("For Approval");
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Use pending style, or create a new one
+                    tvDueDate.setTextColor(getResources().getColor(R.color.orange));
                 } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty() && isDateDueSoon(breakdown.getDueDate())) {
                     tvStatus.setText("Due Soon");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_pending);

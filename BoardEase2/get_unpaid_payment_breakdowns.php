@@ -54,14 +54,15 @@ try {
             pb.is_selected,
             pb.is_paid,
             COALESCE(pb.due_date, pb.period_start_date) as due_date,
+            pb.payment_status as db_payment_status,
             CASE 
                 WHEN pb.is_paid = 1 THEN 'Paid'
                 WHEN pb.payment_status = 'Cancelled' THEN 'Cancelled'
                 WHEN pb.payment_status = 'For Approval' THEN 'For Approval'
-                WHEN COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue') THEN 'Overdue'
-                WHEN COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
-                     AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) 
-                     AND pb.payment_status IN ('Pending', 'Overdue') THEN 'Pending'
+                WHEN pb.payment_status = 'Overdue' OR (COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue')) THEN 'Overdue'
+                WHEN pb.payment_status = 'Pending' AND COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
+                     AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'Pending'
+                WHEN pb.payment_status IS NOT NULL THEN pb.payment_status
                 ELSE 'Pending'
             END as payment_status,
             pb.created_at,
@@ -95,8 +96,14 @@ try {
             $dueDateStr = $row['period_start_date'];
         }
         
-        // Log for debugging
-        error_log("Breakdown: ID=" . $row['breakdown_id'] . ", Label=" . $row['period_label'] . ", Status=" . $paymentStatus . ", Due=" . $dueDateStr . ", IsPaid=" . $row['is_paid']);
+        // Log for debugging - also log the raw database value
+        $dbStatus = isset($row['db_payment_status']) ? $row['db_payment_status'] : 'NULL';
+        error_log("Breakdown: ID=" . $row['breakdown_id'] . ", Label=" . $row['period_label'] . 
+                  ", DB Status=[" . $dbStatus . "]" . 
+                  ", Calculated Status=[" . $paymentStatus . "]" . 
+                  ", Due=" . $dueDateStr . 
+                  ", IsPaid=" . $row['is_paid'] . 
+                  ", PaymentID=" . ($row['payment_id'] ?? 'NULL'));
         
         $breakdown = array(
             'breakdown_id' => (int)$row['breakdown_id'],
