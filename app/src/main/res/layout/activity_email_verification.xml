@@ -68,7 +68,7 @@
             android:background="#F0F0F0"
             android:gravity="center"
             android:padding="12dp"
-            android:textColor="@android:color/holo_blue_dark"
+            android:textColor="#A18167"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -226,7 +226,7 @@
             android:focusable="true"
             android:padding="12dp"
             android:text="Back to Registration"
-            android:textColor="@android:color/holo_blue_dark"
+            android:textColor="#A18167"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -245,20 +245,19 @@
             app:layout_constraintTop_toBottomOf="@+id/tvTitle">
 
             <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="24dp"
-                android:src="@android:drawable/ic_dialog_info"
-                android:background="@android:color/holo_blue_light"
-                android:padding="16dp" />
+                android:src="@drawable/email1"
+                android:tint="#A18167" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="Waiting for Admin Approval"
-                android:textColor="@android:color/holo_blue_dark"
+                android:textColor="#A18167"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -278,8 +277,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/button_primary_background"
+                android:backgroundTint="#A18167"
                 android:text="Check Approval Status"
+                android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
