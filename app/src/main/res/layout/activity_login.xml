@@ -58,7 +58,8 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@drawable/email1"
-                android:contentDescription="Email Icon"/>
+                android:contentDescription="Email Icon"
+                android:tint="#A18167"/>
 
             <EditText
                 android:id="@+id/etEmail"
