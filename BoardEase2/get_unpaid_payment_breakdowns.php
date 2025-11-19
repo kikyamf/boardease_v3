@@ -40,6 +40,7 @@ try {
     // Fetch ALL unpaid payment breakdowns for this booking (current and future periods)
     // Show all breakdowns that are not paid, regardless of selection status (allows advance payment)
     // Also dynamically calculate if status should be 'Overdue' based on due_date
+    // If a breakdown is linked to a payment with "Pending" status, mark it as "For Approval"
     $sql = "
         SELECT 
             pb.breakdown_id,
@@ -58,7 +59,7 @@ try {
             CASE 
                 WHEN pb.is_paid = 1 THEN 'Paid'
                 WHEN pb.payment_status = 'Cancelled' THEN 'Cancelled'
-                WHEN pb.payment_status = 'For Approval' THEN 'For Approval'
+                WHEN pb.payment_id IS NOT NULL AND COALESCE(p.payment_status, '') = 'Pending' THEN 'For Approval'
                 WHEN pb.payment_status = 'Overdue' OR (COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue')) THEN 'Overdue'
                 WHEN pb.payment_status = 'Pending' AND COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
                      AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'Pending'
@@ -68,6 +69,7 @@ try {
             pb.created_at,
             pb.updated_at
         FROM payment_breakdowns pb
+        LEFT JOIN payments p ON pb.payment_id = p.payment_id
         WHERE pb.booking_id = :booking_id
             AND pb.is_paid = 0
             AND (pb.payment_status != 'Cancelled' OR pb.payment_status IS NULL)

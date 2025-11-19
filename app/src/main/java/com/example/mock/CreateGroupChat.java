@@ -146,7 +146,7 @@ public class CreateGroupChat extends AppCompatActivity {
     }
 
     private void loadAvailableMembers() {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
         Log.d("CreateGroupChat", "Loading members from: " + url);
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -277,7 +277,7 @@ public class CreateGroupChat extends AppCompatActivity {
         createGroupButton.setEnabled(false);
 
         // Use create_group_chat.php endpoint
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/create_group_chat.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/create_group_chat.php";
         
         // Prepare member IDs
         JSONArray memberIds = new JSONArray();

@@ -53,7 +53,7 @@ import java.util.Map;
 public class GuestHomeActivity extends AppCompatActivity {
 
     private static final String TAG = "GuestHomeActivity";
-    private static final String GET_ALL_BOARDING_HOUSES_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_all_boarding_houses_public.php";
+    private static final String GET_ALL_BOARDING_HOUSES_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_all_boarding_houses_public.php";
 
     // Views
     private EditText etSearch;
@@ -476,7 +476,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 if (imagePath.startsWith("http")) {
                     imagePaths.add(imagePath);
                 } else {
-                    imagePaths.add("https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + imagePath);
+                    imagePaths.add("https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imagePath);
                 }
             }
             
@@ -518,7 +518,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                                 if (imgPath.startsWith("/")) {
                                     imgPath = imgPath.substring(1);
                                 }
-                                fullUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + imgPath;
+                                fullUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imgPath;
                             }
                             // Avoid duplicates
                             if (!imagePaths.contains(fullUrl)) {
@@ -673,7 +673,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                         if (imgUrl.startsWith("/")) {
                             imgUrl = imgUrl.substring(1);
                         }
-                        finalUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + imgUrl;
+                        finalUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imgUrl;
                     }
                     imageUrls.add(finalUrl);
                     Log.d(TAG, "Adding image URL to slider: " + finalUrl);
@@ -685,7 +685,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 if (imageUrl.startsWith("/")) {
                     imageUrl = imageUrl.substring(1);
                 }
-                imageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + imageUrl;
+                imageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imageUrl;
             }
             imageUrls.add(imageUrl);
             Log.d(TAG, "Using single image URL: " + imageUrl);

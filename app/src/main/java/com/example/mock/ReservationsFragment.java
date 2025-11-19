@@ -33,7 +33,7 @@ import java.util.List;
 public class ReservationsFragment extends Fragment {
 
     private static final String TAG = "ReservationsFragment";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_all_bookings_logs.php";
+    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_all_bookings_logs.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyState;

@@ -54,7 +54,7 @@ import java.util.List;
 public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapter.OnFavoriteClickListener, BoardingHouseCarouselAdapter.OnFavoriteClickListener {
 
     private static final String TAG = "BoarderHomeFragment";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
     private static final String BOARDER_INFO_API = BASE_URL + "get_boarder_info.php";
     private static final String BOARDING_HOUSES_API = BASE_URL + "get_boarding_houses1.php";
 
@@ -1492,7 +1492,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 return;
             }
             
-            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + currentUserId;
+            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + currentUserId;
             android.util.Log.d("BoarderHomeFragment", "API URL: " + url);
             android.util.Log.d("BoarderHomeFragment", "=== Making API request ===");
             
@@ -1556,7 +1556,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 return;
             }
             
-            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + currentUserId;
+            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + currentUserId;
             android.util.Log.d("BoarderHomeFragment", "Notification API URL: " + url);
             android.util.Log.d("BoarderHomeFragment", "=== Making notification API request ===");
             

@@ -98,13 +98,13 @@ public class BoarderAccountSettingsFragment extends Fragment {
     //   - http://192.168.1.3/boardease_v3/get_boarder_info.php (common local IP)
     //   - http://localhost/boardease_v3/get_boarder_info.php (if using emulator)
     //   - http://10.0.2.2/boardease_v3/get_boarder_info.php (Android emulator localhost)
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarder_info.php";
     
     // ============================================================================
     // PRODUCTION (For final deployment with ngrok)
     // ============================================================================
     // Uncomment the line below and comment out the local URL above when deploying
-    // private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    // private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarder_info.php";
     // ============================================================================
     
     private static final String TAG = "BoarderAccountSettings";

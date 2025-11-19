@@ -148,7 +148,7 @@ public class ManageFragment extends Fragment {
     }
     
     private void fetchBoardingHouses(boolean showLoading) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
         
         // Show loading dialog only on first load or when explicitly requested
         if (showLoading && isFirstLoad) {
@@ -255,7 +255,7 @@ public class ManageFragment extends Fragment {
     }
     
     private void performDeleteBoardingHouse(int bhId) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/delete_boarding_house.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_boarding_house.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {

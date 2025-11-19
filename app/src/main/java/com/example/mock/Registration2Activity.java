@@ -397,7 +397,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("REGISTRATION", "File paths - Front: " + idFrontPath + ", Back: " + idBackPath);
             Log.d("REGISTRATION", "BirthDate being sent: '" + birthDate + "'");
 
-            String UPLOAD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/insert_registration.php";
+            String UPLOAD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/insert_registration.php";
             Log.d("REGISTRATION", "Upload URL: " + UPLOAD_URL);
             Log.d("REGISTRATION", "Creating VolleyMultipartRequest...");
 
@@ -441,31 +441,14 @@ public class Registration2Activity extends AppCompatActivity {
                             if (success) {
                                 Log.d("Registration2", "Registration successful");
                                 
-                                // Get registration ID from response
-                                int regId = obj.optInt("reg_id", 0);
-                                Log.d("Registration2", "Registration ID: " + regId);
-                                
-                                // Check if user is BH Owner and has business permits to save
-                                boolean isBHOwnerCheck = role != null && !role.equals("Boarder");
-                                boolean hasPermits = false;
-                                for (PermitUploadItem item : permitUploadItems) {
-                                    if (item.bitmap != null) {
-                                        hasPermits = true;
-                                        break;
-                                    }
+                                // Business permits are now saved together with registration
+                                int permitsInserted = obj.optInt("permits_inserted", 0);
+                                if (permitsInserted > 0) {
+                                    Log.d("Registration2", "Business permits saved: " + permitsInserted);
                                 }
                                 
-                                if (isBHOwnerCheck && hasPermits && regId > 0) {
-                                    // Save business permits separately using direct IP
-                                    Log.d("Registration2", "Saving business permits separately for reg_id: " + regId);
-                                    saveBusinessPermits(regId, () -> {
-                                        // After permits are saved, proceed with verification flow
-                                        proceedToVerification(obj, message);
-                                    });
-                                } else {
-                                    // No permits to save, proceed directly to verification
-                                    proceedToVerification(obj, message);
-                                }
+                                // Proceed directly to verification (permits already saved)
+                                proceedToVerification(obj, message);
                             } else {
                                 Log.d("Registration2", "Registration failed: " + message);
                                 // Handle specific error messages
@@ -667,9 +650,22 @@ public class Registration2Activity extends AppCompatActivity {
                         params.put("idFrontFile", new DataPart("front.jpg", frontData));
                         params.put("idBackFile", new DataPart("back.jpg", backData));
                         
-                        // Business permits are now saved separately after registration
-                        // Removed from initial registration request to avoid conflicts
-                        Log.d("REGISTRATION", "Business permits will be saved separately after registration");
+                        // Include business permits in registration request (for BH Owner)
+                        if (!isBoarder && !permitUploadItems.isEmpty()) {
+                            int permitIndex = 1;
+                            for (PermitUploadItem permitItem : permitUploadItems) {
+                                if (permitItem.bitmap != null) {
+                                    byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
+                                    if (permitData != null && permitData.length > 0) {
+                                        String permitKey = "permitFile" + permitIndex;
+                                        params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                        Log.d("REGISTRATION", "Added permit " + permitIndex + " to registration request (size: " + permitData.length + " bytes)");
+                                        permitIndex++;
+                                    }
+                                }
+                            }
+                            Log.d("REGISTRATION", "Total permits included in registration: " + (permitIndex - 1));
+                        }
                         
                         Log.d("REGISTRATION", "File data added successfully. Total files in request: " + params.size());
                         // Log all file keys for debugging
@@ -1120,7 +1116,7 @@ public class Registration2Activity extends AppCompatActivity {
         Log.d("REGISTRATION", "Registration ID: " + regId);
         
         // Use ngrok URL for saving business permits (same as registration)
-        String PERMITS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/save_business_permits.php";
+        String PERMITS_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/save_business_permits.php";
         Log.d("REGISTRATION", "Permits URL: " + PERMITS_URL);
         
         VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, PERMITS_URL,

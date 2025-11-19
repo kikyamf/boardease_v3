@@ -62,7 +62,7 @@ public class PrivateRoomsAdapter extends RecyclerView.Adapter<PrivateRoomsAdapte
         
         // Load first image if available
         if (room.imagePaths != null && !room.imagePaths.isEmpty()) {
-            String imageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + room.imagePaths.get(0);
+            String imageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + room.imagePaths.get(0);
             System.out.println("DEBUG: Loading room image: " + imageUrl);
             Glide.with(holder.itemView.getContext())
                     .load(imageUrl)

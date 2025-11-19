@@ -30,7 +30,7 @@ import java.util.List;
 public class TodayBookingsActivity extends AppCompatActivity {
 
     private static final String TAG = "TodayBookingsActivity";
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_today_bookings.php";
+    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_today_bookings.php";
 
     private int userId;
     private ProgressDialog progressDialog;

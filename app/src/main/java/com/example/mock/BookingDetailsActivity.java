@@ -741,7 +741,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
     private void loadPaymentProofForDialog(android.widget.ImageView imgPaymentProof, 
                                           TextView tvNoProof, LinearLayout layoutPaymentProof) {
         // Fetch payment proof from the booking's payment record
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_payment_proof_by_booking.php?booking_id=" + bookingData.getBookingId();
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_payment_proof_by_booking.php?booking_id=" + bookingData.getBookingId();
         
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         com.android.volley.toolbox.StringRequest stringRequest = new com.android.volley.toolbox.StringRequest(
@@ -767,7 +767,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
                             layoutPaymentProof.setVisibility(View.VISIBLE);
                             
                             // Build full URL
-                            String baseUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+                            String baseUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
                             String urlToProcess = proofUrl.trim();
                             String finalFullUrl;
                             
@@ -878,7 +878,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         // Make API call to approve booking
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/approve_booking.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/approve_booking.php";
         
         try {
             JSONObject requestBody = new JSONObject();
@@ -1081,7 +1081,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         // Make API call to decline booking
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/decline_booking.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/decline_booking.php";
         
         try {
             JSONObject requestBody = new JSONObject();

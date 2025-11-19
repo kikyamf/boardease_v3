@@ -49,8 +49,8 @@ public class ResetPasswordActivity extends AppCompatActivity {
     private boolean isConfirmPasswordVisible = false;
     private String resetToken;
 
-    private static final String UPDATE_PASSWORD_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/update_password.php";
-    private static final String VALIDATE_TOKEN_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/validate_reset_token.php";
+    private static final String UPDATE_PASSWORD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_password.php";
+    private static final String VALIDATE_TOKEN_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/validate_reset_token.php";
     private static final String TAG = "ResetPassword";
 
     @Override

@@ -67,7 +67,7 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
                 if (!cleanPath.startsWith("uploads/")) {
                     cleanPath = "uploads/" + cleanPath;
                 }
-                fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + cleanPath;
+                fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + cleanPath;
             }
             Glide.with(context)
                     .load(fullImageUrl)

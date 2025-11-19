@@ -3565,7 +3565,25 @@ $idFrontPath = saveFile("idFrontFile", $uploadDir);
 $idBackPath  = saveFile("idBackFile", $uploadDir);
 $gcashQRPath = saveFile("qrFile", $uploadDir);
 
+// Handle business permit file uploads (for BH Owner)
+$permitUploadDir = "uploads/business_permits/";
+if (!is_dir($permitUploadDir)) {
+    mkdir($permitUploadDir, 0777, true);
+    error_log("Created business permits directory: " . $permitUploadDir);
+}
+
+$permitFiles = array();
+for ($i = 1; $i <= 3; $i++) {
+    $permitKey = "permitFile" . $i;
+    $permitPath = saveFile($permitKey, $permitUploadDir);
+    if ($permitPath) {
+        $permitFiles[$i] = $permitPath;
+        error_log("Successfully saved permit file " . $i . " to: " . $permitPath);
+    }
+}
+
 error_log("File upload results - Front: " . ($idFrontPath ?: "null") . ", Back: " . ($idBackPath ?: "null") . ", QR: " . ($gcashQRPath ?: "null"));
+error_log("Business permit files uploaded: " . count($permitFiles));
 
 // Check role - GCash QR code is only required for BH Owner
 $isBoarder = ($role === "Boarder");
@@ -3663,6 +3681,41 @@ if (!$bindResult) {
 if ($stmt->execute()) {
     $userId = $conn->insert_id;
     
+    // Insert business permits if any were uploaded (for BH Owner only)
+    $isBHOwner = ($role !== "Boarder" && $role !== null);
+    $permitsInserted = 0;
+    
+    if (!empty($permitFiles) && $isBHOwner) {
+        error_log("Attempting to insert " . count($permitFiles) . " business permit(s) for user " . $userId);
+        $permitSql = "INSERT INTO bs_permits (reg_id, permit_file, permit_number, created_at) VALUES (?, ?, ?, NOW())";
+        
+        foreach ($permitFiles as $permitNumber => $permitPath) {
+            error_log("Inserting permit " . $permitNumber . " with path: " . $permitPath);
+            $permitStmt = $conn->prepare($permitSql);
+            
+            if ($permitStmt) {
+                $permitStmt->bind_param("isi", $userId, $permitPath, $permitNumber);
+                if (!$permitStmt->execute()) {
+                    error_log("Failed to insert business permit " . $permitNumber . ": " . $permitStmt->error);
+                } else {
+                    $permitsInserted++;
+                    error_log("Successfully inserted business permit " . $permitNumber . " for user " . $userId . " (permit_id: " . $conn->insert_id . ")");
+                }
+                $permitStmt->close();
+            } else {
+                error_log("Failed to prepare permit insert statement for permit " . $permitNumber . ": " . $conn->error);
+            }
+        }
+        error_log("Total permits inserted: " . $permitsInserted . " out of " . count($permitFiles));
+    } else {
+        if (empty($permitFiles)) {
+            error_log("No permit files to insert (empty array)");
+        }
+        if (!$isBHOwner) {
+            error_log("User is not a BH Owner (role: '" . $role . "'), skipping permit insertion");
+        }
+    }
+    
     // Generate and send verification code
     $verificationCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
     $expiryTime = date('Y-m-d H:i:s', strtotime('+30 minutes'));
@@ -3680,7 +3733,8 @@ if ($stmt->execute()) {
         $response = array(
             "success" => true,
             "message" => "Registration successful! Please check your email for verification code. You have 30 minutes to verify your account.",
-            "requires_verification" => true
+            "requires_verification" => true,
+            "permits_inserted" => $permitsInserted
         );
         error_log("Registration SUCCESS - sending immediate response");
         
@@ -3761,6 +3815,13 @@ function sendVerificationEmail($email, $firstName, $verificationCode) {
             }
             .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
             .warning { background-color: #ffeb3b; padding: 10px; border-left: 4px solid #ff9800; margin: 15px 0; }
+            .verification-link { 
+                margin: 20px 0; 
+                padding: 15px; 
+                background-color: #f8f9fa; 
+                border-left: 4px solid #007bff; 
+                border-radius: 5px; 
+            }
         </style>
     </head>
     <body>
@@ -3775,9 +3836,11 @@ function sendVerificationEmail($email, $firstName, $verificationCode) {
                 <div class='verification-code'>" . $verificationCode . "</div>
                 
                 <div class='verification-link'>
-                    <p><strong>Quick Access:</strong> Click the link below to open the verification screen directly in the BoardEase app:</p>
-                    <p><a href='https://boardease.app/verify?email=" . urlencode($email) . "' style='color: #007bff; text-decoration: underline; font-weight: bold; font-size: 16px; display: block; margin: 10px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #007bff; border-radius: 5px;'>Open Verification Screen in BoardEase App</a></p>
-                    <p style='font-size: 12px; color: #666;'>If the link doesn't work, make sure you have the BoardEase app installed on your device.</p>
+                    <p><strong>Quick Access:</strong> Click the button below to open the verification screen directly in the BoardEase app:</p>
+                    <div style='text-align: center; margin: 20px 0;'>
+                        <a href='https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/verify.php?email=" . urlencode($email) . "' style='display: inline-block; padding: 14px 40px; background-color: #A18167; color: #FFFFFF !important; text-decoration: none !important; border-radius: 5px; font-size: 16px; font-weight: bold; border: 2px solid #A18167;'>Open Verification Screen</a>
+                    </div>
+                    <p style='font-size: 12px; color: #666; margin-top: 10px;'><strong>Note:</strong> Clicking the button will open a page that will immediately try to open the BoardEase app. If Android shows an app chooser, please select <strong>BoardEase</strong> and choose <strong>&quot;Always&quot;</strong> to set it as default.</p>
                 </div>
                 
                 <div class='warning'>

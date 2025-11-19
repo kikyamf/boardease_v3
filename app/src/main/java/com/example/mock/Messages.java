@@ -232,7 +232,7 @@ public class Messages extends AppCompatActivity {
     }
 
     private void loadUsersForMessaging() {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
         
         Log.d("Messages", "Loading users from URL: " + url);
         
@@ -316,7 +316,7 @@ public class Messages extends AppCompatActivity {
         if (showLoading) {
             showProgressDialog("Loading messages...");
         }
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_chat_list.php?user_id=" + currentUserId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_chat_list.php?user_id=" + currentUserId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -544,7 +544,7 @@ public class Messages extends AppCompatActivity {
 
     private void updateSuggestions(String query, List<ProfileModel> suggestions, SearchResultAdapter adapter) {
         // Use search_users.php endpoint for real-time search
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/search_users.php?current_user_id=" + currentUserId + "&search_term=" + query;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/search_users.php?current_user_id=" + currentUserId + "&search_term=" + query;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -662,7 +662,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void deleteChat(ChatModel chat) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/delete_chat.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
         
         android.util.Log.d("DeleteChat", "=== DELETING CHAT ===");
         android.util.Log.d("DeleteChat", "URL: " + url);

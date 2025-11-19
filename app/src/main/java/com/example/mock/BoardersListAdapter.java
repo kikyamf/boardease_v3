@@ -80,7 +80,7 @@ public class BoardersListAdapter extends RecyclerView.Adapter<BoardersListAdapte
 
         // Set profile picture with rounded corners (matching booking card style)
         if (boarder.getProfilePicture() != null && !boarder.getProfilePicture().isEmpty()) {
-            String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + boarder.getProfilePicture();
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + boarder.getProfilePicture();
             Glide.with(holder.itemView.getContext())
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)

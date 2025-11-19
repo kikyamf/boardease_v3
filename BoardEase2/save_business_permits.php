@@ -64,7 +64,7 @@ try {
     error_log("Processing business permits for registration ID: " . $regId);
 
     // Verify the registration exists
-    $verifySql = "SELECT reg_id, email, status FROM registrations WHERE reg_id = ?";
+    $verifySql = "SELECT id, email, status FROM registrations WHERE id = ?";
     $verifyStmt = $conn->prepare($verifySql);
     if (!$verifyStmt) {
         error_log("Failed to prepare verification query: " . $conn->error);
@@ -98,7 +98,7 @@ try {
     }
 
     $verifyRow = $verifyResult->fetch_assoc();
-    error_log("Registration found - ID: " . $verifyRow['reg_id'] . ", Email: " . $verifyRow['email'] . ", Status: " . $verifyRow['status']);
+    error_log("Registration found - ID: " . $verifyRow['id'] . ", Email: " . $verifyRow['email'] . ", Status: " . $verifyRow['status']);
     $verifyStmt->close();
 
     // Handle business permit file uploads

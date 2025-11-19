@@ -35,7 +35,7 @@ import java.util.Map;
 public class OwnerProfileFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
-    private static final String GET_OWNER_PROFILE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_owner_profile.php";
+    private static final String GET_OWNER_PROFILE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_profile.php";
     private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
@@ -198,7 +198,7 @@ public class OwnerProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicPath;
                 // Check if fragment is still attached before loading image
                 if (isAdded() && getContext() != null) {
                     Glide.with(requireContext())

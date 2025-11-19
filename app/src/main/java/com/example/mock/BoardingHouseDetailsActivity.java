@@ -48,7 +48,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private static final String TAG = "BoardingHouseDetails";
     // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
     private static final String API_URL = BASE_URL + "get_boarding_house_details1.php";
     
     private ViewPager2 viewPagerImages;
@@ -351,7 +351,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                         if (response.trim().startsWith("<!DOCTYPE html>") || (response.contains("ngrok") && response.contains("<html"))) {
                             Log.e(TAG, "Received ngrok warning page instead of JSON");
                             Log.e(TAG, "Full response: " + response);
-                            Log.e(TAG, "SOLUTION: Visit https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarding_house_details1.php in your browser first");
+                            Log.e(TAG, "SOLUTION: Visit https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarding_house_details1.php in your browser first");
                             Toast.makeText(BoardingHouseDetailsActivity.this, "Ngrok warning! Visit API URL in browser first.", Toast.LENGTH_LONG).show();
                             // Show fallback data for mock listings
                             showFallbackData();

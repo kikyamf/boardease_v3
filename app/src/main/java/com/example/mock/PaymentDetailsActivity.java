@@ -499,7 +499,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             layoutPaymentProof.setVisibility(View.VISIBLE);
             
             // Build full URL if it's a relative path
-            String baseUrl = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/";
+            String baseUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
             String urlToProcess = paymentProofUrl.trim();
             String finalFullUrl;
             

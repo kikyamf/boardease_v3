@@ -101,7 +101,7 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
             showProgressDialog("Loading notifications...");
         }
         
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + currentUserId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + currentUserId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -354,7 +354,7 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
     }
 
     private void markNotificationAsRead(int notifId) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/mark_notification_read.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/mark_notification_read.php";
         
         JSONObject params = new JSONObject();
         try {
@@ -415,7 +415,7 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
     private void markAllNotificationsAsRead() {
         android.util.Log.d("NotificationBadge", "markAllNotificationsAsRead() called for user: " + currentUserId);
         android.util.Log.d("NotificationBadge", "SharedPreferences user_id: " + sharedPreferences.getString("user_id", "1"));
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/mark_all_notifications_read.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/mark_all_notifications_read.php";
         
         JSONObject params = new JSONObject();
         try {

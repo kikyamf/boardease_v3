@@ -241,7 +241,7 @@ public class Conversation extends AppCompatActivity {
         android.util.Log.d("Conversation", "Other user ID: " + otherUserId);
         android.util.Log.d("Conversation", "Group ID: " + groupId);
         
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/mark_specific_messages_read.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/mark_specific_messages_read.php";
         
         JSONObject jsonObject = new JSONObject();
         try {
@@ -300,14 +300,14 @@ public class Conversation extends AppCompatActivity {
         String url = "";
         
         if (chatType.equals("individual")) {
-            url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_messages.php?user1_id=" + currentUserId + "&user2_id=" + otherUserId;
+            url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_messages.php?user1_id=" + currentUserId + "&user2_id=" + otherUserId;
             android.util.Log.d("LoadMessages", "=== LOADING INDIVIDUAL MESSAGES ===");
             android.util.Log.d("LoadMessages", "URL: " + url);
             android.util.Log.d("LoadMessages", "User1 ID: " + currentUserId);
             android.util.Log.d("LoadMessages", "User2 ID: " + otherUserId);
         } else {
             // Group chat
-            url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_group_messages.php?group_id=" + groupId + "&current_user_id=" + currentUserId;
+            url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_group_messages.php?group_id=" + groupId + "&current_user_id=" + currentUserId;
             android.util.Log.d("LoadMessages", "=== LOADING GROUP MESSAGES ===");
             android.util.Log.d("LoadMessages", "URL: " + url);
             android.util.Log.d("LoadMessages", "Group ID: " + groupId);
@@ -509,7 +509,7 @@ public class Conversation extends AppCompatActivity {
     }
 
     private void sendIndividualMessageWithNotification(String messageText, MessageModel messageModel) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/send_message.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/send_message.php";
         
         android.util.Log.d("SendMessage", "=== SENDING INDIVIDUAL MESSAGE ===");
         android.util.Log.d("SendMessage", "URL: " + url);
@@ -577,7 +577,7 @@ public class Conversation extends AppCompatActivity {
     }
 
     private void sendGroupMessageWithNotification(String messageText, MessageModel messageModel) {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/send_group_message.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/send_group_message.php";
         
         android.util.Log.d("SendGroupMessage", "=== SENDING GROUP MESSAGE ===");
         android.util.Log.d("SendGroupMessage", "URL: " + url);
@@ -653,7 +653,7 @@ public class Conversation extends AppCompatActivity {
 
     private void showGroupMembers() {
         // Use get_group_members.php endpoint to get real group members
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_group_members.php?group_id=" + groupId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_group_members.php?group_id=" + groupId;
         
         android.util.Log.d("GroupMembers", "=== LOADING GROUP MEMBERS ===");
         android.util.Log.d("GroupMembers", "URL: " + url);

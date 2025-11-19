@@ -94,7 +94,7 @@ public class BoarderAccountSettingsActivity extends AppCompatActivity {
     private static final String KEY_ADDRESS = "address";
     
     // API URL
-    private static final String API_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_boarder_info.php";
+    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarder_info.php";
     
     private static final String TAG = "BoarderAccountSettings";
 

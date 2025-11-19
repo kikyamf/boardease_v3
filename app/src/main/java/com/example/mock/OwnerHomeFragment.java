@@ -328,7 +328,7 @@ public class OwnerHomeFragment extends Fragment {
     }
 
     private void fetchOwnerDashboardData() {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_owner_dashboard.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_dashboard.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -425,7 +425,7 @@ public class OwnerHomeFragment extends Fragment {
     private void checkUnreadMessages() {
         android.util.Log.d("MessageBadge", "Checking unread messages for user: " + userId);
         
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + userId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_unread_count.php?user_id=" + userId;
         
         JsonObjectRequest request = new JsonObjectRequest(
             Request.Method.GET, url, null,
@@ -555,7 +555,7 @@ public class OwnerHomeFragment extends Fragment {
         
         android.util.Log.d("NotificationBadge", "Checking unread notifications for user: " + userId);
         // Use get_notifications.php to get full list and filter duplicates
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + userId;
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_notifications.php?user_id=" + userId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
             response -> {

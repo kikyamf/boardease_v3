@@ -392,7 +392,7 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Make API call to validate email
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/validate_email_robust.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/validate_email_robust.php";
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
@@ -468,7 +468,7 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Make API call to validate email
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/validate_email_robust.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/validate_email_robust.php";
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
@@ -1095,7 +1095,7 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     private void loadProvinces() {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=provinces";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=provinces";
         
         Log.d("AddressPicker", "Loading provinces from: " + url);
         
@@ -1242,7 +1242,7 @@ public class RegistrationActivity extends AppCompatActivity {
     
     private void loadMunicipalities(String province) {
         try {
-            String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=municipalities&province_name=" + URLEncoder.encode(province, "UTF-8");
+            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=municipalities&province_name=" + URLEncoder.encode(province, "UTF-8");
         
         com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
             com.android.volley.Request.Method.GET, url, null,

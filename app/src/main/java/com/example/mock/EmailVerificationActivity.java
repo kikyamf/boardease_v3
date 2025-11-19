@@ -62,7 +62,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
      * Check if email is already verified before showing verification screen
      */
     private void checkVerificationStatus() {
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/email_verification.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/email_verification.php";
         
         RequestQueue queue = Volley.newRequestQueue(this);
         
@@ -447,7 +447,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
         
         // Make API call to verify code
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/email_verification.php"; // Adjust URL as needed
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/email_verification.php"; // Adjust URL as needed
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
@@ -511,7 +511,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
         
         // Make API call to resend code
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/email_verification.php"; // Adjust URL as needed
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/email_verification.php"; // Adjust URL as needed
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
@@ -624,7 +624,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
         Log.d("EmailVerification", "Automatic checker running: " + isApprovalCheckerRunning);
         
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/check_approval_status.php"; // New endpoint to check approval
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/check_approval_status.php"; // New endpoint to check approval
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
             new Response.Listener<String>() {
