@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -180,19 +181,22 @@
         </LinearLayout>
 
         <!-- Continue as Guest -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGuest"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="100dp"
-            android:background="@drawable/guest_button_border"
             android:text="Continue as Guest"
             android:textAllCaps="false"
-            android:textColor="#A18167"
+            android:textColor="@color/brown"
             android:textSize="16sp"
+            android:backgroundTint="@android:color/white"
+            app:cornerRadius="8dp"
+            app:strokeColor="@color/brown"
+            app:strokeWidth="2dp"
             android:drawableStart="@drawable/ic_person1"
             android:drawablePadding="8dp"
-            android:drawableTint="#A18167" />
+            android:drawableTint="@color/brown" />
 
 
     </LinearLayout>
