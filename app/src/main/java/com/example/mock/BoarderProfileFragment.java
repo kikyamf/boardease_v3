@@ -52,7 +52,7 @@ public class BoarderProfileFragment extends Fragment {
     private android.widget.Button btnLogout;
     
     // Image handling
-    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private ActivityResultLauncher<String[]> requestMultiplePermissionsLauncher;
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<String> galleryLauncher;
     private Uri cameraImageUri;
@@ -132,11 +132,18 @@ public class BoarderProfileFragment extends Fragment {
     }
     
     private void initializeImageHandlers() {
-        // Permission request launcher
-        requestPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
+        // Multiple permissions request launcher
+        requestMultiplePermissionsLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                permissions -> {
+                    boolean allGranted = true;
+                    for (Boolean isGranted : permissions.values()) {
+                        if (!isGranted) {
+                            allGranted = false;
+                            break;
+                        }
+                    }
+                    if (allGranted) {
                         showImageSourceDialog();
                     } else {
                         Toast.makeText(getContext(), "Permission denied. Cannot access camera or gallery.", Toast.LENGTH_SHORT).show();
@@ -475,17 +482,29 @@ public class BoarderProfileFragment extends Fragment {
     }
     
     private void openImageSelector() {
-        // Check permissions first
-        String permission;
+        // Check permissions first - need both CAMERA and storage permissions
+        String storagePermission;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permission = Manifest.permission.READ_MEDIA_IMAGES;
+            storagePermission = Manifest.permission.READ_MEDIA_IMAGES;
         } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+            storagePermission = Manifest.permission.READ_EXTERNAL_STORAGE;
         }
-
-        if (ContextCompat.checkSelfPermission(getContext(), permission) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(permission);
+        
+        String cameraPermission = Manifest.permission.CAMERA;
+        
+        boolean hasStoragePermission = ContextCompat.checkSelfPermission(getContext(), storagePermission) == PackageManager.PERMISSION_GRANTED;
+        boolean hasCameraPermission = ContextCompat.checkSelfPermission(getContext(), cameraPermission) == PackageManager.PERMISSION_GRANTED;
+        
+        if (!hasStoragePermission || !hasCameraPermission) {
+            // Request both permissions at once
+            java.util.ArrayList<String> permissionsToRequest = new java.util.ArrayList<>();
+            if (!hasStoragePermission) {
+                permissionsToRequest.add(storagePermission);
+            }
+            if (!hasCameraPermission) {
+                permissionsToRequest.add(cameraPermission);
+            }
+            requestMultiplePermissionsLauncher.launch(permissionsToRequest.toArray(new String[0]));
         } else {
             showImageSourceDialog();
         }
