@@ -107,6 +107,8 @@ public class BoarderBookingFragment extends Fragment {
     
     // Payment dialog references for image handling
     private View currentPaymentDialogView;
+    private AlertDialog paymentBreakdownsDialog; // Reference to payment breakdowns dialog
+    private int currentBookingIdForPayment = 0; // Track which booking's payment breakdowns are shown
     
     // Activity result launchers for image picking
     private ActivityResultLauncher<String> cashImagePickerLauncher;
@@ -872,6 +874,12 @@ public class BoarderBookingFragment extends Fragment {
             View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_unpaid_payments, null);
             builder.setView(dialogView);
             
+            // Store dialog reference and booking ID for later refresh
+            AlertDialog dialog = builder.create();
+            paymentBreakdownsDialog = dialog;
+            currentBookingIdForPayment = bookingId;
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
             // Initialize views
             ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
             TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
@@ -1049,11 +1057,14 @@ public class BoarderBookingFragment extends Fragment {
             // Update total for initially selected items
             updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
             
-            AlertDialog dialog = builder.create();
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            // Show the dialog (already created and stored above)
             dialog.show();
             
-            btnClose.setOnClickListener(v -> dialog.dismiss());
+            btnClose.setOnClickListener(v -> {
+                paymentBreakdownsDialog = null;
+                currentBookingIdForPayment = 0;
+                dialog.dismiss();
+            });
             
             // Proceed to Payment button
             btnProceedToPayment.setOnClickListener(v -> {
@@ -1469,10 +1480,26 @@ public class BoarderBookingFragment extends Fragment {
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
                                 currentPaymentDialogView = null;
-                                dialog.dismiss();
+                                dialog.dismiss(); // Close payment method dialog
+                                
+                                // Close payment breakdowns dialog if it's open
+                                if (paymentBreakdownsDialog != null && paymentBreakdownsDialog.isShowing()) {
+                                    paymentBreakdownsDialog.dismiss();
+                                    paymentBreakdownsDialog = null;
+                                }
+                                
                                 Toast.makeText(getContext(), "Payment submitted successfully!", Toast.LENGTH_LONG).show();
-                                // Refresh bookings
+                                
+                                // Refresh bookings and payment breakdowns
                                 loadBookingData();
+                                
+                                // Refresh payment breakdowns for the current booking if dialog was open
+                                if (currentBookingIdForPayment > 0) {
+                                    // Small delay to ensure database is updated, then refresh
+                                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                        fetchUnpaidPaymentBreakdowns(currentBookingIdForPayment);
+                                    }, 1000); // 1 second delay
+                                }
                             } else {
                                 String error = jsonResponse.optString("error", "Failed to submit payment");
                                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
