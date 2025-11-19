@@ -100,6 +100,17 @@ public class RegistrationActivity extends AppCompatActivity {
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        
+        // Setup back button
+        ImageView backButton = findViewById(R.id.backButton);
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> {
+                // Go back to Login activity
+                Intent intent = new Intent(RegistrationActivity.this, Login.class);
+                startActivity(intent);
+                finish();
+            });
+        }
 
         // Add real-time email validation
         etEmail.addTextChangedListener(new android.text.TextWatcher() {

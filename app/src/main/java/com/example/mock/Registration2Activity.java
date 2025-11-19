@@ -152,6 +152,15 @@ public class Registration2Activity extends AppCompatActivity {
                 permitImageLaunchers.add(permitLauncher);
             }
             
+            // Setup back button
+            ImageView backButton = findViewById(R.id.backButton);
+            if (backButton != null) {
+                backButton.setOnClickListener(v -> {
+                    // Go back to RegistrationActivity
+                    finish();
+                });
+            }
+            
             // Create first permit upload item
             createPermitUploadItem();
             // Setup add permit button
