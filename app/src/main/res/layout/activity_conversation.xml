@@ -128,7 +128,8 @@
         <LinearLayout
             android:id="@+id/messageBox"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
             android:orientation="horizontal"
             android:padding="8dp"
             android:background="#FAFAFA"
@@ -137,26 +138,31 @@
             <EditText
                 android:id="@+id/editMessage"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minHeight="40dp"
+                android:maxHeight="120dp"
                 android:hint="Write your message"
                 android:background="@drawable/edittext_background"
                 android:padding="10dp"
                 android:textSize="14sp"
                 android:textColor="@color/black"
                 android:textColorHint="#999999"
-                android:singleLine="true"
+                android:inputType="textMultiLine|textCapSentences"
                 android:imeOptions="actionSend"
-                android:inputType="text"/>
+                android:gravity="top|start"
+                android:scrollbars="vertical"
+                android:maxLines="5"
+                android:overScrollMode="always"/>
 
             <ImageButton
                 android:id="@+id/btnSend"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_marginStart="8dp"
                 android:background="@android:color/transparent"
-                android:src="@drawable/send_icon"
-
+                android:src="@drawable/ic_send"
+                android:tint="@color/brown"
                 android:contentDescription="Send"
                 android:scaleType="centerInside"/>
         </LinearLayout>

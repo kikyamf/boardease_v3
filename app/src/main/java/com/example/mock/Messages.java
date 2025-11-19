@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -44,6 +45,7 @@ public class Messages extends AppCompatActivity {
     private CardView layoutEmptyChatList;
     private LinearLayout layoutEmptyProfileList;
     private View dividerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private RequestQueue requestQueue;
     private int currentUserId;
     private String currentUserType;
@@ -54,6 +56,7 @@ public class Messages extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private static int nextGroupId = 10; // For tracking new group chats
     private boolean isFirstLoad = true; // Flag to control loading dialog
+    private int refreshCallCount = 0; // Track refresh API calls
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +104,7 @@ public class Messages extends AppCompatActivity {
         chatListRecyclerView = findViewById(R.id.chatListRecyclerView);
         layoutEmptyChatList = findViewById(R.id.layoutEmptyChatList);
         layoutEmptyProfileList = findViewById(R.id.layoutEmptyProfileList);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         // Back button action
         backButton.setOnClickListener(v -> finish());
@@ -135,9 +139,44 @@ public class Messages extends AppCompatActivity {
         // Setup RecyclerViews
         setupRecyclerViews();
         
+        // Setup pull-to-refresh
+        setupSwipeRefresh();
+        
         // Load real data from database
         loadUsersForMessaging();
         loadChatList();
+    }
+    
+    private void setupSwipeRefresh() {
+        if (swipeRefreshLayout == null) {
+            Log.e("Messages", "SwipeRefreshLayout is null! Check if the view ID is correct in the layout file.");
+            return;
+        }
+        
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            // Reset counter for tracking refresh calls
+            refreshCallCount = 0;
+            // Refresh both profile list and chat list
+            loadUsersForMessaging(true); // Pass true to indicate it's a refresh
+            loadChatList(false, true); // Don't show loading dialog when refreshing, but mark as refresh
+        });
+        
+        // Set refresh colors (optional - customize as needed)
+        swipeRefreshLayout.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        );
+    }
+    
+    private void stopRefreshIfComplete() {
+        refreshCallCount++;
+        // Both calls complete (loadUsersForMessaging and loadChatList)
+        if (refreshCallCount >= 2 && swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(false);
+            refreshCallCount = 0; // Reset for next refresh
+        }
     }
     
     @Override
@@ -193,6 +232,7 @@ public class Messages extends AppCompatActivity {
             Intent intent = new Intent(Messages.this, Conversation.class);
             intent.putExtra("chatName", profile.getName());
             intent.putExtra("chatImage", profile.getImageResId());
+            intent.putExtra("profilePictureUrl", profile.getProfilePictureUrl());
             intent.putExtra("chatId", profile.getUserId());
             intent.putExtra("chatType", "individual");
             intent.putExtra("otherUserId", profile.getUserId());
@@ -214,6 +254,7 @@ public class Messages extends AppCompatActivity {
                 Intent intent = new Intent(Messages.this, Conversation.class);
                 intent.putExtra("chatName", chat.getName());
                 intent.putExtra("chatImage", chat.getImageResId());
+                intent.putExtra("profilePictureUrl", chat.getProfilePictureUrl());
                 intent.putExtra("chatId", chat.getChatId());
                 intent.putExtra("chatType", chat.getChatType());
                 intent.putExtra("otherUserId", chat.getOtherUserId());
@@ -232,6 +273,10 @@ public class Messages extends AppCompatActivity {
     }
 
     private void loadUsersForMessaging() {
+        loadUsersForMessaging(false);
+    }
+    
+    private void loadUsersForMessaging(boolean isRefresh) {
         String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
         
         Log.d("Messages", "Loading users from URL: " + url);
@@ -261,6 +306,12 @@ public class Messages extends AppCompatActivity {
                                         boardingHouseAddress = userObj.getString("boarding_house_address");
                                     }
                                     
+                                    // Get profile picture URL if available
+                                    String profilePictureUrl = "";
+                                    if (userObj.has("profile_picture") && !userObj.isNull("profile_picture")) {
+                                        profilePictureUrl = userObj.getString("profile_picture");
+                                    }
+                                    
                                     ProfileModel profile = new ProfileModel(
                                         userObj.getInt("user_id"),
                                         userObj.getString("full_name"),
@@ -271,7 +322,8 @@ public class Messages extends AppCompatActivity {
                                         userObj.getBoolean("has_device_token"),
                                         userObj.getBoolean("has_device_token") ? "Online" : "Offline",
                                         boardingHouseName,
-                                        boardingHouseAddress
+                                        boardingHouseAddress,
+                                        profilePictureUrl
                                     );
                                     profileList.add(profile);
                                     Log.d("Messages", "Added profile: " + profile.getName());
@@ -291,11 +343,20 @@ public class Messages extends AppCompatActivity {
                         Log.e("Messages", "Error parsing users data", e);
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing users data", Toast.LENGTH_SHORT).show();
+                    } finally {
+                        // Stop refresh indicator if this was a refresh call
+                        if (isRefresh) {
+                            stopRefreshIfComplete();
+                        }
                     }
                 },
                 error -> {
                     Log.e("Messages", "Network error loading users", error);
                     Toast.makeText(this, "Error loading users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Stop refresh indicator if this was a refresh call
+                    if (isRefresh) {
+                        stopRefreshIfComplete();
+                    }
                 });
 
         requestQueue.add(request);
@@ -312,6 +373,10 @@ public class Messages extends AppCompatActivity {
     }
     
     private void loadChatList(boolean showLoading) {
+        loadChatList(showLoading, false);
+    }
+    
+    private void loadChatList(boolean showLoading, boolean isRefresh) {
         android.util.Log.d("Messages", "loadChatList called for user: " + currentUserId + ", showLoading: " + showLoading);
         if (showLoading) {
             showProgressDialog("Loading messages...");
@@ -345,6 +410,12 @@ public class Messages extends AppCompatActivity {
                                         formattedMessage = senderName + ": " + lastMessage;
                                     }
                                     
+                                    // Get profile picture URL if available
+                                    String profilePictureUrl = "";
+                                    if (chatObj.has("other_user_profile_picture") && !chatObj.isNull("other_user_profile_picture")) {
+                                        profilePictureUrl = chatObj.getString("other_user_profile_picture");
+                                    }
+                                    
                                     chat = new ChatModel(
                                         chatObj.getString("other_user_name"),
                                         formattedMessage,
@@ -355,7 +426,8 @@ public class Messages extends AppCompatActivity {
                                         chatObj.getInt("unread_count"),
                                         chatObj.getString("last_message_status"),
                                         chatObj.getInt("other_user_id"),
-                                        chatObj.getString("other_user_name")
+                                        chatObj.getString("other_user_name"),
+                                        profilePictureUrl
                                     );
                                 } else {
                                     // Format group message with sender name
@@ -400,11 +472,19 @@ public class Messages extends AppCompatActivity {
                         if (isFirstLoad) {
                             isFirstLoad = false;
                         }
+                        // Stop refresh indicator if this was a refresh call
+                        if (isRefresh) {
+                            stopRefreshIfComplete();
+                        }
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing chat data", Toast.LENGTH_SHORT).show();
                         if (showLoading) {
                             hideProgressDialog();
+                        }
+                        // Stop refresh indicator if this was a refresh call
+                        if (isRefresh) {
+                            stopRefreshIfComplete();
                         }
                     }
                 },
@@ -412,6 +492,10 @@ public class Messages extends AppCompatActivity {
                     Toast.makeText(this, "Error loading chats: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     if (showLoading) {
                         hideProgressDialog();
+                    }
+                    // Stop refresh indicator if this was a refresh call
+                    if (isRefresh) {
+                        stopRefreshIfComplete();
                     }
                 });
 
@@ -506,6 +590,7 @@ public class Messages extends AppCompatActivity {
             Intent intent = new Intent(Messages.this, Conversation.class);
             intent.putExtra("chatName", profile.getName());
             intent.putExtra("chatImage", profile.getImageResId());
+            intent.putExtra("profilePictureUrl", profile.getProfilePictureUrl());
             intent.putExtra("chatId", profile.getUserId());
             intent.putExtra("chatType", "individual");
             intent.putExtra("otherUserId", profile.getUserId());
@@ -556,6 +641,13 @@ public class Messages extends AppCompatActivity {
                             
                             for (int i = 0; i < usersArray.length(); i++) {
                                 JSONObject userObj = usersArray.getJSONObject(i);
+                                
+                                // Get profile picture URL if available
+                                String profilePictureUrl = "";
+                                if (userObj.has("profile_picture") && !userObj.isNull("profile_picture")) {
+                                    profilePictureUrl = userObj.getString("profile_picture");
+                                }
+                                
                                 ProfileModel profile = new ProfileModel(
                                     userObj.getInt("user_id"),
                                     userObj.getString("full_name"),
@@ -564,7 +656,10 @@ public class Messages extends AppCompatActivity {
                                     userObj.getString("phone"),
                                     R.drawable.ic_profile,
                                     userObj.getBoolean("has_device_token"),
-                                    userObj.getBoolean("has_device_token") ? "Online" : "Offline"
+                                    userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                    "",
+                                    "",
+                                    profilePictureUrl
                                 );
                                 suggestions.add(profile);
                             }
@@ -630,6 +725,7 @@ public class Messages extends AppCompatActivity {
             Intent intent = new Intent(Messages.this, Conversation.class);
             intent.putExtra("chatName", selectedProfile.getName());
             intent.putExtra("chatImage", selectedProfile.getImageResId());
+            intent.putExtra("profilePictureUrl", selectedProfile.getProfilePictureUrl());
             intent.putExtra("chatId", selectedProfile.getUserId());
             intent.putExtra("chatType", "individual");
             intent.putExtra("otherUserId", selectedProfile.getUserId());

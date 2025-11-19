@@ -241,12 +241,13 @@ try {
             throw $e; // Re-throw to be caught by outer catch
         }
         
-        // Update payment_breakdowns to link to payment_id and set status to 'For Approval'
-        // Note: Make sure you've run update_payment_breakdowns_enum.sql to add 'For Approval' to the enum
+        // Update payment_breakdowns to link to payment_id and set status to 'Pending'
+        // Status remains 'Pending' until payment is marked as paid by owner
+        // The 'For Approval' display is calculated in get_unpaid_payment_breakdowns.php based on payments table
         $updateBreakdownSql = "
             UPDATE payment_breakdowns 
             SET payment_id = :payment_id,
-                payment_status = 'For Approval',
+                payment_status = 'Pending',
                 updated_at = NOW()
             WHERE breakdown_id = :breakdown_id
               AND booking_id = :booking_id
@@ -275,7 +276,7 @@ try {
                 }
             }
             
-            error_log("Updated $breakdownsUpdated payment breakdowns to 'For Approval' status");
+            error_log("Updated $breakdownsUpdated payment breakdowns to 'Pending' status (linked to payment_id: $paymentId)");
         } catch (PDOException $e) {
             error_log("Error preparing breakdown update: " . $e->getMessage());
             error_log("SQL: " . $updateBreakdownSql);
@@ -284,6 +285,80 @@ try {
         
         // Commit transaction
         $pdo->commit();
+        
+        // Send notification to owner about new payment needing approval (AFTER commit to avoid blocking)
+        try {
+            // Get boarder name for notification
+            $boarderSql = "SELECT CONCAT(first_name, ' ', last_name) as boarder_name FROM users WHERE user_id = :user_id";
+            $boarderStmt = $pdo->prepare($boarderSql);
+            $boarderStmt->execute([':user_id' => $userId]);
+            $boarder = $boarderStmt->fetch(PDO::FETCH_ASSOC);
+            $boarderName = $boarder ? $boarder['boarder_name'] : 'A boarder';
+            
+            // Get room name for notification
+            $roomSql = "SELECT bhr.room_name 
+                       FROM bookings b
+                       INNER JOIN room_units ru ON b.room_id = ru.room_id
+                       INNER JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
+                       WHERE b.booking_id = :booking_id";
+            $roomStmt = $pdo->prepare($roomSql);
+            $roomStmt->execute([':booking_id' => $bookingId]);
+            $room = $roomStmt->fetch(PDO::FETCH_ASSOC);
+            $roomName = $room ? $room['room_name'] : 'a room';
+            
+            // Insert notification for owner
+            $notifTitle = "Payment Pending Approval";
+            $notifMessage = $boarderName . " has submitted a payment of ₱" . number_format($totalAmount, 2) . " for " . $roomName . ". Please review and approve.";
+            
+            // Check for duplicate notification (prevent duplicates)
+            $checkDuplicateSql = "SELECT notif_id FROM notifications 
+                                 WHERE user_id = :owner_id 
+                                 AND notif_type = 'payment' 
+                                 AND notif_title = :title
+                                 AND notif_message LIKE :message_pattern
+                                 AND notif_created_at >= DATE_SUB(NOW(), INTERVAL 10 SECOND)
+                                 LIMIT 1";
+            $checkDuplicateStmt = $pdo->prepare($checkDuplicateSql);
+            $messagePattern = "%₱" . number_format($totalAmount, 2) . "%";
+            $checkDuplicateStmt->execute([
+                ':owner_id' => $ownerId,
+                ':title' => $notifTitle,
+                ':message_pattern' => $messagePattern
+            ]);
+            $duplicate = $checkDuplicateStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$duplicate) {
+                $insertNotifSql = "INSERT INTO notifications (user_id, notif_title, notif_message, notif_type, notif_status) 
+                                  VALUES (:owner_id, :title, :message, 'payment', 'unread')";
+                $insertNotifStmt = $pdo->prepare($insertNotifSql);
+                $insertNotifStmt->execute([
+                    ':owner_id' => $ownerId,
+                    ':title' => $notifTitle,
+                    ':message' => $notifMessage
+                ]);
+                
+                error_log("Notification sent to owner (user_id: $ownerId) about pending payment (payment_id: $paymentId)");
+                
+                // Try to send FCM notification if available
+                $fcmFile = __DIR__ . '/send_fcm_notification.php';
+                if (file_exists($fcmFile)) {
+                    require_once $fcmFile;
+                    if (function_exists('sendFCMNotification')) {
+                        sendFCMNotification($ownerId, $notifTitle, $notifMessage, [
+                            'type' => 'payment',
+                            'payment_id' => $paymentId,
+                            'booking_id' => $bookingId,
+                            'status' => 'Pending'
+                        ]);
+                    }
+                }
+            } else {
+                error_log("Duplicate notification prevented for owner (user_id: $ownerId) - payment_id: $paymentId");
+            }
+        } catch (Exception $e) {
+            // Don't fail payment submission if notification fails
+            error_log("Warning: Failed to send payment notification: " . $e->getMessage());
+        }
         
         echo json_encode(array(
             'success' => true,

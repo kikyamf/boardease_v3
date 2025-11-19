@@ -7,12 +7,90 @@ import java.util.regex.Pattern;
 
 public class ProfanityFilter {
     
+    // Whitelist of safe words that should never be filtered (even if they contain profane substrings)
+    private static final Set<String> SAFE_WORDS = new HashSet<>(Arrays.asList(
+        // English safe words
+        "hello", "hell", "shell", "hellish", "hellfire", "hellcat", "hellhound",
+        "hellbent", "hellhole", "hellion", "helluva", "hellish", "hellfire",
+        "assassin", "assassinate", "assassination", "assassins", "assassinated",
+        "assassinating", "assassinator", "assassinship", "assassiny", "assassine",
+        "class", "classic", "classical", "classify", "classification", "classroom",
+        "glass", "brass", "pass", "mass", "grass", "bass", "assess", "assessable",
+        "assessment", "assessor", "assessments", "assessors", "assessorship",
+        "assessable", "assessability", "assessorial", "assessory",
+        "passage", "passenger", "passengers", "passing", "passion", "passionate",
+        "passionately", "passionateness", "passionless", "passionflower",
+        "passionfruit", "massive", "massively", "massiveness", "massacre", "massacres", "massacred",
+        "massacring", "massage", "massages", "massaged", "massaging", "massager",
+        "massagers", "massagist", "massagists", "massagistic", "massagistically",
+        "grassland", "grasslands", "grasshopper", "grasshoppers", "grassless",
+        "grasslike", "grassroots", "grassroot", "grassrooted", "grassrooting",
+        
+        // Common Bisaya words (safe words that should never be filtered)
+        "kumusta", "kumusta ka", "kumusta man", "kumusta na", "kumusta ka man",
+        "maayo", "maayo man", "maayo ra", "maayo kaayo", "maayo lang",
+        "salamat", "salamat kaayo", "salamat daan", "salamat gihapon",
+        "palangga", "palangga kaayo", "palangga tika", "palangga ko",
+        "gihigugma", "gihigugma tika", "gihigugma ko ikaw",
+        "unsa", "unsa man", "unsa na", "unsa ka", "unsa man na",
+        "asa", "asa ka", "asa man", "asa dapit", "asa ka dapit",
+        "kanus-a", "kanus-a man", "kanus-a ka",
+        "kinsa", "kinsa man", "kinsa ka", "kinsa na",
+        "ngano", "ngano man", "ngano na",
+        "pila", "pila man", "pila ka", "pila na",
+        "unsaon", "unsaon man", "unsaon nako",
+        "giunsa", "giunsa man", "giunsa nimo",
+        "karon", "karon lang", "karon ra",
+        "unya", "unya lang", "unya ra",
+        "ugma", "ugma lang", "ugma ra",
+        "gabii", "gabii lang", "gabii ra",
+        "buntag", "buntag lang", "buntag ra",
+        "hapon", "hapon lang", "hapon ra",
+        "kaayo", "kaayo kaayo", "kaayo ra",
+        "lang", "lang gihapon", "lang gihapon",
+        "ra", "ra gihapon", "ra gihapon",
+        "man", "man gihapon", "man gihapon",
+        "gud", "gud gihapon", "gud gihapon",
+        "bitaw", "bitaw man", "bitaw gud",
+        "daw", "daw man", "daw gud",
+        "siguro", "siguro man", "siguro gud",
+        "tingali", "tingali man", "tingali gud",
+        "basin", "basin man", "basin gud",
+        "puhon", "puhon man", "puhon gud",
+        "sige", "sige man", "sige lang", "sige ra",
+        "okay", "okay ra", "okay lang", "okay man",
+        "wala", "wala man", "wala ra", "wala lang",
+        "naa", "naa man", "naa ra", "naa lang",
+        "dili", "dili man", "dili ra", "dili lang",
+        "pwede", "pwede man", "pwede ra", "pwede lang",
+        "dili pwede", "dili pwede man",
+        "gusto", "gusto ko", "gusto nako", "gusto ka",
+        "dili gusto", "dili gusto ko",
+        "ganahan", "ganahan ko", "ganahan nako", "ganahan ka",
+        "dili ganahan", "dili ganahan ko",
+        "nahigugma", "nahigugma ko", "nahigugma nako",
+        "gimingaw", "gimingaw ko", "gimingaw nako",
+        "nahuman", "nahuman na", "nahuman ra",
+        "wala pa", "wala pa man", "wala pa ra",
+        "naa pa", "naa pa man", "naa pa ra",
+        "dili pa", "dili pa man", "dili pa ra",
+        "pwede pa", "pwede pa man", "pwede pa ra",
+        "unsa pa", "unsa pa man", "unsa pa na",
+        "asa pa", "asa pa man", "asa pa dapit",
+        "kinsa pa", "kinsa pa man", "kinsa pa na",
+        "ngano pa", "ngano pa man", "ngano pa na",
+        "pila pa", "pila pa man", "pila pa ka",
+        "karon pa", "karon pa lang", "karon pa ra",
+        "unya pa", "unya pa lang", "unya pa ra",
+        "ugma pa", "ugma pa lang", "ugma pa ra"
+    ));
+    
     // Set of profane words (comprehensive list for English, Tagalog, and Bisaya)
     private static final Set<String> PROFANE_WORDS = new HashSet<>(Arrays.asList(
         // ENGLISH PROFANE WORDS
         "shit", "fuck", "fucking", "damn", "bitch", "ass", "asshole", "bastard", "crap",
         "stupid", "idiot", "moron", "retard", "dumb", "fool", "loser", "whore", "slut",
-        "hate", "kill", "die", "death", "murder", "suicide", "hell", "damn", "crap",
+        "hate", "kill", "die", "death", "murder", "suicide", "damn", "crap",
         "piss", "pissed", "pissed off", "bullshit", "fucking hell", "fuck off",
         "son of a bitch", "motherfucker", "fucker", "fucked", "fucks", "fucking",
         "cunt", "cock", "dick", "pussy", "tits", "boobs", "sex", "fuck you",
@@ -32,7 +110,7 @@ public class ProfanityFilter {
         "pokpok", "kalbong", "kalbo", "tanga", "bogo", "gago", "ulol",
         "walanghiya", "bastos", "malandi", "pokpok", "puta", "pota",
         "tangina", "putangina", "pucha", "puke", "ulol", "bogo", "tanga",
-        "gago", "gaga", "walanghiya", "bastos", "malandi", "pokpok",
+        "gago", "gaga", "walanghiya", "bastos", "malandi", "pokpok", "yawa",
         
         // COMMON VARIATIONS AND MISSPELLINGS
         "b0b0", "b0g0", "g4g0", "p0ta", "p0tang", "p0tang1na", "t4ng1na",
@@ -84,9 +162,15 @@ public class ProfanityFilter {
         String[] words = filteredMessage.split("\\s+");
         
         for (int i = 0; i < words.length; i++) {
-            String word = words[i].toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
+            String originalWord = words[i];
+            String word = originalWord.toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
             
-            // Check if word is profane
+            // Skip if word is in safe words whitelist
+            if (SAFE_WORDS.contains(word) || SAFE_WORDS.contains(originalWord.toLowerCase())) {
+                continue;
+            }
+            
+            // Check if word is profane (only if it's an exact match, not embedded)
             if (PROFANE_WORDS.contains(word) || isProfaneVariation(word)) {
                 // Replace with asterisks, keeping the original length
                 words[i] = replaceWithAsterisks(words[i]);
@@ -105,49 +189,51 @@ public class ProfanityFilter {
     /**
      * Filters profane words that are embedded within other words
      * Example: "boboha" -> "b**oha", "tangina" -> "t****na"
+     * But NOT words like "hello" which contains "hell" but is a safe word
      */
     private static String filterEmbeddedProfanity(String message) {
         String filteredMessage = message;
         
-        // Check each profane word for embedding
-        for (String profaneWord : PROFANE_WORDS) {
-            // Create pattern to find the profane word anywhere in the text
-            String pattern = "(?i)\\b" + Pattern.quote(profaneWord) + "\\b";
-            Pattern compiledPattern = Pattern.compile(pattern);
-            
-            // Find all occurrences
-            java.util.regex.Matcher matcher = compiledPattern.matcher(filteredMessage);
-            StringBuffer result = new StringBuffer();
-            
-            while (matcher.find()) {
-                String matched = matcher.group();
-                String replacement = replaceWithAsterisks(matched);
-                matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(replacement));
-            }
-            matcher.appendTail(result);
-            filteredMessage = result.toString();
-        }
+        // Split message into words to check each word individually
+        String[] words = message.split("\\s+");
+        String[] filteredWords = new String[words.length];
         
-        // Also check for embedded profane words without word boundaries
-        for (String profaneWord : PROFANE_WORDS) {
-            if (profaneWord.length() >= 3) { // Only check words with 3+ characters
-                String pattern = "(?i)" + Pattern.quote(profaneWord);
-                Pattern compiledPattern = Pattern.compile(pattern);
-                
-                java.util.regex.Matcher matcher = compiledPattern.matcher(filteredMessage);
-                StringBuffer result = new StringBuffer();
-                
-                while (matcher.find()) {
-                    String matched = matcher.group();
-                    String replacement = replaceWithAsterisks(matched);
-                    matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(replacement));
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+            String cleanWord = word.toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
+            
+            // Skip if word is in safe words whitelist
+            if (SAFE_WORDS.contains(cleanWord) || SAFE_WORDS.contains(word.toLowerCase())) {
+                filteredWords[i] = word;
+                continue;
+            }
+            
+            // Check each profane word for embedding (only with word boundaries to avoid false positives)
+            String processedWord = word;
+            for (String profaneWord : PROFANE_WORDS) {
+                // Only filter if profane word is at least 3 characters and not in safe words
+                if (profaneWord.length() >= 3 && !SAFE_WORDS.contains(profaneWord)) {
+                    // Use word boundaries to match complete words only
+                    String pattern = "(?i)\\b" + Pattern.quote(profaneWord) + "\\b";
+                    Pattern compiledPattern = Pattern.compile(pattern);
+                    
+                    java.util.regex.Matcher matcher = compiledPattern.matcher(processedWord);
+                    StringBuffer result = new StringBuffer();
+                    
+                    while (matcher.find()) {
+                        String matched = matcher.group();
+                        String replacement = replaceWithAsterisks(matched);
+                        matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(replacement));
+                    }
+                    matcher.appendTail(result);
+                    processedWord = result.toString();
                 }
-                matcher.appendTail(result);
-                filteredMessage = result.toString();
             }
+            
+            filteredWords[i] = processedWord;
         }
         
-        return filteredMessage;
+        return String.join(" ", filteredWords);
     }
     
     /**

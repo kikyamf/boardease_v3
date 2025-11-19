@@ -1,5 +1,6 @@
 package com.example.mock;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -18,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -55,6 +58,7 @@ public class Conversation extends AppCompatActivity {
     private String lastSentMessage = ""; // Track last sent message to prevent duplicates
     private long lastMarkAsReadTime = 0; // Track when messages were last marked as read
     private static final long MARK_AS_READ_DELAY = 2000; // 2 seconds delay between mark as read calls
+    private ProgressDialog progressDialog; // Progress dialog for loading messages
     
     // Broadcast receiver for real-time message updates
     private final android.content.BroadcastReceiver messageUpdateReceiver = new android.content.BroadcastReceiver() {
@@ -105,6 +109,7 @@ public class Conversation extends AppCompatActivity {
         // Get data from intent
         String name = getIntent().getStringExtra("chatName");
         int imageRes = getIntent().getIntExtra("chatImage", R.drawable.ic_profile);
+        String profilePictureUrl = getIntent().getStringExtra("profilePictureUrl");
         chatId = getIntent().getIntExtra("chatId", -1);
         chatType = getIntent().getStringExtra("chatType");
         otherUserId = getIntent().getIntExtra("otherUserId", -1);
@@ -112,7 +117,20 @@ public class Conversation extends AppCompatActivity {
         groupId = getIntent().getIntExtra("groupId", -1);
 
         chatUserName.setText(name);
-        chatProfileImage.setImageResource(imageRes);
+        
+        // Load profile picture from URL if available, otherwise use default
+        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            Glide.with(this)
+                    .load(fullImageUrl)
+                    .placeholder(imageRes)
+                    .error(imageRes)
+                    .centerCrop()
+                    .circleCrop()
+                    .into(chatProfileImage);
+        } else {
+            chatProfileImage.setImageResource(imageRes);
+        }
 
         // Show/hide members button based on chat type
         if (chatType != null && chatType.equals("group")) {
@@ -158,6 +176,7 @@ public class Conversation extends AppCompatActivity {
         });
 
         // Load real messages from database
+        showProgressDialog("Loading conversation...");
         loadMessages();
 
         // Send button
@@ -166,6 +185,30 @@ public class Conversation extends AppCompatActivity {
             if (!msg.isEmpty() && !isSendingMessage && !msg.equals(lastSentMessage)) {
                 sendMessage(msg);
             }
+        });
+        
+        // Handle Enter key - allow multi-line input
+        // Enter key will create new line, Send button will send message
+        editMessage.setOnEditorActionListener((v, actionId, event) -> {
+            // If user presses Enter (without Shift), allow it to create new line
+            if (event != null && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER) {
+                if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+                    // Allow default behavior (new line) unless Shift is held
+                    if (!event.isShiftPressed()) {
+                        // For now, allow new line. User can use Send button to send
+                        return false; // Allow default behavior (new line)
+                    }
+                }
+            }
+            // If action is IME_ACTION_SEND, send the message
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                String msg = editMessage.getText().toString().trim();
+                if (!msg.isEmpty() && !isSendingMessage && !msg.equals(lastSentMessage)) {
+                    sendMessage(msg);
+                }
+                return true;
+            }
+            return false;
         });
         
         // Auto-scroll to bottom when keyboard appears (EditText gains focus)
@@ -372,17 +415,24 @@ public class Conversation extends AppCompatActivity {
                             }
                             
                             android.util.Log.d("LoadMessages", "Final message list size: " + messageList.size());
-                            messageAdapter.notifyDataSetChanged();
+                            
+                            // Update empty state first
                             updateMessagesEmptyState();
+                            
+                            // Notify adapter of all changes
+                            messageAdapter.notifyDataSetChanged();
+                            
                             if (!messageList.isEmpty()) {
-                                // Scroll to bottom with smooth animation
-                                scrollToBottom();
-                                
-                                // Mark messages as read after scrolling to bottom (user has seen the conversation)
-                                android.os.Handler handler = new android.os.Handler();
-                                handler.postDelayed(() -> {
-                                    markMessagesAsRead();
-                                }, 1000); // 1 second delay after loading messages
+                                // Scroll to bottom with smooth animation - ensure it happens after layout
+                                recyclerMessages.post(() -> {
+                                    recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+                                    
+                                    // Mark messages as read after scrolling to bottom (user has seen the conversation)
+                                    android.os.Handler handler = new android.os.Handler();
+                                    handler.postDelayed(() -> {
+                                        markMessagesAsRead();
+                                    }, 1000); // 1 second delay after loading messages
+                                });
                             }
                         } else {
                             android.util.Log.e("LoadMessages", "API returned success=false");
@@ -393,6 +443,9 @@ public class Conversation extends AppCompatActivity {
                         android.util.Log.e("LoadMessages", "JSON parsing error", e);
                         e.printStackTrace();
                         Toast.makeText(this, "Error parsing messages data", Toast.LENGTH_SHORT).show();
+                    } finally {
+                        // Hide progress dialog
+                        hideProgressDialog();
                     }
                 },
                 error -> {
@@ -403,6 +456,8 @@ public class Conversation extends AppCompatActivity {
                         android.util.Log.e("LoadMessages", "Network response data: " + new String(error.networkResponse.data));
                     }
                     Toast.makeText(this, "Error loading messages: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Hide progress dialog
+                    hideProgressDialog();
                 });
 
         requestQueue.add(request);
@@ -451,12 +506,39 @@ public class Conversation extends AppCompatActivity {
         
         // Check if message was filtered
         if (!originalMessage.equals(filteredMessage)) {
-            // Show warning to user
-            Toast.makeText(this, ProfanityFilter.getWarningMessage(), Toast.LENGTH_LONG).show();
+            // Show dialog asking if user wants to send filtered or original message
+            showProfanityFilterDialog(originalMessage, filteredMessage);
+            return; // Don't send yet, wait for user's choice
         }
         
-        // Use filtered message for sending
-        messageText = filteredMessage;
+        // Use original message for sending (no profanity detected)
+        sendMessageInternal(messageText);
+    }
+    
+    private void showProfanityFilterDialog(String originalMessage, String filteredMessage) {
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Inappropriate Language Detected")
+            .setMessage("Your message contains inappropriate language. Would you like to:\n\n" +
+                       "• Send filtered message (profane words will be replaced)\n" +
+                       "• Send original message anyway\n" +
+                       "• Cancel")
+            .setPositiveButton("Send Filtered", (dialog, which) -> {
+                // Send filtered message
+                sendMessageInternal(filteredMessage);
+            })
+            .setNeutralButton("Send Original", (dialog, which) -> {
+                // Send original unfiltered message
+                sendMessageInternal(originalMessage);
+            })
+            .setNegativeButton("Cancel", (dialog, which) -> {
+                // Cancel sending
+                dialog.dismiss();
+            })
+            .setCancelable(true)
+            .show();
+    }
+    
+    private void sendMessageInternal(String messageText) {
         
         isSendingMessage = true;
         lastSentMessage = messageText; // Track the message being sent
@@ -492,13 +574,23 @@ public class Conversation extends AppCompatActivity {
         
         // Add message to list
         messageList.add(newMessage);
-        messageAdapter.notifyDataSetChanged();
+        
+        // Update empty state to hide empty message view and show RecyclerView
+        updateMessagesEmptyState();
+        
+        // Notify adapter of the new item (use notifyItemInserted for better performance)
+        int newPosition = messageList.size() - 1;
+        messageAdapter.notifyItemInserted(newPosition);
         
         // Clear input
         editMessage.setText("");
         
-        // Scroll to bottom with smooth animation
-        scrollToBottom();
+        // Scroll to bottom with smooth animation - ensure it happens after layout
+        recyclerMessages.post(() -> {
+            if (!messageList.isEmpty()) {
+                recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+            }
+        });
         
         // Send message with FCM notification
         if (chatType.equals("individual")) {
@@ -777,10 +869,20 @@ public class Conversation extends AppCompatActivity {
                 // Add message to list on UI thread
                 runOnUiThread(() -> {
                     messageList.add(newMessage);
-                    messageAdapter.notifyDataSetChanged();
                     
-                    // Scroll to bottom with smooth animation
-                    scrollToBottom();
+                    // Update empty state to ensure RecyclerView is visible
+                    updateMessagesEmptyState();
+                    
+                    // Notify adapter of the new item
+                    int newPosition = messageList.size() - 1;
+                    messageAdapter.notifyItemInserted(newPosition);
+                    
+                    // Scroll to bottom with smooth animation - ensure it happens after layout
+                    recyclerMessages.post(() -> {
+                        if (!messageList.isEmpty()) {
+                            recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+                        }
+                    });
                     
                     // Mark messages as read since user is in the conversation
                     markMessagesAsRead();
@@ -804,7 +906,22 @@ public class Conversation extends AppCompatActivity {
     private void scrollToBottom() {
         if (!messageList.isEmpty()) {
             recyclerMessages.post(() -> {
-                recyclerMessages.smoothScrollToPosition(messageList.size() - 1);
+                // Ensure RecyclerView is laid out before scrolling
+                if (recyclerMessages.getLayoutManager() != null) {
+                    int lastPosition = messageList.size() - 1;
+                    recyclerMessages.smoothScrollToPosition(lastPosition);
+                    
+                    // Also try immediate scroll as fallback for first message
+                    android.os.Handler handler = new android.os.Handler();
+                    handler.postDelayed(() -> {
+                        if (recyclerMessages.getLayoutManager() != null) {
+                            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerMessages.getLayoutManager();
+                            if (layoutManager != null && lastPosition < messageList.size()) {
+                                layoutManager.scrollToPositionWithOffset(lastPosition, 0);
+                            }
+                        }
+                    }, 100);
+                }
             });
         }
     }
@@ -834,5 +951,38 @@ public class Conversation extends AppCompatActivity {
             // If parsing fails, return the original timestamp
             return timestamp;
         }
+    }
+    
+    private void showProgressDialog(String message) {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage(message);
+            progressDialog.setCancelable(false);
+            progressDialog.setIndeterminate(true);
+            progressDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void hideProgressDialog() {
+        try {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            progressDialog = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Hide progress dialog when activity is paused
+        hideProgressDialog();
     }
 }

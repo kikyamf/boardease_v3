@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.SearchResultViewHolder> {
@@ -42,9 +44,24 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     public void onBindViewHolder(@NonNull SearchResultViewHolder holder, int position) {
         ProfileModel profile = searchResults.get(position);
         
-        // Show full name for search results
-        holder.profileName.setText(profile.getName());
-        holder.profileImage.setImageResource(profile.getImageResId());
+        // Show full name for search results with suffixes preserved
+        String displayName = NameFormatter.formatFullName(profile.getName());
+        holder.profileName.setText(displayName);
+        
+        // Load profile picture from URL if available, otherwise use default
+        String profilePictureUrl = profile.getProfilePictureUrl();
+        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            Glide.with(context)
+                    .load(fullImageUrl)
+                    .placeholder(profile.getImageResId())
+                    .error(profile.getImageResId())
+                    .centerCrop()
+                    .circleCrop()
+                    .into(holder.profileImage);
+        } else {
+            holder.profileImage.setImageResource(profile.getImageResId());
+        }
         
         // Set click listener
         holder.itemView.setOnClickListener(v -> {

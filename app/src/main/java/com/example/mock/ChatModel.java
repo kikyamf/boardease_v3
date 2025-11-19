@@ -4,7 +4,8 @@ public class ChatModel {
     private String name;
     private String lastMessage;
     private String time;
-    private int imageResId; // drawable resource (for now, can be URL later)
+    private int imageResId; // drawable resource (fallback if no profile picture URL)
+    private String profilePictureUrl; // URL to profile picture from database
     private int chatId; // For individual chats: other user's ID, For group chats: group ID
     private String chatType; // "individual" or "group"
     private int unreadCount;
@@ -28,6 +29,24 @@ public class ChatModel {
         this.lastMessageStatus = lastMessageStatus;
         this.otherUserId = otherUserId;
         this.otherUserName = otherUserName;
+        this.profilePictureUrl = "";
+    }
+    
+    // Constructor for individual chats with profile picture
+    public ChatModel(String name, String lastMessage, String time, int imageResId, 
+                    int chatId, String chatType, int unreadCount, String lastMessageStatus,
+                    int otherUserId, String otherUserName, String profilePictureUrl) {
+        this.name = name;
+        this.lastMessage = lastMessage;
+        this.time = time;
+        this.imageResId = imageResId;
+        this.chatId = chatId;
+        this.chatType = chatType;
+        this.unreadCount = unreadCount;
+        this.lastMessageStatus = lastMessageStatus;
+        this.otherUserId = otherUserId;
+        this.otherUserName = otherUserName;
+        this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : "";
     }
 
     // Constructor for group chats
@@ -44,6 +63,7 @@ public class ChatModel {
         this.lastMessageStatus = lastMessageStatus;
         this.groupName = groupName;
         this.groupId = groupId;
+        this.profilePictureUrl = "";
     }
 
     // Legacy constructor for backward compatibility
@@ -61,6 +81,7 @@ public class ChatModel {
     public String getLastMessage() { return lastMessage; }
     public String getTime() { return time; }
     public int getImageResId() { return imageResId; }
+    public String getProfilePictureUrl() { return profilePictureUrl; }
     public int getChatId() { return chatId; }
     public String getChatType() { return chatType; }
     public int getUnreadCount() { return unreadCount; }
@@ -75,5 +96,6 @@ public class ChatModel {
     public void setTime(String time) { this.time = time; }
     public void setUnreadCount(int unreadCount) { this.unreadCount = unreadCount; }
     public void setLastMessageStatus(String lastMessageStatus) { this.lastMessageStatus = lastMessageStatus; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : ""; }
 }
 

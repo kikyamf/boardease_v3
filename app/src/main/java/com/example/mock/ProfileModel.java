@@ -2,7 +2,8 @@ package com.example.mock;
 
 public class ProfileModel {
     private String name;
-    private int imageResId; // drawable resource (can switch to URL if using Glide/Picasso)
+    private int imageResId; // drawable resource (fallback if no profile picture URL)
+    private String profilePictureUrl; // URL to profile picture from database
     private int userId;
     private String userType; // "boarder" or "owner"
     private String email;
@@ -26,6 +27,7 @@ public class ProfileModel {
         this.lastSeen = lastSeen;
         this.boardingHouseName = "";
         this.boardingHouseAddress = "";
+        this.profilePictureUrl = "";
     }
     
     // Constructor with boarding house info
@@ -42,6 +44,24 @@ public class ProfileModel {
         this.lastSeen = lastSeen;
         this.boardingHouseName = boardingHouseName != null ? boardingHouseName : "";
         this.boardingHouseAddress = boardingHouseAddress != null ? boardingHouseAddress : "";
+        this.profilePictureUrl = "";
+    }
+    
+    // Constructor with profile picture URL
+    public ProfileModel(int userId, String name, String userType, String email, 
+                       String phone, int imageResId, boolean isOnline, String lastSeen,
+                       String boardingHouseName, String boardingHouseAddress, String profilePictureUrl) {
+        this.userId = userId;
+        this.name = name;
+        this.userType = userType;
+        this.email = email;
+        this.phone = phone;
+        this.imageResId = imageResId;
+        this.isOnline = isOnline;
+        this.lastSeen = lastSeen;
+        this.boardingHouseName = boardingHouseName != null ? boardingHouseName : "";
+        this.boardingHouseAddress = boardingHouseAddress != null ? boardingHouseAddress : "";
+        this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : "";
     }
 
     // Legacy constructor for backward compatibility
@@ -55,6 +75,7 @@ public class ProfileModel {
     // Getters
     public String getName() { return name; }
     public int getImageResId() { return imageResId; }
+    public String getProfilePictureUrl() { return profilePictureUrl; }
     public int getUserId() { return userId; }
     public String getUserType() { return userType; }
     public String getEmail() { return email; }
@@ -69,5 +90,6 @@ public class ProfileModel {
     public void setOnline(boolean online) { isOnline = online; }
     public void setLastSeen(String lastSeen) { this.lastSeen = lastSeen; }
     public void setSelected(boolean selected) { this.selected = selected; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : ""; }
 }
 

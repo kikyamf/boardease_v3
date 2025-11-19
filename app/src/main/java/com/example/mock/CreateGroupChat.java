@@ -173,6 +173,12 @@ public class CreateGroupChat extends AppCompatActivity {
                                     boardingHouseAddress = userObj.getString("boarding_house_address");
                                 }
                                 
+                                // Get profile picture URL if available
+                                String profilePictureUrl = "";
+                                if (userObj.has("profile_picture") && !userObj.isNull("profile_picture")) {
+                                    profilePictureUrl = userObj.getString("profile_picture");
+                                }
+                                
                                 ProfileModel profile = new ProfileModel(
                                     userObj.getInt("user_id"),
                                     userObj.getString("full_name"),
@@ -183,7 +189,8 @@ public class CreateGroupChat extends AppCompatActivity {
                                     userObj.getBoolean("has_device_token"),
                                     userObj.getBoolean("has_device_token") ? "Online" : "Offline",
                                     boardingHouseName,
-                                    boardingHouseAddress
+                                    boardingHouseAddress,
+                                    profilePictureUrl
                                 );
                                 availableMembers.add(profile);
                                 }
@@ -318,7 +325,8 @@ public class CreateGroupChat extends AppCompatActivity {
                             // Show selected members info
                             StringBuilder membersInfo = new StringBuilder("Members: ");
                             for (ProfileModel member : selectedMembers) {
-                                membersInfo.append(member.getName()).append(", ");
+                                String displayName = NameFormatter.formatFullName(member.getName());
+                                membersInfo.append(displayName).append(", ");
                             }
                             membersInfo.append("You (Creator)");
                             

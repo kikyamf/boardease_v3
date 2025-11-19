@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatViewHolder> {
@@ -43,10 +45,26 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         ChatModel chat = chatList.get(position);
-        holder.userName.setText(chat.getName());
+        // Format name to ensure suffixes are preserved
+        String displayName = NameFormatter.formatFullName(chat.getName());
+        holder.userName.setText(displayName);
         holder.lastMessage.setText(chat.getLastMessage());
         holder.messageTime.setText(chat.getTime());
-        holder.profileImage.setImageResource(chat.getImageResId());
+        
+        // Load profile picture from URL if available, otherwise use default
+        String profilePictureUrl = chat.getProfilePictureUrl();
+        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            Glide.with(context)
+                    .load(fullImageUrl)
+                    .placeholder(chat.getImageResId())
+                    .error(chat.getImageResId())
+                    .centerCrop()
+                    .circleCrop()
+                    .into(holder.profileImage);
+        } else {
+            holder.profileImage.setImageResource(chat.getImageResId());
+        }
 
         // 🔹 Handle unread message indicators (like Messenger)
         boolean hasUnreadMessages = chat.getUnreadCount() > 0;

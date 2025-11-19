@@ -60,10 +60,10 @@ try {
                 WHEN pb.is_paid = 1 THEN 'Paid'
                 WHEN pb.payment_status = 'Cancelled' THEN 'Cancelled'
                 WHEN pb.payment_id IS NOT NULL AND COALESCE(p.payment_status, '') = 'Pending' THEN 'For Approval'
-                WHEN pb.payment_status = 'Overdue' OR (COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue')) THEN 'Overdue'
-                WHEN pb.payment_status = 'Pending' AND COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
+                WHEN pb.payment_status = 'Overdue' OR (COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND COALESCE(pb.payment_status, 'Pending') IN ('Pending', 'Overdue')) THEN 'Overdue'
+                WHEN COALESCE(pb.payment_status, 'Pending') = 'Pending' AND COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
                      AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'Pending'
-                WHEN pb.payment_status IS NOT NULL THEN pb.payment_status
+                WHEN pb.payment_status IS NOT NULL AND pb.payment_status != '' THEN pb.payment_status
                 ELSE 'Pending'
             END as payment_status,
             pb.created_at,

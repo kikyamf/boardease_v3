@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelectionAdapter.MemberViewHolder> {
@@ -41,8 +43,24 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
     @Override
     public void onBindViewHolder(@NonNull MemberViewHolder holder, int position) {
         ProfileModel profile = memberList.get(position);
-        holder.profileName.setText(profile.getName());
-        holder.profileImage.setImageResource(profile.getImageResId());
+        // Format name to ensure suffixes are preserved
+        String displayName = NameFormatter.formatFullName(profile.getName());
+        holder.profileName.setText(displayName);
+        
+        // Load profile picture from URL if available, otherwise use default
+        String profilePictureUrl = profile.getProfilePictureUrl();
+        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            Glide.with(context)
+                    .load(fullImageUrl)
+                    .placeholder(profile.getImageResId())
+                    .error(profile.getImageResId())
+                    .centerCrop()
+                    .circleCrop()
+                    .into(holder.profileImage);
+        } else {
+            holder.profileImage.setImageResource(profile.getImageResId());
+        }
         
         // Set user role
         String userRole = profile.getUserType();

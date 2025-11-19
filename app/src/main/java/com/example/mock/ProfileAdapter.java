@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileViewHolder> {
@@ -54,11 +56,25 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
             // In search mode, show full name
             holder.profileName.setText(fullName);
         } else {
-            // In horizontal profile mode, show first name only
-            String firstName = fullName.split(" ")[0];
+            // In horizontal profile mode, show full first name (all words except last name)
+            String firstName = NameFormatter.getFullFirstName(fullName);
             holder.profileName.setText(firstName);
         }
-        holder.profileImage.setImageResource(profile.getImageResId());
+        
+        // Load profile picture from URL if available, otherwise use default
+        String profilePictureUrl = profile.getProfilePictureUrl();
+        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            Glide.with(context)
+                    .load(fullImageUrl)
+                    .placeholder(profile.getImageResId())
+                    .error(profile.getImageResId())
+                    .centerCrop()
+                    .circleCrop()
+                    .into(holder.profileImage);
+        } else {
+            holder.profileImage.setImageResource(profile.getImageResId());
+        }
         
         // No status text needed for horizontal profile display
         
@@ -83,6 +99,7 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
     public int getItemCount() {
         return profileList.size();
     }
+    
 
     public static class ProfileViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
