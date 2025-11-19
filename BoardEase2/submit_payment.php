@@ -130,7 +130,15 @@ try {
             
             // Generate unique filename
             $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
-            $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/';
+            
+            // Use boardease_v3 directory structure
+            // Path structure: boardease_v3/uploads/payment_proofs/
+            // __DIR__ = boardease_v3/BoardEase2, so dirname(__DIR__) = boardease_v3
+            $baseDir = dirname(__DIR__); // Gets boardease_v3 directory
+            $uploadDir = $baseDir . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'payment_proofs' . DIRECTORY_SEPARATOR;
+            
+            error_log("Base directory: $baseDir");
+            error_log("Upload directory: $uploadDir");
             
             // Create directory if it doesn't exist
             if (!file_exists($uploadDir)) {
@@ -142,9 +150,10 @@ try {
             
             // Save image
             if (file_put_contents($filePath, $imageData)) {
-                // Store relative path from BoardEase2 directory
+                // Store relative path from boardease_v3 root (for web access)
                 $paymentProofPath = 'uploads/payment_proofs/' . $filename;
                 error_log("Payment proof saved successfully: $paymentProofPath");
+                error_log("Full file path: $filePath");
             } else {
                 error_log("Warning: Failed to save payment proof image for booking_id: $bookingId");
                 echo json_encode(array(
