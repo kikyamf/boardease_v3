@@ -23,9 +23,15 @@ $dbname = 'boardease2';
 $username = 'boardease';
 $password = 'boardease';
 
+// Log script execution start
+error_log("=== submit_payment.php STARTED ===");
+error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
+error_log("Script location: " . __FILE__);
+
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    error_log("Database connection successful");
     
     // Get POST data
     $inputData = json_decode(file_get_contents('php://input'), true);
