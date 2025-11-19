@@ -12,28 +12,24 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <LinearLayout
-            android:orientation="horizontal"
+        <!-- Welcome Title - Centered -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical">
+            android:text="Welcome to BoardEase!"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:layout_marginTop="8dp" />
 
-            <ImageView
-                android:id="@+id/backButton"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_arrow_back4"
-                android:contentDescription="Back" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Welcome to BoardEase!"
-                android:textStyle="bold"
-                android:textSize="20sp"
-                android:textColor="@android:color/black"/>
-        </LinearLayout>
+        <!-- Division Line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
 
 
         <!-- Subheading -->
@@ -191,8 +187,11 @@
             android:background="@drawable/guest_button_border"
             android:text="Continue as Guest"
             android:textAllCaps="false"
-            android:textColor="@android:color/black"
-            android:textSize="16sp" />
+            android:textColor="#A18167"
+            android:textSize="16sp"
+            android:drawableStart="@drawable/ic_person1"
+            android:drawablePadding="8dp"
+            android:drawableTint="#A18167" />
 
 
     </LinearLayout>
