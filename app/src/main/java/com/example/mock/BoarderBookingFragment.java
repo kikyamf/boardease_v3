@@ -945,16 +945,13 @@ public class BoarderBookingFragment extends Fragment {
                 // Set checkbox styling - brown border and check when clicked
                 checkboxPeriod.setButtonTintList(getResources().getColorStateList(R.color.checkbox_brown));
                 
-                // Disable checkbox if status is "For Approval" (payment already submitted, waiting for owner approval)
+                // Hide checkbox completely if status is "For Approval" (payment already submitted, waiting for owner approval)
                 if ("For Approval".equals(breakdown.getPaymentStatus())) {
-                    checkboxPeriod.setEnabled(false);
-                    checkboxPeriod.setAlpha(0.5f);
-                    checkboxPeriod.setChecked(false);
-                    checkboxPeriod.setClickable(false);
-                    checkboxPeriod.setFocusable(false);
+                    // Hide the checkbox entirely - payment already submitted
+                    checkboxPeriod.setVisibility(View.GONE);
                     // Don't add to selected breakdowns - payment already submitted
-                    // Also disable the entire breakdown item view to prevent any interaction
-                    breakdownItem.setAlpha(0.7f); // Slightly dimmed to show it's not selectable
+                    // Slightly dim the entire breakdown item to show it's not selectable
+                    breakdownItem.setAlpha(0.7f);
                 } else {
                     // Determine if this is current/overdue period (should be checked by default)
                     boolean isCurrentOrOverdue = false;
@@ -965,9 +962,9 @@ public class BoarderBookingFragment extends Fragment {
                     }
                     
                     // Chronological validation: disable checkboxes if previous period is not checked
-                    // First period is always enabled, others are disabled by default
+                    // "For Approval" items are treated as already "selected" for enabling next period
                     if (i == 0) {
-                        // First checkbox is always enabled
+                        // First checkbox is always enabled (if not "For Approval")
                         checkboxPeriod.setEnabled(true);
                         checkboxPeriod.setAlpha(1.0f);
                         // Check first period if it's current/overdue
@@ -978,9 +975,33 @@ public class BoarderBookingFragment extends Fragment {
                             checkboxPeriod.setChecked(false);
                         }
                     } else {
-                        // Later periods are disabled by default until previous one is checked
-                        checkboxPeriod.setEnabled(false);
-                        checkboxPeriod.setAlpha(0.5f); // Visual indication that it's disabled
+                        // Check if previous period allows this one to be enabled
+                        // Look backwards to find the previous non-"For Approval" period
+                        boolean canEnable = false;
+                        for (int j = i - 1; j >= 0; j--) {
+                            PaymentBreakdown prevBreakdown = filteredBreakdowns.get(j);
+                            
+                            // If previous is "For Approval", treat it as "selected" and enable this one
+                            if ("For Approval".equals(prevBreakdown.getPaymentStatus())) {
+                                canEnable = true; // "For Approval" counts as selected
+                                break;
+                            }
+                            
+                            // Check if previous checkbox exists and is checked
+                            // Checkboxes are added for all items (including "For Approval" which are hidden)
+                            // So indices match directly, but we need to check visibility
+                            if (j < checkboxes.size()) {
+                                android.widget.CheckBox prevCheckBox = checkboxes.get(j);
+                                // Only check if it's visible (not "For Approval")
+                                if (prevCheckBox.getVisibility() == View.VISIBLE) {
+                                    canEnable = prevCheckBox.isChecked();
+                                }
+                                // If it's hidden (GONE), it's "For Approval" which we already handled above
+                            }
+                        }
+                        
+                        checkboxPeriod.setEnabled(canEnable);
+                        checkboxPeriod.setAlpha(canEnable ? 1.0f : 0.5f);
                         checkboxPeriod.setChecked(false);
                     }
                 }
@@ -1168,18 +1189,41 @@ public class BoarderBookingFragment extends Fragment {
                                       TextView tvTotalAmount,
                                       com.google.android.material.button.MaterialButton btnProceedToPayment) {
         // Enable/disable checkboxes based on sequential logic
+        // "For Approval" items are treated as already "selected" for chronological validation
         for (int i = 0; i < checkboxes.size(); i++) {
             android.widget.CheckBox checkBox = checkboxes.get(i);
             PaymentBreakdown breakdown = filteredBreakdowns.get(i);
             
+            // Skip "For Approval" items - they don't have checkboxes (hidden)
+            if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                continue; // Skip this item, it's treated as "selected" for next period validation
+            }
+            
             if (i == 0) {
-                // First checkbox is always enabled
+                // First checkbox is always enabled (if not "For Approval")
                 checkBox.setEnabled(true);
                 checkBox.setAlpha(1.0f);
             } else {
-                // Can only check if previous is checked
-                android.widget.CheckBox previousCheckBox = checkboxes.get(i - 1);
-                boolean canEnable = previousCheckBox.isChecked();
+                // Check if previous period allows this one to be enabled
+                // Look backwards to find the previous non-"For Approval" period
+                boolean canEnable = false;
+                for (int j = i - 1; j >= 0; j--) {
+                    PaymentBreakdown prevBreakdown = filteredBreakdowns.get(j);
+                    
+                    // If previous is "For Approval", treat it as "selected" and continue
+                    if ("For Approval".equals(prevBreakdown.getPaymentStatus())) {
+                        canEnable = true; // "For Approval" counts as selected
+                        break;
+                    }
+                    
+                    // Check if previous checkbox is checked
+                    android.widget.CheckBox prevCheckBox = checkboxes.get(j);
+                    if (prevCheckBox.getVisibility() == View.VISIBLE) {
+                        canEnable = prevCheckBox.isChecked();
+                        break;
+                    }
+                }
+                
                 checkBox.setEnabled(canEnable);
                 
                 // Update alpha based on enabled state
@@ -1191,13 +1235,20 @@ public class BoarderBookingFragment extends Fragment {
                     selectedBreakdowns.remove(breakdown.getBreakdownId());
                     // Recursively uncheck all subsequent periods
                     for (int j = i + 1; j < checkboxes.size(); j++) {
-                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
-                        if (laterCheckBox.isChecked()) {
-                            laterCheckBox.setChecked(false);
-                            selectedBreakdowns.remove(filteredBreakdowns.get(j).getBreakdownId());
+                        PaymentBreakdown laterBreakdown = filteredBreakdowns.get(j);
+                        // Skip "For Approval" items
+                        if ("For Approval".equals(laterBreakdown.getPaymentStatus())) {
+                            continue;
                         }
-                        laterCheckBox.setEnabled(false);
-                        laterCheckBox.setAlpha(0.5f);
+                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
+                        if (laterCheckBox.getVisibility() == View.VISIBLE) {
+                            if (laterCheckBox.isChecked()) {
+                                laterCheckBox.setChecked(false);
+                                selectedBreakdowns.remove(laterBreakdown.getBreakdownId());
+                            }
+                            laterCheckBox.setEnabled(false);
+                            laterCheckBox.setAlpha(0.5f);
+                        }
                     }
                 }
             }
