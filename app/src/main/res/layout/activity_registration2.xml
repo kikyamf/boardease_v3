@@ -135,18 +135,69 @@
                 android:padding="10dp"
                 android:textColor="@color/black" />
 
-            <CheckBox
-                android:id="@+id/cbAgree"
-                android:layout_width="wrap_content"
+        </LinearLayout>
+
+        <!-- Business Permit Section (Only for BH Owner) -->
+        <LinearLayout
+            android:id="@+id/businessPermitSection"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone">
+
+            <!-- Section Title -->
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:text="Business Permits"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Description -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="As a Boarding House Owner, you are required to upload your business permit(s) for verification. This helps ensure compliance with local regulations and builds trust with potential boarders. You can upload up to 3 business permits."
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2dp" />
+
+            <!-- Container for Business Permit Upload Items -->
+            <LinearLayout
+                android:id="@+id/businessPermitContainer"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" />
+
+            <!-- Button to Add Another Permit -->
+            <Button
+                android:id="@+id/btnAddPermit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:backgroundTint="#A18167"
-                android:checked="false"
-                android:padding="4dp"
-                android:text="Agree with terms and privacy"
-                android:textColor="@color/black" />
+                android:text="Add Another Business Permit"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:visibility="gone" />
 
         </LinearLayout>
+
+        <!-- CheckBox -->
+        <CheckBox
+            android:id="@+id/cbAgree"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#A18167"
+            android:checked="false"
+            android:padding="4dp"
+            android:text="Agree with terms and privacy"
+            android:textColor="@color/black" />
 
         <!-- Register Button -->
         <Button

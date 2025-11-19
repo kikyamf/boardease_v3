@@ -30,6 +30,13 @@ public class VolleyMultipartRequest extends Request<NetworkResponse> {
         this.mErrorListener = errorListener;
         this.mHeaders = new HashMap<>();
     }
+    
+    public void setHeader(String key, String value) {
+        if (mHeaders == null) {
+            mHeaders = new HashMap<>();
+        }
+        mHeaders.put(key, value);
+    }
 
     @Override
     public Map<String, String> getHeaders() throws AuthFailureError {

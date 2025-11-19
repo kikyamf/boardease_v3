@@ -100,6 +100,17 @@ public class RegistrationActivity extends AppCompatActivity {
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        
+        // Setup back button
+        ImageView backButton = findViewById(R.id.backButton);
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> {
+                // Go back to Login activity
+                Intent intent = new Intent(RegistrationActivity.this, Login.class);
+                startActivity(intent);
+                finish();
+            });
+        }
 
         // Add real-time email validation
         etEmail.addTextChangedListener(new android.text.TextWatcher() {
@@ -149,6 +160,16 @@ public class RegistrationActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_item,
                 roles
         ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
             @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
@@ -205,6 +226,16 @@ public class RegistrationActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_item,
                 suffixes
         ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
             @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
@@ -1089,6 +1120,16 @@ public class RegistrationActivity extends AppCompatActivity {
                         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                             this, android.R.layout.simple_spinner_item, provinceNames) {
                             @Override
+                            public View getView(int position, View convertView, ViewGroup parent) {
+                                View view = super.getView(position, convertView, parent);
+                                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                                if (textView != null) {
+                                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                                }
+                                return view;
+                            }
+                            
+                            @Override
                             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                                 View view = super.getDropDownView(position, convertView, parent);
                                 if (view instanceof TextView) {
@@ -1162,6 +1203,16 @@ public class RegistrationActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
             this, android.R.layout.simple_spinner_item, fallbackProvinces) {
             @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 if (view instanceof TextView) {
@@ -1211,6 +1262,16 @@ public class RegistrationActivity extends AppCompatActivity {
                             
                             ArrayAdapter<String> adapter = new ArrayAdapter<String>(
                                 this, android.R.layout.simple_spinner_item, municipalityNames) {
+                                @Override
+                                public View getView(int position, View convertView, ViewGroup parent) {
+                                    View view = super.getView(position, convertView, parent);
+                                    TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                                    if (textView != null) {
+                                        textView.setTextColor(0xFF000000); // Black text color for selected item
+                                    }
+                                    return view;
+                                }
+                                
                                 @Override
                                 public View getDropDownView(int position, View convertView, ViewGroup parent) {
                                     View view = super.getDropDownView(position, convertView, parent);
@@ -1275,6 +1336,16 @@ public class RegistrationActivity extends AppCompatActivity {
     private void clearMunicipalityAndBarangay() {
         String[] emptyArray = {"Select Municipality"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
             @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);

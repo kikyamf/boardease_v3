@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,13 +28,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Registration2Activity extends AppCompatActivity {
@@ -49,6 +53,10 @@ public class Registration2Activity extends AppCompatActivity {
     TextView tvLogin;
     private boolean isRegistering = false; // Flag to prevent multiple registrations
 
+    // Business Permit Views
+    private View businessPermitSection;
+    private ViewGroup businessPermitContainer;
+    private Button btnAddPermit;
 
     // File paths for ID images
     private String idFrontPath = null;
@@ -57,9 +65,25 @@ public class Registration2Activity extends AppCompatActivity {
     // Get data from first registration screen
     String role, firstName, middleName, lastName, suffix, birthDate, phone, address, email, password, gcashNum, qrPath;
 
+    // Business Permit data
+    private static class PermitUploadItem {
+        View itemView;
+        ImageView imageView;
+        Button removeButton;
+        Bitmap bitmap;
+        Uri uri;
+        int index;
+    }
+    
+    private List<PermitUploadItem> permitUploadItems = new ArrayList<>();
+    private static final int MAX_PERMITS = 3;
+    private int nextPermitIndex = 0;
+
     // Launchers for picking images
     private ActivityResultLauncher<String> pickFrontImageLauncher;
     private ActivityResultLauncher<String> pickBackImageLauncher;
+    private List<ActivityResultLauncher<String>> permitImageLaunchers = new ArrayList<>();
+    private PermitUploadItem currentPermitItemForLauncher = null; // Track which permit item is being edited
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -77,6 +101,11 @@ public class Registration2Activity extends AppCompatActivity {
         btnReg = findViewById(R.id.btnReg);
 
         tvLogin = findViewById(R.id.tvLogin);
+        
+        // Initialize Business Permit Views
+        businessPermitSection = findViewById(R.id.businessPermitSection);
+        businessPermitContainer = findViewById(R.id.businessPermitContainer);
+        btnAddPermit = findViewById(R.id.btnAddPermit);
 
         // Retrieve data passed from RegistrationActivity
         role = getIntent().getStringExtra("role");
@@ -102,6 +131,49 @@ public class Registration2Activity extends AppCompatActivity {
                 e.printStackTrace();
                 Toast.makeText(this, "Error loading QR image", Toast.LENGTH_SHORT).show();
             }
+        }
+        
+        // Setup Business Permit Section (only for BH Owner)
+        boolean isBHOwner = role != null && !role.equals("Boarder");
+        if (isBHOwner) {
+            businessPermitSection.setVisibility(View.VISIBLE);
+            
+            // Pre-register all permit image launchers (must be done during onCreate)
+            for (int i = 0; i < MAX_PERMITS; i++) {
+                ActivityResultLauncher<String> permitLauncher = registerForActivityResult(
+                        new ActivityResultContracts.GetContent(),
+                        uri -> {
+                            if (uri != null && currentPermitItemForLauncher != null) {
+                                handlePermitImageSelection(currentPermitItemForLauncher, uri);
+                                currentPermitItemForLauncher = null; // Reset after handling
+                            }
+                        }
+                );
+                permitImageLaunchers.add(permitLauncher);
+            }
+            
+            // Setup back button
+            ImageView backButton = findViewById(R.id.backButton);
+            if (backButton != null) {
+                backButton.setOnClickListener(v -> {
+                    // Go back to RegistrationActivity
+                    finish();
+                });
+            }
+            
+            // Create first permit upload item
+            createPermitUploadItem();
+            // Setup add permit button
+            btnAddPermit.setOnClickListener(v -> {
+                if (permitUploadItems.size() < MAX_PERMITS) {
+                    createPermitUploadItem();
+                    updateAddPermitButtonVisibility();
+                } else {
+                    Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            businessPermitSection.setVisibility(View.GONE);
         }
 
         // Prepare image pickers
@@ -189,6 +261,16 @@ public class Registration2Activity extends AppCompatActivity {
                 roles
         ) {
             @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
             public View getDropDownView(int position, View convertView, ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 if (view instanceof TextView) {
@@ -275,7 +357,35 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
             
+            // Business permits are required for BH Owner (at least one)
+            if (!isBoarder) {
+                boolean hasPermits = false;
+                for (PermitUploadItem item : permitUploadItems) {
+                    if (item.bitmap != null) {
+                        hasPermits = true;
+                        break;
+                    }
+                }
+                if (!hasPermits) {
+                    Log.d("REGISTRATION", "❌ Validation failed: No business permits uploaded (required for BH Owner)");
+                    Toast.makeText(this, "At least one business permit is required for BH Owner. Please upload your business permit(s).", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+            
             Log.d("REGISTRATION", "✅ All required bitmaps loaded successfully");
+            
+            // Log permit status before sending
+            if (!isBoarder) {
+                int permitCount = 0;
+                for (PermitUploadItem item : permitUploadItems) {
+                    if (item.bitmap != null) {
+                        permitCount++;
+                        Log.d("REGISTRATION", "Permit " + permitCount + " ready - bitmap size: " + (item.bitmap.getWidth() + "x" + item.bitmap.getHeight()));
+                    }
+                }
+                Log.d("REGISTRATION", "Total permits ready to send: " + permitCount);
+            }
 
             // Set registering flag and disable button
             isRegistering = true;
@@ -321,6 +431,8 @@ public class Registration2Activity extends AppCompatActivity {
                             Log.d("Registration2", "Message: " + message);
                             Log.d("Registration2", "Has requires_verification: " + obj.has("requires_verification"));
                             
+                            // Business permits are now saved separately, so we don't check permits_received here
+                            
                             // Re-enable button
                             isRegistering = false;
                             btnReg.setEnabled(true);
@@ -329,26 +441,31 @@ public class Registration2Activity extends AppCompatActivity {
                             if (success) {
                                 Log.d("Registration2", "Registration successful");
                                 
-                                // Check if verification is required
-                                boolean requiresVerification = obj.optBoolean("requires_verification", false);
-                                Log.d("Registration2", "Requires verification: " + requiresVerification);
+                                // Get registration ID from response
+                                int regId = obj.optInt("reg_id", 0);
+                                Log.d("Registration2", "Registration ID: " + regId);
                                 
-                                if (requiresVerification) {
-                                    // Navigate to email verification
-                                    Log.d("Registration2", "Navigating to EmailVerificationActivity");
-                                    Intent intent = new Intent(Registration2Activity.this, EmailVerificationActivity.class);
-                                    intent.putExtra("email", email);
-                                    startActivity(intent);
-                                    finish();
-                                } else {
-                                    // Navigate to login (old flow)
-                                    Log.d("Registration2", "Navigating to Login");
-                                    Intent intent = new Intent(Registration2Activity.this, Login.class);
-                                    startActivity(intent);
-                                    finish();
+                                // Check if user is BH Owner and has business permits to save
+                                boolean isBHOwnerCheck = role != null && !role.equals("Boarder");
+                                boolean hasPermits = false;
+                                for (PermitUploadItem item : permitUploadItems) {
+                                    if (item.bitmap != null) {
+                                        hasPermits = true;
+                                        break;
+                                    }
                                 }
                                 
-                                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                                if (isBHOwnerCheck && hasPermits && regId > 0) {
+                                    // Save business permits separately using direct IP
+                                    Log.d("Registration2", "Saving business permits separately for reg_id: " + regId);
+                                    saveBusinessPermits(regId, () -> {
+                                        // After permits are saved, proceed with verification flow
+                                        proceedToVerification(obj, message);
+                                    });
+                                } else {
+                                    // No permits to save, proceed directly to verification
+                                    proceedToVerification(obj, message);
+                                }
                             } else {
                                 Log.d("Registration2", "Registration failed: " + message);
                                 // Handle specific error messages
@@ -466,6 +583,17 @@ public class Registration2Activity extends AppCompatActivity {
                     }
             ) {
                 @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> headers = super.getHeaders();
+                    if (headers == null) {
+                        headers = new HashMap<>();
+                    }
+                    // Add ngrok skip browser warning header
+                    headers.put("ngrok-skip-browser-warning", "true");
+                    return headers;
+                }
+                
+                @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<>();
                     Log.d("REGISTRATION", "=== BUILDING PARAMETERS ===");
@@ -539,7 +667,16 @@ public class Registration2Activity extends AppCompatActivity {
                         params.put("idFrontFile", new DataPart("front.jpg", frontData));
                         params.put("idBackFile", new DataPart("back.jpg", backData));
                         
-                        Log.d("REGISTRATION", "File data added successfully");
+                        // Business permits are now saved separately after registration
+                        // Removed from initial registration request to avoid conflicts
+                        Log.d("REGISTRATION", "Business permits will be saved separately after registration");
+                        
+                        Log.d("REGISTRATION", "File data added successfully. Total files in request: " + params.size());
+                        // Log all file keys for debugging
+                        for (String key : params.keySet()) {
+                            DataPart dataPart = params.get(key);
+                            Log.d("REGISTRATION", "File in request: " + key + " -> " + (dataPart != null ? dataPart.getFileName() + " (" + dataPart.getContent().length + " bytes)" : "null"));
+                        }
                     } catch (Exception e) {
                         Log.e("REGISTRATION", "Error creating file data: " + e.getMessage());
                         e.printStackTrace();
@@ -753,6 +890,342 @@ public class Registration2Activity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("ID_CAPTURE", "Error handling back ID result: " + e.getMessage());
             Toast.makeText(this, "Error processing back ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Creates a new business permit upload item
+     */
+    private void createPermitUploadItem() {
+        if (permitUploadItems.size() >= MAX_PERMITS) {
+            Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        int permitIndex = nextPermitIndex++;
+        PermitUploadItem item = new PermitUploadItem();
+        item.index = permitIndex;
+        
+        // Create the layout for the permit upload item
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.VERTICAL);
+        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        
+        // Label
+        TextView label = new TextView(this);
+        label.setText("Business Permit " + (permitUploadItems.size() + 1));
+        label.setTextColor(getResources().getColor(android.R.color.black));
+        label.setTextSize(14);
+        label.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        label.setPadding(0, 0, 0, 8);
+        itemLayout.addView(label);
+        
+        // ImageView for permit
+        ImageView permitImageView = new ImageView(this);
+        permitImageView.setId(View.generateViewId());
+        // Convert 200dp to pixels
+        float density = getResources().getDisplayMetrics().density;
+        int heightInPixels = (int) (200 * density);
+        permitImageView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                heightInPixels
+        ));
+        permitImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        permitImageView.setAdjustViewBounds(true);
+        permitImageView.setBackgroundResource(R.drawable.edittext_background);
+        permitImageView.setImageResource(R.drawable.upload);
+        permitImageView.setPadding(0, 0, 0, 8);
+        itemLayout.addView(permitImageView);
+        
+        // Remove button (only show if more than one permit)
+        Button removeButton = new Button(this);
+        removeButton.setText("Remove");
+        removeButton.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        removeButton.setBackgroundTintList(getResources().getColorStateList(android.R.color.holo_red_dark));
+        removeButton.setTextColor(getResources().getColor(android.R.color.white));
+        removeButton.setVisibility(View.GONE); // Initially hidden, shown when multiple permits exist
+        itemLayout.addView(removeButton);
+        
+        // Add margin between items
+        if (permitUploadItems.size() > 0) {
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) itemLayout.getLayoutParams();
+            params.topMargin = 16;
+            itemLayout.setLayoutParams(params);
+        }
+        
+        // Store references
+        item.itemView = itemLayout;
+        item.imageView = permitImageView;
+        item.removeButton = removeButton;
+        
+        // Get the launcher for this permit item (use index from list size)
+        int launcherIndex = permitUploadItems.size();
+        if (launcherIndex < permitImageLaunchers.size()) {
+            ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(launcherIndex);
+            
+            // Setup click listener for image view
+            permitImageView.setOnClickListener(v -> {
+                currentPermitItemForLauncher = item; // Set which item is being edited
+                permitLauncher.launch("image/*");
+            });
+        } else {
+            Log.e("PERMIT_UPLOAD", "No launcher available for permit item " + launcherIndex);
+            Toast.makeText(this, "Error: Cannot add more permits", Toast.LENGTH_SHORT).show();
+        }
+        
+        // Setup remove button
+        removeButton.setOnClickListener(v -> {
+            removePermitUploadItem(item);
+        });
+        
+        // Add to container and list
+        businessPermitContainer.addView(itemLayout);
+        permitUploadItems.add(item);
+        
+        // Update add button visibility
+        updateAddPermitButtonVisibility();
+        
+        Log.d("PERMIT_UPLOAD", "Created permit upload item " + (permitUploadItems.size()));
+    }
+    
+    /**
+     * Handles when a permit image is selected
+     */
+    private void handlePermitImageSelection(PermitUploadItem item, Uri imageUri) {
+        try {
+            ContentResolver resolver = getContentResolver();
+            Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+            
+            if (bitmap != null) {
+                item.bitmap = bitmap;
+                item.uri = imageUri;
+                item.imageView.setImageBitmap(bitmap);
+                item.imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                
+                // Show remove buttons for all items if there are multiple permits
+                if (permitUploadItems.size() > 1) {
+                    for (PermitUploadItem permitItem : permitUploadItems) {
+                        permitItem.removeButton.setVisibility(View.VISIBLE);
+                    }
+                }
+                
+                // Show add button if not at max
+                updateAddPermitButtonVisibility();
+                
+                Toast.makeText(this, "Business permit uploaded successfully", Toast.LENGTH_SHORT).show();
+                Log.d("PERMIT_UPLOAD", "Permit image loaded successfully for item " + item.index);
+            } else {
+                Toast.makeText(this, "Failed to load permit image", Toast.LENGTH_SHORT).show();
+                Log.e("PERMIT_UPLOAD", "Failed to decode permit image");
+            }
+        } catch (Exception e) {
+            Log.e("PERMIT_UPLOAD", "Error loading permit image: " + e.getMessage());
+            Toast.makeText(this, "Error loading permit image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Removes a permit upload item
+     */
+    private void removePermitUploadItem(PermitUploadItem item) {
+        try {
+            // Find the index of the item to remove
+            int itemIndex = permitUploadItems.indexOf(item);
+            if (itemIndex == -1) {
+                Log.e("PERMIT_UPLOAD", "Item not found in list");
+                return;
+            }
+            
+            // Remove from container
+            businessPermitContainer.removeView(item.itemView);
+            
+            // Remove from list
+            permitUploadItems.remove(item);
+            
+            // Update labels and reassign launchers for remaining items
+            for (int i = 0; i < permitUploadItems.size(); i++) {
+                PermitUploadItem permitItem = permitUploadItems.get(i);
+                ViewGroup itemLayout = (ViewGroup) permitItem.itemView;
+                TextView label = (TextView) itemLayout.getChildAt(0);
+                label.setText("Business Permit " + (i + 1));
+                
+                // Reassign launcher to the correct index
+                ImageView imageView = permitItem.imageView;
+                if (i < permitImageLaunchers.size()) {
+                    ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(i);
+                    imageView.setOnClickListener(v -> {
+                        currentPermitItemForLauncher = permitItem;
+                        permitLauncher.launch("image/*");
+                    });
+                }
+            }
+            
+            // Update remove button visibility
+            if (permitUploadItems.size() <= 1) {
+                for (PermitUploadItem permitItem : permitUploadItems) {
+                    permitItem.removeButton.setVisibility(View.GONE);
+                }
+            }
+            
+            // Update add button visibility
+            updateAddPermitButtonVisibility();
+            
+            Log.d("PERMIT_UPLOAD", "Removed permit upload item " + item.index + ", remaining: " + permitUploadItems.size());
+        } catch (Exception e) {
+            Log.e("PERMIT_UPLOAD", "Error removing permit item: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error removing permit: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void proceedToVerification(JSONObject obj, String message) {
+        try {
+            // Check if verification is required
+            boolean requiresVerification = obj.optBoolean("requires_verification", false);
+            Log.d("Registration2", "Requires verification: " + requiresVerification);
+            
+            if (requiresVerification) {
+                // Navigate to email verification
+                Log.d("Registration2", "Navigating to EmailVerificationActivity");
+                Intent intent = new Intent(Registration2Activity.this, EmailVerificationActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+                finish();
+            } else {
+                // Navigate to login (old flow)
+                Log.d("Registration2", "Navigating to Login");
+                Intent intent = new Intent(Registration2Activity.this, Login.class);
+                startActivity(intent);
+                finish();
+            }
+            
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e("Registration2", "Error in proceedToVerification: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void saveBusinessPermits(int regId, Runnable onComplete) {
+        Log.d("REGISTRATION", "=== SAVING BUSINESS PERMITS SEPARATELY ===");
+        Log.d("REGISTRATION", "Registration ID: " + regId);
+        
+        // Use ngrok URL for saving business permits (same as registration)
+        String PERMITS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/save_business_permits.php";
+        Log.d("REGISTRATION", "Permits URL: " + PERMITS_URL);
+        
+        VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, PERMITS_URL,
+                response -> {
+                    Log.d("REGISTRATION", "=== BUSINESS PERMITS RESPONSE RECEIVED ===");
+                    String responseString = new String(response.data);
+                    Log.d("REGISTRATION", "Permits response: " + responseString);
+                    
+                    try {
+                        if (responseString.trim().startsWith("<")) {
+                            Log.e("REGISTRATION", "ERROR: Server returned HTML instead of JSON for permits");
+                            Toast.makeText(Registration2Activity.this, "Warning: Business permits may not have been saved. Please contact support.", Toast.LENGTH_LONG).show();
+                            if (onComplete != null) onComplete.run();
+                            return;
+                        }
+                        
+                        JSONObject obj = new JSONObject(responseString);
+                        boolean success = obj.getBoolean("success");
+                        String message = obj.optString("message", "");
+                        int permitsInserted = obj.optInt("permits_inserted", 0);
+                        
+                        if (success) {
+                            Log.d("REGISTRATION", "Business permits saved successfully: " + permitsInserted);
+                            Toast.makeText(Registration2Activity.this, "✅ " + permitsInserted + " business permit(s) saved successfully", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.e("REGISTRATION", "Failed to save business permits: " + message);
+                            Toast.makeText(Registration2Activity.this, "⚠️ Business permits could not be saved: " + message, Toast.LENGTH_LONG).show();
+                        }
+                        
+                        if (onComplete != null) onComplete.run();
+                    } catch (JSONException e) {
+                        Log.e("REGISTRATION", "JSON parsing error for permits: " + e.getMessage());
+                        Toast.makeText(Registration2Activity.this, "Warning: Business permits response error. Please contact support.", Toast.LENGTH_LONG).show();
+                        if (onComplete != null) onComplete.run();
+                    }
+                },
+                error -> {
+                    Log.e("REGISTRATION", "Network error saving business permits: " + error.getMessage());
+                    Toast.makeText(Registration2Activity.this, "⚠️ Could not save business permits. Please contact support.", Toast.LENGTH_LONG).show();
+                    if (onComplete != null) onComplete.run();
+                }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = super.getHeaders();
+                if (headers == null) {
+                    headers = new HashMap<>();
+                }
+                // Add ngrok skip browser warning header
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+            
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("reg_id", String.valueOf(regId));
+                Log.d("REGISTRATION", "Permits params - reg_id: " + regId);
+                return params;
+            }
+            
+            @Override
+            protected Map<String, DataPart> getByteData() {
+                Map<String, DataPart> params = new HashMap<>();
+                
+                if (!permitUploadItems.isEmpty()) {
+                    int permitIndex = 1;
+                    for (PermitUploadItem permitItem : permitUploadItems) {
+                        if (permitItem.bitmap != null) {
+                            byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
+                            if (permitData != null && permitData.length > 0) {
+                                String permitKey = "permitFile" + permitIndex;
+                                params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                Log.d("REGISTRATION", "Added permit " + permitIndex + " to request (size: " + permitData.length + " bytes)");
+                                permitIndex++;
+                            }
+                        }
+                    }
+                    Log.d("REGISTRATION", "Total permits being sent: " + (permitIndex - 1));
+                }
+                
+                return params;
+            }
+        };
+        
+        Volley.newRequestQueue(this).add(request);
+    }
+    
+    /**
+     * Updates the visibility of the add permit button
+     */
+    private void updateAddPermitButtonVisibility() {
+        // Show button if there are permits uploaded and not at max
+        boolean hasUploadedPermits = false;
+        for (PermitUploadItem item : permitUploadItems) {
+            if (item.bitmap != null) {
+                hasUploadedPermits = true;
+                break;
+            }
+        }
+        
+        if (hasUploadedPermits && permitUploadItems.size() < MAX_PERMITS) {
+            btnAddPermit.setVisibility(View.VISIBLE);
+        } else {
+            btnAddPermit.setVisibility(View.GONE);
         }
     }
 }

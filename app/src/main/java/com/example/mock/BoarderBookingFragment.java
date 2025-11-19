@@ -99,7 +99,9 @@ public class BoarderBookingFragment extends Fragment {
 
     // API
     private static final String TAG = "BoarderBookingFragment";
-    private static final String BASE_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/";
+    // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.6/boardease_v3/"
+    // If your XAMPP document root is boardease_v3, use: "http://192.168.1.6/"
+    private static final String BASE_URL = "http://192.168.1.6/boardease_v3/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
     private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "BoardEase2/get_unpaid_payment_breakdowns.php";
@@ -111,6 +113,8 @@ public class BoarderBookingFragment extends Fragment {
     
     // Payment dialog references for image handling
     private View currentPaymentDialogView;
+    private AlertDialog paymentBreakdownsDialog; // Reference to payment breakdowns dialog
+    private int currentBookingIdForPayment = 0; // Track which booking's payment breakdowns are shown
     
     // Activity result launchers for image picking
     private ActivityResultLauncher<String> cashImagePickerLauncher;
@@ -348,7 +352,15 @@ public class BoarderBookingFragment extends Fragment {
                             if (swipeRefreshLayout != null) {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
-                            showError("Network error: " + error.getMessage());
+                            String errorMessage = "Network error occurred";
+                            if (error.getMessage() != null) {
+                                errorMessage = error.getMessage();
+                            } else if (error.networkResponse != null) {
+                                errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            } else if (error.getCause() != null) {
+                                errorMessage = error.getCause().getMessage();
+                            }
+                            showError(errorMessage);
                         }
                     }) {
                 @Override
@@ -736,6 +748,11 @@ public class BoarderBookingFragment extends Fragment {
                         @Override
                         public void onResponse(String response) {
                             Log.d(TAG, "Unpaid breakdowns response: " + response);
+                            Log.d(TAG, "Response length: " + response.length());
+                            // Log first 500 chars to see the structure
+                            if (response.length() > 500) {
+                                Log.d(TAG, "Response preview: " + response.substring(0, 500));
+                            }
                             try {
                                 JSONObject jsonResponse = new JSONObject(response);
                                 if (jsonResponse.getBoolean("success")) {
@@ -749,10 +766,14 @@ public class BoarderBookingFragment extends Fragment {
                                     // Log each breakdown for debugging
                                     for (PaymentBreakdown breakdown : unpaidBreakdowns) {
                                         Log.d(TAG, "Breakdown: " + breakdown.getPeriodLabel() + 
-                                            " - Status: " + breakdown.getPaymentStatus() + 
+                                            " - Status: [" + breakdown.getPaymentStatus() + "]" + 
                                             " - Due: " + breakdown.getDueDate() + 
                                             " - Selected: " + breakdown.isSelected() + 
                                             " - Paid: " + breakdown.isPaid());
+                                        // Specifically check for "For Approval"
+                                        if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                                            Log.d(TAG, "✓ Found 'For Approval' status for: " + breakdown.getPeriodLabel());
+                                        }
                                     }
                                     
                                     if (unpaidBreakdowns.isEmpty()) {
@@ -773,8 +794,16 @@ public class BoarderBookingFragment extends Fragment {
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-                            Log.e(TAG, "Volley error fetching unpaid breakdowns: " + error.getMessage());
-                            Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                            String errorMessage = "Network error occurred";
+                            if (error.getMessage() != null) {
+                                errorMessage = error.getMessage();
+                            } else if (error.networkResponse != null) {
+                                errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            } else if (error.getCause() != null) {
+                                errorMessage = error.getCause().getMessage();
+                            }
+                            Log.e(TAG, "Volley error fetching unpaid breakdowns: " + errorMessage);
+                            Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                         }
                     }) {
                 @Override
@@ -792,6 +821,12 @@ public class BoarderBookingFragment extends Fragment {
                     return headers;
                 }
             };
+            
+            // Set retry policy for unpaid breakdowns request
+            stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                    15000, // 15 seconds timeout
+                    2, // 2 retries
+                    com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             
             requestQueue.add(stringRequest);
         } catch (Exception e) {
@@ -854,6 +889,12 @@ public class BoarderBookingFragment extends Fragment {
             View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_unpaid_payments, null);
             builder.setView(dialogView);
             
+            // Store dialog reference and booking ID for later refresh
+            AlertDialog dialog = builder.create();
+            paymentBreakdownsDialog = dialog;
+            currentBookingIdForPayment = bookingId;
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
             // Initialize views
             ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
             TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
@@ -907,44 +948,83 @@ public class BoarderBookingFragment extends Fragment {
                 tvAmount.setText("₱" + String.format(Locale.getDefault(), "%,.2f", breakdown.getAmount()));
                 tvDueDate.setText("Due: " + breakdown.getDueDate());
                 
-                // Determine if this is current/overdue period (should be checked by default)
-                boolean isCurrentOrOverdue = false;
-                if ("Overdue".equals(breakdown.getPaymentStatus())) {
-                    isCurrentOrOverdue = true;
-                } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
-                    isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
-                }
-                
                 // Set checkbox styling - brown border and check when clicked
                 checkboxPeriod.setButtonTintList(getResources().getColorStateList(R.color.checkbox_brown));
                 
-                // Chronological validation: disable checkboxes if previous period is not checked
-                // First period is always enabled, others are disabled by default
-                if (i == 0) {
-                    // First checkbox is always enabled
-                    checkboxPeriod.setEnabled(true);
-                    checkboxPeriod.setAlpha(1.0f);
-                    // Check first period if it's current/overdue
-                    if (isCurrentOrOverdue) {
-                        checkboxPeriod.setChecked(true);
-                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                // Hide checkbox completely if status is "For Approval" (payment already submitted, waiting for owner approval)
+                if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                    // Hide the checkbox entirely - payment already submitted
+                    checkboxPeriod.setVisibility(View.GONE);
+                    // Don't add to selected breakdowns - payment already submitted
+                    // Slightly dim the entire breakdown item to show it's not selectable
+                    breakdownItem.setAlpha(0.7f);
+                } else {
+                    // Determine if this is current/overdue period (should be checked by default)
+                    boolean isCurrentOrOverdue = false;
+                    if ("Overdue".equals(breakdown.getPaymentStatus())) {
+                        isCurrentOrOverdue = true;
+                    } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
+                        isCurrentOrOverdue = isDateCurrentOrPast(breakdown.getDueDate());
+                    }
+                    
+                    // Chronological validation: disable checkboxes if previous period is not checked
+                    // "For Approval" items are treated as already "selected" for enabling next period
+                    if (i == 0) {
+                        // First checkbox is always enabled (if not "For Approval")
+                        checkboxPeriod.setEnabled(true);
+                        checkboxPeriod.setAlpha(1.0f);
+                        // Check first period if it's current/overdue
+                        if (isCurrentOrOverdue) {
+                            checkboxPeriod.setChecked(true);
+                            selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                        } else {
+                            checkboxPeriod.setChecked(false);
+                        }
                     } else {
+                        // Check if previous period allows this one to be enabled
+                        // Look backwards to find the previous non-"For Approval" period
+                        boolean canEnable = false;
+                        for (int j = i - 1; j >= 0; j--) {
+                            PaymentBreakdown prevBreakdown = filteredBreakdowns.get(j);
+                            
+                            // If previous is "For Approval", treat it as "selected" and enable this one
+                            if ("For Approval".equals(prevBreakdown.getPaymentStatus())) {
+                                canEnable = true; // "For Approval" counts as selected
+                                break;
+                            }
+                            
+                            // Check if previous checkbox exists and is checked
+                            // Checkboxes are added for all items (including "For Approval" which are hidden)
+                            // So indices match directly, but we need to check visibility
+                            if (j < checkboxes.size()) {
+                                android.widget.CheckBox prevCheckBox = checkboxes.get(j);
+                                // Only check if it's visible (not "For Approval")
+                                if (prevCheckBox.getVisibility() == View.VISIBLE) {
+                                    canEnable = prevCheckBox.isChecked();
+                                }
+                                // If it's hidden (GONE), it's "For Approval" which we already handled above
+                            }
+                        }
+                        
+                        checkboxPeriod.setEnabled(canEnable);
+                        checkboxPeriod.setAlpha(canEnable ? 1.0f : 0.5f);
                         checkboxPeriod.setChecked(false);
                     }
-                } else {
-                    // Later periods are disabled by default until previous one is checked
-                    checkboxPeriod.setEnabled(false);
-                    checkboxPeriod.setAlpha(0.5f); // Visual indication that it's disabled
-                    checkboxPeriod.setChecked(false);
                 }
                 
                 // Set status and colors
-                if ("Overdue".equals(breakdown.getPaymentStatus())) {
+                String status = breakdown.getPaymentStatus();
+                Log.d(TAG, "Setting status for " + breakdown.getPeriodLabel() + ": [" + status + "]");
+                if ("Overdue".equals(status)) {
                     tvStatus.setText("Overdue");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
                     if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty()) {
                         tvDueDate.setTextColor(getResources().getColor(R.color.red));
                     }
+                } else if ("For Approval".equals(status)) {
+                    tvStatus.setText("For Approval");
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Use pending style, or create a new one
+                    tvDueDate.setTextColor(getResources().getColor(R.color.orange));
                 } else if (breakdown.getDueDate() != null && !breakdown.getDueDate().isEmpty() && isDateDueSoon(breakdown.getDueDate())) {
                     tvStatus.setText("Due Soon");
                     tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
@@ -956,21 +1036,34 @@ public class BoarderBookingFragment extends Fragment {
                 }
                 
                 // Set checkbox listener with chronological validation
-                int periodIndex = i; // Capture index for lambda
-                checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                    if (isChecked) {
-                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
-                        // Enable the next period if this one is checked
-                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
-                    } else {
-                        selectedBreakdowns.remove(breakdown.getBreakdownId());
-                        // Disable and uncheck all later periods if this one is unchecked
-                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
-                    }
-                    updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
-                });
+                // Skip listener for "For Approval" status (payment already submitted)
+                if (!"For Approval".equals(breakdown.getPaymentStatus())) {
+                    int periodIndex = i; // Capture index for lambda
+                    checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        // Double-check: prevent interaction if status is "For Approval"
+                        if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                            checkboxPeriod.setChecked(false);
+                            checkboxPeriod.setEnabled(false);
+                            return;
+                        }
+                        
+                        if (isChecked) {
+                            selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                            // Enable the next period if this one is checked
+                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
+                        } else {
+                            selectedBreakdowns.remove(breakdown.getBreakdownId());
+                            // Disable and uncheck all later periods if this one is unchecked
+                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
+                        }
+                        updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
+                    });
+                } else {
+                    // No listener for "For Approval" - payment already submitted
+                    checkboxPeriod.setOnCheckedChangeListener(null);
+                }
                 
                 checkboxes.add(checkboxPeriod);
                 breakdownItemViews.add(breakdownItem);
@@ -1031,11 +1124,14 @@ public class BoarderBookingFragment extends Fragment {
             // Update total for initially selected items
             updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
             
-            AlertDialog dialog = builder.create();
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            // Show the dialog (already created and stored above)
             dialog.show();
             
-            btnClose.setOnClickListener(v -> dialog.dismiss());
+            btnClose.setOnClickListener(v -> {
+                paymentBreakdownsDialog = null;
+                currentBookingIdForPayment = 0;
+                dialog.dismiss();
+            });
             
             // Proceed to Payment button
             btnProceedToPayment.setOnClickListener(v -> {
@@ -1099,18 +1195,41 @@ public class BoarderBookingFragment extends Fragment {
                                       TextView tvTotalAmount,
                                       com.google.android.material.button.MaterialButton btnProceedToPayment) {
         // Enable/disable checkboxes based on sequential logic
+        // "For Approval" items are treated as already "selected" for chronological validation
         for (int i = 0; i < checkboxes.size(); i++) {
             android.widget.CheckBox checkBox = checkboxes.get(i);
             PaymentBreakdown breakdown = filteredBreakdowns.get(i);
             
+            // Skip "For Approval" items - they don't have checkboxes (hidden)
+            if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                continue; // Skip this item, it's treated as "selected" for next period validation
+            }
+            
             if (i == 0) {
-                // First checkbox is always enabled
+                // First checkbox is always enabled (if not "For Approval")
                 checkBox.setEnabled(true);
                 checkBox.setAlpha(1.0f);
             } else {
-                // Can only check if previous is checked
-                android.widget.CheckBox previousCheckBox = checkboxes.get(i - 1);
-                boolean canEnable = previousCheckBox.isChecked();
+                // Check if previous period allows this one to be enabled
+                // Look backwards to find the previous non-"For Approval" period
+                boolean canEnable = false;
+                for (int j = i - 1; j >= 0; j--) {
+                    PaymentBreakdown prevBreakdown = filteredBreakdowns.get(j);
+                    
+                    // If previous is "For Approval", treat it as "selected" and continue
+                    if ("For Approval".equals(prevBreakdown.getPaymentStatus())) {
+                        canEnable = true; // "For Approval" counts as selected
+                        break;
+                    }
+                    
+                    // Check if previous checkbox is checked
+                    android.widget.CheckBox prevCheckBox = checkboxes.get(j);
+                    if (prevCheckBox.getVisibility() == View.VISIBLE) {
+                        canEnable = prevCheckBox.isChecked();
+                        break;
+                    }
+                }
+                
                 checkBox.setEnabled(canEnable);
                 
                 // Update alpha based on enabled state
@@ -1122,13 +1241,20 @@ public class BoarderBookingFragment extends Fragment {
                     selectedBreakdowns.remove(breakdown.getBreakdownId());
                     // Recursively uncheck all subsequent periods
                     for (int j = i + 1; j < checkboxes.size(); j++) {
-                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
-                        if (laterCheckBox.isChecked()) {
-                            laterCheckBox.setChecked(false);
-                            selectedBreakdowns.remove(filteredBreakdowns.get(j).getBreakdownId());
+                        PaymentBreakdown laterBreakdown = filteredBreakdowns.get(j);
+                        // Skip "For Approval" items
+                        if ("For Approval".equals(laterBreakdown.getPaymentStatus())) {
+                            continue;
                         }
-                        laterCheckBox.setEnabled(false);
-                        laterCheckBox.setAlpha(0.5f);
+                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
+                        if (laterCheckBox.getVisibility() == View.VISIBLE) {
+                            if (laterCheckBox.isChecked()) {
+                                laterCheckBox.setChecked(false);
+                                selectedBreakdowns.remove(laterBreakdown.getBreakdownId());
+                            }
+                            laterCheckBox.setEnabled(false);
+                            laterCheckBox.setAlpha(0.5f);
+                        }
                     }
                 }
             }
@@ -1451,10 +1577,26 @@ public class BoarderBookingFragment extends Fragment {
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
                                 currentPaymentDialogView = null;
-                                dialog.dismiss();
+                                dialog.dismiss(); // Close payment method dialog
+                                
+                                // Close payment breakdowns dialog if it's open
+                                if (paymentBreakdownsDialog != null && paymentBreakdownsDialog.isShowing()) {
+                                    paymentBreakdownsDialog.dismiss();
+                                    paymentBreakdownsDialog = null;
+                                }
+                                
                                 Toast.makeText(getContext(), "Payment submitted successfully!", Toast.LENGTH_LONG).show();
-                                // Refresh bookings
+                                
+                                // Refresh bookings and payment breakdowns
                                 loadBookingData();
+                                
+                                // Refresh payment breakdowns for the current booking if dialog was open
+                                if (currentBookingIdForPayment > 0) {
+                                    // Small delay to ensure database is updated, then refresh
+                                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                        fetchUnpaidPaymentBreakdowns(currentBookingIdForPayment);
+                                    }, 1000); // 1 second delay
+                                }
                             } else {
                                 String error = jsonResponse.optString("error", "Failed to submit payment");
                                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
@@ -1469,8 +1611,29 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        Log.e(TAG, "Error submitting payment: " + error.getMessage());
-                        Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        
+                        String errorMessage = "Network error occurred";
+                        if (error.getMessage() != null) {
+                            errorMessage = error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            try {
+                                String responseBody = new String(error.networkResponse.data, "UTF-8");
+                                Log.e(TAG, "Server response: " + responseBody);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error reading response: " + e.getMessage());
+                            }
+                        } else if (error.getCause() != null) {
+                            errorMessage = error.getCause().getMessage();
+                        }
+                        
+                        Log.e(TAG, "Error submitting payment: " + errorMessage);
+                        Log.e(TAG, "Error class: " + error.getClass().getSimpleName());
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Status code: " + error.networkResponse.statusCode);
+                        }
+                        
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
                 @Override
@@ -1503,6 +1666,12 @@ public class BoarderBookingFragment extends Fragment {
                     return headers;
                 }
             };
+            
+            // Set retry policy with longer timeout for payment submission (large base64 image)
+            stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                    30000, // 30 seconds timeout
+                    2, // 2 retries
+                    com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             
             requestQueue.add(stringRequest);
             
