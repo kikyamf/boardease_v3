@@ -10,6 +10,7 @@ import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -40,8 +41,9 @@ public class Login extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private Button btnLogin;
     private Button btnGuest;
-    private TextView tvSignUp;
+    private TextView tvSignUp, tvForgotPassword;
     private ImageButton btnTogglePassword;
+    private CheckBox chkRemember;
     private ProgressDialog progressDialog;
     private RequestQueue requestQueue;
     private boolean isPasswordVisible = false;
@@ -53,6 +55,10 @@ public class Login extends AppCompatActivity {
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_USER_EMAIL = "user_email";
+    
+    // SharedPreferences keys for Remember Me
+    private static final String KEY_REMEMBER_ME = "remember_me";
+    private static final String KEY_SAVED_EMAIL = "saved_email";
 
     // Server URL - Update this path if login.php is in a different location
     private static final String LOGIN_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/login.php";
@@ -75,6 +81,9 @@ public class Login extends AppCompatActivity {
 
         // Check if user is already logged in
         checkExistingSession();
+        
+        // Load saved email if Remember Me was checked
+        loadSavedEmail();
 
         // Set click listeners
         setClickListeners();
@@ -92,7 +101,9 @@ public class Login extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         btnGuest = findViewById(R.id.btnGuest);
         tvSignUp = findViewById(R.id.tvSignUp);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
         btnTogglePassword = findViewById(R.id.btnTogglePassword);
+        chkRemember = findViewById(R.id.chkRemember);
 
         // Initialize progress dialog
         progressDialog = new ProgressDialog(this);
@@ -108,6 +119,19 @@ public class Login extends AppCompatActivity {
         if (userId != null && userRole != null) {
             // User is already logged in, navigate to appropriate dashboard
             navigateToDashboard(userRole);
+        }
+    }
+    
+    private void loadSavedEmail() {
+        // Check if Remember Me was previously checked
+        boolean rememberMe = sharedPreferences.getBoolean(KEY_REMEMBER_ME, false);
+        String savedEmail = sharedPreferences.getString(KEY_SAVED_EMAIL, "");
+        
+        if (rememberMe && !savedEmail.isEmpty()) {
+            // Set checkbox as checked
+            chkRemember.setChecked(true);
+            // Load saved email
+            etEmail.setText(savedEmail);
         }
     }
 
@@ -138,6 +162,14 @@ public class Login extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 navigateToGuestMode();
+            }
+        });
+
+        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Login.this, ForgotPasswordActivity.class);
+                startActivity(intent);
             }
         });
     }
@@ -276,6 +308,10 @@ public class Login extends AppCompatActivity {
 
                 // Also store first and last name separately
                 saveUserNameParts(firstName, lastName);
+                
+                // Handle Remember Me checkbox - use email from EditText
+                String email = etEmail.getText().toString().trim();
+                handleRememberMe(email);
 
                 // Show success message
                 Toast.makeText(this, "Welcome, " + firstName + "!", Toast.LENGTH_SHORT).show();
@@ -319,6 +355,21 @@ public class Login extends AppCompatActivity {
         editor.putString("user_suffix", suffix);
         editor.apply();
     }
+    
+    private void handleRememberMe(String email) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        
+        if (chkRemember.isChecked()) {
+            // Save email and remember me preference
+            editor.putBoolean(KEY_REMEMBER_ME, true);
+            editor.putString(KEY_SAVED_EMAIL, email);
+        } else {
+            // Clear saved email and remember me preference
+            editor.putBoolean(KEY_REMEMBER_ME, false);
+            editor.remove(KEY_SAVED_EMAIL);
+        }
+        editor.apply();
+    }
 
     // Helper method to save first and last name separately (called during login)
     private void saveUserNameParts(String firstName, String lastName) {
@@ -353,7 +404,20 @@ public class Login extends AppCompatActivity {
     public static void logout(android.content.Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
+        
+        // Save remember me preference and email before clearing
+        boolean rememberMe = sharedPreferences.getBoolean(KEY_REMEMBER_ME, false);
+        String savedEmail = sharedPreferences.getString(KEY_SAVED_EMAIL, "");
+        
+        // Clear all preferences
         editor.clear();
+        
+        // Restore remember me preference and email if they were set
+        if (rememberMe && !savedEmail.isEmpty()) {
+            editor.putBoolean(KEY_REMEMBER_ME, rememberMe);
+            editor.putString(KEY_SAVED_EMAIL, savedEmail);
+        }
+        
         editor.apply();
 
         Intent intent = new Intent(context, Login.class);
