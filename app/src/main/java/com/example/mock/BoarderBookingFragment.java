@@ -950,7 +950,11 @@ public class BoarderBookingFragment extends Fragment {
                     checkboxPeriod.setEnabled(false);
                     checkboxPeriod.setAlpha(0.5f);
                     checkboxPeriod.setChecked(false);
+                    checkboxPeriod.setClickable(false);
+                    checkboxPeriod.setFocusable(false);
                     // Don't add to selected breakdowns - payment already submitted
+                    // Also disable the entire breakdown item view to prevent any interaction
+                    breakdownItem.setAlpha(0.7f); // Slightly dimmed to show it's not selectable
                 } else {
                     // Determine if this is current/overdue period (should be checked by default)
                     boolean isCurrentOrOverdue = false;
@@ -1005,21 +1009,34 @@ public class BoarderBookingFragment extends Fragment {
                 }
                 
                 // Set checkbox listener with chronological validation
-                int periodIndex = i; // Capture index for lambda
-                checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                    if (isChecked) {
-                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
-                        // Enable the next period if this one is checked
-                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
-                    } else {
-                        selectedBreakdowns.remove(breakdown.getBreakdownId());
-                        // Disable and uncheck all later periods if this one is unchecked
-                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
-                    }
-                    updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
-                });
+                // Skip listener for "For Approval" status (payment already submitted)
+                if (!"For Approval".equals(breakdown.getPaymentStatus())) {
+                    int periodIndex = i; // Capture index for lambda
+                    checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        // Double-check: prevent interaction if status is "For Approval"
+                        if ("For Approval".equals(breakdown.getPaymentStatus())) {
+                            checkboxPeriod.setChecked(false);
+                            checkboxPeriod.setEnabled(false);
+                            return;
+                        }
+                        
+                        if (isChecked) {
+                            selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
+                            // Enable the next period if this one is checked
+                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
+                        } else {
+                            selectedBreakdowns.remove(breakdown.getBreakdownId());
+                            // Disable and uncheck all later periods if this one is unchecked
+                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
+                        }
+                        updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
+                    });
+                } else {
+                    // No listener for "For Approval" - payment already submitted
+                    checkboxPeriod.setOnCheckedChangeListener(null);
+                }
                 
                 checkboxes.add(checkboxPeriod);
                 breakdownItemViews.add(breakdownItem);
