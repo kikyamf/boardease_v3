@@ -437,7 +437,7 @@ public class Registration2Activity extends AppCompatActivity {
                                 Log.d("Registration2", "Registration ID: " + regId);
                                 
                                 // Check if user is BH Owner and has business permits to save
-                                boolean isBHOwner = role != null && !role.equals("Boarder");
+                                boolean isBHOwnerCheck = role != null && !role.equals("Boarder");
                                 boolean hasPermits = false;
                                 for (PermitUploadItem item : permitUploadItems) {
                                     if (item.bitmap != null) {
@@ -446,7 +446,7 @@ public class Registration2Activity extends AppCompatActivity {
                                     }
                                 }
                                 
-                                if (isBHOwner && hasPermits && regId > 0) {
+                                if (isBHOwnerCheck && hasPermits && regId > 0) {
                                     // Save business permits separately using direct IP
                                     Log.d("Registration2", "Saving business permits separately for reg_id: " + regId);
                                     saveBusinessPermits(regId, () -> {
