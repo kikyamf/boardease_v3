@@ -342,7 +342,15 @@ public class BoarderBookingFragment extends Fragment {
                             if (swipeRefreshLayout != null) {
                                 swipeRefreshLayout.setRefreshing(false);
                             }
-                            showError("Network error: " + error.getMessage());
+                            String errorMessage = "Network error occurred";
+                            if (error.getMessage() != null) {
+                                errorMessage = error.getMessage();
+                            } else if (error.networkResponse != null) {
+                                errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            } else if (error.getCause() != null) {
+                                errorMessage = error.getCause().getMessage();
+                            }
+                            showError(errorMessage);
                         }
                     }) {
                 @Override
@@ -767,8 +775,16 @@ public class BoarderBookingFragment extends Fragment {
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-                            Log.e(TAG, "Volley error fetching unpaid breakdowns: " + error.getMessage());
-                            Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                            String errorMessage = "Network error occurred";
+                            if (error.getMessage() != null) {
+                                errorMessage = error.getMessage();
+                            } else if (error.networkResponse != null) {
+                                errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            } else if (error.getCause() != null) {
+                                errorMessage = error.getCause().getMessage();
+                            }
+                            Log.e(TAG, "Volley error fetching unpaid breakdowns: " + errorMessage);
+                            Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                         }
                     }) {
                 @Override
@@ -786,6 +802,12 @@ public class BoarderBookingFragment extends Fragment {
                     return headers;
                 }
             };
+            
+            // Set retry policy for unpaid breakdowns request
+            stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                    15000, // 15 seconds timeout
+                    2, // 2 retries
+                    com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             
             requestQueue.add(stringRequest);
         } catch (Exception e) {
@@ -1463,8 +1485,29 @@ public class BoarderBookingFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         progressDialog.dismiss();
-                        Log.e(TAG, "Error submitting payment: " + error.getMessage());
-                        Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        
+                        String errorMessage = "Network error occurred";
+                        if (error.getMessage() != null) {
+                            errorMessage = error.getMessage();
+                        } else if (error.networkResponse != null) {
+                            errorMessage = "Server error: " + error.networkResponse.statusCode;
+                            try {
+                                String responseBody = new String(error.networkResponse.data, "UTF-8");
+                                Log.e(TAG, "Server response: " + responseBody);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error reading response: " + e.getMessage());
+                            }
+                        } else if (error.getCause() != null) {
+                            errorMessage = error.getCause().getMessage();
+                        }
+                        
+                        Log.e(TAG, "Error submitting payment: " + errorMessage);
+                        Log.e(TAG, "Error class: " + error.getClass().getSimpleName());
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Status code: " + error.networkResponse.statusCode);
+                        }
+                        
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
                 @Override
@@ -1497,6 +1540,12 @@ public class BoarderBookingFragment extends Fragment {
                     return headers;
                 }
             };
+            
+            // Set retry policy with longer timeout for payment submission (large base64 image)
+            stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                    30000, // 30 seconds timeout
+                    2, // 2 retries
+                    com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             
             requestQueue.add(stringRequest);
             
