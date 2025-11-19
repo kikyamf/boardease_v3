@@ -93,7 +93,9 @@ public class BoarderBookingFragment extends Fragment {
 
     // API
     private static final String TAG = "BoarderBookingFragment";
-    private static final String BASE_URL = "http://192.168.1.6/";
+    // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.6/boardease_v3/"
+    // If your XAMPP document root is boardease_v3, use: "http://192.168.1.6/"
+    private static final String BASE_URL = "http://192.168.1.6/boardease_v3/";
     private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
     private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
     private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "BoardEase2/get_unpaid_payment_breakdowns.php";
