@@ -20,6 +20,7 @@ public class PaymentData implements Serializable {
     private String notes;
     private String paymentProof;
     private String receiptUrl;
+    private String profilePicture;
     private String createdAt;
     private String updatedAt;
     
@@ -53,7 +54,7 @@ public class PaymentData implements Serializable {
     public PaymentData(int paymentId, int bookingId, int userId, String boarderName, String room, 
                       String rentType, String amountPaid, String totalAmount, String paymentStatus, 
                       String rentalStatus, String paymentDate, String dueDate, String paymentMethod, 
-                      String notes, String paymentProof, String receiptUrl, String createdAt, String updatedAt) {
+                      String notes, String paymentProof, String receiptUrl, String profilePicture, String createdAt, String updatedAt) {
         this.paymentId = paymentId;
         this.bookingId = bookingId;
         this.userId = userId;
@@ -70,6 +71,7 @@ public class PaymentData implements Serializable {
         this.notes = notes;
         this.paymentProof = paymentProof;
         this.receiptUrl = receiptUrl;
+        this.profilePicture = profilePicture;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -100,6 +102,7 @@ public class PaymentData implements Serializable {
                 json.optString("notes", ""),
                 paymentProofUrl,
                 json.optString("receipt_url", ""),
+                json.optString("profile_picture", ""),
                 json.optString("created_at", ""),
                 json.optString("updated_at", "")
             );
@@ -143,6 +146,7 @@ public class PaymentData implements Serializable {
     public String getNotes() { return notes; }
     public String getPaymentProof() { return paymentProof; }
     public String getReceiptUrl() { return receiptUrl; }
+    public String getProfilePicture() { return profilePicture; }
     public String getCreatedAt() { return createdAt; }
     public String getUpdatedAt() { return updatedAt; }
     
@@ -176,6 +180,7 @@ public class PaymentData implements Serializable {
     public void setNotes(String notes) { this.notes = notes; }
     public void setPaymentProof(String paymentProof) { this.paymentProof = paymentProof; }
     public void setReceiptUrl(String receiptUrl) { this.receiptUrl = receiptUrl; }
+    public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
     

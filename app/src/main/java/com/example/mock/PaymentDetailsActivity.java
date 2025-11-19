@@ -135,9 +135,20 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         // Set boarder name
         tvBoarderName.setText(payment.getBoarderName() != null ? payment.getBoarderName() : "Unknown");
         
-        // Set profile image (placeholder for now)
+        // Load profile picture
         if (imgProfile != null) {
-            imgProfile.setImageResource(R.drawable.ic_profile);
+            String profilePicture = payment.getProfilePicture();
+            if (profilePicture != null && !profilePicture.isEmpty()) {
+                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicture;
+                Glide.with(this)
+                        .load(fullImageUrl)
+                        .placeholder(R.drawable.ic_profile)
+                        .error(R.drawable.ic_profile)
+                        .circleCrop()
+                        .into(imgProfile);
+            } else {
+                imgProfile.setImageResource(R.drawable.ic_profile);
+            }
         }
         
         // Hide email and phone (not available in PaymentData)

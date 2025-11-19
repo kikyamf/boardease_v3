@@ -389,9 +389,20 @@ public class BookingDetailsActivity extends AppCompatActivity {
                   ", Paid Amount: " + paidAmountForBooking + 
                   ", Room Amount: " + roomAmount);
             
-            // Set profile image (placeholder for now)
+            // Load profile picture
             if (imgProfile != null) {
-            imgProfile.setImageResource(R.drawable.ic_profile);
+                String profilePicture = bookingData.getProfileImage();
+                if (profilePicture != null && !profilePicture.isEmpty()) {
+                    String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicture;
+                    com.bumptech.glide.Glide.with(this)
+                            .load(fullImageUrl)
+                            .placeholder(R.drawable.ic_profile)
+                            .error(R.drawable.ic_profile)
+                            .circleCrop()
+                            .into(imgProfile);
+                } else {
+                    imgProfile.setImageResource(R.drawable.ic_profile);
+                }
             }
             
             // Show/hide action buttons based on status
