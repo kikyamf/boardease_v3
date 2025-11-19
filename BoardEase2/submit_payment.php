@@ -185,8 +185,7 @@ try {
                 payment_month,
                 payment_year,
                 payment_month_number,
-                is_monthly_payment,
-                created_at
+                is_monthly_payment
             ) VALUES (
                 :booking_id,
                 :user_id,
@@ -199,28 +198,34 @@ try {
                 :payment_month,
                 :payment_year,
                 :payment_month_number,
-                1,
-                NOW()
+                1
             )
         ";
         
-        $insertPaymentStmt = $pdo->prepare($insertPaymentSql);
-        $insertPaymentStmt->execute([
-            ':booking_id' => $bookingId,
-            ':user_id' => $userId,
-            ':owner_id' => $ownerId,
-            ':payment_amount' => $totalAmount,
-            ':payment_method' => $paymentMethod,
-            ':payment_proof' => $paymentProofPath,
-            ':payment_month' => $paymentMonth,
-            ':payment_year' => $paymentYear,
-            ':payment_month_number' => $paymentMonthNumber
-        ]);
-        
-        $paymentId = $pdo->lastInsertId();
-        error_log("Payment record created with payment_id: $paymentId");
+        try {
+            $insertPaymentStmt = $pdo->prepare($insertPaymentSql);
+            $insertPaymentStmt->execute([
+                ':booking_id' => $bookingId,
+                ':user_id' => $userId,
+                ':owner_id' => $ownerId,
+                ':payment_amount' => $totalAmount,
+                ':payment_method' => $paymentMethod,
+                ':payment_proof' => $paymentProofPath,
+                ':payment_month' => $paymentMonth,
+                ':payment_year' => $paymentYear,
+                ':payment_month_number' => $paymentMonthNumber
+            ]);
+            
+            $paymentId = $pdo->lastInsertId();
+            error_log("Payment record created with payment_id: $paymentId");
+        } catch (PDOException $e) {
+            error_log("Error inserting payment: " . $e->getMessage());
+            error_log("SQL: " . $insertPaymentSql);
+            throw $e; // Re-throw to be caught by outer catch
+        }
         
         // Update payment_breakdowns to link to payment_id and set status to 'For Approval'
+        // Note: Make sure you've run update_payment_breakdowns_enum.sql to add 'For Approval' to the enum
         $updateBreakdownSql = "
             UPDATE payment_breakdowns 
             SET payment_id = :payment_id,
@@ -231,22 +236,34 @@ try {
               AND is_paid = 0
         ";
         
-        $updateBreakdownStmt = $pdo->prepare($updateBreakdownSql);
-        $breakdownsUpdated = 0;
-        
-        foreach ($breakdownIds as $breakdownId) {
-            $updateBreakdownStmt->execute([
-                ':payment_id' => $paymentId,
-                ':breakdown_id' => intval($breakdownId),
-                ':booking_id' => $bookingId
-            ]);
+        try {
+            $updateBreakdownStmt = $pdo->prepare($updateBreakdownSql);
+            $breakdownsUpdated = 0;
             
-            if ($updateBreakdownStmt->rowCount() > 0) {
-                $breakdownsUpdated++;
+            foreach ($breakdownIds as $breakdownId) {
+                try {
+                    $updateBreakdownStmt->execute([
+                        ':payment_id' => $paymentId,
+                        ':breakdown_id' => intval($breakdownId),
+                        ':booking_id' => $bookingId
+                    ]);
+                    
+                    if ($updateBreakdownStmt->rowCount() > 0) {
+                        $breakdownsUpdated++;
+                    }
+                } catch (PDOException $e) {
+                    error_log("Error updating breakdown_id $breakdownId: " . $e->getMessage());
+                    error_log("SQL: " . $updateBreakdownSql);
+                    // Continue with other breakdowns
+                }
             }
+            
+            error_log("Updated $breakdownsUpdated payment breakdowns to 'For Approval' status");
+        } catch (PDOException $e) {
+            error_log("Error preparing breakdown update: " . $e->getMessage());
+            error_log("SQL: " . $updateBreakdownSql);
+            throw $e; // Re-throw to be caught by outer catch
         }
-        
-        error_log("Updated $breakdownsUpdated payment breakdowns to 'For Approval' status");
         
         // Commit transaction
         $pdo->commit();
