@@ -1110,8 +1110,8 @@ public class Registration2Activity extends AppCompatActivity {
         Log.d("REGISTRATION", "=== SAVING BUSINESS PERMITS SEPARATELY ===");
         Log.d("REGISTRATION", "Registration ID: " + regId);
         
-        // Use direct IP for saving business permits
-        String PERMITS_URL = "http://192.168.1.6/BoardEase2/save_business_permits.php";
+        // Use ngrok URL for saving business permits (same as registration)
+        String PERMITS_URL = "https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/save_business_permits.php";
         Log.d("REGISTRATION", "Permits URL: " + PERMITS_URL);
         
         VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, PERMITS_URL,
@@ -1154,6 +1154,17 @@ public class Registration2Activity extends AppCompatActivity {
                     if (onComplete != null) onComplete.run();
                 }
         ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = super.getHeaders();
+                if (headers == null) {
+                    headers = new HashMap<>();
+                }
+                // Add ngrok skip browser warning header
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+            
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();

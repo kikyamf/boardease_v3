@@ -57,6 +57,7 @@ try {
             CASE 
                 WHEN pb.is_paid = 1 THEN 'Paid'
                 WHEN pb.payment_status = 'Cancelled' THEN 'Cancelled'
+                WHEN pb.payment_status = 'For Approval' THEN 'For Approval'
                 WHEN COALESCE(pb.due_date, pb.period_start_date) < CURDATE() AND pb.payment_status IN ('Pending', 'Overdue') THEN 'Overdue'
                 WHEN COALESCE(pb.due_date, pb.period_start_date) >= CURDATE() 
                      AND COALESCE(pb.due_date, pb.period_start_date) <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) 
@@ -69,6 +70,7 @@ try {
         WHERE pb.booking_id = :booking_id
             AND pb.is_paid = 0
             AND (pb.payment_status != 'Cancelled' OR pb.payment_status IS NULL)
+            AND (pb.payment_status != 'Paid' OR pb.payment_status IS NULL)
         ORDER BY 
             COALESCE(pb.due_date, pb.period_start_date) ASC
     ";
