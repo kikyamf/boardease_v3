@@ -91,9 +91,11 @@ try {
     }
     
     // Verify booking exists and get user_id and owner_id
+    // Correct relationship: bookings -> room_units -> boarding_house_rooms -> boarding_houses
     $bookingSql = "SELECT b.user_id, bhr.bh_id, bh.user_id as owner_id 
                    FROM bookings b
-                   INNER JOIN boarding_house_rooms bhr ON b.room_id = bhr.room_id
+                   INNER JOIN room_units ru ON b.room_id = ru.room_id
+                   INNER JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
                    INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
                    WHERE b.booking_id = :booking_id";
     $bookingStmt = $pdo->prepare($bookingSql);
