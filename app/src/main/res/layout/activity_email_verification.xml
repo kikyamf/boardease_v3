@@ -188,17 +188,19 @@
             android:fontFamily="sans-serif-medium" />
 
         <!-- Resend Button -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnResend"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/button_outline_background"
             android:text="RESEND CODE"
-            android:textColor="@android:color/holo_blue_dark"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium" />
+            android:textAllCaps="false"
+            android:textColor="@color/brown"
+            android:textSize="16sp"
+            android:backgroundTint="@android:color/white"
+            app:cornerRadius="8dp"
+            app:strokeColor="@color/brown"
+            app:strokeWidth="2dp" />
 
         <!-- Help Text -->
         <TextView
