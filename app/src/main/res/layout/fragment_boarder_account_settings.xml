@@ -114,7 +114,8 @@
                     android:id="@+id/llPersonalInfoFields"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                     <!-- Each field spaced properly -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -331,8 +332,8 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="5dp"
             app:strokeWidth="2dp"
-            app:strokeColor="@color/blue"
-            android:backgroundTint="#E3F2FD">
+            app:strokeColor="@color/green"
+            android:backgroundTint="#E8F5E9">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -349,7 +350,7 @@
                     android:gravity="center_vertical"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="@drawable/bg_privacy_header_ripple_blue"
+                    android:background="@drawable/bg_privacy_header_ripple_green"
                     android:padding="12dp"
                     android:paddingBottom="12dp"
                     android:layout_marginBottom="12dp"
@@ -361,7 +362,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_security"
-                        android:tint="@color/blue"
+                        android:tint="@color/green"
                         android:layout_marginEnd="12dp"
                         android:contentDescription="Security Icon" />
 
@@ -372,14 +373,14 @@
                         android:text="Privacy &amp; Security"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold"
-                        android:textColor="@color/blue" />
+                        android:textColor="@color/green" />
 
                     <ImageView
                         android:id="@+id/ivExpandCollapse"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_down"
-                        android:tint="@color/blue"
+                        android:tint="@color/green"
                         android:contentDescription="Expand/Collapse" />
                 </LinearLayout>
 
@@ -397,7 +398,7 @@
                         android:text="Change Password"
                         android:textSize="16sp"
                         android:fontFamily="@font/poppins_medium"
-                        android:textColor="@color/blue"
+                        android:textColor="@color/green"
                         android:layout_marginBottom="10dp" />
 
                 <!-- Current Password Field -->
@@ -407,7 +408,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background_blue"
+                    android:background="@drawable/edittext_background_green"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -431,7 +432,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background_blue"
+                    android:background="@drawable/edittext_background_green"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -455,7 +456,7 @@
                     android:layout_marginBottom="12dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="@drawable/edittext_background_blue"
+                    android:background="@drawable/edittext_background_green"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp">
 
@@ -482,7 +483,7 @@
                         android:textSize="16sp"
                         android:textColor="#FFFFFF"
                         android:fontFamily="@font/poppins_medium"
-                        android:backgroundTint="@color/blue"
+                        android:backgroundTint="@color/green"
                         app:cornerRadius="10dp"
                         android:paddingVertical="12dp" />
                 </LinearLayout>

@@ -19,6 +19,14 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.UnderlineSpan;
+import android.text.style.ClickableSpan;
+import android.text.method.LinkMovementMethod;
+import android.view.LayoutInflater;
+import android.app.AlertDialog;
+import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -99,6 +107,7 @@ public class Registration2Activity extends AppCompatActivity {
         etIdNumber = findViewById(R.id.etidNumber);
         cbAgree = findViewById(R.id.cbAgree);
         btnReg = findViewById(R.id.btnReg);
+        TextView tvAgreeText = findViewById(R.id.tvAgreeText);
 
         tvLogin = findViewById(R.id.tvLogin);
         
@@ -293,6 +302,34 @@ public class Registration2Activity extends AppCompatActivity {
         };
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerVId.setAdapter(adapter);
+
+        // Setup clickable "terms and privacy" text
+        if (tvAgreeText != null) {
+            String fullText = "Agree with terms and privacy";
+            SpannableString spannableString = new SpannableString(fullText);
+            
+            // Find the start and end positions of "terms and privacy"
+            String clickableText = "terms and privacy";
+            int startIndex = fullText.indexOf(clickableText);
+            int endIndex = startIndex + clickableText.length();
+            
+            if (startIndex >= 0) {
+                // Make it clickable
+                ClickableSpan clickableSpan = new ClickableSpan() {
+                    @Override
+                    public void onClick(View widget) {
+                        showTermsPrivacyDialog();
+                    }
+                };
+                spannableString.setSpan(clickableSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                
+                // Make it underlined
+                spannableString.setSpan(new UnderlineSpan(), startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            
+            tvAgreeText.setText(spannableString);
+            tvAgreeText.setMovementMethod(LinkMovementMethod.getInstance());
+        }
 
         // Register button click
         btnReg.setOnClickListener(v -> {
@@ -677,7 +714,6 @@ public class Registration2Activity extends AppCompatActivity {
                         Log.e("REGISTRATION", "Error creating file data: " + e.getMessage());
                         e.printStackTrace();
                     }
-                    
                     return params;
                 }
             };
@@ -1222,6 +1258,39 @@ public class Registration2Activity extends AppCompatActivity {
             btnAddPermit.setVisibility(View.VISIBLE);
         } else {
             btnAddPermit.setVisibility(View.GONE);
+        }
+    }
+    
+    /**
+     * Shows the Terms and Privacy dialog
+     */
+    private void showTermsPrivacyDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_terms_privacy, null);
+            builder.setView(dialogView);
+            
+            // Initialize views
+            ImageButton btnCloseTerms = dialogView.findViewById(R.id.btnCloseTerms);
+            Button btnCloseTermsDialog = dialogView.findViewById(R.id.btnCloseTermsDialog);
+            
+            // Create and show dialog
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
+            // Close button click listeners
+            if (btnCloseTerms != null) {
+                btnCloseTerms.setOnClickListener(v -> dialog.dismiss());
+            }
+            if (btnCloseTermsDialog != null) {
+                btnCloseTermsDialog.setOnClickListener(v -> dialog.dismiss());
+            }
+            
+            dialog.show();
+        } catch (Exception e) {
+            Log.e("Registration2", "Error showing Terms and Privacy dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error loading Terms and Privacy", Toast.LENGTH_SHORT).show();
         }
     }
 }

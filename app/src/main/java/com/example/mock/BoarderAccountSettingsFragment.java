@@ -46,6 +46,12 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private ImageButton btnBack;
     private ProgressBar progressBar;
     
+    // Collapsible Personal Information Section
+    private View llPersonalInfoHeader;
+    private View llPersonalInfoFields;
+    private ImageView ivExpandCollapsePersonal;
+    private boolean isPersonalInfoSectionExpanded = false;
+    
     // Collapsible Privacy Section
     private View llPrivacyHeader;
     private View llPasswordFields;
@@ -136,9 +142,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
         initializeSharedPreferences();
         setupClickListeners();
         loadUserData();
-        
-        // Set up privacy header click listener directly here
-        setupPrivacyHeaderClick();
     }
 
     private void initializeViews(View view) {
@@ -164,15 +167,25 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etNewPassword = view.findViewById(R.id.etNewPassword);
             etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
             btnUpdatePassword = view.findViewById(R.id.btnUpdatePassword);
-//
-//            // Collapsible Privacy Section
-//            llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
-//            llPasswordFields = view.findViewById(R.id.llPasswordFields);
-//            ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
             
-            Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null)); // Debug log
-            Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null)); // Debug log
-            Log.d("BoarderAccountSettings", "ivExpandCollapse found: " + (ivExpandCollapse != null)); // Debug log
+            // Collapsible Personal Information Section
+            llPersonalInfoHeader = view.findViewById(R.id.llPersonalInfoHeader);
+            llPersonalInfoFields = view.findViewById(R.id.llPersonalInfoFields);
+            ivExpandCollapsePersonal = view.findViewById(R.id.ivExpandCollapsePersonal);
+            
+            // Collapsible Privacy Section
+            llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
+            llPasswordFields = view.findViewById(R.id.llPasswordFields);
+            ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
+            
+            // Initialize all sections as collapsed
+            initializeSectionsCollapsed();
+            
+            Log.d("BoarderAccountSettings", "llPersonalInfoHeader found: " + (llPersonalInfoHeader != null));
+            Log.d("BoarderAccountSettings", "llPersonalInfoFields found: " + (llPersonalInfoFields != null));
+            Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null));
+            Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null));
+            Log.d("BoarderAccountSettings", "ivExpandCollapse found: " + (ivExpandCollapse != null));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -188,6 +201,28 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
 
+    private void initializeSectionsCollapsed() {
+        try {
+            // Set Personal Information section as collapsed
+            if (llPersonalInfoFields != null) {
+                llPersonalInfoFields.setVisibility(View.GONE);
+            }
+            if (ivExpandCollapsePersonal != null) {
+                ivExpandCollapsePersonal.setRotation(0f);
+            }
+            
+            // Set Privacy section as collapsed (already has visibility="gone" in XML, but ensure it's set)
+            if (llPasswordFields != null) {
+                llPasswordFields.setVisibility(View.GONE);
+            }
+            if (ivExpandCollapse != null) {
+                ivExpandCollapse.setRotation(0f);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     private void setupClickListeners() {
         try {
             Log.d("BoarderAccountSettings", "setupClickListeners called"); // Debug log
@@ -204,20 +239,28 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 });
             }
             
+            // Personal Information Section Collapsible
+            if (llPersonalInfoHeader != null) {
+                llPersonalInfoHeader.setOnClickListener(v -> {
+                    try {
+                        Log.d("BoarderAccountSettings", "Personal Info header clicked!");
+                        togglePersonalInfoSection();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+            
             // Privacy Section Collapsible
             if (llPrivacyHeader != null) {
                 llPrivacyHeader.setOnClickListener(v -> {
                     try {
-                        Log.d("BoarderAccountSettings", "Privacy header clicked!"); // Debug log
-                        Toast.makeText(getContext(), "Privacy section clicked!", Toast.LENGTH_SHORT).show();
+                        Log.d("BoarderAccountSettings", "Privacy header clicked!");
                         togglePasswordSection();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
-                Log.d("BoarderAccountSettings", "Privacy header click listener set"); // Debug log
-            } else {
-                Log.d("BoarderAccountSettings", "llPrivacyHeader is null!"); // Debug log
             }
 
             // Birthdate picker
@@ -648,7 +691,7 @@ public class BoarderAccountSettingsFragment extends Fragment {
             Toast.makeText(getContext(), "Error updating password", Toast.LENGTH_SHORT).show();
         }
     }
-
+    
     private boolean validatePasswordFields() {
         try {
             // Check if fields are empty
@@ -816,6 +859,38 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
     
+    private void togglePersonalInfoSection() {
+        try {
+            Log.d("BoarderAccountSettings", "togglePersonalInfoSection called, current state: " + isPersonalInfoSectionExpanded);
+            
+            if (llPersonalInfoFields == null) {
+                Log.d("BoarderAccountSettings", "llPersonalInfoFields is null");
+                return;
+            }
+            if (ivExpandCollapsePersonal == null) {
+                Log.d("BoarderAccountSettings", "ivExpandCollapsePersonal is null");
+                return;
+            }
+            
+            if (isPersonalInfoSectionExpanded) {
+                // Collapse the section
+                llPersonalInfoFields.setVisibility(View.GONE);
+                ivExpandCollapsePersonal.setRotation(0f); // Point down
+                isPersonalInfoSectionExpanded = false;
+                Log.d("BoarderAccountSettings", "Personal Info section collapsed");
+            } else {
+                // Expand the section
+                llPersonalInfoFields.setVisibility(View.VISIBLE);
+                ivExpandCollapsePersonal.setRotation(180f); // Point up
+                isPersonalInfoSectionExpanded = true;
+                Log.d("BoarderAccountSettings", "Personal Info section expanded");
+            }
+        } catch (Exception e) {
+            Log.d("BoarderAccountSettings", "Error in togglePersonalInfoSection: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     private void togglePasswordSection() {
         try {
             Log.d("BoarderAccountSettings", "togglePasswordSection called, current state: " + isPasswordSectionExpanded); // Debug log
@@ -848,4 +923,5 @@ public class BoarderAccountSettingsFragment extends Fragment {
             e.printStackTrace();
         }
     }
+    
 }

@@ -2,8 +2,11 @@ package com.example.mock;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +14,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,9 +31,23 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,6 +60,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
  */
 public class BoarderProfileFragment extends Fragment {
 
+    private static final String TAG = "BoarderProfileFragment";
+    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String GET_BOARDER_INFO_URL = BASE_URL + "get_boarder_info.php";
+    private static final String UPLOAD_PROFILE_PIC_URL = BASE_URL + "upload_profile_picture.php";
+
     // Views
     private ImageButton btnBack;
     private ImageView ivProfilePic;
@@ -52,11 +76,13 @@ public class BoarderProfileFragment extends Fragment {
     private android.widget.Button btnLogout;
     
     // Image handling
-    private ActivityResultLauncher<String> requestPermissionLauncher;
+    private ActivityResultLauncher<String[]> requestMultiplePermissionsLauncher;
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<String> galleryLauncher;
     private Uri cameraImageUri;
+    private Uri selectedImageUri;
     private File cameraImageFile;
+    private int userId;
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
@@ -66,6 +92,11 @@ public class BoarderProfileFragment extends Fragment {
     
     // Pull-to-refresh
     private SwipeRefreshLayout swipeRefreshLayout;
+
+    // Profile cache
+    private SharedPreferences profilePrefs;
+    private static final String PROFILE_PREFS_NAME = "boarder_profile_prefs";
+    private static final String KEY_PROFILE_PICTURE = "profile_picture_path";
 
     public BoarderProfileFragment() {
         // Required empty public constructor
@@ -89,10 +120,21 @@ public class BoarderProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
         initializeViews(view);
         initializeImageHandlers();
         setupClickListeners();
+        if (getContext() != null) {
+            profilePrefs = getContext().getSharedPreferences(PROFILE_PREFS_NAME, android.content.Context.MODE_PRIVATE);
+        }
+        loadUserData();
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh profile data when fragment becomes visible
+        // This ensures any changes made in other activities are reflected
         loadUserData();
     }
 
@@ -132,11 +174,18 @@ public class BoarderProfileFragment extends Fragment {
     }
     
     private void initializeImageHandlers() {
-        // Permission request launcher
-        requestPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
+        // Multiple permissions request launcher
+        requestMultiplePermissionsLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                permissions -> {
+                    boolean allGranted = true;
+                    for (Boolean isGranted : permissions.values()) {
+                        if (!isGranted) {
+                            allGranted = false;
+                            break;
+                        }
+                    }
+                    if (allGranted) {
                         showImageSourceDialog();
                     } else {
                         Toast.makeText(getContext(), "Permission denied. Cannot access camera or gallery.", Toast.LENGTH_SHORT).show();
@@ -150,11 +199,15 @@ public class BoarderProfileFragment extends Fragment {
                 result -> {
                     if (result.getResultCode() == getActivity().RESULT_OK) {
                         try {
-                            // Load the captured image
+                            // Set the selected image URI from camera
+                            selectedImageUri = cameraImageUri;
+                            
+                            // Load the captured image to preview
                             Bitmap bitmap = BitmapFactory.decodeFile(cameraImageFile.getAbsolutePath());
                             if (bitmap != null) {
                                 ivProfilePic.setImageBitmap(bitmap);
-                                Toast.makeText(getContext(), "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                                // Upload the image to database
+                                uploadProfilePicture();
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -170,10 +223,15 @@ public class BoarderProfileFragment extends Fragment {
                 uri -> {
                     if (uri != null) {
                         try {
+                            // Set the selected image URI from gallery
+                            selectedImageUri = uri;
+                            
+                            // Load the image to preview
                             Bitmap bitmap = getBitmapFromUri(uri);
                             if (bitmap != null) {
                                 ivProfilePic.setImageBitmap(bitmap);
-                                Toast.makeText(getContext(), "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                                // Upload the image to database
+                                uploadProfilePicture();
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -240,7 +298,7 @@ public class BoarderProfileFragment extends Fragment {
             if (layoutPaymentMethods != null) {
                 layoutPaymentMethods.setOnClickListener(v -> {
                     try {
-                        // Navigate to GcashInfoActivity (reused from owner side)
+                        // Navigate to GcashInfoActivity
                         String userIdString = Login.getCurrentUserId(getContext());
                         if (userIdString == null || userIdString.isEmpty()) {
                             Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
@@ -316,15 +374,37 @@ public class BoarderProfileFragment extends Fragment {
 
     private void loadUserData() {
         try {
+            // Get user ID
+            String userIdString = Login.getCurrentUserId(getContext());
+            if (userIdString == null || userIdString.isEmpty()) {
+                loadUserDataFromSharedPreferences();
+                return;
+            }
+            
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid user ID: " + userIdString);
+                loadUserDataFromSharedPreferences();
+                return;
+            }
+            
+            // Load user data from API to get profile picture
+            loadBoarderInfoFromAPI();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            loadUserDataFromSharedPreferences();
+        }
+    }
+    
+    private void loadUserDataFromSharedPreferences() {
+        try {
             // Load user data from SharedPreferences
             String userName = Login.getCurrentUserName(getContext());
             String middleName = Login.getCurrentUserMiddleName(getContext());
             String suffix = Login.getCurrentUserSuffix(getContext());
             String userEmail = Login.getCurrentUserEmail(getContext());
-            String userPhone = Login.getCurrentUserPhone(getContext());
-            String userAddress = Login.getCurrentUserAddress(getContext());
-            String userBirthDate = Login.getCurrentUserBirthDate(getContext());
-            String userGcashNumber = Login.getCurrentUserGcashNumber(getContext());
             
             // Build full name properly, handling null/empty middle name
             if (tvBoarderName != null) {
@@ -343,12 +423,8 @@ public class BoarderProfileFragment extends Fragment {
                     tvBoarderEmail.setText("user@email.com"); // Fallback
                 }
             }
-            
-            // You can add more TextViews to display additional user information
-            // For example, if you have TextViews for phone, address, etc.
-            // tvUserPhone.setText(userPhone != null ? userPhone : "Not provided");
-            // tvUserAddress.setText(userAddress != null ? userAddress : "Not provided");
-            
+
+            loadProfilePictureFromCache();
         } catch (Exception e) {
             e.printStackTrace();
             // Fallback to mock data if there's an error
@@ -362,6 +438,145 @@ public class BoarderProfileFragment extends Fragment {
             // Stop refresh indicator
             if (swipeRefreshLayout != null) {
                 swipeRefreshLayout.setRefreshing(false);
+            }
+        }
+    }
+
+    private void saveProfilePicturePath(String path) {
+        if (profilePrefs != null && path != null && !path.trim().isEmpty()) {
+            profilePrefs.edit().putString(KEY_PROFILE_PICTURE, path.trim()).apply();
+        }
+    }
+
+    private void loadProfilePictureFromCache() {
+        if (profilePrefs != null) {
+            String cachedPath = profilePrefs.getString(KEY_PROFILE_PICTURE, "");
+            if (cachedPath != null && !cachedPath.isEmpty() && !cachedPath.equalsIgnoreCase("null")) {
+                loadProfilePicture(cachedPath);
+            } else {
+                if (isAdded() && ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
+            }
+        }
+    }
+    
+    private void loadBoarderInfoFromAPI() {
+        try {
+            StringRequest request = new StringRequest(Request.Method.POST, GET_BOARDER_INFO_URL,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            try {
+                                JSONObject jsonResponse = new JSONObject(response);
+                                if (jsonResponse.getBoolean("success")) {
+                                    JSONObject boarderData = jsonResponse.getJSONObject("boarder");
+                                    
+                                    // Load name and email
+                                    String firstName = boarderData.optString("first_name", "");
+                                    String middleName = boarderData.optString("middle_name", "");
+                                    String lastName = boarderData.optString("last_name", "");
+                                    String suffix = boarderData.optString("suffix", "");
+                                    String email = boarderData.optString("email", "");
+                                    
+                                    // Build full name
+                                    String fullName = firstName;
+                                    if (middleName != null && !middleName.isEmpty() && !middleName.equalsIgnoreCase("null")) {
+                                        fullName += " " + middleName;
+                                    }
+                                    fullName += " " + lastName;
+                                    if (suffix != null && !suffix.isEmpty() && !suffix.equalsIgnoreCase("null") && !suffix.equalsIgnoreCase("none")) {
+                                        fullName += " " + suffix;
+                                    }
+                                    
+                                    if (tvBoarderName != null) {
+                                        tvBoarderName.setText(fullName.trim());
+                                    }
+                                    
+                                    if (tvBoarderEmail != null) {
+                                        tvBoarderEmail.setText(email);
+                                    }
+                                    
+                                    // Load profile picture
+                                    String profilePicture = boarderData.optString("profile_picture", "");
+                                    loadProfilePicture(profilePicture);
+                                    saveProfilePicturePath(profilePicture);
+                                    
+                                } else {
+                                    loadUserDataFromSharedPreferences();
+                                }
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error parsing boarder info response", e);
+                                loadUserDataFromSharedPreferences();
+                            } finally {
+                                if (swipeRefreshLayout != null) {
+                                    swipeRefreshLayout.setRefreshing(false);
+                                }
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e(TAG, "Error loading boarder info", error);
+                            loadUserDataFromSharedPreferences();
+                        }
+                    }
+            ) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("user_id", String.valueOf(userId));
+                    return params;
+                }
+            };
+            
+            RequestQueue queue = Volley.newRequestQueue(getContext());
+            queue.add(request);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading boarder info", e);
+            loadUserDataFromSharedPreferences();
+        }
+    }
+    
+    private void loadProfilePicture(String profilePicturePath) {
+        try {
+            if (ivProfilePic == null) {
+                return;
+            }
+
+            if (profilePicturePath != null && !profilePicturePath.trim().isEmpty() && !profilePicturePath.equalsIgnoreCase("null")) {
+                String trimmedPath = profilePicturePath.trim();
+                String fullImageUrl;
+                if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+                    fullImageUrl = trimmedPath;
+                } else {
+                    if (trimmedPath.startsWith("/")) {
+                        trimmedPath = trimmedPath.substring(1);
+                    }
+                    fullImageUrl = BASE_URL + trimmedPath;
+                }
+                
+                // Check if fragment is still attached before loading image
+                if (isAdded() && getContext() != null) {
+                    Glide.with(requireContext())
+                        .load(fullImageUrl)
+                        .placeholder(R.drawable.btn_profile)
+                        .error(R.drawable.btn_profile)
+                        .centerCrop()
+                        .into(ivProfilePic);
+                }
+            } else {
+                // Set default profile picture
+                if (isAdded() && ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading profile picture", e);
+            if (isAdded() && ivProfilePic != null) {
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
             }
         }
     }
@@ -475,17 +690,29 @@ public class BoarderProfileFragment extends Fragment {
     }
     
     private void openImageSelector() {
-        // Check permissions first
-        String permission;
+        // Check permissions first - need both CAMERA and storage permissions
+        String storagePermission;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permission = Manifest.permission.READ_MEDIA_IMAGES;
+            storagePermission = Manifest.permission.READ_MEDIA_IMAGES;
         } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+            storagePermission = Manifest.permission.READ_EXTERNAL_STORAGE;
         }
-
-        if (ContextCompat.checkSelfPermission(getContext(), permission) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(permission);
+        
+        String cameraPermission = Manifest.permission.CAMERA;
+        
+        boolean hasStoragePermission = ContextCompat.checkSelfPermission(getContext(), storagePermission) == PackageManager.PERMISSION_GRANTED;
+        boolean hasCameraPermission = ContextCompat.checkSelfPermission(getContext(), cameraPermission) == PackageManager.PERMISSION_GRANTED;
+        
+        if (!hasStoragePermission || !hasCameraPermission) {
+            // Request both permissions at once
+            java.util.ArrayList<String> permissionsToRequest = new java.util.ArrayList<>();
+            if (!hasStoragePermission) {
+                permissionsToRequest.add(storagePermission);
+            }
+            if (!hasCameraPermission) {
+                permissionsToRequest.add(cameraPermission);
+            }
+            requestMultiplePermissionsLauncher.launch(permissionsToRequest.toArray(new String[0]));
         } else {
             showImageSourceDialog();
         }
@@ -567,6 +794,145 @@ public class BoarderProfileFragment extends Fragment {
             return bitmap;
         } catch (Exception e) {
             throw new IOException("Error processing image: " + e.getMessage(), e);
+        }
+    }
+    
+    private void uploadProfilePicture() {
+        if (selectedImageUri == null) {
+            Toast.makeText(getContext(), "No image selected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get user ID
+        String userIdString = Login.getCurrentUserId(getContext());
+        if (userIdString == null || userIdString.isEmpty()) {
+            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        try {
+            userId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        ProgressDialog progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage("Uploading profile picture...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        
+        try {
+            Bitmap originalBitmap;
+            
+            // Handle different URI types
+            if (selectedImageUri.getScheme().equals("file")) {
+                // From camera
+                originalBitmap = BitmapFactory.decodeFile(cameraImageFile.getAbsolutePath());
+            } else {
+                // From gallery
+                originalBitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), selectedImageUri);
+            }
+            
+            if (originalBitmap == null) {
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Resize image to reduce file size
+            int maxSize = 800; // Maximum width or height
+            int width = originalBitmap.getWidth();
+            int height = originalBitmap.getHeight();
+            
+            if (width > maxSize || height > maxSize) {
+                float ratio = Math.min((float) maxSize / width, (float) maxSize / height);
+                int newWidth = Math.round(width * ratio);
+                int newHeight = Math.round(height * ratio);
+                
+                originalBitmap = Bitmap.createScaledBitmap(originalBitmap, newWidth, newHeight, true);
+                Log.d(TAG, "Resized image from " + width + "x" + height + " to " + newWidth + "x" + newHeight);
+            }
+            
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            originalBitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos); // Reduced quality to 70%
+            byte[] imageBytes = baos.toByteArray();
+            String encodedImage = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+            
+            Log.d(TAG, "Original image size: " + imageBytes.length + " bytes");
+            Log.d(TAG, "Encoded image length: " + encodedImage.length());
+            
+            // Check if image is too large (limit to 1MB)
+            if (imageBytes.length > 1024 * 1024) {
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Image is too large. Please select a smaller image.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            StringRequest request = new StringRequest(Request.Method.POST, UPLOAD_PROFILE_PIC_URL,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            progressDialog.dismiss();
+                            Log.d(TAG, "Upload response: " + response);
+                            try {
+                                JSONObject jsonResponse = new JSONObject(response);
+                                if (jsonResponse.getBoolean("success")) {
+                                    String newProfilePicPath = jsonResponse.getString("profile_picture_path");
+                                    // Reload profile picture
+                                    loadProfilePicture(newProfilePicPath);
+                                        saveProfilePicturePath(newProfilePicPath);
+                                    Toast.makeText(getContext(), "Profile picture uploaded successfully!", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(getContext(), 
+                                        "Failed to upload profile picture: " + jsonResponse.optString("error", "Unknown error"), 
+                                        Toast.LENGTH_SHORT).show();
+                                }
+                            } catch (JSONException e) {
+                                progressDialog.dismiss();
+                                Log.e(TAG, "Error parsing upload response", e);
+                                Toast.makeText(getContext(), "Error uploading profile picture", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            progressDialog.dismiss();
+                            Log.e(TAG, "Error uploading profile picture", error);
+                            
+                            String errorMessage = "Error uploading profile picture";
+                            if (error.networkResponse != null) {
+                                errorMessage += " (HTTP " + error.networkResponse.statusCode + ")";
+                            }
+                            
+                            Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            ) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("user_id", String.valueOf(userId));
+                    params.put("profile_picture", encodedImage);
+                    return params;
+                }
+                
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Content-Type", "application/x-www-form-urlencoded");
+                    return headers;
+                }
+            };
+            
+            RequestQueue queue = Volley.newRequestQueue(getContext());
+            queue.add(request);
+            
+        } catch (IOException e) {
+            progressDialog.dismiss();
+            Log.e(TAG, "Error processing image", e);
+            Toast.makeText(getContext(), "Error processing image", Toast.LENGTH_SHORT).show();
         }
     }
 }
