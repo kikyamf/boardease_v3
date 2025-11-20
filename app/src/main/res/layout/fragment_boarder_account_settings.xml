@@ -351,13 +351,15 @@
                     android:gravity="center_vertical"
                     android:clickable="true"
                     android:focusable="true"
+                    android:focusableInTouchMode="true"
                     android:background="@drawable/bg_gcash_header_ripple_blue"
                     android:padding="12dp"
                     android:paddingBottom="12dp"
                     android:layout_marginBottom="12dp"
                     android:layout_marginStart="-4dp"
                     android:layout_marginEnd="-4dp"
-                    android:layout_marginTop="-4dp">
+                    android:layout_marginTop="-4dp"
+                    android:descendantFocusability="blocksDescendants">
 
                     <ImageView
                         android:layout_width="28dp"
@@ -424,7 +426,7 @@
                         android:id="@+id/btnChangeGcash"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Change"
+                        android:text="Update"
                         android:textSize="16sp"
                         android:textColor="#FFFFFF"
                         android:fontFamily="@font/poppins_medium"

@@ -323,16 +323,22 @@ public class BoarderAccountSettingsFragment extends Fragment {
             
             // Gcash Section Collapsible
             if (llGcashHeader != null) {
+                Log.d("BoarderAccountSettings", "Setting up Gcash header click listener");
                 llGcashHeader.setOnClickListener(v -> {
                     try {
                         Log.d("BoarderAccountSettings", "Gcash header clicked!");
                         toggleGcashSection();
                     } catch (Exception e) {
+                        Log.e("BoarderAccountSettings", "Error in Gcash header click: " + e.getMessage());
                         e.printStackTrace();
                     }
                 });
+                // Also make sure it's clickable
+                llGcashHeader.setClickable(true);
+                llGcashHeader.setFocusable(true);
+                Log.d("BoarderAccountSettings", "Gcash header click listener set successfully");
             } else {
-                Log.d("BoarderAccountSettings", "llGcashHeader is null!");
+                Log.e("BoarderAccountSettings", "llGcashHeader is null! Cannot set click listener");
             }
             
             // Change Gcash button
@@ -430,8 +436,18 @@ public class BoarderAccountSettingsFragment extends Fragment {
                                 
                                 // Load Gcash number if available
                                 String gcashNumber = data.optString("gcash_number", "");
-                                if (etGcashNumber != null && !gcashNumber.isEmpty() && !gcashNumber.equalsIgnoreCase("null")) {
-                                    etGcashNumber.setText(gcashNumber);
+                                if (gcashNumber == null || gcashNumber.isEmpty() || gcashNumber.equalsIgnoreCase("null")) {
+                                    // Try alternative field name
+                                    gcashNumber = data.optString("gcash_num", "");
+                                }
+                                if (etGcashNumber != null) {
+                                    if (gcashNumber != null && !gcashNumber.isEmpty() && !gcashNumber.equalsIgnoreCase("null")) {
+                                        etGcashNumber.setText(gcashNumber);
+                                        Log.d(TAG, "GCash number loaded: " + gcashNumber);
+                                    } else {
+                                        etGcashNumber.setText("");
+                                        Log.d(TAG, "No GCash number found in response");
+                                    }
                                 }
                                 
                                 Log.d(TAG, "Successfully loaded boarder profile data");
