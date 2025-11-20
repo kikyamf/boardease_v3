@@ -84,6 +84,7 @@ public class BoarderProfileFragment extends Fragment {
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
+    private LinearLayout layoutPaymentMethods;
     private LinearLayout layoutHelpSupport;
     private LinearLayout layoutAboutApp;
     
@@ -132,6 +133,7 @@ public class BoarderProfileFragment extends Fragment {
             
             // Menu items
             layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
+            layoutPaymentMethods = view.findViewById(R.id.layoutPaymentMethods);
             layoutHelpSupport = view.findViewById(R.id.layoutHelpSupport);
             layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
             
@@ -270,6 +272,36 @@ public class BoarderProfileFragment extends Fragment {
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            // Gcash Information (Payment Methods)
+            if (layoutPaymentMethods != null) {
+                layoutPaymentMethods.setOnClickListener(v -> {
+                    try {
+                        // Navigate to GcashInfoActivity
+                        String userIdString = Login.getCurrentUserId(getContext());
+                        if (userIdString == null || userIdString.isEmpty()) {
+                            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // Parse user ID to int
+                        int userId;
+                        try {
+                            userId = Integer.parseInt(userIdString);
+                        } catch (NumberFormatException e) {
+                            Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        Intent intent = new Intent(getActivity(), GcashInfoActivity.class);
+                        intent.putExtra("user_id", userId);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening Gcash Information", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
