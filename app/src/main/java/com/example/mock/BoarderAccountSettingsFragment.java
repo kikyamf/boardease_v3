@@ -57,14 +57,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private View llPasswordFields;
     private ImageView ivExpandCollapse;
     private boolean isPasswordSectionExpanded = false;
-    
-    // Collapsible Gcash Section
-    private View llGcashHeader;
-    private View llGcashFields;
-    private ImageView ivExpandCollapseGcash;
-    private TextInputEditText etGcashNumber;
-    private MaterialButton btnChangeGcash;
-    private boolean isGcashSectionExpanded = false;
 
     // Personal Information Fields
     private TextInputEditText etFirstName;
@@ -186,21 +178,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             llPasswordFields = view.findViewById(R.id.llPasswordFields);
             ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
             
-            // Collapsible Gcash Section
-            llGcashHeader = view.findViewById(R.id.llGcashHeader);
-            llGcashFields = view.findViewById(R.id.llGcashFields);
-            ivExpandCollapseGcash = view.findViewById(R.id.ivExpandCollapseGcash);
-            etGcashNumber = view.findViewById(R.id.etGcashNumber);
-            btnChangeGcash = view.findViewById(R.id.btnChangeGcash);
-            
-            // Debug: Log Gcash views
-            Log.d("BoarderAccountSettings", "Gcash views initialization:");
-            Log.d("BoarderAccountSettings", "  - llGcashHeader: " + (llGcashHeader != null ? "FOUND" : "NULL"));
-            Log.d("BoarderAccountSettings", "  - llGcashFields: " + (llGcashFields != null ? "FOUND" : "NULL"));
-            Log.d("BoarderAccountSettings", "  - ivExpandCollapseGcash: " + (ivExpandCollapseGcash != null ? "FOUND" : "NULL"));
-            Log.d("BoarderAccountSettings", "  - etGcashNumber: " + (etGcashNumber != null ? "FOUND" : "NULL"));
-            Log.d("BoarderAccountSettings", "  - btnChangeGcash: " + (btnChangeGcash != null ? "FOUND" : "NULL"));
-            
             // Initialize all sections as collapsed
             initializeSectionsCollapsed();
             
@@ -209,8 +186,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             Log.d("BoarderAccountSettings", "llPrivacyHeader found: " + (llPrivacyHeader != null));
             Log.d("BoarderAccountSettings", "llPasswordFields found: " + (llPasswordFields != null));
             Log.d("BoarderAccountSettings", "ivExpandCollapse found: " + (ivExpandCollapse != null));
-            Log.d("BoarderAccountSettings", "llGcashHeader found: " + (llGcashHeader != null));
-            Log.d("BoarderAccountSettings", "llGcashFields found: " + (llGcashFields != null));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -234,14 +209,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             }
             if (ivExpandCollapsePersonal != null) {
                 ivExpandCollapsePersonal.setRotation(0f);
-            }
-            
-            // Set Gcash section as collapsed
-            if (llGcashFields != null) {
-                llGcashFields.setVisibility(View.GONE);
-            }
-            if (ivExpandCollapseGcash != null) {
-                ivExpandCollapseGcash.setRotation(0f);
             }
             
             // Set Privacy section as collapsed (already has visibility="gone" in XML, but ensure it's set)
@@ -323,52 +290,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 btnUpdatePassword.setOnClickListener(v -> {
                     try {
                         updatePassword();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-            
-            // Gcash Section Collapsible
-            if (llGcashHeader != null) {
-                Log.d("BoarderAccountSettings", "Setting up Gcash header click listener - View found: " + llGcashHeader.toString());
-                
-                // Remove any existing click listeners
-                llGcashHeader.setOnClickListener(null);
-                
-                // Set up new click listener
-                llGcashHeader.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Log.d("BoarderAccountSettings", "*** Gcash header onClick called! ***");
-                        try {
-                            toggleGcashSection();
-                        } catch (Exception e) {
-                            Log.e("BoarderAccountSettings", "Error in Gcash header click: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                
-                // Also make sure it's clickable and focusable
-                llGcashHeader.setClickable(true);
-                llGcashHeader.setFocusable(true);
-                llGcashHeader.setFocusableInTouchMode(true);
-                
-                // Test if view is clickable
-                boolean isClickable = llGcashHeader.isClickable();
-                boolean isFocusable = llGcashHeader.isFocusable();
-                Log.d("BoarderAccountSettings", "Gcash header - Clickable: " + isClickable + ", Focusable: " + isFocusable);
-                Log.d("BoarderAccountSettings", "Gcash header click listener set successfully");
-            } else {
-                Log.e("BoarderAccountSettings", "*** llGcashHeader is NULL! Cannot set click listener ***");
-            }
-            
-            // Change Gcash button
-            if (btnChangeGcash != null) {
-                btnChangeGcash.setOnClickListener(v -> {
-                    try {
-                        updateGcashNumber();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -456,22 +377,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
                                 if (etContactNumber != null) etContactNumber.setText(contact);
                                 if (etBirthdate != null) etBirthdate.setText(birthdate);
                                 if (etAddress != null) etAddress.setText(address);
-                                
-                                // Load Gcash number if available
-                                String gcashNumber = data.optString("gcash_number", "");
-                                if (gcashNumber == null || gcashNumber.isEmpty() || gcashNumber.equalsIgnoreCase("null")) {
-                                    // Try alternative field name
-                                    gcashNumber = data.optString("gcash_num", "");
-                                }
-                                if (etGcashNumber != null) {
-                                    if (gcashNumber != null && !gcashNumber.isEmpty() && !gcashNumber.equalsIgnoreCase("null")) {
-                                        etGcashNumber.setText(gcashNumber);
-                                        Log.d(TAG, "GCash number loaded: " + gcashNumber);
-                                    } else {
-                                        etGcashNumber.setText("");
-                                        Log.d(TAG, "No GCash number found in response");
-                                    }
-                                }
                                 
                                 Log.d(TAG, "Successfully loaded boarder profile data");
                             } else {
@@ -870,10 +775,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             if (btnUpdatePassword != null) {
                 btnUpdatePassword.setEnabled(!isLoading);
             }
-            
-            if (btnChangeGcash != null) {
-                btnChangeGcash.setEnabled(!isLoading);
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1023,88 +924,4 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
     
-    private void toggleGcashSection() {
-        try {
-            Log.d("BoarderAccountSettings", "toggleGcashSection called, current state: " + isGcashSectionExpanded);
-            
-            if (llGcashFields == null) {
-                Log.d("BoarderAccountSettings", "llGcashFields is null");
-                return;
-            }
-            if (ivExpandCollapseGcash == null) {
-                Log.d("BoarderAccountSettings", "ivExpandCollapseGcash is null");
-                return;
-            }
-            
-            if (isGcashSectionExpanded) {
-                // Collapse the section
-                llGcashFields.setVisibility(View.GONE);
-                ivExpandCollapseGcash.setRotation(0f); // Point down
-                isGcashSectionExpanded = false;
-                Log.d("BoarderAccountSettings", "Gcash section collapsed");
-            } else {
-                // Expand the section
-                llGcashFields.setVisibility(View.VISIBLE);
-                ivExpandCollapseGcash.setRotation(180f); // Point up
-                isGcashSectionExpanded = true;
-                Log.d("BoarderAccountSettings", "Gcash section expanded");
-            }
-        } catch (Exception e) {
-            Log.d("BoarderAccountSettings", "Error in toggleGcashSection: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    private void updateGcashNumber() {
-        try {
-            // Validate Gcash number
-            if (etGcashNumber == null) {
-                Toast.makeText(getContext(), "Error: Gcash field not found", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            String gcashNumber = etGcashNumber.getText().toString().trim();
-            
-            // Basic validation
-            if (TextUtils.isEmpty(gcashNumber)) {
-                etGcashNumber.setError("GCash number is required");
-                etGcashNumber.requestFocus();
-                return;
-            }
-            
-            // Validate phone number format (should be 11 digits for Philippines)
-            if (!gcashNumber.matches("^09\\d{9}$")) {
-                etGcashNumber.setError("Please enter a valid GCash number (09XXXXXXXXX)");
-                etGcashNumber.requestFocus();
-                return;
-            }
-            
-            // Show loading
-            setLoading(true);
-            
-            // Get user ID
-            String userId = Login.getCurrentUserId(getContext());
-            if (userId == null || userId.isEmpty()) {
-                setLoading(false);
-                Toast.makeText(getContext(), "User ID not found. Please login again.", Toast.LENGTH_LONG).show();
-                return;
-            }
-            
-            // TODO: Implement API call to update Gcash number
-            // For now, simulate update
-            new android.os.Handler().postDelayed(() -> {
-                try {
-                    setLoading(false);
-                    Toast.makeText(getContext(), "GCash number updated successfully!", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, 1500);
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            setLoading(false);
-            Toast.makeText(getContext(), "Error updating GCash number", Toast.LENGTH_SHORT).show();
-        }
-    }
 }
