@@ -114,7 +114,8 @@
                     android:id="@+id/llPersonalInfoFields"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                     <!-- Each field spaced properly -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -381,7 +382,9 @@
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_down"
                         android:tint="@color/blue"
-                        android:contentDescription="Expand/Collapse" />
+                        android:contentDescription="Expand/Collapse"
+                        android:clickable="false"
+                        android:focusable="false" />
                 </LinearLayout>
 
                 <!-- Gcash Details Fields Container -->
