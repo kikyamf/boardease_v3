@@ -614,6 +614,15 @@ public class EmailVerificationActivity extends AppCompatActivity {
         Button btnCheckApproval = findViewById(R.id.btnCheckApproval);
         btnCheckApproval.setOnClickListener(v -> checkApprovalStatus());
         
+        // Set up back to login button
+        com.google.android.material.button.MaterialButton btnBackToLogin = findViewById(R.id.btnBackToLogin);
+        btnBackToLogin.setOnClickListener(v -> {
+            Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        });
+        
         // Start checking for approval every 30 seconds
         startApprovalChecker();
     }
