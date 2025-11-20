@@ -76,57 +76,60 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         boolean success = jsonResponse.getBoolean("success");
                         
                         if (success && jsonResponse.has("isVerified") && jsonResponse.getBoolean("isVerified")) {
-                            // Email is already verified - close activity and show message
+                            // Email is already verified - handle based on status
                             String message = jsonResponse.getString("message");
                             String status = jsonResponse.optString("status", "pending");
                             
                             Log.d("EmailVerification", "Email already verified. Status: " + status);
                             
-                            // Customize message based on status
-                            String dialogTitle;
-                            String dialogMessage;
-                            
                             if ("approved".equals(status)) {
-                                dialogTitle = "Email Already Verified";
-                                dialogMessage = message + "\n\nYour account has been approved. You can now log in.";
+                                // Account approved - navigate to login
+                                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(EmailVerificationActivity.this)
+                                    .setTitle("Email Already Verified")
+                                    .setMessage(message + "\n\nYour account has been approved. You can now log in.")
+                                    .setCancelable(false)
+                                    .setPositiveButton("OK", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(intent);
+                                        finish();
+                                    });
+                                dialogBuilder.show();
+                                return;
                             } else if ("pending".equals(status)) {
-                                dialogTitle = "Email Already Verified";
-                                dialogMessage = "Your email has already been verified.\n\nYour account is currently pending admin approval. Please wait for the admin to approve your account before you can log in.";
+                                // Account pending - show approval container
+                                Log.d("EmailVerification", "Email verified but pending approval - showing approval container");
+                                // Initialize views if not already initialized
+                                if (tvEmail == null) {
+                                    initializeViews();
+                                    setupClickListeners();
+                                }
+                                // Show the approval container
+                                showAdminApprovalMessage();
+                                return;
                             } else if ("rejected".equals(status)) {
-                                dialogTitle = "Account Rejected";
-                                dialogMessage = "Your account has been rejected by the admin. Please contact support for assistance.";
+                                // Account rejected - show rejection dialog
+                                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(EmailVerificationActivity.this)
+                                    .setTitle("Account Rejected")
+                                    .setMessage("Your account has been rejected by the admin. Please contact support for assistance.")
+                                    .setCancelable(false)
+                                    .setPositiveButton("OK", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        finish();
+                                    });
+                                dialogBuilder.show();
+                                return;
                             } else {
-                                dialogTitle = "Email Already Verified";
-                                dialogMessage = message + "\n\nPlease wait for admin approval before logging in.";
+                                // Unknown status - show approval container as fallback
+                                Log.d("EmailVerification", "Email verified with unknown status: " + status + " - showing approval container");
+                                if (tvEmail == null) {
+                                    initializeViews();
+                                    setupClickListeners();
+                                }
+                                showAdminApprovalMessage();
+                                return;
                             }
-                            
-                            // Show modal dialog
-                            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(EmailVerificationActivity.this)
-                                .setTitle(dialogTitle)
-                                .setMessage(dialogMessage)
-                                .setCancelable(false);
-                            
-                            // Only redirect to login if approved
-                            if ("approved".equals(status)) {
-                                dialogBuilder.setPositiveButton("OK", (dialog, which) -> {
-                                    dialog.dismiss();
-                                    // Redirect to login if approved
-                                    Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
-                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                    startActivity(intent);
-                                    finish();
-                                });
-                            } else {
-                                // For pending/rejected/other statuses, just close the activity
-                                dialogBuilder.setPositiveButton("OK", (dialog, which) -> {
-                                    dialog.dismiss();
-                                    finish();
-                                });
-                            }
-                            
-                            dialogBuilder.show();
-                            
-                            return;
                         }
                         
                         // Email not verified or expired - check if code is still valid
