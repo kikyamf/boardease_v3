@@ -255,10 +255,15 @@ public class AccountSettingsActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
+                // Normalize email - lowercase and remove all whitespace (same as backend)
+                String normalizedEmail = newEmail.trim().toLowerCase().replaceAll("\\s+", "");
+                
                 params.put("action", "send_verification_code");
                 params.put("user_id", String.valueOf(userId));
                 params.put("current_password", currentPassword);
-                params.put("new_email", newEmail);
+                params.put("new_email", normalizedEmail);
+                
+                Log.d(TAG, "Sending verification code request - User ID: " + userId + ", Email: " + normalizedEmail + " (original: " + newEmail + ")");
                 return params;
             }
         };
@@ -319,11 +324,32 @@ public class AccountSettingsActivity extends AppCompatActivity {
             StringBuilder code = new StringBuilder();
             for (EditText field : codeFields) {
                 String digit = field.getText().toString().trim();
-                code.append(digit.isEmpty() ? "0" : digit);
+                // Only append if it's a single digit (0-9)
+                if (digit.length() == 1 && Character.isDigit(digit.charAt(0))) {
+                    code.append(digit);
+                } else if (!digit.isEmpty()) {
+                    // If field has multiple characters, take only the first digit
+                    if (Character.isDigit(digit.charAt(0))) {
+                        code.append(digit.charAt(0));
+                    }
+                }
             }
 
             String verificationCode = code.toString();
             Log.d(TAG, "Verification code entered: " + verificationCode + " (length: " + verificationCode.length() + ")");
+            
+            // Ensure code is exactly 6 digits, pad with zeros if needed
+            if (verificationCode.length() < 6) {
+                // Pad with leading zeros
+                while (verificationCode.length() < 6) {
+                    verificationCode = "0" + verificationCode;
+                }
+                Log.d(TAG, "Padded verification code: " + verificationCode);
+            } else if (verificationCode.length() > 6) {
+                // Take only first 6 digits
+                verificationCode = verificationCode.substring(0, 6);
+                Log.d(TAG, "Truncated verification code: " + verificationCode);
+            }
             
             if (verificationCode.length() == 6) {
                 verifyEmailCode(verificationCode, dialog);
@@ -447,11 +473,26 @@ public class AccountSettingsActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
+                String trimmedCode = code.trim();
+                // Normalize email - lowercase and remove all whitespace (same as backend)
+                String normalizedEmail = pendingNewEmail.trim().toLowerCase().replaceAll("\\s+", "");
+                
+                // Remove any non-numeric characters from code
+                String cleanCode = trimmedCode.replaceAll("[^0-9]", "");
+                // Ensure it's 6 digits
+                while (cleanCode.length() < 6) {
+                    cleanCode = "0" + cleanCode;
+                }
+                if (cleanCode.length() > 6) {
+                    cleanCode = cleanCode.substring(0, 6);
+                }
+                
                 params.put("action", "verify_code");
                 params.put("user_id", String.valueOf(userId));
-                params.put("new_email", pendingNewEmail.trim());
-                params.put("verification_code", code.trim());
-                Log.d(TAG, "Sending verification request - User ID: " + userId + ", Email: " + pendingNewEmail + ", Code: " + code);
+                params.put("new_email", normalizedEmail);
+                params.put("verification_code", cleanCode);
+                
+                Log.d(TAG, "Sending verification request - User ID: " + userId + ", Email: " + normalizedEmail + " (original: " + pendingNewEmail + "), Code: " + cleanCode + " (original: " + code + ", length: " + cleanCode.length() + ")");
                 return params;
             }
         };
@@ -585,11 +626,36 @@ public class AccountSettingsActivity extends AppCompatActivity {
                     try {
                         // Log the raw response for debugging
                         Log.d(TAG, "Password change response (raw): " + response);
+                        Log.d(TAG, "Password change response length: " + response.length());
                         
                         // Trim and clean the response
                         String cleanResponse = response.trim();
                         
-                        // Check if response contains success indicators first (before parsing)
+                        // Check if response contains error indicators first
+                        boolean hasErrorIndicator = cleanResponse.contains("\"error\":\"Current password is incorrect\"") ||
+                                                   cleanResponse.contains("\"error\": \"Current password is incorrect\"") ||
+                                                   (cleanResponse.contains("\"success\":false") && cleanResponse.contains("Current password is incorrect"));
+                        
+                        if (hasErrorIndicator) {
+                            Log.e(TAG, "Found error indicator in password change response");
+                            // Check if password was actually updated by checking for success message too
+                            boolean alsoHasSuccess = cleanResponse.contains("Password changed successfully") ||
+                                                    cleanResponse.contains("\"success\":true");
+                            
+                            if (alsoHasSuccess) {
+                                Log.w(TAG, "Response contains both error and success - password may have been updated");
+                                // Still show success since password was updated
+                                showPasswordChangeSuccessDialog();
+                                return;
+                            } else {
+                                // Only error, show error
+                                String error = "Current password is incorrect";
+                                Toast.makeText(AccountSettingsActivity.this, error, Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                        }
+                        
+                        // Check if response contains success indicators
                         boolean hasSuccessIndicator = cleanResponse.contains("\"success\":true") || 
                                                      cleanResponse.contains("\"success\": true") ||
                                                      cleanResponse.contains("Password changed successfully");
@@ -763,3 +829,14 @@ public class AccountSettingsActivity extends AppCompatActivity {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+

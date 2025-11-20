@@ -37,7 +37,7 @@ try {
     }
     
     // Try to find by registrations.id first (most common case from boarding house)
-    $sql = "SELECT gcash_qr FROM registrations WHERE id = :reg_id";
+    $sql = "SELECT gcash_num, gcash_qr FROM registrations WHERE id = :reg_id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':reg_id' => $userId]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -52,7 +52,7 @@ try {
         if ($userData && $userData['reg_id']) {
             $regId = $userData['reg_id'];
             // Fetch from registrations using reg_id
-            $sql = "SELECT gcash_qr FROM registrations WHERE id = :reg_id";
+            $sql = "SELECT gcash_num, gcash_qr FROM registrations WHERE id = :reg_id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':reg_id' => $regId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -60,11 +60,13 @@ try {
     }
     
     if ($result) {
+        $gcashNumber = $result['gcash_num'] ?? '';
         $gcashQr = $result['gcash_qr'] ?? '';
         
-        // Return the QR code path
+        // Return both GCash number and QR code
         echo json_encode(array(
             'success' => true,
+            'gcash_number' => $gcashNumber,
             'gcash_qr' => $gcashQr
         ));
     } else {
