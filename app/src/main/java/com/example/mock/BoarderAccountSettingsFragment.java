@@ -57,12 +57,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private View llPasswordFields;
     private ImageView ivExpandCollapse;
     private boolean isPasswordSectionExpanded = false;
-    
-    // Collapsible Privacy Section (Duplicate)
-    private View llPrivacyHeader2;
-    private View llPasswordFields2;
-    private ImageView ivExpandCollapse2;
-    private boolean isPasswordSectionExpanded2 = false;
 
     // Personal Information Fields
     private TextInputEditText etFirstName;
@@ -80,12 +74,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
     private android.widget.EditText etNewPassword;
     private android.widget.EditText etConfirmPassword;
     private MaterialButton btnUpdatePassword;
-    
-    // Password Change Fields (Duplicate)
-    private android.widget.EditText etCurrentPassword2;
-    private android.widget.EditText etNewPassword2;
-    private android.widget.EditText etConfirmPassword2;
-    private MaterialButton btnUpdatePassword2;
     
     // Password visibility states
     private boolean isCurrentPasswordVisible = false;
@@ -180,12 +168,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
             btnUpdatePassword = view.findViewById(R.id.btnUpdatePassword);
             
-            // Password change fields (Duplicate)
-            etCurrentPassword2 = view.findViewById(R.id.etCurrentPassword2);
-            etNewPassword2 = view.findViewById(R.id.etNewPassword2);
-            etConfirmPassword2 = view.findViewById(R.id.etConfirmPassword2);
-            btnUpdatePassword2 = view.findViewById(R.id.btnUpdatePassword2);
-            
             // Collapsible Personal Information Section
             llPersonalInfoHeader = view.findViewById(R.id.llPersonalInfoHeader);
             llPersonalInfoFields = view.findViewById(R.id.llPersonalInfoFields);
@@ -195,11 +177,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             llPrivacyHeader = view.findViewById(R.id.llPrivacyHeader);
             llPasswordFields = view.findViewById(R.id.llPasswordFields);
             ivExpandCollapse = view.findViewById(R.id.ivExpandCollapse);
-            
-            // Collapsible Privacy Section (Duplicate)
-            llPrivacyHeader2 = view.findViewById(R.id.llPrivacyHeader2);
-            llPasswordFields2 = view.findViewById(R.id.llPasswordFields2);
-            ivExpandCollapse2 = view.findViewById(R.id.ivExpandCollapse2);
             
             // Initialize all sections as collapsed
             initializeSectionsCollapsed();
@@ -240,14 +217,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             }
             if (ivExpandCollapse != null) {
                 ivExpandCollapse.setRotation(0f);
-            }
-            
-            // Set Privacy section 2 as collapsed
-            if (llPasswordFields2 != null) {
-                llPasswordFields2.setVisibility(View.GONE);
-            }
-            if (ivExpandCollapse2 != null) {
-                ivExpandCollapse2.setRotation(0f);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -293,18 +262,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
                     }
                 });
             }
-            
-            // Privacy Section Collapsible (Duplicate)
-            if (llPrivacyHeader2 != null) {
-                llPrivacyHeader2.setOnClickListener(v -> {
-                    try {
-                        Log.d("BoarderAccountSettings", "Privacy header 2 clicked!");
-                        togglePasswordSection2();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
 
             // Birthdate picker
             if (etBirthdate != null) {
@@ -333,17 +290,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
                 btnUpdatePassword.setOnClickListener(v -> {
                     try {
                         updatePassword();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-            
-            // Update Password button (Duplicate)
-            if (btnUpdatePassword2 != null) {
-                btnUpdatePassword2.setOnClickListener(v -> {
-                    try {
-                        updatePassword2();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -746,140 +692,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
         }
     }
     
-    private void updatePassword2() {
-        try {
-            // Validate password fields
-            if (!validatePasswordFields2()) {
-                return;
-            }
-
-            // Show loading
-            setLoading(true);
-
-            // Get password values
-            String currentPassword = etCurrentPassword2.getText().toString().trim();
-            String newPassword = etNewPassword2.getText().toString().trim();
-
-            // Simulate current password verification (in real app, verify with Firebase Auth)
-            new android.os.Handler().postDelayed(() -> {
-                try {
-                    // Simulate password verification
-                    if (verifyCurrentPassword(currentPassword)) {
-                        // Password is correct, proceed with update
-                        performPasswordUpdate2(newPassword);
-                    } else {
-                        // Current password is incorrect
-                        setLoading(false);
-                        etCurrentPassword2.setError("Current password is incorrect");
-                        etCurrentPassword2.requestFocus();
-                        Toast.makeText(getContext(), "Current password is incorrect", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    setLoading(false);
-                    Toast.makeText(getContext(), "Error verifying password", Toast.LENGTH_SHORT).show();
-                }
-            }, 1500);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            setLoading(false);
-            Toast.makeText(getContext(), "Error updating password", Toast.LENGTH_SHORT).show();
-        }
-    }
-    
-    private void performPasswordUpdate2(String newPassword) {
-        try {
-            // Simulate password update (in real app, use Firebase Auth)
-            new android.os.Handler().postDelayed(() -> {
-                try {
-                    setLoading(false);
-                    
-                    // Store new password (in real app, update Firebase Auth)
-                    if (userPrefs != null) {
-                        SharedPreferences.Editor editor = userPrefs.edit();
-                        editor.putString("stored_password", newPassword);
-                        editor.apply();
-                    }
-                    
-                    // Clear password fields
-                    if (etCurrentPassword2 != null) etCurrentPassword2.setText("");
-                    if (etNewPassword2 != null) etNewPassword2.setText("");
-                    if (etConfirmPassword2 != null) etConfirmPassword2.setText("");
-                    
-                    Toast.makeText(getContext(), "Password updated successfully!", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, 1000);
-        } catch (Exception e) {
-            e.printStackTrace();
-            setLoading(false);
-            Toast.makeText(getContext(), "Error updating password", Toast.LENGTH_SHORT).show();
-        }
-    }
-    
-    private boolean validatePasswordFields2() {
-        try {
-            // Check if fields are empty
-            if (TextUtils.isEmpty(etCurrentPassword2.getText().toString().trim())) {
-                etCurrentPassword2.setError("Current password is required");
-                etCurrentPassword2.requestFocus();
-                return false;
-            }
-
-            if (TextUtils.isEmpty(etNewPassword2.getText().toString().trim())) {
-                etNewPassword2.setError("New password is required");
-                etNewPassword2.requestFocus();
-                return false;
-            }
-
-            // Enhanced password validation
-            String newPassword = etNewPassword2.getText().toString().trim();
-            String currentPassword = etCurrentPassword2.getText().toString().trim();
-            
-            // Check if new password is same as current password
-            if (newPassword.equals(currentPassword)) {
-                etNewPassword2.setError("New password must be different from current password");
-                etNewPassword2.requestFocus();
-                return false;
-            }
-
-            // Check password length
-            if (newPassword.length() < 8) {
-                etNewPassword2.setError("Password must be at least 8 characters");
-                etNewPassword2.requestFocus();
-                return false;
-            }
-
-            // Check for strong password requirements
-            if (!isStrongPassword(newPassword)) {
-                etNewPassword2.setError("Password must contain at least one uppercase letter, one lowercase letter, and one number");
-                etNewPassword2.requestFocus();
-                return false;
-            }
-
-            if (TextUtils.isEmpty(etConfirmPassword2.getText().toString().trim())) {
-                etConfirmPassword2.setError("Please confirm your new password");
-                etConfirmPassword2.requestFocus();
-                return false;
-            }
-
-            // Check if passwords match
-            String confirmPassword = etConfirmPassword2.getText().toString().trim();
-            if (!newPassword.equals(confirmPassword)) {
-                etConfirmPassword2.setError("Passwords do not match");
-                etConfirmPassword2.requestFocus();
-                return false;
-            }
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     private boolean validatePasswordFields() {
         try {
             // Check if fields are empty
@@ -962,10 +774,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             
             if (btnUpdatePassword != null) {
                 btnUpdatePassword.setEnabled(!isLoading);
-            }
-            
-            if (btnUpdatePassword2 != null) {
-                btnUpdatePassword2.setEnabled(!isLoading);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1112,38 +920,6 @@ public class BoarderAccountSettingsFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.d("BoarderAccountSettings", "Error in togglePasswordSection: " + e.getMessage()); // Debug log
-            e.printStackTrace();
-        }
-    }
-    
-    private void togglePasswordSection2() {
-        try {
-            Log.d("BoarderAccountSettings", "togglePasswordSection2 called, current state: " + isPasswordSectionExpanded2);
-            
-            if (llPasswordFields2 == null) {
-                Log.d("BoarderAccountSettings", "llPasswordFields2 is null");
-                return;
-            }
-            if (ivExpandCollapse2 == null) {
-                Log.d("BoarderAccountSettings", "ivExpandCollapse2 is null");
-                return;
-            }
-            
-            if (isPasswordSectionExpanded2) {
-                // Collapse the section
-                llPasswordFields2.setVisibility(View.GONE);
-                ivExpandCollapse2.setRotation(0f); // Point down
-                isPasswordSectionExpanded2 = false;
-                Log.d("BoarderAccountSettings", "Section 2 collapsed");
-            } else {
-                // Expand the section
-                llPasswordFields2.setVisibility(View.VISIBLE);
-                ivExpandCollapse2.setRotation(180f); // Point up
-                isPasswordSectionExpanded2 = true;
-                Log.d("BoarderAccountSettings", "Section 2 expanded");
-            }
-        } catch (Exception e) {
-            Log.d("BoarderAccountSettings", "Error in togglePasswordSection2: " + e.getMessage());
             e.printStackTrace();
         }
     }
