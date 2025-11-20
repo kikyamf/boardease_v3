@@ -139,13 +139,6 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="8dp" />
-
         <!-- Gcash Information -->
         <LinearLayout
             android:id="@+id/layoutPaymentMethods"
@@ -181,13 +174,6 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="8dp" />
-
         <!-- Help & Support -->
         <LinearLayout
             android:id="@+id/layoutHelpSupport"
@@ -222,13 +208,6 @@
                 android:src="@drawable/ic_arrow_right"
                 android:tint="#999999" />
         </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E0E0E0"
-            android:layout_marginBottom="8dp" />
 
         <!-- About App -->
         <LinearLayout

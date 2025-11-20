@@ -109,13 +109,6 @@
                         android:contentDescription="Expand/Collapse" />
                 </LinearLayout>
 
-                <!-- Divider below Personal Information Header -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#E0E0E0"
-                    android:layout_marginBottom="12dp" />
-
                 <!-- Personal Information Fields Container -->
                 <LinearLayout
                     android:id="@+id/llPersonalInfoFields"
