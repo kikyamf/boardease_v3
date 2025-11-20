@@ -334,7 +334,9 @@
             app:cardElevation="5dp"
             app:strokeWidth="2dp"
             app:strokeColor="@color/blue"
-            android:backgroundTint="#E3F2FD">
+            android:backgroundTint="#E3F2FD"
+            android:clickable="false"
+            android:focusable="false">
 
             <LinearLayout
                 android:layout_width="match_parent"

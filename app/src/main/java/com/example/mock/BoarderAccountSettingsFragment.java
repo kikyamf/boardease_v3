@@ -193,6 +193,14 @@ public class BoarderAccountSettingsFragment extends Fragment {
             etGcashNumber = view.findViewById(R.id.etGcashNumber);
             btnChangeGcash = view.findViewById(R.id.btnChangeGcash);
             
+            // Debug: Log Gcash views
+            Log.d("BoarderAccountSettings", "Gcash views initialization:");
+            Log.d("BoarderAccountSettings", "  - llGcashHeader: " + (llGcashHeader != null ? "FOUND" : "NULL"));
+            Log.d("BoarderAccountSettings", "  - llGcashFields: " + (llGcashFields != null ? "FOUND" : "NULL"));
+            Log.d("BoarderAccountSettings", "  - ivExpandCollapseGcash: " + (ivExpandCollapseGcash != null ? "FOUND" : "NULL"));
+            Log.d("BoarderAccountSettings", "  - etGcashNumber: " + (etGcashNumber != null ? "FOUND" : "NULL"));
+            Log.d("BoarderAccountSettings", "  - btnChangeGcash: " + (btnChangeGcash != null ? "FOUND" : "NULL"));
+            
             // Initialize all sections as collapsed
             initializeSectionsCollapsed();
             
@@ -323,22 +331,37 @@ public class BoarderAccountSettingsFragment extends Fragment {
             
             // Gcash Section Collapsible
             if (llGcashHeader != null) {
-                Log.d("BoarderAccountSettings", "Setting up Gcash header click listener");
-                llGcashHeader.setOnClickListener(v -> {
-                    try {
-                        Log.d("BoarderAccountSettings", "Gcash header clicked!");
-                        toggleGcashSection();
-                    } catch (Exception e) {
-                        Log.e("BoarderAccountSettings", "Error in Gcash header click: " + e.getMessage());
-                        e.printStackTrace();
+                Log.d("BoarderAccountSettings", "Setting up Gcash header click listener - View found: " + llGcashHeader.toString());
+                
+                // Remove any existing click listeners
+                llGcashHeader.setOnClickListener(null);
+                
+                // Set up new click listener
+                llGcashHeader.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.d("BoarderAccountSettings", "*** Gcash header onClick called! ***");
+                        try {
+                            toggleGcashSection();
+                        } catch (Exception e) {
+                            Log.e("BoarderAccountSettings", "Error in Gcash header click: " + e.getMessage());
+                            e.printStackTrace();
+                        }
                     }
                 });
-                // Also make sure it's clickable
+                
+                // Also make sure it's clickable and focusable
                 llGcashHeader.setClickable(true);
                 llGcashHeader.setFocusable(true);
+                llGcashHeader.setFocusableInTouchMode(true);
+                
+                // Test if view is clickable
+                boolean isClickable = llGcashHeader.isClickable();
+                boolean isFocusable = llGcashHeader.isFocusable();
+                Log.d("BoarderAccountSettings", "Gcash header - Clickable: " + isClickable + ", Focusable: " + isFocusable);
                 Log.d("BoarderAccountSettings", "Gcash header click listener set successfully");
             } else {
-                Log.e("BoarderAccountSettings", "llGcashHeader is null! Cannot set click listener");
+                Log.e("BoarderAccountSettings", "*** llGcashHeader is NULL! Cannot set click listener ***");
             }
             
             // Change Gcash button
