@@ -133,6 +133,12 @@
             android:name=".Messages"
             android:exported="false" />
         <activity
+            android:name=".BoarderMessages"
+            android:exported="false" />
+        <activity
+            android:name=".OwnerMessages"
+            android:exported="false" />
+        <activity
             android:name=".EditBoardingHouseActivity"
             android:exported="false" />
         <activity

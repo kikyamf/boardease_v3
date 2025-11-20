@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -40,7 +41,8 @@ public class OwnerProfileFragment extends Fragment {
 
     private ImageView ivProfilePic, ivEditProfile;
     private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
-    private LinearLayout layoutPayments, layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
+    private LinearLayout layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     public OwnerProfileFragment() {
         // Required empty public constructor
@@ -76,12 +78,21 @@ public class OwnerProfileFragment extends Fragment {
         tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
         tvSignOut = view.findViewById(R.id.tvSignOut);
 
-        layoutPayments = view.findViewById(R.id.layoutPayments);
         layoutNotifications = view.findViewById(R.id.layoutNotifications);
         layoutMessages = view.findViewById(R.id.layoutMessages);
         layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
         layoutGcashInfo = view.findViewById(R.id.layoutGcashInfo);
         layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
+        
+        // Pull-to-refresh
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        
+        // Set up pull-to-refresh listener
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                loadOwnerProfile();
+            });
+        }
 
         // Load owner profile data
         loadOwnerProfile();
@@ -90,12 +101,11 @@ public class OwnerProfileFragment extends Fragment {
         ivEditProfile.setOnClickListener(v -> openEditProfile());
         ivProfilePic.setOnClickListener(v -> openEditProfile());
         
-        layoutPayments.setOnClickListener(v -> Toast.makeText(getContext(), "Open Payments", Toast.LENGTH_SHORT).show());
-        layoutNotifications.setOnClickListener(v -> Toast.makeText(getContext(), "Open Notifications", Toast.LENGTH_SHORT).show());
-        layoutMessages.setOnClickListener(v -> Toast.makeText(getContext(), "Open Messages", Toast.LENGTH_SHORT).show());
+        layoutNotifications.setOnClickListener(v -> openNotifications());
+        layoutMessages.setOnClickListener(v -> openMessages());
         layoutAccountSettings.setOnClickListener(v -> openAccountSettings());
         layoutGcashInfo.setOnClickListener(v -> openGcashInfo());
-        layoutAboutApp.setOnClickListener(v -> Toast.makeText(getContext(), "Open About App", Toast.LENGTH_SHORT).show());
+        layoutAboutApp.setOnClickListener(v -> showAboutAppDialog());
 
         tvSignOut.setOnClickListener(v -> showSignOutConfirmationDialog());
 
@@ -118,6 +128,26 @@ public class OwnerProfileFragment extends Fragment {
         Intent intent = new Intent(getContext(), GcashInfoActivity.class);
         intent.putExtra("user_id", userId);
         startActivityForResult(intent, 300); // Use request code 300 for GCash info
+    }
+    
+    private void openNotifications() {
+        try {
+            Intent intent = new Intent(getContext(), Notification.class);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e("OwnerProfile", "Error opening notifications", e);
+            Toast.makeText(getContext(), "Error opening notifications", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void openMessages() {
+        try {
+            Intent intent = new Intent(getContext(), Messages.class);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e("OwnerProfile", "Error opening messages", e);
+            Toast.makeText(getContext(), "Error opening messages", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void loadOwnerProfile() {
@@ -148,6 +178,11 @@ public class OwnerProfileFragment extends Fragment {
                             tvOwnerName.setText("Owner " + userId);
                             tvOwnerEmail.setText("owner" + userId + "@example.com");
                         }
+                    } finally {
+                        // Stop refresh indicator
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                     }
                 }
             },
@@ -159,6 +194,10 @@ public class OwnerProfileFragment extends Fragment {
                     if (isAdded() && tvOwnerName != null && tvOwnerEmail != null) {
                         tvOwnerName.setText("Owner " + userId);
                         tvOwnerEmail.setText("owner" + userId + "@example.com");
+                    }
+                    // Stop refresh indicator
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
                     }
                 }
             }
@@ -245,6 +284,31 @@ public class OwnerProfileFragment extends Fragment {
      */
     public void refreshProfile() {
         loadOwnerProfile();
+    }
+    
+    private void showAboutAppDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("About BoardEase");
+            builder.setMessage("BoardEase v1.0.0\n\n" +
+                    "A comprehensive platform for finding and managing boarding house accommodations.\n\n" +
+                    "Features:\n" +
+                    "• Browse boarding houses\n" +
+                    "• Book accommodations\n" +
+                    "• Manage favorites\n" +
+                    "• Track bookings\n\n" +
+                    "© 2024 BoardEase. All rights reserved.");
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     private void showSignOutConfirmationDialog() {

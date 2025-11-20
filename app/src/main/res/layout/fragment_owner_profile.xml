@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipeRefreshLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/white"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white"
+        android:fillViewport="true">
 
 <LinearLayout
     android:layout_width="match_parent"
@@ -108,7 +113,7 @@
             android:background="@drawable/profile_item_ripple"
             android:clickable="true"
             android:focusable="true"
-            >
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -143,7 +148,7 @@
             android:background="@drawable/profile_item_ripple"
             android:clickable="true"
             android:focusable="true"
-            >
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -167,40 +172,6 @@
                 android:tint="#999999" />
         </LinearLayout>
 
-        <!-- Payments -->
-        <LinearLayout
-            android:id="@+id/layoutPayments"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical"
-            android:background="@drawable/profile_item_ripple"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_payment2"
-                android:tint="#795548" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:text="Payments"
-                android:textSize="16sp"
-                android:textColor="#000000" />
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_arrow_right1"
-                android:tint="#999999" />
-        </LinearLayout>
-
         <!-- Notifications -->
         <LinearLayout
             android:id="@+id/layoutNotifications"
@@ -211,7 +182,8 @@
             android:gravity="center_vertical"
             android:background="@drawable/profile_item_ripple"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -245,7 +217,8 @@
             android:gravity="center_vertical"
             android:background="@drawable/profile_item_ripple"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:layout_marginBottom="8dp">
 
             <ImageView
                 android:layout_width="24dp"
@@ -336,6 +309,8 @@
 
     </LinearLayout>
 
-</LinearLayout>
+    </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

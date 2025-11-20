@@ -19,10 +19,21 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class BoarderDashboard extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private Fragment currentFragment;
+    private int userId;
     
     // Cache fragment instances to avoid recreating them
     private BoarderHomeFragment homeFragment;
@@ -57,12 +68,14 @@ public class BoarderDashboard extends AppCompatActivity {
         // Get user ID from SharedPreferences
         android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
         String userIdString = prefs.getString("user_id", "0");
-        int userId = 0;
         try {
             userId = Integer.parseInt(userIdString);
         } catch (NumberFormatException e) {
             userId = 0;
         }
+        
+        // Initialize FCM token
+        initializeFCMToken();
         
         // Try to restore fragments from FragmentManager first (they persist across configuration changes)
         homeFragment = (BoarderHomeFragment) getSupportFragmentManager().findFragmentByTag("home");
@@ -272,5 +285,64 @@ public class BoarderDashboard extends AppCompatActivity {
                 Log.d("BoarderDashboard", "Notification permission already granted");
             }
         }
+    }
+    
+    /**
+     * Initialize FCM token for push notifications
+     */
+    private void initializeFCMToken() {
+        FCMTokenManager.getCurrentToken(this, new FCMTokenManager.TokenCallback() {
+            @Override
+            public void onTokenReceived(String token) {
+                Log.d("BoarderDashboard", "FCM Token received: " + token);
+                // Automatically send token to server
+                sendTokenToServer(token);
+            }
+
+            @Override
+            public void onTokenError(Exception error) {
+                Log.e("BoarderDashboard", "Failed to get FCM token", error);
+            }
+        });
+    }
+    
+    /**
+     * Send FCM token to server
+     */
+    private void sendTokenToServer(String token) {
+        // Server URL - update this to match your server path
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/register_device_token.php";
+        
+        // Create request using Volley
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            response -> {
+                Log.d("BoarderDashboard", "Token sent to server successfully: " + response);
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        Log.d("BoarderDashboard", "Device token registered: " + jsonResponse.getString("message"));
+                    } else {
+                        Log.e("BoarderDashboard", "Server error: " + jsonResponse.getString("message"));
+                    }
+                } catch (JSONException e) {
+                    Log.e("BoarderDashboard", "Error parsing server response: " + e.getMessage());
+                }
+            },
+            error -> {
+                Log.e("BoarderDashboard", "Error sending token to server: " + error.getMessage());
+            }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("user_id", String.valueOf(userId)); // Use actual logged-in user ID
+                params.put("device_token", token);
+                params.put("device_type", "android");
+                params.put("app_version", "1.0.0");
+                return params;
+            }
+        };
+        
+        // Add request to queue
+        Volley.newRequestQueue(this).add(stringRequest);
     }
 }

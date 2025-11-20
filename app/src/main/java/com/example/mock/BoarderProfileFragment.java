@@ -35,6 +35,20 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * BoarderProfileFragment - Profile page for boarders
  * Displays user information and provides access to various settings and features
@@ -60,12 +74,16 @@ public class BoarderProfileFragment extends Fragment {
 
     // Menu Items
     private LinearLayout layoutAccountSettings;
-    private LinearLayout layoutPaymentMethods;
+    private LinearLayout layoutNotifications;
+    private LinearLayout layoutMessages;
     private LinearLayout layoutHelpSupport;
     private LinearLayout layoutAboutApp;
     
     // Pull-to-refresh
     private SwipeRefreshLayout swipeRefreshLayout;
+    
+    // API URL
+    private static final String GET_BOARDER_PROFILE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_profile.php";
 
     public BoarderProfileFragment() {
         // Required empty public constructor
@@ -109,7 +127,8 @@ public class BoarderProfileFragment extends Fragment {
             
             // Menu items
             layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
-            layoutPaymentMethods = view.findViewById(R.id.layoutPaymentMethods);
+            layoutNotifications = view.findViewById(R.id.layoutNotifications);
+            layoutMessages = view.findViewById(R.id.layoutMessages);
             layoutHelpSupport = view.findViewById(R.id.layoutHelpSupport);
             layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
             
@@ -200,35 +219,33 @@ public class BoarderProfileFragment extends Fragment {
                 });
             }
 
-            // Edit profile picture
+            // Edit profile picture - opens edit profile activity (like owner side)
             if (ivEditProfile != null) {
                 ivEditProfile.setOnClickListener(v -> {
                     try {
-                        openImageSelector();
+                        openEditProfile();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
             }
             
-            // Profile picture click
+            // Profile picture click - opens edit profile activity (like owner side)
             if (ivProfilePic != null) {
                 ivProfilePic.setOnClickListener(v -> {
                     try {
-                        openImageSelector();
+                        openEditProfile();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
             }
 
-            // Account Settings
+            // Account Settings - opens account settings with email/password change (like owner side)
             if (layoutAccountSettings != null) {
                 layoutAccountSettings.setOnClickListener(v -> {
                     try {
-                        // Navigate to account settings activity
-                        Intent intent = new Intent(getActivity(), BoarderAccountSettingsActivity.class);
-                        startActivity(intent);
+                        openAccountSettings();
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
@@ -236,32 +253,28 @@ public class BoarderProfileFragment extends Fragment {
                 });
             }
 
-            // Gcash Information (Payment Methods)
-            if (layoutPaymentMethods != null) {
-                layoutPaymentMethods.setOnClickListener(v -> {
+            // Notifications
+            if (layoutNotifications != null) {
+                layoutNotifications.setOnClickListener(v -> {
                     try {
-                        // Navigate to GcashInfoActivity (reused from owner side)
-                        String userIdString = Login.getCurrentUserId(getContext());
-                        if (userIdString == null || userIdString.isEmpty()) {
-                            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        
-                        // Parse user ID to int
-                        int userId;
-                        try {
-                            userId = Integer.parseInt(userIdString);
-                        } catch (NumberFormatException e) {
-                            Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        
-                        Intent intent = new Intent(getActivity(), GcashInfoActivity.class);
-                        intent.putExtra("user_id", userId);
+                        Intent intent = new Intent(getActivity(), Notification.class);
                         startActivity(intent);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening Gcash Information", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Error opening notifications", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            // Messages
+            if (layoutMessages != null) {
+                layoutMessages.setOnClickListener(v -> {
+                    try {
+                        Intent intent = new Intent(getActivity(), Messages.class);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening messages", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -314,17 +327,190 @@ public class BoarderProfileFragment extends Fragment {
         }
     }
 
-    private void loadUserData() {
+    private void openEditProfile() {
         try {
-            // Load user data from SharedPreferences
+            String userIdString = Login.getCurrentUserId(getContext());
+            if (userIdString == null || userIdString.isEmpty()) {
+                Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            int userId;
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            Intent intent = new Intent(getActivity(), BoarderAccountSettingsActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivityForResult(intent, 100); // Use request code 100 for profile edit
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error opening edit profile", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void openAccountSettings() {
+        try {
+            String userIdString = Login.getCurrentUserId(getContext());
+            if (userIdString == null || userIdString.isEmpty()) {
+                Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            int userId;
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Toast.makeText(getContext(), "Invalid user ID", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            Intent intent = new Intent(getActivity(), AccountSettingsActivity.class);
+            intent.putExtra("user_id", userId);
+            startActivityForResult(intent, 200); // Use request code 200 for account settings
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void loadUserData() {
+        // Get user ID
+        String userIdString = Login.getCurrentUserId(getContext());
+        if (userIdString == null || userIdString.isEmpty()) {
+            // Fallback to SharedPreferences data
+            loadUserDataFromSharedPreferences();
+            return;
+        }
+        
+        int userId;
+        try {
+            userId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e) {
+            // Fallback to SharedPreferences data
+            loadUserDataFromSharedPreferences();
+            return;
+        }
+        
+        // Load profile data from server
+        StringRequest request = new StringRequest(Request.Method.POST, GET_BOARDER_PROFILE_URL,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    // Check if fragment is still attached before processing response
+                    if (!isAdded() || getContext() == null) {
+                        return;
+                    }
+                    
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            populateProfileData(jsonResponse);
+                        } else {
+                            // Fallback to SharedPreferences data
+                            loadUserDataFromSharedPreferences();
+                        }
+                    } catch (JSONException e) {
+                        android.util.Log.e("BoarderProfile", "Error parsing profile response", e);
+                        // Fallback to SharedPreferences data
+                        loadUserDataFromSharedPreferences();
+                    } finally {
+                        // Stop refresh indicator
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+                    }
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    android.util.Log.e("BoarderProfile", "Error loading profile", error);
+                    // Fallback to SharedPreferences data
+                    loadUserDataFromSharedPreferences();
+                    // Stop refresh indicator
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                }
+            }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("user_id", userIdString);
+                return params;
+            }
+        };
+        
+        RequestQueue queue = Volley.newRequestQueue(getContext());
+        queue.add(request);
+    }
+    
+    private void populateProfileData(JSONObject profileData) {
+        try {
+            // Set name
+            String firstName = profileData.optString("f_name", "");
+            String middleName = profileData.optString("m_name", "");
+            String lastName = profileData.optString("l_name", "");
+            String suffix = profileData.optString("suffix", "");
+            
+            String fullName = firstName;
+            if (!middleName.isEmpty()) {
+                fullName += " " + middleName;
+            }
+            fullName += " " + lastName;
+            if (suffix != null && !suffix.isEmpty() && !suffix.equals("None")) {
+                fullName += " " + suffix;
+            }
+            
+            if (isAdded() && tvBoarderName != null) {
+                tvBoarderName.setText(fullName.trim());
+            }
+            
+            // Set email
+            String email = profileData.optString("email", "");
+            if (isAdded() && tvBoarderEmail != null) {
+                tvBoarderEmail.setText(email);
+            }
+            
+            // Load profile picture
+            String profilePicPath = profileData.optString("profile_picture", "");
+            if (!profilePicPath.isEmpty()) {
+                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicPath;
+                // Check if fragment is still attached before loading image
+                if (isAdded() && getContext() != null && ivProfilePic != null) {
+                    Glide.with(requireContext())
+                        .load(fullImageUrl)
+                        .placeholder(R.drawable.btn_profile)
+                        .error(R.drawable.btn_profile)
+                        .centerCrop()
+                        .into(ivProfilePic);
+                }
+            } else {
+                // Set default profile picture
+                if (isAdded() && ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
+            }
+            
+        } catch (Exception e) {
+            android.util.Log.e("BoarderProfile", "Error populating profile data", e);
+            // Fallback to SharedPreferences data
+            loadUserDataFromSharedPreferences();
+        }
+    }
+    
+    private void loadUserDataFromSharedPreferences() {
+        try {
+            // Load user data from SharedPreferences as fallback
             String userName = Login.getCurrentUserName(getContext());
             String middleName = Login.getCurrentUserMiddleName(getContext());
             String suffix = Login.getCurrentUserSuffix(getContext());
             String userEmail = Login.getCurrentUserEmail(getContext());
-            String userPhone = Login.getCurrentUserPhone(getContext());
-            String userAddress = Login.getCurrentUserAddress(getContext());
-            String userBirthDate = Login.getCurrentUserBirthDate(getContext());
-            String userGcashNumber = Login.getCurrentUserGcashNumber(getContext());
             
             // Build full name properly, handling null/empty middle name
             if (tvBoarderName != null) {
@@ -344,10 +530,10 @@ public class BoarderProfileFragment extends Fragment {
                 }
             }
             
-            // You can add more TextViews to display additional user information
-            // For example, if you have TextViews for phone, address, etc.
-            // tvUserPhone.setText(userPhone != null ? userPhone : "Not provided");
-            // tvUserAddress.setText(userAddress != null ? userAddress : "Not provided");
+            // Set default profile picture if not loaded from server
+            if (ivProfilePic != null) {
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -358,10 +544,8 @@ public class BoarderProfileFragment extends Fragment {
             if (tvBoarderEmail != null) {
                 tvBoarderEmail.setText("user@email.com");
             }
-        } finally {
-            // Stop refresh indicator
-            if (swipeRefreshLayout != null) {
-                swipeRefreshLayout.setRefreshing(false);
+            if (ivProfilePic != null) {
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
             }
         }
     }
@@ -568,5 +752,32 @@ public class BoarderProfileFragment extends Fragment {
         } catch (Exception e) {
             throw new IOException("Error processing image: " + e.getMessage(), e);
         }
+    }
+    
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        // Check if the result is from BoarderAccountSettingsActivity or AccountSettingsActivity
+        if ((requestCode == 100 || requestCode == 200) && resultCode == getActivity().RESULT_OK) {
+            // Profile or account settings was updated successfully, refresh the data
+            loadUserData();
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh profile data when fragment becomes visible
+        // This ensures any changes made in other activities are reflected
+        loadUserData();
+    }
+    
+    /**
+     * Public method to refresh profile data
+     * Can be called from parent activity when needed
+     */
+    public void refreshProfile() {
+        loadUserData();
     }
 }

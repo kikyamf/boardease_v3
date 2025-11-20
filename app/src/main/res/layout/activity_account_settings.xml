@@ -54,7 +54,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-        <!-- Email & Password Section -->
+        <!-- Change Email Section -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,35 +72,166 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Email &amp; Password"
+                    android:text="Change Email Address"
                     android:textSize="18sp"
                     android:fontFamily="@font/poppins_semibold"
                     android:textColor="#212529"
                     android:layout_marginBottom="12dp" />
 
-                <!-- Email -->
+                <!-- Current Email (Display Only) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Email Address *"
+                    android:text="Current Email"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvCurrentEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="16sp"
+                    android:textColor="#212529"
+                    android:fontFamily="@font/poppins_regular"
+                    android:padding="16dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Current Password for Email Change -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Current Password *"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp">
+
+                    <EditText
+                        android:id="@+id/etEmailCurrentPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/modern_edittext_focused"
+                        android:padding="16dp"
+                        android:hint="Enter current password"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="textPassword"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp" />
+                    
+                    <ImageView
+                        android:id="@+id/ivToggleEmailCurrentPassword"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_password_hidden"
+                        android:contentDescription="Toggle Password Visibility"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp" />
+                </FrameLayout>
+
+                <!-- New Email -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="New Email *"
                     android:textSize="14sp"
                     android:textColor="#495057"
                     android:fontFamily="@font/poppins_medium"
                     android:layout_marginBottom="8dp" />
 
                 <EditText
-                    android:id="@+id/etEmail"
+                    android:id="@+id/etNewEmail"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:background="@drawable/modern_edittext_focused"
                     android:padding="16dp"
-                    android:hint="Enter email address"
+                    android:hint="Enter new email address"
                     android:textColor="#212529"
                     android:textColorHint="#6C757D"
                     android:inputType="textEmailAddress"
                     android:fontFamily="@font/poppins_regular"
                     android:textSize="16sp"
                     android:layout_marginBottom="16dp" />
+
+                <!-- Confirm New Email -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Confirm New Email *"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etConfirmNewEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:padding="16dp"
+                    android:hint="Confirm new email address"
+                    android:textColor="#212529"
+                    android:textColorHint="#6C757D"
+                    android:inputType="textEmailAddress"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Change Email Button -->
+                <Button
+                    android:id="@+id/btnChangeEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Change Email"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:letterSpacing="0.5"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_semibold"
+                    app:backgroundTint="#A18167"
+                    app:cornerRadius="12dp"
+                    android:elevation="4dp"
+                    android:stateListAnimator="@null" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Change Password Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Change Password"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:textColor="#212529"
+                    android:layout_marginBottom="12dp" />
 
                 <!-- Current Password -->
                 <TextView
@@ -118,7 +249,7 @@
                     android:layout_marginBottom="16dp">
 
                     <EditText
-                        android:id="@+id/etCurrentPassword"
+                        android:id="@+id/etPasswordCurrentPassword"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:background="@drawable/modern_edittext_focused"
@@ -131,7 +262,7 @@
                         android:textSize="16sp" />
                     
                     <ImageView
-                        android:id="@+id/ivToggleCurrentPassword"
+                        android:id="@+id/ivTogglePasswordCurrentPassword"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="end|center_vertical"
@@ -147,7 +278,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="New Password"
+                    android:text="New Password *"
                     android:textSize="14sp"
                     android:textColor="#495057"
                     android:fontFamily="@font/poppins_medium"
@@ -164,7 +295,7 @@
                         android:layout_height="56dp"
                         android:background="@drawable/modern_edittext_focused"
                         android:padding="16dp"
-                        android:hint="Enter new password (optional)"
+                        android:hint="Enter new password"
                         android:textColor="#212529"
                         android:textColorHint="#6C757D"
                         android:inputType="textPassword"
@@ -184,11 +315,11 @@
                         android:padding="4dp" />
                 </FrameLayout>
 
-                <!-- Confirm Password -->
+                <!-- Confirm New Password -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Confirm New Password"
+                    android:text="Confirm New Password *"
                     android:textSize="14sp"
                     android:textColor="#495057"
                     android:fontFamily="@font/poppins_medium"
@@ -224,30 +355,26 @@
                         android:padding="4dp" />
                 </FrameLayout>
 
+                <!-- Change Password Button -->
+                <Button
+                    android:id="@+id/btnChangePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Change Password"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:letterSpacing="0.5"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_semibold"
+                    app:backgroundTint="#A18167"
+                    app:cornerRadius="12dp"
+                    android:elevation="4dp"
+                    android:stateListAnimator="@null" />
+
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
-
-
-        <!-- Save Button -->
-            <Button
-                android:id="@+id/btnSaveChanges"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginStart="15dp"
-                android:layout_marginEnd="15dp"
-                android:layout_marginBottom="15dp"
-                android:layout_marginTop="8dp"
-                android:text="Save Changes"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:letterSpacing="0.5"
-                android:textStyle="bold"
-                android:fontFamily="@font/poppins_semibold"
-                app:backgroundTint="#A18167"
-                app:cornerRadius="12dp"
-                android:elevation="4dp"
-                android:stateListAnimator="@null" />
 
         </LinearLayout>
 
