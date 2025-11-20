@@ -244,14 +244,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvTitle">
 
-            <ImageView
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="24dp"
-                android:src="@drawable/email1"
-                android:tint="#A18167" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -260,12 +252,13 @@
                 android:textColor="#A18167"
                 android:textSize="20sp"
                 android:textStyle="bold"
+                android:layout_marginTop="24dp"
                 android:layout_marginBottom="16dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Your email has been verified successfully! Your account is now pending admin approval. Please wait for the admin to review and approve your account."
+                android:text="Your email has been verified successfully! Your account is now pending admin approval. An email will be sent to you once your account is already approved by the admin."
                 android:textAlignment="center"
                 android:textColor="@android:color/black"
                 android:textSize="14sp"
@@ -284,6 +277,20 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackToLogin"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp"
+                android:text="Back to Login"
+                android:textAllCaps="false"
+                android:textColor="@color/brown"
+                android:textSize="16sp"
+                android:backgroundTint="@android:color/white"
+                app:cornerRadius="8dp"
+                app:strokeColor="@color/brown"
+                app:strokeWidth="2dp" />
 
             <TextView
                 android:layout_width="wrap_content"
