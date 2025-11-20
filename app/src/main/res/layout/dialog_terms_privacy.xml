@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="600dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/dialog_background">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Terms and Privacy"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <ImageButton
+                android:id="@+id/btnCloseTerms"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Terms of Service Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Terms of Service"
+            android:textSize="18sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By using BoardEase, you agree to the following terms:\n\n1. You must provide accurate and truthful information during registration.\n\n2. You are responsible for maintaining the confidentiality of your account credentials.\n\n3. Boarding house owners must comply with all local regulations and maintain valid business permits.\n\n4. All transactions and communications should be conducted in good faith.\n\n5. BoardEase reserves the right to suspend or terminate accounts that violate these terms.\n\n6. Users are responsible for their own safety and should exercise caution when meeting other users.\n\n7. BoardEase is not liable for disputes between boarders and boarding house owners."
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Privacy Policy Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Privacy Policy"
+            android:textSize="18sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BoardEase is committed to protecting your privacy:\n\n1. We collect personal information necessary for account creation and service provision.\n\n2. Your ID documents and business permits are securely stored and only used for verification purposes.\n\n3. Contact information (email, phone) is used for account verification and communication.\n\n4. Payment information is processed securely and not stored on our servers.\n\n5. We do not share your personal information with third parties without your consent.\n\n6. You have the right to access, update, or delete your personal information.\n\n7. We implement security measures to protect your data from unauthorized access.\n\n8. Cookies and similar technologies may be used to enhance your experience.\n\n9. By using BoardEase, you consent to the collection and use of information as described in this policy."
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Close Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseTermsDialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Close"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#A18167"
+            app:cornerRadius="8dp"
+            android:paddingVertical="12dp"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+</ScrollView>
+
