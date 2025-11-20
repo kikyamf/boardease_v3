@@ -129,6 +129,14 @@ public class BoarderProfileFragment extends Fragment {
         }
         loadUserData();
     }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh profile data when fragment becomes visible
+        // This ensures any changes made in other activities are reflected
+        loadUserData();
+    }
 
     private void initializeViews(View view) {
         try {
@@ -443,10 +451,10 @@ public class BoarderProfileFragment extends Fragment {
     private void loadProfilePictureFromCache() {
         if (profilePrefs != null) {
             String cachedPath = profilePrefs.getString(KEY_PROFILE_PICTURE, "");
-            if (cachedPath != null && !cachedPath.isEmpty()) {
+            if (cachedPath != null && !cachedPath.isEmpty() && !cachedPath.equalsIgnoreCase("null")) {
                 loadProfilePicture(cachedPath);
             } else {
-                if (ivProfilePic != null) {
+                if (isAdded() && ivProfilePic != null) {
                     ivProfilePic.setImageResource(R.drawable.btn_profile);
                 }
             }
@@ -538,7 +546,7 @@ public class BoarderProfileFragment extends Fragment {
                 return;
             }
 
-            if (profilePicturePath != null && !profilePicturePath.trim().isEmpty()) {
+            if (profilePicturePath != null && !profilePicturePath.trim().isEmpty() && !profilePicturePath.equalsIgnoreCase("null")) {
                 String trimmedPath = profilePicturePath.trim();
                 String fullImageUrl;
                 if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
@@ -549,21 +557,25 @@ public class BoarderProfileFragment extends Fragment {
                     }
                     fullImageUrl = BASE_URL + trimmedPath;
                 }
-
-                Glide.with(this)
-                    .load(fullImageUrl)
-                    .placeholder(R.drawable.btn_profile)
-                    .error(R.drawable.btn_profile)
-                    .centerCrop()
-                    .circleCrop()
-                    .into(ivProfilePic);
+                
+                // Check if fragment is still attached before loading image
+                if (isAdded() && getContext() != null) {
+                    Glide.with(requireContext())
+                        .load(fullImageUrl)
+                        .placeholder(R.drawable.btn_profile)
+                        .error(R.drawable.btn_profile)
+                        .centerCrop()
+                        .into(ivProfilePic);
+                }
             } else {
                 // Set default profile picture
-                ivProfilePic.setImageResource(R.drawable.btn_profile);
+                if (isAdded() && ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Error loading profile picture", e);
-            if (ivProfilePic != null) {
+            if (isAdded() && ivProfilePic != null) {
                 ivProfilePic.setImageResource(R.drawable.btn_profile);
             }
         }
