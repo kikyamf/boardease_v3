@@ -677,7 +677,6 @@ public class Registration2Activity extends AppCompatActivity {
                         Log.e("REGISTRATION", "Error creating file data: " + e.getMessage());
                         e.printStackTrace();
                     }
-                    
                     return params;
                 }
             };
