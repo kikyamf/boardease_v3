@@ -3,8 +3,10 @@ package com.example.mock;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -91,6 +93,11 @@ public class BoarderProfileFragment extends Fragment {
     // Pull-to-refresh
     private SwipeRefreshLayout swipeRefreshLayout;
 
+    // Profile cache
+    private SharedPreferences profilePrefs;
+    private static final String PROFILE_PREFS_NAME = "boarder_profile_prefs";
+    private static final String KEY_PROFILE_PICTURE = "profile_picture_path";
+
     public BoarderProfileFragment() {
         // Required empty public constructor
     }
@@ -113,10 +120,13 @@ public class BoarderProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
         initializeViews(view);
         initializeImageHandlers();
         setupClickListeners();
+        if (getContext() != null) {
+            profilePrefs = getContext().getSharedPreferences(PROFILE_PREFS_NAME, android.content.Context.MODE_PRIVATE);
+        }
         loadUserData();
     }
 
@@ -405,6 +415,8 @@ public class BoarderProfileFragment extends Fragment {
                     tvBoarderEmail.setText("user@email.com"); // Fallback
                 }
             }
+
+            loadProfilePictureFromCache();
         } catch (Exception e) {
             e.printStackTrace();
             // Fallback to mock data if there's an error
@@ -418,6 +430,25 @@ public class BoarderProfileFragment extends Fragment {
             // Stop refresh indicator
             if (swipeRefreshLayout != null) {
                 swipeRefreshLayout.setRefreshing(false);
+            }
+        }
+    }
+
+    private void saveProfilePicturePath(String path) {
+        if (profilePrefs != null && path != null && !path.trim().isEmpty()) {
+            profilePrefs.edit().putString(KEY_PROFILE_PICTURE, path.trim()).apply();
+        }
+    }
+
+    private void loadProfilePictureFromCache() {
+        if (profilePrefs != null) {
+            String cachedPath = profilePrefs.getString(KEY_PROFILE_PICTURE, "");
+            if (cachedPath != null && !cachedPath.isEmpty()) {
+                loadProfilePicture(cachedPath);
+            } else {
+                if (ivProfilePic != null) {
+                    ivProfilePic.setImageResource(R.drawable.btn_profile);
+                }
             }
         }
     }
@@ -461,6 +492,7 @@ public class BoarderProfileFragment extends Fragment {
                                     // Load profile picture
                                     String profilePicture = boarderData.optString("profile_picture", "");
                                     loadProfilePicture(profilePicture);
+                                    saveProfilePicturePath(profilePicture);
                                     
                                 } else {
                                     loadUserDataFromSharedPreferences();
@@ -502,8 +534,22 @@ public class BoarderProfileFragment extends Fragment {
     
     private void loadProfilePicture(String profilePicturePath) {
         try {
-            if (profilePicturePath != null && !profilePicturePath.isEmpty()) {
-                String fullImageUrl = BASE_URL + profilePicturePath;
+            if (ivProfilePic == null) {
+                return;
+            }
+
+            if (profilePicturePath != null && !profilePicturePath.trim().isEmpty()) {
+                String trimmedPath = profilePicturePath.trim();
+                String fullImageUrl;
+                if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+                    fullImageUrl = trimmedPath;
+                } else {
+                    if (trimmedPath.startsWith("/")) {
+                        trimmedPath = trimmedPath.substring(1);
+                    }
+                    fullImageUrl = BASE_URL + trimmedPath;
+                }
+
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)
@@ -517,7 +563,9 @@ public class BoarderProfileFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error loading profile picture", e);
-            ivProfilePic.setImageResource(R.drawable.btn_profile);
+            if (ivProfilePic != null) {
+                ivProfilePic.setImageResource(R.drawable.btn_profile);
+            }
         }
     }
     
@@ -821,6 +869,7 @@ public class BoarderProfileFragment extends Fragment {
                                     String newProfilePicPath = jsonResponse.getString("profile_picture_path");
                                     // Reload profile picture
                                     loadProfilePicture(newProfilePicPath);
+                                        saveProfilePicturePath(newProfilePicPath);
                                     Toast.makeText(getContext(), "Profile picture uploaded successfully!", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(getContext(), 
