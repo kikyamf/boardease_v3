@@ -439,11 +439,16 @@ public class Messages extends AppCompatActivity {
                                         formattedMessage = senderName + ": " + lastMessage;
                                     }
                                     
-                                    // Get creator_id if available
+                                    // Get creator_id if available - try different field names
                                     int creatorId = -1;
                                     if (chatObj.has("creator_id") && !chatObj.isNull("creator_id")) {
                                         creatorId = chatObj.getInt("creator_id");
+                                    } else if (chatObj.has("created_by") && !chatObj.isNull("created_by")) {
+                                        creatorId = chatObj.getInt("created_by");
+                                    } else if (chatObj.has("owner_id") && !chatObj.isNull("owner_id")) {
+                                        creatorId = chatObj.getInt("owner_id");
                                     }
+                                    android.util.Log.d("LoadChatList", "Group: " + chatObj.getString("group_name") + ", Creator ID: " + creatorId);
                                     
                                     ChatModel groupChat = new ChatModel(
                                         chatObj.getString("group_name"),
@@ -758,8 +763,27 @@ public class Messages extends AppCompatActivity {
         int currentUserId = getCurrentUserId();
         
         if (isGroupChat) {
-            isOwner = (chat.getCreatorId() == currentUserId);
+            int creatorId = chat.getCreatorId();
+            isOwner = (creatorId == currentUserId);
+            android.util.Log.d("ShowDeleteDialog", "Group Chat: " + chatName);
+            android.util.Log.d("ShowDeleteDialog", "Creator ID: " + creatorId + ", Current User ID: " + currentUserId);
+            android.util.Log.d("ShowDeleteDialog", "Is Owner: " + isOwner);
+            
+            // If creatorId is -1 (not set), try to verify ownership via API
+            if (creatorId == -1) {
+                android.util.Log.d("ShowDeleteDialog", "Creator ID not set, verifying ownership via API...");
+                verifyGroupOwnership(chat, currentUserId);
+                return; // Exit early, will show dialog after verification
+            }
         }
+        
+        // Show the appropriate dialog based on chat type and ownership
+        showDeleteChatDialogAfterVerification(chat, isOwner);
+    }
+    
+    private void showDeleteChatDialogAfterVerification(ChatModel chat, boolean isOwner) {
+        String chatName = chat.getName();
+        boolean isGroupChat = chat.getChatType().equals("group");
         
         if (isGroupChat && isOwner) {
             // Show options for group chat owner: Leave or Delete
@@ -961,6 +985,57 @@ public class Messages extends AppCompatActivity {
                 });
         
         queue.add(request);
+    }
+    
+    private void verifyGroupOwnership(ChatModel chat, int currentUserId) {
+        // Verify if current user is the owner of the group chat
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_group_info.php?group_id=" + chat.getGroupId();
+        
+        android.util.Log.d("VerifyOwnership", "Verifying ownership for group: " + chat.getGroupId());
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        android.util.Log.d("VerifyOwnership", "Response: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            int creatorId = -1;
+                            
+                            // Try different field names for creator
+                            if (data.has("creator_id") && !data.isNull("creator_id")) {
+                                creatorId = data.getInt("creator_id");
+                            } else if (data.has("created_by") && !data.isNull("created_by")) {
+                                creatorId = data.getInt("created_by");
+                            } else if (data.has("owner_id") && !data.isNull("owner_id")) {
+                                creatorId = data.getInt("owner_id");
+                            }
+                            
+                            // Update the chat model with creator ID
+                            chat.setCreatorId(creatorId);
+                            
+                            boolean isOwner = (creatorId == currentUserId);
+                            android.util.Log.d("VerifyOwnership", "Creator ID from API: " + creatorId + ", Is Owner: " + isOwner);
+                            
+                            // Now show the appropriate dialog
+                            showDeleteChatDialogAfterVerification(chat, isOwner);
+                        } else {
+                            // If verification fails, assume not owner and show leave option
+                            android.util.Log.e("VerifyOwnership", "Failed to verify ownership");
+                            showDeleteChatDialogAfterVerification(chat, false);
+                        }
+                    } catch (JSONException e) {
+                        android.util.Log.e("VerifyOwnership", "JSON parsing error", e);
+                        // If parsing fails, assume not owner and show leave option
+                        showDeleteChatDialogAfterVerification(chat, false);
+                    }
+                },
+                error -> {
+                    android.util.Log.e("VerifyOwnership", "Network error", error);
+                    // If network error, assume not owner and show leave option
+                    showDeleteChatDialogAfterVerification(chat, false);
+                });
+        
+        requestQueue.add(request);
     }
     
     private int getCurrentUserId() {
