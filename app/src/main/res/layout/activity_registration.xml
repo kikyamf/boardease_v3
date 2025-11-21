@@ -47,6 +47,7 @@
 
             <!-- I. Account Type Section -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sectionAccountType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
@@ -88,10 +89,12 @@
 
             <!-- II. Personal Information Section -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sectionPersonalInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
                 app:cardBackgroundColor="@android:color/white">
@@ -280,10 +283,12 @@
 
             <!-- III. Permanent Address Section -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sectionAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
                 app:cardBackgroundColor="@android:color/white">
@@ -387,10 +392,12 @@
 
             <!-- IV. Login Credentials Section -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sectionLoginCredentials"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
                 app:cardBackgroundColor="@android:color/white">
@@ -482,10 +489,12 @@
 
             <!-- V. Payment Information Section -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sectionPaymentInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp"
                 app:cardBackgroundColor="@android:color/white">

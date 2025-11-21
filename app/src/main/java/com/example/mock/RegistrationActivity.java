@@ -54,6 +54,13 @@ public class RegistrationActivity extends AppCompatActivity {
     private Uri selectedQrUri; // store the selected image URI
     private Runnable validationRunnable; // for real-time email validation
     
+    // Section cards for progressive reveal
+    private com.google.android.material.card.MaterialCardView sectionAccountType;
+    private com.google.android.material.card.MaterialCardView sectionPersonalInfo;
+    private com.google.android.material.card.MaterialCardView sectionAddress;
+    private com.google.android.material.card.MaterialCardView sectionLoginCredentials;
+    private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
+    
     // Address picker data
     private String selectedProvince = "";
     private String selectedMunicipality = "";
@@ -101,6 +108,13 @@ public class RegistrationActivity extends AppCompatActivity {
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
         
+        // Get section cards
+        sectionAccountType = findViewById(R.id.sectionAccountType);
+        sectionPersonalInfo = findViewById(R.id.sectionPersonalInfo);
+        sectionAddress = findViewById(R.id.sectionAddress);
+        sectionLoginCredentials = findViewById(R.id.sectionLoginCredentials);
+        sectionPaymentInfo = findViewById(R.id.sectionPaymentInfo);
+        
         // Setup back button
         ImageView backButton = findViewById(R.id.backButton);
         if (backButton != null) {
@@ -137,6 +151,9 @@ public class RegistrationActivity extends AppCompatActivity {
                     // Clear validation message if email is empty
                     tvEmailValidation.setVisibility(View.GONE);
                 }
+                
+                // Check section IV completion
+                checkSectionIVCompletion();
             }
         });
 
@@ -194,7 +211,7 @@ public class RegistrationActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRole.setAdapter(adapter);
 
-        // Setup role spinner listener to show/hide GCash fields
+        // Setup role spinner listener to show/hide GCash fields and check section completion
         spinnerRole.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
@@ -208,6 +225,9 @@ public class RegistrationActivity extends AppCompatActivity {
                     // Show GCash fields for BH Owner or other roles
                     llGcash.setVisibility(android.view.View.VISIBLE);
                 }
+                
+                // Check if section I is complete and reveal section II
+                checkSectionICompletion();
             }
 
             @Override
@@ -281,6 +301,8 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Format: MM/DD/YYYY
                             String date = (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear;
                             etBirthDate.setText(date);
+                            // Check section II completion after birth date is set
+                            checkSectionIICompletion();
                         },
                         year, month, day
                 );
@@ -289,6 +311,32 @@ public class RegistrationActivity extends AppCompatActivity {
                 datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
 
                 datePickerDialog.show();
+            }
+        });
+        
+        // Setup listeners for section II fields to check completion
+        etFirstName.addTextChangedListener(createSectionIICheckListener());
+        etLastName.addTextChangedListener(createSectionIICheckListener());
+        etPhone.addTextChangedListener(createSectionIICheckListener());
+        
+        // Setup listeners for section III fields to check completion
+        etBarangay.addTextChangedListener(createSectionIIICheckListener());
+        etDetailedAddress.addTextChangedListener(createSectionIIICheckListener());
+        
+        // Setup listeners for section IV fields to check completion
+        etPassword.addTextChangedListener(createSectionIVCheckListener());
+        
+        // Setup listener for section V fields to check completion
+        etGcashNum.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionVCompletion();
             }
         });
 
@@ -483,6 +531,8 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Email is valid - show success message
                             tvEmailValidation.setText("✓ " + message);
                             tvEmailValidation.setTextColor(getResources().getColor(android.R.color.black));
+                            // Check section IV completion after email validation
+                            checkSectionIVCompletion();
                         } else {
                             // Email validation failed - show error message
                             tvEmailValidation.setText("✗ " + message);
@@ -958,6 +1008,9 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_green_dark));
                     tvResultMessage.setVisibility(View.VISIBLE);
                     btnCloseDialog.setVisibility(View.VISIBLE);
+                    
+                    // Check section V completion after QR code is verified
+                    checkSectionVCompletion();
                 } else {
                     Log.d("QR_VALIDATION", "❌ QR CODE VALIDATION FAILED");
                     Log.d("QR_VALIDATION", "Failure reason: " + reason);
@@ -1041,6 +1094,8 @@ public class RegistrationActivity extends AppCompatActivity {
                     selectedBarangay = "";
                 }
                 updateCompleteAddress();
+                // Check section III completion
+                checkSectionIIICompletion();
             }
             
             @Override
@@ -1057,6 +1112,8 @@ public class RegistrationActivity extends AppCompatActivity {
                     selectedMunicipality = "";
                 }
                 updateCompleteAddress();
+                // Check section III completion
+                checkSectionIIICompletion();
             }
             
             @Override
@@ -1403,5 +1460,186 @@ public class RegistrationActivity extends AppCompatActivity {
         }
         
         etAddress.setText(completeAddress.toString());
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section II completion
+     */
+    private android.text.TextWatcher createSectionIICheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIICompletion();
+            }
+        };
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section III completion
+     */
+    private android.text.TextWatcher createSectionIIICheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIIICompletion();
+            }
+        };
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section IV completion
+     */
+    private android.text.TextWatcher createSectionIVCheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIVCompletion();
+            }
+        };
+    }
+    
+    /**
+     * Checks if Section I (Account Type) is complete and reveals Section II
+     */
+    private void checkSectionICompletion() {
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
+            // Section I is complete, reveal Section II
+            if (sectionPersonalInfo.getVisibility() != View.VISIBLE) {
+                sectionPersonalInfo.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    /**
+     * Checks if Section II (Personal Information) is complete and reveals Section III
+     */
+    private void checkSectionIICompletion() {
+        // Check if all required fields in Section II are filled
+        String firstName = etFirstName.getText().toString().trim();
+        String lastName = etLastName.getText().toString().trim();
+        String birthDate = etBirthDate.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        
+        // Phone validation: should have at least +63 and 10 digits after it
+        boolean phoneValid = phone.length() >= 14 && phone.startsWith("+63") && 
+                            phone.substring(4).replaceAll("[^0-9]", "").length() >= 10;
+        
+        // Birth date validation: should match MM/DD/YYYY format
+        boolean birthDateValid = birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$");
+        
+        if (!firstName.isEmpty() && !lastName.isEmpty() && birthDateValid && phoneValid) {
+            // Section II is complete, reveal Section III
+            if (sectionAddress.getVisibility() != View.VISIBLE) {
+                sectionAddress.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    /**
+     * Checks if Section III (Permanent Address) is complete and reveals Section IV
+     */
+    private void checkSectionIIICompletion() {
+        // Check if all required fields in Section III are filled
+        String province = spinnerProvince.getSelectedItem().toString();
+        String municipality = spinnerMunicipality.getSelectedItem().toString();
+        String barangay = etBarangay.getText().toString().trim();
+        String detailedAddress = etDetailedAddress.getText().toString().trim();
+        
+        boolean provinceValid = !province.equals("Select Province") && !province.isEmpty();
+        boolean municipalityValid = !municipality.equals("Select Municipality") && !municipality.isEmpty();
+        boolean barangayValid = !barangay.isEmpty();
+        boolean detailedAddressValid = !detailedAddress.isEmpty();
+        
+        if (provinceValid && municipalityValid && barangayValid && detailedAddressValid) {
+            // Section III is complete, reveal Section IV
+            if (sectionLoginCredentials.getVisibility() != View.VISIBLE) {
+                sectionLoginCredentials.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    /**
+     * Checks if Section IV (Login Credentials) is complete and reveals Section V
+     */
+    private void checkSectionIVCompletion() {
+        // Check if all required fields in Section IV are filled
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        
+        // Basic email format validation
+        boolean emailValid = !email.isEmpty() && email.contains("@") && email.contains(".");
+        
+        // Password validation: at least 8 characters
+        boolean passwordValid = password.length() >= 8;
+        
+        // For email validation status - if validation has been triggered and visible, it must pass
+        // If validation hasn't been triggered yet, we just need valid format
+        boolean emailValidationPassed = true;
+        if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+            String validationText = tvEmailValidation.getText().toString();
+            // If validation message is visible, check if it's successful (starts with ✓)
+            // If it shows an error (starts with ✗), validation failed
+            if (validationText.startsWith("✗")) {
+                emailValidationPassed = false;
+            } else if (validationText.startsWith("✓")) {
+                emailValidationPassed = true;
+            } else {
+                // Still validating, don't reveal next section yet
+                emailValidationPassed = false;
+            }
+        }
+        
+        // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
+        if (emailValid && passwordValid && emailValidationPassed) {
+            // Section IV is complete, reveal Section V
+            String selectedRole = spinnerRole.getSelectedItem().toString();
+            boolean isBoarder = "Boarder".equals(selectedRole);
+            
+            // Only show Section V if not a Boarder (Boarders don't need payment info)
+            if (!isBoarder && sectionPaymentInfo.getVisibility() != View.VISIBLE) {
+                sectionPaymentInfo.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    
+    /**
+     * Checks if Section V (Payment Information) completion
+     * This section is only for BH Owner, so we check accordingly
+     */
+    private void checkSectionVCompletion() {
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
+        if (isBoarder) {
+            // Boarders don't need payment info, so section is always "complete" once revealed
+            return;
+        }
+        
+        // For BH Owner, check if GCash number and QR code are provided
+        String gcashNum = etGcashNum.getText().toString().trim();
+        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.replaceAll("[^0-9]", "").length() == 11;
+        boolean qrCodeValid = selectedQrUri != null;
+        
+        // Section V completion doesn't reveal a new section, but we can use this for final validation
+        // This method is called when GCash fields are updated to ensure data is ready for submission
     }
 }
