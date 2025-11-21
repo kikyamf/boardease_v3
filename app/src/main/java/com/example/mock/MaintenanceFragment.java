@@ -199,7 +199,6 @@ public class MaintenanceFragment extends Fragment {
     }
 
     private void onMaintenanceClick(MaintenanceLog maintenance) {
-        Toast.makeText(getContext(), "Clicked: " + maintenance.getPropertyName(), Toast.LENGTH_SHORT).show();
         // Handle maintenance click - could open details dialog or activity
     }
 

@@ -199,7 +199,6 @@ public class ReservationsFragment extends Fragment {
     }
 
     private void onReservationClick(ReservationLog reservation) {
-        Toast.makeText(getContext(), "Clicked: " + reservation.getPropertyName(), Toast.LENGTH_SHORT).show();
         // Handle reservation click - could open details dialog or activity
     }
 

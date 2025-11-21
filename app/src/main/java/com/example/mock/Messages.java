@@ -312,6 +312,14 @@ public class Messages extends AppCompatActivity {
                                         profilePictureUrl = userObj.getString("profile_picture");
                                     }
                                     
+                                    // Get online status - check for is_online field, fallback to has_device_token
+                                    boolean isOnline = false;
+                                    if (userObj.has("is_online") && !userObj.isNull("is_online")) {
+                                        isOnline = userObj.getBoolean("is_online");
+                                    } else if (userObj.has("has_device_token")) {
+                                        isOnline = userObj.getBoolean("has_device_token");
+                                    }
+                                    
                                     ProfileModel profile = new ProfileModel(
                                         userObj.getInt("user_id"),
                                         userObj.getString("full_name"),
@@ -319,8 +327,8 @@ public class Messages extends AppCompatActivity {
                                         userObj.getString("email"),
                                         userObj.getString("phone"),
                                         R.drawable.ic_profile,
-                                        userObj.getBoolean("has_device_token"),
-                                        userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                        isOnline,
+                                        isOnline ? "Online" : "Offline",
                                         boardingHouseName,
                                         boardingHouseAddress,
                                         profilePictureUrl
@@ -416,6 +424,12 @@ public class Messages extends AppCompatActivity {
                                         profilePictureUrl = chatObj.getString("other_user_profile_picture");
                                     }
                                     
+                                    // Get online status if available
+                                    boolean isOnline = false;
+                                    if (chatObj.has("is_online") && !chatObj.isNull("is_online")) {
+                                        isOnline = chatObj.getBoolean("is_online");
+                                    }
+                                    
                                     chat = new ChatModel(
                                         chatObj.getString("other_user_name"),
                                         formattedMessage,
@@ -429,6 +443,7 @@ public class Messages extends AppCompatActivity {
                                         chatObj.getString("other_user_name"),
                                         profilePictureUrl
                                     );
+                                    chat.setOnline(isOnline);
                                 } else {
                                     // Format group message with sender name
                                     String lastMessage = chatObj.getString("last_message");
@@ -439,7 +454,18 @@ public class Messages extends AppCompatActivity {
                                         formattedMessage = senderName + ": " + lastMessage;
                                     }
                                     
-                                    chat = new ChatModel(
+                                    // Get creator_id if available - try different field names
+                                    int creatorId = -1;
+                                    if (chatObj.has("creator_id") && !chatObj.isNull("creator_id")) {
+                                        creatorId = chatObj.getInt("creator_id");
+                                    } else if (chatObj.has("created_by") && !chatObj.isNull("created_by")) {
+                                        creatorId = chatObj.getInt("created_by");
+                                    } else if (chatObj.has("owner_id") && !chatObj.isNull("owner_id")) {
+                                        creatorId = chatObj.getInt("owner_id");
+                                    }
+                                    android.util.Log.d("LoadChatList", "Group: " + chatObj.getString("group_name") + ", Creator ID: " + creatorId);
+                                    
+                                    ChatModel groupChat = new ChatModel(
                                         chatObj.getString("group_name"),
                                         formattedMessage,
                                         formatTime(chatObj.getString("last_message_time")),
@@ -449,8 +475,10 @@ public class Messages extends AppCompatActivity {
                                         chatObj.getInt("unread_count"),
                                         "Sent",
                                         chatObj.getString("group_name"),
-                                        chatObj.getInt("group_id")
+                                        chatObj.getInt("group_id"),
+                                        creatorId
                                     );
+                                    chat = groupChat;
                                 }
                                 
                                 chatList.add(chat);
@@ -506,6 +534,7 @@ public class Messages extends AppCompatActivity {
 
     private void addNewGroupChatToList(String groupName) {
         // Create a new group chat and add it to the top of the list
+        int currentUserId = getCurrentUserId();
         ChatModel newGroupChat = new ChatModel(
             groupName,
             "Group created successfully!",
@@ -516,7 +545,8 @@ public class Messages extends AppCompatActivity {
             0,
             "Sent",
             groupName,
-            nextGroupId
+            nextGroupId,
+            currentUserId // Set creator ID to current user
         );
         
         // Add to the beginning of the list (most recent first)
@@ -648,6 +678,14 @@ public class Messages extends AppCompatActivity {
                                     profilePictureUrl = userObj.getString("profile_picture");
                                 }
                                 
+                                // Get online status - check for is_online field, fallback to has_device_token
+                                boolean isOnline = false;
+                                if (userObj.has("is_online") && !userObj.isNull("is_online")) {
+                                    isOnline = userObj.getBoolean("is_online");
+                                } else if (userObj.has("has_device_token")) {
+                                    isOnline = userObj.getBoolean("has_device_token");
+                                }
+                                
                                 ProfileModel profile = new ProfileModel(
                                     userObj.getInt("user_id"),
                                     userObj.getString("full_name"),
@@ -655,8 +693,8 @@ public class Messages extends AppCompatActivity {
                                     userObj.getString("email"),
                                     userObj.getString("phone"),
                                     R.drawable.ic_profile,
-                                    userObj.getBoolean("has_device_token"),
-                                    userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                    isOnline,
+                                    isOnline ? "Online" : "Offline",
                                     "",
                                     "",
                                     profilePictureUrl
@@ -741,20 +779,86 @@ public class Messages extends AppCompatActivity {
     
     private void showDeleteChatDialog(ChatModel chat) {
         String chatName = chat.getName();
-        String message = "Are you sure you want to delete this chat?";
         
-        if (chat.getChatType().equals("group")) {
-            message = "Are you sure you want to leave this group chat?";
+        // Check if this is a group chat and if current user is the creator
+        boolean isGroupChat = chat.getChatType().equals("group");
+        boolean isOwner = false;
+        int currentUserId = getCurrentUserId();
+        
+        if (isGroupChat) {
+            int creatorId = chat.getCreatorId();
+            isOwner = (creatorId == currentUserId);
+            android.util.Log.d("ShowDeleteDialog", "Group Chat: " + chatName);
+            android.util.Log.d("ShowDeleteDialog", "Creator ID: " + creatorId + ", Current User ID: " + currentUserId);
+            android.util.Log.d("ShowDeleteDialog", "Is Owner: " + isOwner);
+            
+            // If creatorId is -1 (not set), try to verify ownership via API
+            if (creatorId == -1) {
+                android.util.Log.d("ShowDeleteDialog", "Creator ID not set, verifying ownership via API...");
+                verifyGroupOwnership(chat, currentUserId);
+                return; // Exit early, will show dialog after verification
+            }
         }
         
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("Delete Chat")
-                .setMessage(message)
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    deleteChat(chat);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        // Show the appropriate dialog based on chat type and ownership
+        showDeleteChatDialogAfterVerification(chat, isOwner);
+    }
+    
+    private void showDeleteChatDialogAfterVerification(ChatModel chat, boolean isOwner) {
+        String chatName = chat.getName();
+        boolean isGroupChat = chat.getChatType().equals("group");
+        
+        if (isGroupChat && isOwner) {
+            // Show options for group chat owner: Leave or Delete
+            String[] options = {"Delete GC", "Leave GC"};
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Group Chat Options")
+                    .setItems(options, (dialog, which) -> {
+                        if (which == 0) {
+                            // Delete GC option
+                            new android.app.AlertDialog.Builder(this)
+                                    .setTitle("Delete Group Chat")
+                                    .setMessage("Are you sure you want to delete \"" + chatName + "\"? This will permanently delete the group chat for all members.")
+                                    .setPositiveButton("Delete", (d, w) -> {
+                                        deleteGroupChat(chat);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                        } else if (which == 1) {
+                            // Leave GC option
+                            new android.app.AlertDialog.Builder(this)
+                                    .setTitle("Leave Group Chat")
+                                    .setMessage("Are you sure you want to leave \"" + chatName + "\"?")
+                                    .setPositiveButton("Leave", (d, w) -> {
+                                        leaveGroupChat(chat);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else if (isGroupChat) {
+            // Regular member can only leave
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Leave Group Chat")
+                    .setMessage("Are you sure you want to leave \"" + chatName + "\"?")
+                    .setPositiveButton("Leave", (dialog, which) -> {
+                        leaveGroupChat(chat);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else {
+            // Individual chat - delete
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Delete Chat")
+                    .setMessage("Are you sure you want to delete this chat?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        deleteChat(chat);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
     }
     
     private void deleteChat(ChatModel chat) {
@@ -806,6 +910,159 @@ public class Messages extends AppCompatActivity {
                 });
         
         queue.add(request);
+    }
+    
+    private void leaveGroupChat(ChatModel chat) {
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
+        
+        android.util.Log.d("LeaveGroupChat", "=== LEAVING GROUP CHAT ===");
+        android.util.Log.d("LeaveGroupChat", "URL: " + url);
+        android.util.Log.d("LeaveGroupChat", "User ID: " + getCurrentUserId());
+        android.util.Log.d("LeaveGroupChat", "Group ID: " + chat.getGroupId());
+        
+        RequestQueue queue = Volley.newRequestQueue(this);
+        
+        // Create request parameters - using delete_chat.php with action=leave
+        java.util.Map<String, String> params = new java.util.HashMap<>();
+        params.put("user_id", String.valueOf(getCurrentUserId()));
+        params.put("chat_type", "group");
+        params.put("chat_id", String.valueOf(chat.getGroupId()));
+        params.put("action", "leave"); // Distinguish leave from delete
+        
+        android.util.Log.d("LeaveGroupChat", "Request params: " + params.toString());
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params),
+                response -> {
+                    try {
+                        android.util.Log.d("LeaveGroupChat", "Response received: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            android.util.Log.d("LeaveGroupChat", "Left group chat successfully!");
+                            Toast.makeText(this, response.getString("message"), Toast.LENGTH_SHORT).show();
+                            // Refresh chat list - don't show loading dialog
+                            loadChatList(false);
+                        } else {
+                            android.util.Log.e("LeaveGroupChat", "Failed to leave group chat: " + response.getString("message"));
+                            Toast.makeText(this, "Failed to leave group chat: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        android.util.Log.e("LeaveGroupChat", "JSON parsing error", e);
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    android.util.Log.e("LeaveGroupChat", "Network error", error);
+                    android.util.Log.e("LeaveGroupChat", "Error details: " + error.getMessage());
+                    if (error.networkResponse != null) {
+                        android.util.Log.e("LeaveGroupChat", "Network response code: " + error.networkResponse.statusCode);
+                        android.util.Log.e("LeaveGroupChat", "Network response data: " + new String(error.networkResponse.data));
+                    }
+                    Toast.makeText(this, "Error leaving group chat: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+        
+        queue.add(request);
+    }
+    
+    private void deleteGroupChat(ChatModel chat) {
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
+        
+        android.util.Log.d("DeleteGroupChat", "=== DELETING GROUP CHAT ===");
+        android.util.Log.d("DeleteGroupChat", "URL: " + url);
+        android.util.Log.d("DeleteGroupChat", "User ID: " + getCurrentUserId());
+        android.util.Log.d("DeleteGroupChat", "Group ID: " + chat.getGroupId());
+        
+        RequestQueue queue = Volley.newRequestQueue(this);
+        
+        // Create request parameters - using delete_chat.php with action=delete
+        java.util.Map<String, String> params = new java.util.HashMap<>();
+        params.put("user_id", String.valueOf(getCurrentUserId()));
+        params.put("chat_type", "group");
+        params.put("chat_id", String.valueOf(chat.getGroupId()));
+        params.put("action", "delete"); // Force delete the entire group
+        
+        android.util.Log.d("DeleteGroupChat", "Request params: " + params.toString());
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params),
+                response -> {
+                    try {
+                        android.util.Log.d("DeleteGroupChat", "Response received: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            android.util.Log.d("DeleteGroupChat", "Group chat deleted successfully!");
+                            Toast.makeText(this, response.getString("message"), Toast.LENGTH_SHORT).show();
+                            // Refresh chat list - don't show loading dialog
+                            loadChatList(false);
+                        } else {
+                            android.util.Log.e("DeleteGroupChat", "Failed to delete group chat: " + response.getString("message"));
+                            Toast.makeText(this, "Failed to delete group chat: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        android.util.Log.e("DeleteGroupChat", "JSON parsing error", e);
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    android.util.Log.e("DeleteGroupChat", "Network error", error);
+                    android.util.Log.e("DeleteGroupChat", "Error details: " + error.getMessage());
+                    if (error.networkResponse != null) {
+                        android.util.Log.e("DeleteGroupChat", "Network response code: " + error.networkResponse.statusCode);
+                        android.util.Log.e("DeleteGroupChat", "Network response data: " + new String(error.networkResponse.data));
+                    }
+                    Toast.makeText(this, "Error deleting group chat: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+        
+        queue.add(request);
+    }
+    
+    private void verifyGroupOwnership(ChatModel chat, int currentUserId) {
+        // Verify if current user is the owner of the group chat
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_group_info.php?group_id=" + chat.getGroupId();
+        
+        android.util.Log.d("VerifyOwnership", "Verifying ownership for group: " + chat.getGroupId());
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        android.util.Log.d("VerifyOwnership", "Response: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            int creatorId = -1;
+                            
+                            // Try different field names for creator
+                            if (data.has("creator_id") && !data.isNull("creator_id")) {
+                                creatorId = data.getInt("creator_id");
+                            } else if (data.has("created_by") && !data.isNull("created_by")) {
+                                creatorId = data.getInt("created_by");
+                            } else if (data.has("owner_id") && !data.isNull("owner_id")) {
+                                creatorId = data.getInt("owner_id");
+                            }
+                            
+                            // Update the chat model with creator ID
+                            chat.setCreatorId(creatorId);
+                            
+                            boolean isOwner = (creatorId == currentUserId);
+                            android.util.Log.d("VerifyOwnership", "Creator ID from API: " + creatorId + ", Is Owner: " + isOwner);
+                            
+                            // Now show the appropriate dialog
+                            showDeleteChatDialogAfterVerification(chat, isOwner);
+                        } else {
+                            // If verification fails, assume not owner and show leave option
+                            android.util.Log.e("VerifyOwnership", "Failed to verify ownership");
+                            showDeleteChatDialogAfterVerification(chat, false);
+                        }
+                    } catch (JSONException e) {
+                        android.util.Log.e("VerifyOwnership", "JSON parsing error", e);
+                        // If parsing fails, assume not owner and show leave option
+                        showDeleteChatDialogAfterVerification(chat, false);
+                    }
+                },
+                error -> {
+                    android.util.Log.e("VerifyOwnership", "Network error", error);
+                    // If network error, assume not owner and show leave option
+                    showDeleteChatDialogAfterVerification(chat, false);
+                });
+        
+        requestQueue.add(request);
     }
     
     private int getCurrentUserId() {

@@ -50,16 +50,24 @@ public class MemberSelectionAdapter extends RecyclerView.Adapter<MemberSelection
         // Load profile picture from URL if available, otherwise use default
         String profilePictureUrl = profile.getProfilePictureUrl();
         if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+            // Reset background and scaleType for actual profile pictures
+            holder.profileImage.setBackgroundResource(R.drawable.circle_bg);
+            holder.profileImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            holder.profileImage.setPadding(0, 0, 0, 0);
             String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
             Glide.with(context)
                     .load(fullImageUrl)
-                    .placeholder(profile.getImageResId())
-                    .error(profile.getImageResId())
+                    .placeholder(R.drawable.btn_profile)
+                    .error(R.drawable.btn_profile)
                     .centerCrop()
                     .circleCrop()
                     .into(holder.profileImage);
         } else {
-            holder.profileImage.setImageResource(profile.getImageResId());
+            // Use light gray background and fit icon inside circle for default profile picture
+            holder.profileImage.setBackgroundResource(R.drawable.circle_bg_dark_gray);
+            holder.profileImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            holder.profileImage.setPadding(12, 12, 12, 12);
+            holder.profileImage.setImageResource(R.drawable.btn_profile);
         }
         
         // Set user role

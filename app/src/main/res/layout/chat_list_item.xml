@@ -27,8 +27,7 @@
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:layout_gravity="bottom|end"
-            android:background="@drawable/circle_bg"
-            android:backgroundTint="#28A745"
+            android:background="@drawable/online_status_indicator"
             android:visibility="gone"/>
     </FrameLayout>
 
