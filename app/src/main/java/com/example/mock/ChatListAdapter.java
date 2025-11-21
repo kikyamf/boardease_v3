@@ -57,13 +57,13 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
             String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
             Glide.with(context)
                     .load(fullImageUrl)
-                    .placeholder(chat.getImageResId())
-                    .error(chat.getImageResId())
+                    .placeholder(R.drawable.btn_profile)
+                    .error(R.drawable.btn_profile)
                     .centerCrop()
                     .circleCrop()
                     .into(holder.profileImage);
         } else {
-            holder.profileImage.setImageResource(chat.getImageResId());
+            holder.profileImage.setImageResource(R.drawable.btn_profile);
         }
 
         // 🔹 Handle unread message indicators (like Messenger)

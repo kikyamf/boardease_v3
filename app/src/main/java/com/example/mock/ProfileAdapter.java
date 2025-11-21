@@ -67,13 +67,13 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
             String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
             Glide.with(context)
                     .load(fullImageUrl)
-                    .placeholder(profile.getImageResId())
-                    .error(profile.getImageResId())
+                    .placeholder(R.drawable.btn_profile)
+                    .error(R.drawable.btn_profile)
                     .centerCrop()
                     .circleCrop()
                     .into(holder.profileImage);
         } else {
-            holder.profileImage.setImageResource(profile.getImageResId());
+            holder.profileImage.setImageResource(R.drawable.btn_profile);
         }
         
         // No status text needed for horizontal profile display
