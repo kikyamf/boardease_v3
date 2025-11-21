@@ -1518,6 +1518,7 @@ public class RegistrationActivity extends AppCompatActivity {
     
     /**
      * Checks if Section I (Account Type) is complete and reveals Section II
+     * Also hides Section II and all subsequent sections if Section I becomes incomplete
      */
     private void checkSectionICompletion() {
         String selectedRole = spinnerRole.getSelectedItem().toString();
@@ -1526,11 +1527,15 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionPersonalInfo.getVisibility() != View.VISIBLE) {
                 sectionPersonalInfo.setVisibility(View.VISIBLE);
             }
+        } else {
+            // Section I is incomplete, hide Section II and all subsequent sections
+            hideAllSubsequentSections(2);
         }
     }
     
     /**
      * Checks if Section II (Personal Information) is complete and reveals Section III
+     * Also hides Section III and all subsequent sections if Section II becomes incomplete
      */
     private void checkSectionIICompletion() {
         // Check if all required fields in Section II are filled
@@ -1551,11 +1556,15 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionAddress.getVisibility() != View.VISIBLE) {
                 sectionAddress.setVisibility(View.VISIBLE);
             }
+        } else {
+            // Section II is incomplete, hide Section III and all subsequent sections
+            hideAllSubsequentSections(3);
         }
     }
     
     /**
      * Checks if Section III (Permanent Address) is complete and reveals Section IV
+     * Also hides Section IV and all subsequent sections if Section III becomes incomplete
      */
     private void checkSectionIIICompletion() {
         // Check if all required fields in Section III are filled
@@ -1574,6 +1583,9 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionLoginCredentials.getVisibility() != View.VISIBLE) {
                 sectionLoginCredentials.setVisibility(View.VISIBLE);
             }
+        } else {
+            // Section III is incomplete, hide Section IV and all subsequent sections
+            hideAllSubsequentSections(4);
         }
     }
     
@@ -1618,6 +1630,11 @@ public class RegistrationActivity extends AppCompatActivity {
             if (!isBoarder && sectionPaymentInfo.getVisibility() != View.VISIBLE) {
                 sectionPaymentInfo.setVisibility(View.VISIBLE);
             }
+        } else {
+            // Section IV is incomplete, hide Section V
+            if (sectionPaymentInfo.getVisibility() == View.VISIBLE) {
+                sectionPaymentInfo.setVisibility(View.GONE);
+            }
         }
     }
     
@@ -1641,5 +1658,40 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Section V completion doesn't reveal a new section, but we can use this for final validation
         // This method is called when GCash fields are updated to ensure data is ready for submission
+    }
+    
+    /**
+     * Hides all subsequent sections starting from the given section number
+     * Used when an earlier section becomes incomplete to cascade hide all dependent sections
+     * @param startSectionNumber The section number to start hiding from (2 = Section II, 3 = Section III, etc.)
+     *                           All sections from this number onwards will be hidden
+     */
+    private void hideAllSubsequentSections(int startSectionNumber) {
+        // Section numbers: 2 = Section II (Personal Info), 3 = Section III (Address),
+        // 4 = Section IV (Login Credentials), 5 = Section V (Payment Info)
+        
+        // Hide Section II (Personal Info) if we're starting from section 2 onwards
+        if (startSectionNumber <= 2 && sectionPersonalInfo.getVisibility() == View.VISIBLE) {
+            sectionPersonalInfo.setVisibility(View.GONE);
+        }
+        
+        // Hide Section III (Address) if we're starting from section 3 onwards
+        if (startSectionNumber <= 3 && sectionAddress.getVisibility() == View.VISIBLE) {
+            sectionAddress.setVisibility(View.GONE);
+        }
+        
+        // Hide Section IV (Login Credentials) if we're starting from section 4 onwards
+        if (startSectionNumber <= 4 && sectionLoginCredentials.getVisibility() == View.VISIBLE) {
+            sectionLoginCredentials.setVisibility(View.GONE);
+            // Also clear email validation message when hiding login section
+            if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+                tvEmailValidation.setVisibility(View.GONE);
+            }
+        }
+        
+        // Hide Section V (Payment Info) if we're starting from section 5 onwards
+        if (startSectionNumber <= 5 && sectionPaymentInfo.getVisibility() == View.VISIBLE) {
+            sectionPaymentInfo.setVisibility(View.GONE);
+        }
     }
 }
