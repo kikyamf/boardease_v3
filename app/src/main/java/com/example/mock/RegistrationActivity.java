@@ -47,6 +47,7 @@ public class RegistrationActivity extends AppCompatActivity {
 
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etBarangay, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
+    TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
     ImageView UploadQr, ivTogglePassword;
     Button btnNext;
     boolean isPasswordVisible = false;
@@ -111,6 +112,14 @@ public class RegistrationActivity extends AppCompatActivity {
 
         tvLogin = findViewById(R.id.tvLogin);
         tvEmailValidation = findViewById(R.id.tvEmailValidation);
+        
+        // Get error TextViews
+        tvFirstNameError = findViewById(R.id.tvFirstNameError);
+        tvLastNameError = findViewById(R.id.tvLastNameError);
+        tvMiddleNameError = findViewById(R.id.tvMiddleNameError);
+        tvBirthDateError = findViewById(R.id.tvBirthDateError);
+        tvBarangayError = findViewById(R.id.tvBarangayError);
+        tvDetailedAddressError = findViewById(R.id.tvDetailedAddressError);
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
@@ -302,15 +311,33 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Setup phone number field with fixed +63 prefix and formatting
         setupPhoneNumberField();
-
-        //Set the calendar for the birthdate
+        
+        // Setup name field validations with input filters and real-time validation
+        setupNameFieldValidation(etFirstName, tvFirstNameError, "First Name");
+        setupNameFieldValidation(etLastName, tvLastNameError, "Last Name");
+        setupNameFieldValidation(etMiddleName, tvMiddleNameError, "Middle Name");
+        
+        // Setup address field validations
+        setupAddressFieldValidation();
+        
+        // Set the calendar for the birthdate with 18+ restriction
         etBirthDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final Calendar calendar = Calendar.getInstance();
-                int year = calendar.get(Calendar.YEAR);
-                int month = calendar.get(Calendar.MONTH);
-                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int currentYear = calendar.get(Calendar.YEAR);
+                int currentMonth = calendar.get(Calendar.MONTH);
+                int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
+                
+                // Calculate maximum allowed year (18 years ago)
+                int maxYear = currentYear - 18;
+                int maxMonth = currentMonth;
+                int maxDay = currentDay;
+                
+                // Default to 18 years ago
+                int defaultYear = maxYear;
+                int defaultMonth = maxMonth;
+                int defaultDay = maxDay;
 
                 DatePickerDialog datePickerDialog = new DatePickerDialog(
                         RegistrationActivity.this,
@@ -318,14 +345,25 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Format: MM/DD/YYYY
                             String date = (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear;
                             etBirthDate.setText(date);
+                            
+                            // Validate birth date and show error if needed
+                            validateBirthDate(date);
+                            
                             // Check section II completion after birth date is set
                             checkSectionIICompletion();
                         },
-                        year, month, day
+                        defaultYear, defaultMonth, defaultDay
                 );
 
-                // Optional: restrict future dates (no selecting birth date in future)
-                datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+                // Restrict dates: no future dates and must be at least 18 years old
+                Calendar maxDateCalendar = Calendar.getInstance();
+                maxDateCalendar.set(maxYear, maxMonth, maxDay);
+                datePickerDialog.getDatePicker().setMaxDate(maxDateCalendar.getTimeInMillis());
+                
+                // Set minimum date to 100 years ago (reasonable limit)
+                Calendar minDateCalendar = Calendar.getInstance();
+                minDateCalendar.set(currentYear - 100, 0, 1);
+                datePickerDialog.getDatePicker().setMinDate(minDateCalendar.getTimeInMillis());
 
                 datePickerDialog.show();
             }
@@ -1803,6 +1841,229 @@ public class RegistrationActivity extends AppCompatActivity {
         } else {
             progressCircle5.setBackgroundResource(R.drawable.progress_circle_hollow);
             progressCircle5.setTextColor(0xFF666666);
+        }
+    }
+    
+    /**
+     * Sets up validation for name fields (First, Last, Middle)
+     * - Capital letters by default
+     * - Only letters, spaces, hyphens, apostrophes allowed
+     * - Min: 2 chars (Middle name can be optional)
+     * - Max: 50 chars
+     * - Real-time validation with visual feedback
+     */
+    private void setupNameFieldValidation(EditText editText, TextView errorTextView, String fieldName) {
+        // Add input filter to restrict characters (letters, spaces, hyphens, apostrophes only)
+        android.text.InputFilter[] filters = new android.text.InputFilter[] {
+            new android.text.InputFilter() {
+                @Override
+                public CharSequence filter(CharSequence source, int start, int end,
+                                         android.text.Spanned dest, int dstart, int dend) {
+                    // Allow letters, spaces, hyphens, and apostrophes
+                    for (int i = start; i < end; i++) {
+                        char c = source.charAt(i);
+                        if (!Character.isLetter(c) && c != ' ' && c != '-' && c != '\'') {
+                            return ""; // Reject the character
+                        }
+                    }
+                    return null; // Accept the input
+                }
+            },
+            new android.text.InputFilter.LengthFilter(50) // Max 50 characters
+        };
+        editText.setFilters(filters);
+        
+        // Add TextWatcher for real-time validation
+        editText.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString().trim();
+                String error = validateNameField(text, fieldName, fieldName.equals("Middle Name"));
+                showFieldError(editText, errorTextView, error);
+                
+                // Check section completion if it's First or Last name
+                if (fieldName.equals("First Name") || fieldName.equals("Last Name")) {
+                    checkSectionIICompletion();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Validates a name field and returns error message if invalid
+     */
+    private String validateNameField(String text, String fieldName, boolean isOptional) {
+        if (text.isEmpty()) {
+            if (isOptional) {
+                return null; // Middle name is optional
+            }
+            return fieldName + " is required";
+        }
+        
+        if (text.length() < 2) {
+            return fieldName + " must be at least 2 characters";
+        }
+        
+        if (text.length() > 50) {
+            return fieldName + " must not exceed 50 characters";
+        }
+        
+        // Check for invalid characters (only letters, spaces, hyphens, apostrophes allowed)
+        if (!text.matches("^[a-zA-Z\\s\\-']+$")) {
+            return fieldName + " can only contain letters, spaces, hyphens, and apostrophes";
+        }
+        
+        return null; // Valid
+    }
+    
+    /**
+     * Sets up validation for address fields (Barangay and Detailed Address)
+     * - Must start with capital letter
+     * - Minimum 3 characters
+     * - Real-time validation with visual feedback
+     */
+    private void setupAddressFieldValidation() {
+        // Barangay validation
+        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString();
+                
+                // Capitalize first letter if field is being edited
+                if (text.length() > 0 && Character.isLowerCase(text.charAt(0))) {
+                    int cursorPosition = etBarangay.getSelectionStart();
+                    s.replace(0, 1, String.valueOf(Character.toUpperCase(text.charAt(0))));
+                    etBarangay.setSelection(Math.min(cursorPosition, s.length()));
+                }
+                
+                String trimmedText = text.trim();
+                String error = validateAddressField(trimmedText, "Barangay");
+                showFieldError(etBarangay, tvBarangayError, error);
+                
+                checkSectionIIICompletion();
+            }
+        });
+        
+        // Detailed Address validation
+        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString();
+                
+                // Capitalize first letter if field is being edited
+                if (text.length() > 0 && Character.isLowerCase(text.charAt(0))) {
+                    int cursorPosition = etDetailedAddress.getSelectionStart();
+                    s.replace(0, 1, String.valueOf(Character.toUpperCase(text.charAt(0))));
+                    etDetailedAddress.setSelection(Math.min(cursorPosition, s.length()));
+                }
+                
+                String trimmedText = text.trim();
+                String error = validateAddressField(trimmedText, "Detailed Address");
+                showFieldError(etDetailedAddress, tvDetailedAddressError, error);
+                
+                checkSectionIIICompletion();
+            }
+        });
+    }
+    
+    /**
+     * Validates an address field (Barangay or Detailed Address)
+     */
+    private String validateAddressField(String text, String fieldName) {
+        if (text.isEmpty()) {
+            return fieldName + " is required";
+        }
+        
+        if (text.length() < 3) {
+            return fieldName + " must be at least 3 characters";
+        }
+        
+        // Check if starts with capital letter
+        if (!text.isEmpty() && !Character.isUpperCase(text.charAt(0))) {
+            return fieldName + " must start with a capital letter";
+        }
+        
+        return null; // Valid
+    }
+    
+    /**
+     * Validates birth date and shows error if user is not 18+ years old
+     */
+    private void validateBirthDate(String birthDate) {
+        if (birthDate == null || birthDate.isEmpty()) {
+            showFieldError(etBirthDate, tvBirthDateError, "Birth Date is required");
+            return;
+        }
+        
+        // Validate date format (MM/DD/YYYY)
+        if (!birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
+            showFieldError(etBirthDate, tvBirthDateError, "Birth Date must be in MM/DD/YYYY format");
+            return;
+        }
+        
+        try {
+            String[] dateParts = birthDate.split("/");
+            int month = Integer.parseInt(dateParts[0]);
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+            
+            // Calculate age
+            Calendar birthCalendar = Calendar.getInstance();
+            birthCalendar.set(year, month - 1, day);
+            Calendar now = Calendar.getInstance();
+            int age = now.get(Calendar.YEAR) - birthCalendar.get(Calendar.YEAR);
+            if (now.get(Calendar.DAY_OF_YEAR) < birthCalendar.get(Calendar.DAY_OF_YEAR)) {
+                age--;
+            }
+            
+            if (age < 18) {
+                showFieldError(etBirthDate, tvBirthDateError, "You must be at least 18 years old to register");
+            } else {
+                showFieldError(etBirthDate, tvBirthDateError, null); // Clear error
+            }
+        } catch (Exception e) {
+            showFieldError(etBirthDate, tvBirthDateError, "Invalid date format");
+        }
+    }
+    
+    /**
+     * Shows or hides field error with visual feedback
+     * @param editText The EditText field
+     * @param errorTextView The TextView to show error message
+     * @param errorMessage The error message (null to clear error)
+     */
+    private void showFieldError(EditText editText, TextView errorTextView, String errorMessage) {
+        if (errorTextView == null || editText == null) {
+            return;
+        }
+        
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            // Show error
+            errorTextView.setText(errorMessage);
+            errorTextView.setVisibility(View.VISIBLE);
+            editText.setBackgroundResource(R.drawable.edittext_background_error);
+        } else {
+            // Clear error
+            errorTextView.setVisibility(View.GONE);
+            editText.setBackgroundResource(R.drawable.edittext_background);
         }
     }
 }

@@ -250,7 +250,18 @@
                                 android:layout_height="48dp"
                                 android:background="@drawable/edittext_background"
                                 android:padding="10dp"
-                                android:textColor="#000000" />
+                                android:textColor="#000000"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvFirstNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
                         </LinearLayout>
 
                         <Space
@@ -277,7 +288,18 @@
                                 android:layout_height="48dp"
                                 android:background="@drawable/edittext_background"
                                 android:padding="10dp"
-                                android:textColor="#000000" />
+                                android:textColor="#000000"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvLastNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -330,7 +352,18 @@
                                 android:layout_height="48dp"
                                 android:background="@drawable/edittext_background"
                                 android:padding="10dp"
-                                android:textColor="@color/black" />
+                                android:textColor="@color/black"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvMiddleNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
                         </LinearLayout>
 
                         <Space
@@ -361,6 +394,15 @@
                                 android:hint="MM/DD/YYYY"
                                 android:padding="10dp"
                                 android:textColor="@color/black" />
+
+                            <TextView
+                                android:id="@+id/tvBirthDateError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -473,7 +515,18 @@
                         android:hint="Enter barangay"
                         android:padding="10dp"
                         android:textColor="@color/black"
-                        android:layout_marginBottom="12dp" />
+                        android:inputType="textCapSentences"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:id="@+id/tvBarangayError"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#FF0000"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginTop="2dp" />
 
                     <!-- Detailed Address -->
                     <TextView
@@ -493,7 +546,17 @@
                         android:minLines="2"
                         android:padding="10dp"
                         android:textColor="@color/black"
+                        android:inputType="textCapSentences|textMultiLine"
                         android:hint="Enter street, house number, building name, etc." />
+
+                    <TextView
+                        android:id="@+id/tvDetailedAddressError"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#FF0000"
+                        android:visibility="gone"
+                        android:layout_marginTop="2dp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
