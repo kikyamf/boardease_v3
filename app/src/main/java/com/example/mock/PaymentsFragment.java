@@ -200,7 +200,6 @@ public class PaymentsFragment extends Fragment {
     }
 
     private void onPaymentClick(PaymentLog payment) {
-        Toast.makeText(getContext(), "Clicked: " + payment.getPropertyName(), Toast.LENGTH_SHORT).show();
         // Handle payment click - could open details dialog or activity
     }
 

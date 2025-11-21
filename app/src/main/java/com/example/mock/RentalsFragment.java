@@ -199,7 +199,6 @@ public class RentalsFragment extends Fragment {
     }
 
     private void onRentalClick(RentalLog rental) {
-        Toast.makeText(getContext(), "Clicked: " + rental.getPropertyName(), Toast.LENGTH_SHORT).show();
         // Handle rental click - could open details dialog or activity
     }
 
