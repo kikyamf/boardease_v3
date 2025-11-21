@@ -73,9 +73,7 @@
                     android:layout_width="0dp"
                     android:layout_height="2dp"
                     android:layout_weight="1"
-                    android:background="#666666"
-                    android:layout_marginStart="-16dp"
-                    android:layout_marginEnd="-16dp" />
+                    android:background="#666666" />
 
                 <!-- Circle 2 -->
                 <TextView
@@ -94,9 +92,7 @@
                     android:layout_width="0dp"
                     android:layout_height="2dp"
                     android:layout_weight="1"
-                    android:background="#666666"
-                    android:layout_marginStart="-16dp"
-                    android:layout_marginEnd="-16dp" />
+                    android:background="#666666" />
 
                 <!-- Circle 3 -->
                 <TextView
@@ -115,9 +111,7 @@
                     android:layout_width="0dp"
                     android:layout_height="2dp"
                     android:layout_weight="1"
-                    android:background="#666666"
-                    android:layout_marginStart="-16dp"
-                    android:layout_marginEnd="-16dp" />
+                    android:background="#666666" />
 
                 <!-- Circle 4 -->
                 <TextView
@@ -136,9 +130,7 @@
                     android:layout_width="0dp"
                     android:layout_height="2dp"
                     android:layout_weight="1"
-                    android:background="#666666"
-                    android:layout_marginStart="-16dp"
-                    android:layout_marginEnd="-16dp" />
+                    android:background="#666666" />
 
                 <!-- Circle 5 -->
                 <TextView
