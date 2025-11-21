@@ -101,12 +101,12 @@ try {
         
         // Check if user is the creator of the group
         $stmt = $db->prepare("
-            SELECT created_by FROM chat_groups 
+            SELECT gc_created_by FROM chat_groups 
             WHERE gc_id = ?
         ");
         $stmt->execute([$group_id]);
         $group_info = $stmt->fetch();
-        $is_creator = ($group_info && $group_info['created_by'] == $user_id);
+        $is_creator = ($group_info && $group_info['gc_created_by'] == $user_id);
         
         if ($action === 'delete' && $is_creator) {
             // Delete the entire group (only if user is the creator)
