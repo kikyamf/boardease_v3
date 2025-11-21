@@ -93,6 +93,17 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
             }
         }
 
+        // 🔹 Handle online status indicator (only for individual chats, not group chats)
+        if (!isGroupChat) {
+            // For now, show online status - you can add actual online status check from API later
+            // For individual chats, show online status if available
+            boolean isOnline = chat.isOnline(); // This will be false by default until we add the field
+            holder.onlineStatus.setVisibility(isOnline ? View.VISIBLE : View.GONE);
+        } else {
+            // Hide online status for group chats
+            holder.onlineStatus.setVisibility(View.GONE);
+        }
+        
         // 🔹 Handle unread message indicators (like Messenger)
         boolean hasUnreadMessages = chat.getUnreadCount() > 0;
         
@@ -232,6 +243,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
     public static class ChatViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
         TextView userName, lastMessage, messageTime, unreadBadge;
+        View onlineStatus;
 
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -240,6 +252,7 @@ public class ChatListAdapter extends RecyclerView.Adapter<ChatListAdapter.ChatVi
             lastMessage = itemView.findViewById(R.id.lastMessage);
             messageTime = itemView.findViewById(R.id.messageTime);
             unreadBadge = itemView.findViewById(R.id.unreadBadge);
+            onlineStatus = itemView.findViewById(R.id.onlineStatus);
         }
     }
 }

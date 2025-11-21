@@ -84,7 +84,9 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
             holder.profileImage.setImageResource(R.drawable.btn_profile);
         }
         
-        // No status text needed for horizontal profile display
+        // Handle online status indicator
+        boolean isOnline = profile.isOnline(); // Get online status from ProfileModel
+        holder.onlineStatus.setVisibility(isOnline ? View.VISIBLE : View.GONE);
         
         // Handle selection mode
         if (selectionMode) {
@@ -112,11 +114,13 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
     public static class ProfileViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
         TextView profileName;
+        View onlineStatus;
 
         public ProfileViewHolder(@NonNull View itemView) {
             super(itemView);
             profileImage = itemView.findViewById(R.id.profileImage);
             profileName = itemView.findViewById(R.id.profileName);
+            onlineStatus = itemView.findViewById(R.id.onlineStatus);
         }
     }
 }

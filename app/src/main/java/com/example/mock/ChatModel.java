@@ -15,6 +15,7 @@ public class ChatModel {
     private String groupName; // For group chats
     private int groupId; // For group chats
     private int creatorId; // For group chats - ID of user who created the group
+    private boolean isOnline; // For individual chats - whether the user is online
 
     // Constructor for individual chats
     public ChatModel(String name, String lastMessage, String time, int imageResId, 
@@ -31,6 +32,7 @@ public class ChatModel {
         this.otherUserId = otherUserId;
         this.otherUserName = otherUserName;
         this.profilePictureUrl = "";
+        this.isOnline = false; // Default to offline
     }
     
     // Constructor for individual chats with profile picture
@@ -48,6 +50,7 @@ public class ChatModel {
         this.otherUserId = otherUserId;
         this.otherUserName = otherUserName;
         this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : "";
+        this.isOnline = false; // Default to offline
     }
 
     // Constructor for group chats
@@ -111,6 +114,7 @@ public class ChatModel {
     public String getGroupName() { return groupName; }
     public int getGroupId() { return groupId; }
     public int getCreatorId() { return creatorId; }
+    public boolean isOnline() { return isOnline; }
 
     // Setters
     public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }
@@ -119,5 +123,6 @@ public class ChatModel {
     public void setLastMessageStatus(String lastMessageStatus) { this.lastMessageStatus = lastMessageStatus; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : ""; }
     public void setCreatorId(int creatorId) { this.creatorId = creatorId; }
+    public void setOnline(boolean isOnline) { this.isOnline = isOnline; }
 }
 

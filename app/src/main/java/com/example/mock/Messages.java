@@ -312,6 +312,14 @@ public class Messages extends AppCompatActivity {
                                         profilePictureUrl = userObj.getString("profile_picture");
                                     }
                                     
+                                    // Get online status - check for is_online field, fallback to has_device_token
+                                    boolean isOnline = false;
+                                    if (userObj.has("is_online") && !userObj.isNull("is_online")) {
+                                        isOnline = userObj.getBoolean("is_online");
+                                    } else if (userObj.has("has_device_token")) {
+                                        isOnline = userObj.getBoolean("has_device_token");
+                                    }
+                                    
                                     ProfileModel profile = new ProfileModel(
                                         userObj.getInt("user_id"),
                                         userObj.getString("full_name"),
@@ -319,8 +327,8 @@ public class Messages extends AppCompatActivity {
                                         userObj.getString("email"),
                                         userObj.getString("phone"),
                                         R.drawable.ic_profile,
-                                        userObj.getBoolean("has_device_token"),
-                                        userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                        isOnline,
+                                        isOnline ? "Online" : "Offline",
                                         boardingHouseName,
                                         boardingHouseAddress,
                                         profilePictureUrl
@@ -416,6 +424,12 @@ public class Messages extends AppCompatActivity {
                                         profilePictureUrl = chatObj.getString("other_user_profile_picture");
                                     }
                                     
+                                    // Get online status if available
+                                    boolean isOnline = false;
+                                    if (chatObj.has("is_online") && !chatObj.isNull("is_online")) {
+                                        isOnline = chatObj.getBoolean("is_online");
+                                    }
+                                    
                                     chat = new ChatModel(
                                         chatObj.getString("other_user_name"),
                                         formattedMessage,
@@ -429,6 +443,7 @@ public class Messages extends AppCompatActivity {
                                         chatObj.getString("other_user_name"),
                                         profilePictureUrl
                                     );
+                                    chat.setOnline(isOnline);
                                 } else {
                                     // Format group message with sender name
                                     String lastMessage = chatObj.getString("last_message");
@@ -663,6 +678,14 @@ public class Messages extends AppCompatActivity {
                                     profilePictureUrl = userObj.getString("profile_picture");
                                 }
                                 
+                                // Get online status - check for is_online field, fallback to has_device_token
+                                boolean isOnline = false;
+                                if (userObj.has("is_online") && !userObj.isNull("is_online")) {
+                                    isOnline = userObj.getBoolean("is_online");
+                                } else if (userObj.has("has_device_token")) {
+                                    isOnline = userObj.getBoolean("has_device_token");
+                                }
+                                
                                 ProfileModel profile = new ProfileModel(
                                     userObj.getInt("user_id"),
                                     userObj.getString("full_name"),
@@ -670,8 +693,8 @@ public class Messages extends AppCompatActivity {
                                     userObj.getString("email"),
                                     userObj.getString("phone"),
                                     R.drawable.ic_profile,
-                                    userObj.getBoolean("has_device_token"),
-                                    userObj.getBoolean("has_device_token") ? "Online" : "Offline",
+                                    isOnline,
+                                    isOnline ? "Online" : "Offline",
                                     "",
                                     "",
                                     profilePictureUrl
