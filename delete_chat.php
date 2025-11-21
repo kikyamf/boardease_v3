@@ -83,8 +83,9 @@ try {
         ];
         
     } elseif ($chat_type === 'group') {
-        // For group chats, remove user from group
+        // For group chats, handle leave or delete action
         $group_id = $chat_id;
+        $action = $_POST['action'] ?? $data['action'] ?? 'leave'; // Default to 'leave'
         
         // Check if user is a member of the group
         $stmt = $db->prepare("
@@ -98,49 +99,91 @@ try {
             throw new Exception('User is not a member of this group');
         }
         
-        // Remove user from group
+        // Check if user is the creator of the group
         $stmt = $db->prepare("
-            DELETE FROM group_members 
-            WHERE gc_id = ? AND user_id = ?
-        ");
-        $stmt->execute([$group_id, $user_id]);
-        
-        // Check if group is now empty and delete it if so
-        $stmt = $db->prepare("
-            SELECT COUNT(*) as member_count 
-            FROM group_members 
+            SELECT created_by FROM chat_groups 
             WHERE gc_id = ?
         ");
         $stmt->execute([$group_id]);
-        $member_count = $stmt->fetch()['member_count'];
+        $group_info = $stmt->fetch();
+        $is_creator = ($group_info && $group_info['created_by'] == $user_id);
         
-        if ($member_count == 0) {
-            // Delete the group and all its messages
+        if ($action === 'delete' && $is_creator) {
+            // Delete the entire group (only if user is the creator)
+            // First, delete all group messages
             $stmt = $db->prepare("DELETE FROM group_messages WHERE gc_id = ?");
             $stmt->execute([$group_id]);
             
+            // Delete all group members
+            $stmt = $db->prepare("DELETE FROM group_members WHERE gc_id = ?");
+            $stmt->execute([$group_id]);
+            
+            // Delete the group itself
             $stmt = $db->prepare("DELETE FROM chat_groups WHERE gc_id = ?");
             $stmt->execute([$group_id]);
             
             $response = [
                 'success' => true,
-                'message' => "Group chat deleted successfully (group was empty)",
+                'message' => "Group chat deleted successfully",
                 'data' => [
                     'chat_type' => 'group',
                     'chat_id' => $chat_id,
-                    'group_deleted' => true
+                    'group_deleted' => true,
+                    'action' => 'delete'
                 ]
             ];
         } else {
-            $response = [
-                'success' => true,
-                'message' => "Left group chat successfully",
-                'data' => [
-                    'chat_type' => 'group',
-                    'chat_id' => $chat_id,
-                    'group_deleted' => false
-                ]
-            ];
+            // Leave the group (remove user from group)
+            if ($action === 'delete' && !$is_creator) {
+                throw new Exception('Only the group creator can delete the group chat');
+            }
+            
+            // Remove user from group
+            $stmt = $db->prepare("
+                DELETE FROM group_members 
+                WHERE gc_id = ? AND user_id = ?
+            ");
+            $stmt->execute([$group_id, $user_id]);
+            
+            // Check if group is now empty and delete it if so
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as member_count 
+                FROM group_members 
+                WHERE gc_id = ?
+            ");
+            $stmt->execute([$group_id]);
+            $member_count = $stmt->fetch()['member_count'];
+            
+            if ($member_count == 0) {
+                // Delete the group and all its messages
+                $stmt = $db->prepare("DELETE FROM group_messages WHERE gc_id = ?");
+                $stmt->execute([$group_id]);
+                
+                $stmt = $db->prepare("DELETE FROM chat_groups WHERE gc_id = ?");
+                $stmt->execute([$group_id]);
+                
+                $response = [
+                    'success' => true,
+                    'message' => "Left group chat successfully (group was empty and deleted)",
+                    'data' => [
+                        'chat_type' => 'group',
+                        'chat_id' => $chat_id,
+                        'group_deleted' => true,
+                        'action' => 'leave'
+                    ]
+                ];
+            } else {
+                $response = [
+                    'success' => true,
+                    'message' => "Left group chat successfully",
+                    'data' => [
+                        'chat_type' => 'group',
+                        'chat_id' => $chat_id,
+                        'group_deleted' => false,
+                        'action' => 'leave'
+                    ]
+                ];
+            }
         }
         
     } else {

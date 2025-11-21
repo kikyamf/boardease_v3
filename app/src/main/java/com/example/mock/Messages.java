@@ -890,7 +890,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void leaveGroupChat(ChatModel chat) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/leave_group_chat.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
         
         android.util.Log.d("LeaveGroupChat", "=== LEAVING GROUP CHAT ===");
         android.util.Log.d("LeaveGroupChat", "URL: " + url);
@@ -899,10 +899,12 @@ public class Messages extends AppCompatActivity {
         
         RequestQueue queue = Volley.newRequestQueue(this);
         
-        // Create request parameters
+        // Create request parameters - using delete_chat.php with action=leave
         java.util.Map<String, String> params = new java.util.HashMap<>();
         params.put("user_id", String.valueOf(getCurrentUserId()));
-        params.put("group_id", String.valueOf(chat.getGroupId()));
+        params.put("chat_type", "group");
+        params.put("chat_id", String.valueOf(chat.getGroupId()));
+        params.put("action", "leave"); // Distinguish leave from delete
         
         android.util.Log.d("LeaveGroupChat", "Request params: " + params.toString());
         
@@ -939,7 +941,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void deleteGroupChat(ChatModel chat) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_group_chat.php";
+        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
         
         android.util.Log.d("DeleteGroupChat", "=== DELETING GROUP CHAT ===");
         android.util.Log.d("DeleteGroupChat", "URL: " + url);
@@ -948,10 +950,12 @@ public class Messages extends AppCompatActivity {
         
         RequestQueue queue = Volley.newRequestQueue(this);
         
-        // Create request parameters
+        // Create request parameters - using delete_chat.php with action=delete
         java.util.Map<String, String> params = new java.util.HashMap<>();
         params.put("user_id", String.valueOf(getCurrentUserId()));
-        params.put("group_id", String.valueOf(chat.getGroupId()));
+        params.put("chat_type", "group");
+        params.put("chat_id", String.valueOf(chat.getGroupId()));
+        params.put("action", "delete"); // Force delete the entire group
         
         android.util.Log.d("DeleteGroupChat", "Request params: " + params.toString());
         
