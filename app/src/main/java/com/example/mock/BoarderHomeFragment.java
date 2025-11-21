@@ -499,7 +499,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 @Override
                 public void onClick(View v) {
                     android.util.Log.d("BoarderHomeFragment", "Message icon clicked!");
-                    Toast.makeText(getContext(), "Message icon clicked!", Toast.LENGTH_SHORT).show();
                     try {
                         Intent intent = new Intent(getContext(), Messages.class);
                         startActivity(intent);
