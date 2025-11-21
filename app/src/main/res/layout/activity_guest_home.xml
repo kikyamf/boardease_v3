@@ -182,7 +182,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_margin="16dp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:indeterminateTint="@color/brown" />
 
             <!-- Empty State -->
             <TextView

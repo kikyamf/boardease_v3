@@ -149,7 +149,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Remember me"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:backgroundTint="#A18167"
                         android:textColor="@color/black" />
 
