@@ -61,6 +61,13 @@ public class RegistrationActivity extends AppCompatActivity {
     private com.google.android.material.card.MaterialCardView sectionLoginCredentials;
     private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
     
+    // Progress indicator circles
+    private ImageView progressCircle1;
+    private ImageView progressCircle2;
+    private ImageView progressCircle3;
+    private ImageView progressCircle4;
+    private ImageView progressCircle5;
+    
     // Address picker data
     private String selectedProvince = "";
     private String selectedMunicipality = "";
@@ -114,6 +121,16 @@ public class RegistrationActivity extends AppCompatActivity {
         sectionAddress = findViewById(R.id.sectionAddress);
         sectionLoginCredentials = findViewById(R.id.sectionLoginCredentials);
         sectionPaymentInfo = findViewById(R.id.sectionPaymentInfo);
+        
+        // Get progress indicator circles
+        progressCircle1 = findViewById(R.id.progressCircle1);
+        progressCircle2 = findViewById(R.id.progressCircle2);
+        progressCircle3 = findViewById(R.id.progressCircle3);
+        progressCircle4 = findViewById(R.id.progressCircle4);
+        progressCircle5 = findViewById(R.id.progressCircle5);
+        
+        // Initialize progress indicator (Circle 1 is filled by default)
+        updateProgressIndicator();
         
         // Setup back button
         ImageView backButton = findViewById(R.id.backButton);
@@ -1539,10 +1556,12 @@ public class RegistrationActivity extends AppCompatActivity {
             // Section I is complete, reveal Section II
             if (sectionIIWrapper.getVisibility() != View.VISIBLE) {
                 sectionIIWrapper.setVisibility(View.VISIBLE);
+                updateProgressIndicator();
             }
         } else {
             // Section I is incomplete, hide Section II and all subsequent sections
             hideAllSubsequentSections(2);
+            updateProgressIndicator();
         }
     }
     
@@ -1570,10 +1589,12 @@ public class RegistrationActivity extends AppCompatActivity {
             // Section II is complete, reveal Section III
             if (sectionIIIWrapper.getVisibility() != View.VISIBLE) {
                 sectionIIIWrapper.setVisibility(View.VISIBLE);
+                updateProgressIndicator();
             }
         } else {
             // Section II is incomplete, hide Section III and all subsequent sections
             hideAllSubsequentSections(3);
+            updateProgressIndicator();
         }
     }
     
@@ -1599,10 +1620,12 @@ public class RegistrationActivity extends AppCompatActivity {
             // Section III is complete, reveal Section IV
             if (sectionIVWrapper.getVisibility() != View.VISIBLE) {
                 sectionIVWrapper.setVisibility(View.VISIBLE);
+                updateProgressIndicator();
             }
         } else {
             // Section III is incomplete, hide Section IV and all subsequent sections
             hideAllSubsequentSections(4);
+            updateProgressIndicator();
         }
     }
     
@@ -1647,12 +1670,17 @@ public class RegistrationActivity extends AppCompatActivity {
             // Only show Section V if not a Boarder (Boarders don't need payment info)
             if (!isBoarder && sectionVWrapper.getVisibility() != View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.VISIBLE);
+                updateProgressIndicator();
+            } else if (isBoarder) {
+                // Boarder doesn't need section 5, but section 4 is complete
+                updateProgressIndicator();
             }
         } else {
             // Section IV is incomplete, hide Section V
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.GONE);
             }
+            updateProgressIndicator();
         }
     }
     
@@ -1722,6 +1750,50 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.GONE);
             }
+        }
+    }
+    
+    /**
+     * Updates the progress indicator circles based on which sections are visible/completed
+     * Circle 1 is always filled (Section 1 is always visible)
+     * Subsequent circles are filled when their corresponding section becomes visible
+     */
+    private void updateProgressIndicator() {
+        if (progressCircle1 == null || progressCircle2 == null || progressCircle3 == null ||
+            progressCircle4 == null || progressCircle5 == null) {
+            return; // Progress circles not initialized yet
+        }
+        
+        // Circle 1 is always filled (Section 1 is always visible)
+        progressCircle1.setImageResource(R.drawable.progress_circle_filled);
+        
+        // Check visibility of each section wrapper and fill corresponding circle
+        View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+        if (sectionIIWrapper != null && sectionIIWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle2.setImageResource(R.drawable.progress_circle_filled);
+        } else {
+            progressCircle2.setImageResource(R.drawable.progress_circle_hollow);
+        }
+        
+        View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+        if (sectionIIIWrapper != null && sectionIIIWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle3.setImageResource(R.drawable.progress_circle_filled);
+        } else {
+            progressCircle3.setImageResource(R.drawable.progress_circle_hollow);
+        }
+        
+        View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+        if (sectionIVWrapper != null && sectionIVWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle4.setImageResource(R.drawable.progress_circle_filled);
+        } else {
+            progressCircle4.setImageResource(R.drawable.progress_circle_hollow);
+        }
+        
+        View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+        if (sectionVWrapper != null && sectionVWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle5.setImageResource(R.drawable.progress_circle_filled);
+        } else {
+            progressCircle5.setImageResource(R.drawable.progress_circle_hollow);
         }
     }
 }

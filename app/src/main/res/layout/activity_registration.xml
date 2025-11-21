@@ -45,6 +45,85 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <!-- Progress Indicator -->
+            <LinearLayout
+                android:id="@+id/progressIndicator"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:paddingHorizontal="16dp">
+
+                <!-- Circle 1 -->
+                <ImageView
+                    android:id="@+id/progressCircle1"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/progress_circle_filled" />
+
+                <!-- Line 1-2 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666"
+                    android:layout_marginHorizontal="8dp" />
+
+                <!-- Circle 2 -->
+                <ImageView
+                    android:id="@+id/progressCircle2"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/progress_circle_hollow" />
+
+                <!-- Line 2-3 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666"
+                    android:layout_marginHorizontal="8dp" />
+
+                <!-- Circle 3 -->
+                <ImageView
+                    android:id="@+id/progressCircle3"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/progress_circle_hollow" />
+
+                <!-- Line 3-4 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666"
+                    android:layout_marginHorizontal="8dp" />
+
+                <!-- Circle 4 -->
+                <ImageView
+                    android:id="@+id/progressCircle4"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/progress_circle_hollow" />
+
+                <!-- Line 4-5 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666"
+                    android:layout_marginHorizontal="8dp" />
+
+                <!-- Circle 5 -->
+                <ImageView
+                    android:id="@+id/progressCircle5"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/progress_circle_hollow" />
+            </LinearLayout>
+
             <!-- Section 1: Account Type -->
             <FrameLayout
                 android:layout_width="match_parent"
