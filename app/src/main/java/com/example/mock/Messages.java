@@ -763,14 +763,31 @@ public class Messages extends AppCompatActivity {
         
         if (isGroupChat && isOwner) {
             // Show options for group chat owner: Leave or Delete
+            String[] options = {"Delete GC", "Leave GC"};
             new android.app.AlertDialog.Builder(this)
                     .setTitle("Group Chat Options")
-                    .setMessage("What would you like to do with \"" + chatName + "\"?")
-                    .setPositiveButton("Delete GC", (dialog, which) -> {
-                        deleteGroupChat(chat);
-                    })
-                    .setNeutralButton("Leave GC", (dialog, which) -> {
-                        leaveGroupChat(chat);
+                    .setItems(options, (dialog, which) -> {
+                        if (which == 0) {
+                            // Delete GC option
+                            new android.app.AlertDialog.Builder(this)
+                                    .setTitle("Delete Group Chat")
+                                    .setMessage("Are you sure you want to delete \"" + chatName + "\"? This will permanently delete the group chat for all members.")
+                                    .setPositiveButton("Delete", (d, w) -> {
+                                        deleteGroupChat(chat);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                        } else if (which == 1) {
+                            // Leave GC option
+                            new android.app.AlertDialog.Builder(this)
+                                    .setTitle("Leave Group Chat")
+                                    .setMessage("Are you sure you want to leave \"" + chatName + "\"?")
+                                    .setPositiveButton("Leave", (d, w) -> {
+                                        leaveGroupChat(chat);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+                        }
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
