@@ -123,13 +123,29 @@ public class Conversation extends AppCompatActivity {
             String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
             Glide.with(this)
                     .load(fullImageUrl)
-                    .placeholder(imageRes)
-                    .error(imageRes)
+                    .placeholder(R.drawable.btn_profile)
+                    .error(R.drawable.btn_profile)
                     .centerCrop()
                     .circleCrop()
                     .into(chatProfileImage);
         } else {
-            chatProfileImage.setImageResource(imageRes);
+            // Use default profile picture icon
+            if (chatType != null && chatType.equals("group")) {
+                // For group chats, show first letter of group name
+                String groupName = name != null ? name : "Group";
+                String firstLetter = getFirstLetter(groupName);
+                android.graphics.drawable.Drawable letterAvatar = createLetterAvatar(firstLetter, 40);
+                chatProfileImage.setImageDrawable(letterAvatar);
+                chatProfileImage.setBackground(null);
+                chatProfileImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                chatProfileImage.setPadding(0, 0, 0, 0);
+            } else {
+                // For individual chats, use default profile icon with background
+                chatProfileImage.setBackgroundResource(R.drawable.circle_bg_dark_gray);
+                chatProfileImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                chatProfileImage.setPadding(8, 8, 8, 8);
+                chatProfileImage.setImageResource(R.drawable.btn_profile);
+            }
         }
 
         // Show/hide members button based on chat type
@@ -977,6 +993,84 @@ public class Conversation extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Get the first letter of a string, handling empty/null strings
+     */
+    private String getFirstLetter(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return "?";
+        }
+        String trimmed = text.trim();
+        return trimmed.substring(0, 1).toUpperCase();
+    }
+    
+    /**
+     * Create a circular avatar with a letter (like Gmail)
+     * @param letter The letter to display
+     * @param size The size of the avatar in dp (will be converted to pixels)
+     * @return A Drawable containing the circular letter avatar
+     */
+    private android.graphics.drawable.Drawable createLetterAvatar(String letter, int size) {
+        // Convert dp to pixels
+        float density = getResources().getDisplayMetrics().density;
+        int sizePx = (int) (size * density);
+        
+        // Create bitmap
+        android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(sizePx, sizePx, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+        
+        // Generate a color based on the letter (for consistency)
+        int color = getColorForLetter(letter);
+        
+        // Draw circle background
+        android.graphics.Paint circlePaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        circlePaint.setColor(color);
+        float radius = sizePx / 2.0f;
+        canvas.drawCircle(radius, radius, radius, circlePaint);
+        
+        // Draw letter
+        android.graphics.Paint textPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(android.graphics.Color.WHITE);
+        textPaint.setTextSize(sizePx * 0.5f); // Letter size is 50% of circle
+        textPaint.setTextAlign(android.graphics.Paint.Align.CENTER);
+        textPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+        
+        // Center the text vertically
+        android.graphics.Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
+        float textHeight = fontMetrics.bottom - fontMetrics.top;
+        float textOffset = textHeight / 2 - fontMetrics.bottom;
+        canvas.drawText(letter, radius, radius + textOffset, textPaint);
+        
+        return new android.graphics.drawable.BitmapDrawable(getResources(), bitmap);
+    }
+    
+    /**
+     * Generate a consistent color for a letter (like Gmail does)
+     * Uses a simple hash function to map letters to colors
+     */
+    private int getColorForLetter(String letter) {
+        // Array of nice colors (similar to Gmail's palette)
+        int[] colors = {
+            0xFF4285F4, // Blue
+            0xFF34A853, // Green
+            0xFFEA4335, // Red
+            0xFFFBBC04, // Yellow
+            0xFF9C27B0, // Purple
+            0xFF00BCD4, // Cyan
+            0xFFFF9800, // Orange
+            0xFF795548, // Brown
+            0xFF607D8B, // Blue Grey
+            0xFFE91E63, // Pink
+            0xFF3F51B5, // Indigo
+            0xFF009688, // Teal
+        };
+        
+        // Use the letter's character code to pick a color
+        char ch = letter.charAt(0);
+        int index = Math.abs(ch) % colors.length;
+        return colors[index];
     }
     
     @Override
