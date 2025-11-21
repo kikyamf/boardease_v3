@@ -90,22 +90,6 @@
                             android:background="@drawable/edittext_background"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step Badge 1 (Upper Left Corner - Half Outside) -->
-                <TextView
-                    android:id="@+id/stepBadge1"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="1"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:background="@drawable/step_badge_brown"
-                    android:layout_gravity="top|start"
-                    android:layout_marginStart="0dp"
-                    android:layout_marginTop="0dp"
-                    android:elevation="10dp" />
             </FrameLayout>
 
             <!-- Section 2: Personal Information -->
@@ -305,22 +289,6 @@
                     </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step Badge 2 (Upper Right Corner - Half Outside) -->
-                <TextView
-                    android:id="@+id/stepBadge2"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="2"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:background="@drawable/step_badge_brown"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="-18dp"
-                    android:layout_marginEnd="0dp"
-                    android:elevation="10dp" />
             </FrameLayout>
 
             <!-- Section 3: Permanent Address -->
@@ -428,22 +396,6 @@
                         android:hint="Enter street, house number, building name, etc." />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step Badge 3 (Upper Left Corner - Half Outside) -->
-                <TextView
-                    android:id="@+id/stepBadge3"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="3"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:background="@drawable/step_badge_brown"
-                    android:layout_gravity="top|start"
-                    android:layout_marginTop="-18dp"
-                    android:layout_marginStart="0dp"
-                    android:elevation="10dp" />
             </FrameLayout>
 
             <!-- Hidden field for complete address -->
@@ -553,22 +505,6 @@
                     </RelativeLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step Badge 4 (Upper Right Corner - Half Outside) -->
-                <TextView
-                    android:id="@+id/stepBadge4"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="4"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:background="@drawable/step_badge_brown"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="-18dp"
-                    android:layout_marginEnd="0dp"
-                    android:elevation="10dp" />
             </FrameLayout>
 
             <!-- Section 5: Payment Information -->
@@ -642,22 +578,6 @@
                         android:contentDescription="Upload QR" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step Badge 5 (Upper Left Corner - Half Outside) -->
-                <TextView
-                    android:id="@+id/stepBadge5"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:text="5"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:background="@drawable/step_badge_brown"
-                    android:layout_gravity="top|start"
-                    android:layout_marginTop="-18dp"
-                    android:layout_marginStart="0dp"
-                    android:elevation="10dp" />
             </FrameLayout>
 
             <!-- NEXT Button -->
