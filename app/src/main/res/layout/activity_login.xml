@@ -20,8 +20,8 @@
             android:src="@drawable/boardease_logo"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="32dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="16dp"
             android:contentDescription="BoardEase Logo" />
 
         <!-- Floating Login Container -->
