@@ -46,19 +46,19 @@
             android:layout_height="wrap_content">
 
             <!-- Section 1: Account Type -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/sectionAccountType"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="@android:color/white">
+                android:layout_marginBottom="16dp">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionAccountType"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
                     <LinearLayout
                         android:orientation="vertical"
@@ -75,54 +75,54 @@
                             android:textColor="@android:color/black"
                             android:layout_marginBottom="8dp" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Apply as"
-                        android:textColor="@color/black"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="8dp" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Apply as"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="8dp" />
 
-                    <Spinner
-                        android:id="@+id/spinnerRole"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/edittext_background"/>
+                        <Spinner
+                            android:id="@+id/spinnerRole"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"/>
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Step Badge 1 (Upper Left Corner - Half Outside) -->
-                    <TextView
-                        android:id="@+id/stepBadge1"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="1"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/step_badge_brown"
-                        android:layout_gravity="top|start"
-                        android:layout_marginTop="-18dp"
-                        android:layout_marginStart="-18dp"
-                        android:elevation="4dp" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Step Badge 1 (Upper Left Corner - Half Outside) -->
+                <TextView
+                    android:id="@+id/stepBadge1"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="1"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/step_badge_brown"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginTop="0dp"
+                    android:elevation="10dp" />
+            </FrameLayout>
 
             <!-- Section 2: Personal Information -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/sectionPersonalInfo"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="@android:color/white">
+                android:visibility="gone">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionPersonalInfo"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
                     <LinearLayout
                         android:orientation="vertical"
@@ -304,40 +304,40 @@
                             android:textColor="@color/black" />
                     </LinearLayout>
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Step Badge 2 (Upper Right Corner - Half Outside) -->
-                    <TextView
-                        android:id="@+id/stepBadge2"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="2"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/step_badge_brown"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="-18dp"
-                        android:layout_marginEnd="-18dp"
-                        android:elevation="4dp" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Step Badge 2 (Upper Right Corner - Half Outside) -->
+                <TextView
+                    android:id="@+id/stepBadge2"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="2"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/step_badge_brown"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-18dp"
+                    android:layout_marginEnd="0dp"
+                    android:elevation="10dp" />
+            </FrameLayout>
 
             <!-- Section 3: Permanent Address -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/sectionAddress"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="@android:color/white">
+                android:visibility="gone">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionAddress"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
                     <LinearLayout
                         android:orientation="vertical"
@@ -427,24 +427,24 @@
                         android:textColor="@color/black"
                         android:hint="Enter street, house number, building name, etc." />
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Step Badge 3 (Upper Left Corner - Half Outside) -->
-                    <TextView
-                        android:id="@+id/stepBadge3"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="3"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/step_badge_brown"
-                        android:layout_gravity="top|start"
-                        android:layout_marginTop="-18dp"
-                        android:layout_marginStart="-18dp"
-                        android:elevation="4dp" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Step Badge 3 (Upper Left Corner - Half Outside) -->
+                <TextView
+                    android:id="@+id/stepBadge3"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="3"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/step_badge_brown"
+                    android:layout_gravity="top|start"
+                    android:layout_marginTop="-18dp"
+                    android:layout_marginStart="0dp"
+                    android:elevation="10dp" />
+            </FrameLayout>
 
             <!-- Hidden field for complete address -->
             <EditText
@@ -454,20 +454,20 @@
                 android:visibility="gone" />
 
             <!-- Section 4: Login Credentials -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/sectionLoginCredentials"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="@android:color/white">
+                android:visibility="gone">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionLoginCredentials"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
                     <LinearLayout
                         android:orientation="vertical"
@@ -552,40 +552,40 @@
                             android:focusable="true" />
                     </RelativeLayout>
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Step Badge 4 (Upper Right Corner - Half Outside) -->
-                    <TextView
-                        android:id="@+id/stepBadge4"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="4"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/step_badge_brown"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="-18dp"
-                        android:layout_marginEnd="-18dp"
-                        android:elevation="4dp" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Step Badge 4 (Upper Right Corner - Half Outside) -->
+                <TextView
+                    android:id="@+id/stepBadge4"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="4"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/step_badge_brown"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-18dp"
+                    android:layout_marginEnd="0dp"
+                    android:elevation="10dp" />
+            </FrameLayout>
 
             <!-- Section 5: Payment Information -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/sectionPaymentInfo"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:cardBackgroundColor="@android:color/white">
+                android:visibility="gone">
 
-                <FrameLayout
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionPaymentInfo"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
                     <LinearLayout
                         android:id="@+id/llGcash"
@@ -641,24 +641,24 @@
                         android:background="@drawable/edittext_background"
                         android:contentDescription="Upload QR" />
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Step Badge 5 (Upper Left Corner - Half Outside) -->
-                    <TextView
-                        android:id="@+id/stepBadge5"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:text="5"
-                        android:textColor="@android:color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@drawable/step_badge_brown"
-                        android:layout_gravity="top|start"
-                        android:layout_marginTop="-18dp"
-                        android:layout_marginStart="-18dp"
-                        android:elevation="4dp" />
-                </FrameLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Step Badge 5 (Upper Left Corner - Half Outside) -->
+                <TextView
+                    android:id="@+id/stepBadge5"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="5"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/step_badge_brown"
+                    android:layout_gravity="top|start"
+                    android:layout_marginTop="-18dp"
+                    android:layout_marginStart="0dp"
+                    android:elevation="10dp" />
+            </FrameLayout>
 
             <!-- NEXT Button -->
             <Button

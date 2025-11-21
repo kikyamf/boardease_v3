@@ -1517,15 +1517,28 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     /**
+     * Gets the parent FrameLayout wrapper for a CardView to control visibility
+     */
+    private View getSectionWrapper(com.google.android.material.card.MaterialCardView cardView) {
+        if (cardView != null && cardView.getParent() instanceof ViewGroup) {
+            return (View) cardView.getParent();
+        }
+        return cardView;
+    }
+    
+    /**
      * Checks if Section I (Account Type) is complete and reveals Section II
      * Also hides Section II and all subsequent sections if Section I becomes incomplete
      */
     private void checkSectionICompletion() {
         String selectedRole = spinnerRole.getSelectedItem().toString();
+        View sectionIWrapper = getSectionWrapper(sectionAccountType);
+        View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+        
         if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
             // Section I is complete, reveal Section II
-            if (sectionPersonalInfo.getVisibility() != View.VISIBLE) {
-                sectionPersonalInfo.setVisibility(View.VISIBLE);
+            if (sectionIIWrapper.getVisibility() != View.VISIBLE) {
+                sectionIIWrapper.setVisibility(View.VISIBLE);
             }
         } else {
             // Section I is incomplete, hide Section II and all subsequent sections
@@ -1551,10 +1564,12 @@ public class RegistrationActivity extends AppCompatActivity {
         // Birth date validation: should match MM/DD/YYYY format
         boolean birthDateValid = birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$");
         
+        View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+        
         if (!firstName.isEmpty() && !lastName.isEmpty() && birthDateValid && phoneValid) {
             // Section II is complete, reveal Section III
-            if (sectionAddress.getVisibility() != View.VISIBLE) {
-                sectionAddress.setVisibility(View.VISIBLE);
+            if (sectionIIIWrapper.getVisibility() != View.VISIBLE) {
+                sectionIIIWrapper.setVisibility(View.VISIBLE);
             }
         } else {
             // Section II is incomplete, hide Section III and all subsequent sections
@@ -1578,10 +1593,12 @@ public class RegistrationActivity extends AppCompatActivity {
         boolean barangayValid = !barangay.isEmpty();
         boolean detailedAddressValid = !detailedAddress.isEmpty();
         
+        View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+        
         if (provinceValid && municipalityValid && barangayValid && detailedAddressValid) {
             // Section III is complete, reveal Section IV
-            if (sectionLoginCredentials.getVisibility() != View.VISIBLE) {
-                sectionLoginCredentials.setVisibility(View.VISIBLE);
+            if (sectionIVWrapper.getVisibility() != View.VISIBLE) {
+                sectionIVWrapper.setVisibility(View.VISIBLE);
             }
         } else {
             // Section III is incomplete, hide Section IV and all subsequent sections
@@ -1620,20 +1637,21 @@ public class RegistrationActivity extends AppCompatActivity {
             }
         }
         
+        View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
         // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
         if (emailValid && passwordValid && emailValidationPassed) {
             // Section IV is complete, reveal Section V
-            String selectedRole = spinnerRole.getSelectedItem().toString();
-            boolean isBoarder = "Boarder".equals(selectedRole);
-            
             // Only show Section V if not a Boarder (Boarders don't need payment info)
-            if (!isBoarder && sectionPaymentInfo.getVisibility() != View.VISIBLE) {
-                sectionPaymentInfo.setVisibility(View.VISIBLE);
+            if (!isBoarder && sectionVWrapper.getVisibility() != View.VISIBLE) {
+                sectionVWrapper.setVisibility(View.VISIBLE);
             }
         } else {
             // Section IV is incomplete, hide Section V
-            if (sectionPaymentInfo.getVisibility() == View.VISIBLE) {
-                sectionPaymentInfo.setVisibility(View.GONE);
+            if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                sectionVWrapper.setVisibility(View.GONE);
             }
         }
     }
@@ -1671,27 +1689,39 @@ public class RegistrationActivity extends AppCompatActivity {
         // 4 = Section IV (Login Credentials), 5 = Section V (Payment Info)
         
         // Hide Section II (Personal Info) if we're starting from section 2 onwards
-        if (startSectionNumber <= 2 && sectionPersonalInfo.getVisibility() == View.VISIBLE) {
-            sectionPersonalInfo.setVisibility(View.GONE);
+        if (startSectionNumber <= 2) {
+            View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+            if (sectionIIWrapper.getVisibility() == View.VISIBLE) {
+                sectionIIWrapper.setVisibility(View.GONE);
+            }
         }
         
         // Hide Section III (Address) if we're starting from section 3 onwards
-        if (startSectionNumber <= 3 && sectionAddress.getVisibility() == View.VISIBLE) {
-            sectionAddress.setVisibility(View.GONE);
+        if (startSectionNumber <= 3) {
+            View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+            if (sectionIIIWrapper.getVisibility() == View.VISIBLE) {
+                sectionIIIWrapper.setVisibility(View.GONE);
+            }
         }
         
         // Hide Section IV (Login Credentials) if we're starting from section 4 onwards
-        if (startSectionNumber <= 4 && sectionLoginCredentials.getVisibility() == View.VISIBLE) {
-            sectionLoginCredentials.setVisibility(View.GONE);
-            // Also clear email validation message when hiding login section
-            if (tvEmailValidation.getVisibility() == View.VISIBLE) {
-                tvEmailValidation.setVisibility(View.GONE);
+        if (startSectionNumber <= 4) {
+            View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+            if (sectionIVWrapper.getVisibility() == View.VISIBLE) {
+                sectionIVWrapper.setVisibility(View.GONE);
+                // Also clear email validation message when hiding login section
+                if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+                    tvEmailValidation.setVisibility(View.GONE);
+                }
             }
         }
         
         // Hide Section V (Payment Info) if we're starting from section 5 onwards
-        if (startSectionNumber <= 5 && sectionPaymentInfo.getVisibility() == View.VISIBLE) {
-            sectionPaymentInfo.setVisibility(View.GONE);
+        if (startSectionNumber <= 5) {
+            View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+            if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                sectionVWrapper.setVisibility(View.GONE);
+            }
         }
     }
 }
