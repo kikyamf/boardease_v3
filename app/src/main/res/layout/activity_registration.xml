@@ -90,7 +90,7 @@
                         android:background="@drawable/edittext_background"/>
                     </LinearLayout>
 
-                    <!-- Step Badge 1 (Upper Left) -->
+                    <!-- Step Badge 1 (Upper Left Corner - Half Outside) -->
                     <TextView
                         android:id="@+id/stepBadge1"
                         android:layout_width="36dp"
@@ -101,7 +101,9 @@
                         android:textStyle="bold"
                         android:gravity="center"
                         android:background="@drawable/step_badge_brown"
-                        android:layout_margin="12dp"
+                        android:layout_gravity="top|start"
+                        android:layout_marginTop="-18dp"
+                        android:layout_marginStart="-18dp"
                         android:elevation="4dp" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -303,7 +305,7 @@
                     </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Step Badge 2 (Upper Right) -->
+                    <!-- Step Badge 2 (Upper Right Corner - Half Outside) -->
                     <TextView
                         android:id="@+id/stepBadge2"
                         android:layout_width="36dp"
@@ -315,7 +317,8 @@
                         android:gravity="center"
                         android:background="@drawable/step_badge_brown"
                         android:layout_gravity="top|end"
-                        android:layout_margin="12dp"
+                        android:layout_marginTop="-18dp"
+                        android:layout_marginEnd="-18dp"
                         android:elevation="4dp" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -425,7 +428,7 @@
                         android:hint="Enter street, house number, building name, etc." />
                     </LinearLayout>
 
-                    <!-- Step Badge 3 (Upper Left) -->
+                    <!-- Step Badge 3 (Upper Left Corner - Half Outside) -->
                     <TextView
                         android:id="@+id/stepBadge3"
                         android:layout_width="36dp"
@@ -436,7 +439,9 @@
                         android:textStyle="bold"
                         android:gravity="center"
                         android:background="@drawable/step_badge_brown"
-                        android:layout_margin="12dp"
+                        android:layout_gravity="top|start"
+                        android:layout_marginTop="-18dp"
+                        android:layout_marginStart="-18dp"
                         android:elevation="4dp" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -548,7 +553,7 @@
                     </RelativeLayout>
                     </LinearLayout>
 
-                    <!-- Step Badge 4 (Upper Right) -->
+                    <!-- Step Badge 4 (Upper Right Corner - Half Outside) -->
                     <TextView
                         android:id="@+id/stepBadge4"
                         android:layout_width="36dp"
@@ -560,7 +565,8 @@
                         android:gravity="center"
                         android:background="@drawable/step_badge_brown"
                         android:layout_gravity="top|end"
-                        android:layout_margin="12dp"
+                        android:layout_marginTop="-18dp"
+                        android:layout_marginEnd="-18dp"
                         android:elevation="4dp" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -636,7 +642,7 @@
                         android:contentDescription="Upload QR" />
                     </LinearLayout>
 
-                    <!-- Step Badge 5 (Upper Left) -->
+                    <!-- Step Badge 5 (Upper Left Corner - Half Outside) -->
                     <TextView
                         android:id="@+id/stepBadge5"
                         android:layout_width="36dp"
@@ -647,7 +653,9 @@
                         android:textStyle="bold"
                         android:gravity="center"
                         android:background="@drawable/step_badge_brown"
-                        android:layout_margin="12dp"
+                        android:layout_gravity="top|start"
+                        android:layout_marginTop="-18dp"
+                        android:layout_marginStart="-18dp"
                         android:elevation="4dp" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
