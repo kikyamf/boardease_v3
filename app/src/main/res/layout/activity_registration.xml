@@ -53,15 +53,20 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
                 android:layout_marginTop="8dp"
-                android:gravity="center"
+                android:gravity="center_vertical"
                 android:paddingHorizontal="16dp">
 
                 <!-- Circle 1 -->
-                <ImageView
+                <TextView
                     android:id="@+id/progressCircle1"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/progress_circle_filled" />
+                    android:text="1"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_filled" />
 
                 <!-- Line 1-2 -->
                 <View
@@ -69,14 +74,20 @@
                     android:layout_height="2dp"
                     android:layout_weight="1"
                     android:background="#666666"
-                    android:layout_marginHorizontal="8dp" />
+                    android:layout_marginStart="-16dp"
+                    android:layout_marginEnd="-16dp" />
 
                 <!-- Circle 2 -->
-                <ImageView
+                <TextView
                     android:id="@+id/progressCircle2"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/progress_circle_hollow" />
+                    android:text="2"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
 
                 <!-- Line 2-3 -->
                 <View
@@ -84,14 +95,20 @@
                     android:layout_height="2dp"
                     android:layout_weight="1"
                     android:background="#666666"
-                    android:layout_marginHorizontal="8dp" />
+                    android:layout_marginStart="-16dp"
+                    android:layout_marginEnd="-16dp" />
 
                 <!-- Circle 3 -->
-                <ImageView
+                <TextView
                     android:id="@+id/progressCircle3"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/progress_circle_hollow" />
+                    android:text="3"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
 
                 <!-- Line 3-4 -->
                 <View
@@ -99,14 +116,20 @@
                     android:layout_height="2dp"
                     android:layout_weight="1"
                     android:background="#666666"
-                    android:layout_marginHorizontal="8dp" />
+                    android:layout_marginStart="-16dp"
+                    android:layout_marginEnd="-16dp" />
 
                 <!-- Circle 4 -->
-                <ImageView
+                <TextView
                     android:id="@+id/progressCircle4"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/progress_circle_hollow" />
+                    android:text="4"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
 
                 <!-- Line 4-5 -->
                 <View
@@ -114,14 +137,20 @@
                     android:layout_height="2dp"
                     android:layout_weight="1"
                     android:background="#666666"
-                    android:layout_marginHorizontal="8dp" />
+                    android:layout_marginStart="-16dp"
+                    android:layout_marginEnd="-16dp" />
 
                 <!-- Circle 5 -->
-                <ImageView
+                <TextView
                     android:id="@+id/progressCircle5"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/progress_circle_hollow" />
+                    android:text="5"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
             </LinearLayout>
 
             <!-- Section 1: Account Type -->

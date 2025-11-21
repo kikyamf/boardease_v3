@@ -62,11 +62,11 @@ public class RegistrationActivity extends AppCompatActivity {
     private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
     
     // Progress indicator circles
-    private ImageView progressCircle1;
-    private ImageView progressCircle2;
-    private ImageView progressCircle3;
-    private ImageView progressCircle4;
-    private ImageView progressCircle5;
+    private TextView progressCircle1;
+    private TextView progressCircle2;
+    private TextView progressCircle3;
+    private TextView progressCircle4;
+    private TextView progressCircle5;
     
     // Address picker data
     private String selectedProvince = "";
@@ -1765,35 +1765,44 @@ public class RegistrationActivity extends AppCompatActivity {
         }
         
         // Circle 1 is always filled (Section 1 is always visible)
-        progressCircle1.setImageResource(R.drawable.progress_circle_filled);
+        progressCircle1.setBackgroundResource(R.drawable.progress_circle_filled);
+        progressCircle1.setTextColor(getResources().getColor(android.R.color.white));
         
         // Check visibility of each section wrapper and fill corresponding circle
         View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
         if (sectionIIWrapper != null && sectionIIWrapper.getVisibility() == View.VISIBLE) {
-            progressCircle2.setImageResource(R.drawable.progress_circle_filled);
+            progressCircle2.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle2.setTextColor(getResources().getColor(android.R.color.white));
         } else {
-            progressCircle2.setImageResource(R.drawable.progress_circle_hollow);
+            progressCircle2.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle2.setTextColor(0xFF666666);
         }
         
         View sectionIIIWrapper = getSectionWrapper(sectionAddress);
         if (sectionIIIWrapper != null && sectionIIIWrapper.getVisibility() == View.VISIBLE) {
-            progressCircle3.setImageResource(R.drawable.progress_circle_filled);
+            progressCircle3.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle3.setTextColor(getResources().getColor(android.R.color.white));
         } else {
-            progressCircle3.setImageResource(R.drawable.progress_circle_hollow);
+            progressCircle3.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle3.setTextColor(0xFF666666);
         }
         
         View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
         if (sectionIVWrapper != null && sectionIVWrapper.getVisibility() == View.VISIBLE) {
-            progressCircle4.setImageResource(R.drawable.progress_circle_filled);
+            progressCircle4.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle4.setTextColor(getResources().getColor(android.R.color.white));
         } else {
-            progressCircle4.setImageResource(R.drawable.progress_circle_hollow);
+            progressCircle4.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle4.setTextColor(0xFF666666);
         }
         
         View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
         if (sectionVWrapper != null && sectionVWrapper.getVisibility() == View.VISIBLE) {
-            progressCircle5.setImageResource(R.drawable.progress_circle_filled);
+            progressCircle5.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle5.setTextColor(getResources().getColor(android.R.color.white));
         } else {
-            progressCircle5.setImageResource(R.drawable.progress_circle_hollow);
+            progressCircle5.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle5.setTextColor(0xFF666666);
         }
     }
 }
