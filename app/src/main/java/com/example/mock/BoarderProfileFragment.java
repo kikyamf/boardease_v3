@@ -76,7 +76,6 @@ public class BoarderProfileFragment extends Fragment {
     private LinearLayout layoutAccountSettings;
     private LinearLayout layoutNotifications;
     private LinearLayout layoutMessages;
-    private LinearLayout layoutHelpSupport;
     private LinearLayout layoutAboutApp;
     
     // Pull-to-refresh
@@ -129,7 +128,6 @@ public class BoarderProfileFragment extends Fragment {
             layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
             layoutNotifications = view.findViewById(R.id.layoutNotifications);
             layoutMessages = view.findViewById(R.id.layoutMessages);
-            layoutHelpSupport = view.findViewById(R.id.layoutHelpSupport);
             layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
             
             // Sign out
@@ -275,18 +273,6 @@ public class BoarderProfileFragment extends Fragment {
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error opening messages", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            // Help & Support
-            if (layoutHelpSupport != null) {
-                layoutHelpSupport.setOnClickListener(v -> {
-                    try {
-                        Toast.makeText(getContext(), "Help & Support - Coming Soon!", Toast.LENGTH_SHORT).show();
-                        // TODO: Navigate to help & support
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
                 });
             }

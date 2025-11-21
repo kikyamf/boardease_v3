@@ -112,8 +112,8 @@ try {
     
     error_log("get_favorites_v2.php - Found " . count($results) . " favorites for user_id: $userId");
     
-    // Get base URL for images
-    $baseUrl = 'http://192.168.1.4/boardease_v3/';
+    // Get base URL for images - use ngrok URL to match Android app
+    $baseUrl = 'https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/';
     
     // Format the response
     $response = array();
@@ -121,6 +121,24 @@ try {
         // Build owner full name
         $ownerName = trim(($row['first_name'] ?? '') . ' ' . ($row['middle_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
         $ownerName = preg_replace('/\s+/', ' ', $ownerName);
+        
+        // Format image path properly
+        $imagePath = null;
+        if (!empty($row['image_path'])) {
+            $rawImagePath = $row['image_path'];
+            // If image path already starts with http, use as is
+            if (strpos($rawImagePath, 'http://') === 0 || strpos($rawImagePath, 'https://') === 0) {
+                $imagePath = $rawImagePath;
+            } else {
+                // Remove leading slash if present
+                $cleanPath = ltrim($rawImagePath, '/');
+                // If path already contains 'uploads/', use as is, otherwise prepend it
+                if (strpos($cleanPath, 'uploads/') !== 0) {
+                    $cleanPath = 'uploads/' . $cleanPath;
+                }
+                $imagePath = $baseUrl . $cleanPath;
+            }
+        }
         
         $boardingHouse = array(
             'bh_id' => (int)$row['bh_id'],
@@ -134,7 +152,7 @@ try {
             'build_year' => $row['build_year'],
             'status' => $row['status'],
             'bh_created_at' => $row['bh_created_at'],
-            'image_path' => $row['image_path'] ? $baseUrl . $row['image_path'] : null,
+            'image_path' => $imagePath,
             'min_price' => $row['min_price'] ? (int)$row['min_price'] : null,
             'max_price' => $row['max_price'] ? (int)$row['max_price'] : null,
             'total_rooms' => (int)$row['total_rooms'],
