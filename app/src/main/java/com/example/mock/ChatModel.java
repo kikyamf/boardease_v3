@@ -14,6 +14,7 @@ public class ChatModel {
     private String otherUserName; // For individual chats
     private String groupName; // For group chats
     private int groupId; // For group chats
+    private int creatorId; // For group chats - ID of user who created the group
 
     // Constructor for individual chats
     public ChatModel(String name, String lastMessage, String time, int imageResId, 
@@ -63,6 +64,25 @@ public class ChatModel {
         this.lastMessageStatus = lastMessageStatus;
         this.groupName = groupName;
         this.groupId = groupId;
+        this.creatorId = -1; // Default to -1 if not set
+        this.profilePictureUrl = "";
+    }
+    
+    // Constructor for group chats with creator ID
+    public ChatModel(String name, String lastMessage, String time, int imageResId, 
+                    int chatId, String chatType, int unreadCount, String lastMessageStatus,
+                    String groupName, int groupId, int creatorId) {
+        this.name = name;
+        this.lastMessage = lastMessage;
+        this.time = time;
+        this.imageResId = imageResId;
+        this.chatId = chatId;
+        this.chatType = chatType;
+        this.unreadCount = unreadCount;
+        this.lastMessageStatus = lastMessageStatus;
+        this.groupName = groupName;
+        this.groupId = groupId;
+        this.creatorId = creatorId;
         this.profilePictureUrl = "";
     }
 
@@ -90,6 +110,7 @@ public class ChatModel {
     public String getOtherUserName() { return otherUserName; }
     public String getGroupName() { return groupName; }
     public int getGroupId() { return groupId; }
+    public int getCreatorId() { return creatorId; }
 
     // Setters
     public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }
@@ -97,5 +118,6 @@ public class ChatModel {
     public void setUnreadCount(int unreadCount) { this.unreadCount = unreadCount; }
     public void setLastMessageStatus(String lastMessageStatus) { this.lastMessageStatus = lastMessageStatus; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl != null ? profilePictureUrl : ""; }
+    public void setCreatorId(int creatorId) { this.creatorId = creatorId; }
 }
 
