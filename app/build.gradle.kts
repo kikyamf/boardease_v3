@@ -56,4 +56,7 @@ dependencies {
     
     // Google Vision API for OCR
     implementation("com.google.android.gms:play-services-vision:20.1.3")
+    
+    // ML Kit for OCR (Free, Offline)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 }

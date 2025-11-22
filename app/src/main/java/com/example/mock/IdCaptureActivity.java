@@ -55,6 +55,7 @@ public class IdCaptureActivity extends AppCompatActivity {
     private LinearLayout processingOverlay;
     
     private String idType; // "front" or "back"
+    private String selectedIdType; // Selected ID type from spinner (e.g., "Driver's License", "PhilID (National ID)")
     private boolean isFlashOn = false;
     private boolean isProcessing = false;
     private boolean isCapturing = true; // Track if we're in capture mode
@@ -64,6 +65,7 @@ public class IdCaptureActivity extends AppCompatActivity {
     private String capturedIdNumber; // Store captured ID number
     private Handler autoCaptureHandler = new Handler();
     private Runnable autoCaptureRunnable;
+    private boolean isVerificationPassed = false; // Track if current scan passed verification
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +88,13 @@ public class IdCaptureActivity extends AppCompatActivity {
             idType = "front";
         }
         
+        // Get selected ID type from intent
+        selectedIdType = getIntent().getStringExtra("selected_id_type");
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            selectedIdType = "Driver's License"; // Default fallback
+        }
+        Log.d(TAG, "Selected ID type for verification: " + selectedIdType);
+        
         initializeViews();
         setupClickListeners();
         checkCameraPermission();
@@ -100,6 +109,12 @@ public class IdCaptureActivity extends AppCompatActivity {
         tvInstructions = findViewById(R.id.tv_instructions);
         tvStatus = findViewById(R.id.tv_status);
         processingOverlay = findViewById(R.id.processing_overlay);
+        
+        // Initially disable capture button until verification passes
+        if (btnCapture != null) {
+            btnCapture.setEnabled(false);
+            btnCapture.setAlpha(0.5f); // Make it semi-transparent
+        }
         
         // Set initial flash button icon (flash off)
         btnFlash.setImageResource(R.drawable.ic_flashlight_modern_off);
@@ -191,13 +206,16 @@ public class IdCaptureActivity extends AppCompatActivity {
     
     private void startVisualIdDetection() {
         // Real ID detection for visual feedback
+        // Continue scanning even after verification passes to detect when ID is removed
         autoCaptureRunnable = () -> {
             if (!isProcessing && cameraPreview.isPreviewRunning()) {
                 Log.d(TAG, "Checking for real ID detection...");
+                // Always check, even if verification passed (to detect when ID is removed)
                 checkForVisualIdIndicators();
             }
             
             // Schedule next check for continuous monitoring
+            // Always continue scanning to detect when ID is removed from view
             if (isCapturing && !isProcessing) {
                 Log.d(TAG, "Scheduling next detection check in 1.5 seconds");
                 autoCaptureHandler.postDelayed(autoCaptureRunnable, 1500); // Faster detection
@@ -705,7 +723,129 @@ public class IdCaptureActivity extends AppCompatActivity {
     
     private void analyzeImageForId(Bitmap bitmap) {
         try {
-            // Use Google Vision API to extract text
+            // Save bitmap to temporary file for verification
+            String tempFileName = "temp_scan_" + System.currentTimeMillis() + ".jpg";
+            File tempFile = new File(getCacheDir(), tempFileName);
+            FileOutputStream fos = new FileOutputStream(tempFile);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.close();
+            
+            android.net.Uri imageUri = android.net.Uri.fromFile(tempFile);
+            
+            // Use IdVerificationHelper for real-time verification
+            if (selectedIdType != null && !selectedIdType.isEmpty()) {
+                Log.d(TAG, "Performing real-time ID verification with selected type: " + selectedIdType);
+                
+                IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+                    @Override
+                    public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                        if (result.isValid) {
+                            Log.d(TAG, "✅ ID verification passed! Detected: " + result.detectedIdType);
+                            
+                            // Set verification passed flag BEFORE showing UI
+                            isVerificationPassed = true;
+                            
+                            // Show green frame to indicate ready for capture
+                            runOnUiThread(() -> {
+                                showGreenFrame();
+                                String statusMsg = "✅ " + result.detectedIdType + " verified! Tap capture to take photo";
+                                if (result.extractedIdNumber != null && !result.extractedIdNumber.isEmpty()) {
+                                    statusMsg += "\nID Number: " + result.extractedIdNumber;
+                                    capturedIdNumber = result.extractedIdNumber;
+                                }
+                                tvStatus.setText(statusMsg);
+                                
+                                // Log for debugging
+                                Log.d(TAG, "Green frame shown, isVerificationPassed: " + isVerificationPassed);
+                                Log.d(TAG, "Capture button enabled: " + (btnCapture != null && btnCapture.isEnabled()));
+                            });
+                        } else {
+                            Log.d(TAG, "❌ ID verification failed: " + result.reason);
+                            
+                            // Set verification failed flag
+                            isVerificationPassed = false;
+                            
+                            // Check if we had a green frame before (ID was detected but now invalid)
+                            boolean hadGreenFrame = isGreenFrameVisible;
+                            
+                            // Hide green frame and show error, then continue scanning
+                            runOnUiThread(() -> {
+                                hideGreenFrame();
+                                
+                                // If ID was previously detected but now invalid (removed from view)
+                                if (hadGreenFrame) {
+                                    tvStatus.setText("ID removed from view. Please position your " + idType + " ID in the frame");
+                                } else {
+                                    // First time detection failed
+                                    String errorMsg = result.reason;
+                                    if (errorMsg.length() > 80) {
+                                        errorMsg = errorMsg.substring(0, 80) + "...";
+                                    }
+                                    tvStatus.setText("❌ " + errorMsg + "\nPlease adjust and try again");
+                                    
+                                    // Auto-reset after 3 seconds only for first-time failures
+                                    new Handler().postDelayed(() -> {
+                                        if (isCapturing && !isProcessing) {
+                                            tvStatus.setText("Position your " + idType + " ID in the frame");
+                                        }
+                                    }, 3000);
+                                }
+                            });
+                        }
+                        
+                        // Clean up temp file
+                        if (tempFile.exists()) {
+                            tempFile.delete();
+                        }
+                    }
+                    
+                    @Override
+                    public void onVerificationError(String error) {
+                        Log.e(TAG, "Verification error: " + error);
+                        
+                        // Check if we had a green frame before (ID was detected but now error)
+                        boolean hadGreenFrame = isGreenFrameVisible;
+                        isVerificationPassed = false;
+                        
+                        // Hide green frame and continue scanning
+                        runOnUiThread(() -> {
+                            hideGreenFrame();
+                            
+                            // If ID was previously detected but now error (removed from view)
+                            if (hadGreenFrame) {
+                                tvStatus.setText("ID removed from view. Please position your " + idType + " ID in the frame");
+                            } else {
+                                tvStatus.setText("Scanning... Please ensure ID is clear and well-lit");
+                            }
+                        });
+                        
+                        // Clean up temp file
+                        if (tempFile.exists()) {
+                            tempFile.delete();
+                        }
+                    }
+                });
+            } else {
+                // Fallback to old method if no ID type selected
+                Log.w(TAG, "No selected ID type, using fallback detection");
+                performFallbackDetection(bitmap);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error analyzing image for ID: " + e.getMessage());
+            // Continue scanning
+            runOnUiThread(() -> {
+                if (isCapturing && !isProcessing) {
+                    autoCaptureHandler.postDelayed(autoCaptureRunnable, 2000);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Fallback detection method (old implementation) when ID type is not available
+     */
+    private void performFallbackDetection(Bitmap bitmap) {
+        try {
             TextRecognizer textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
             
             if (textRecognizer.isOperational()) {
@@ -721,50 +861,25 @@ public class IdCaptureActivity extends AppCompatActivity {
                 }
                 
                 String extractedText = fullText.toString().trim();
-                Log.d(TAG, "Analyzing text for ID detection: " + extractedText);
+                Log.d(TAG, "Fallback: Analyzing text for ID detection: " + extractedText);
                 
-                // Check if this looks like a valid ID document
                 if (isValidIdDocument(extractedText)) {
-                    Log.d(TAG, "✅ Valid ID detected! Showing green frame...");
-                    
-                    // Show green frame to indicate ready for capture
                     runOnUiThread(() -> {
                         showGreenFrame();
                         tvStatus.setText("✅ ID detected! Tap capture button to take photo");
                     });
                 } else {
-                    Log.d(TAG, "No valid ID detected yet, continuing to scan...");
-                    
-                    // Hide green frame and continue scanning
                     runOnUiThread(() -> {
                         hideGreenFrame();
-                        tvStatus.setText("Position your ID in the frame. Tap screen to focus, then tap capture when green frame appears");
-                    });
-                    
-                    // Schedule next check
-                    runOnUiThread(() -> {
+                        tvStatus.setText("Position your ID in the frame");
                         if (isCapturing && !isProcessing) {
-                            autoCaptureHandler.postDelayed(autoCaptureRunnable, 2000); // Check again in 2 seconds
+                            autoCaptureHandler.postDelayed(autoCaptureRunnable, 2000);
                         }
                     });
                 }
-            } else {
-                Log.e(TAG, "TextRecognizer is not operational");
-                // Continue scanning without green frame
-                runOnUiThread(() -> {
-                    if (isCapturing && !isProcessing) {
-                        autoCaptureHandler.postDelayed(autoCaptureRunnable, 2000);
-                    }
-                });
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error analyzing image for ID: " + e.getMessage());
-            // Continue scanning
-            runOnUiThread(() -> {
-                if (isCapturing && !isProcessing) {
-                    autoCaptureHandler.postDelayed(autoCaptureRunnable, 2000);
-                }
-            });
+            Log.e(TAG, "Error in fallback detection: " + e.getMessage());
         }
     }
     
@@ -777,10 +892,30 @@ public class IdCaptureActivity extends AppCompatActivity {
     }
     
     private void showGreenFrame() {
+        isGreenFrameVisible = true;
+        
+        // Ensure verification passed flag is set when showing green frame
+        if (!isVerificationPassed) {
+            Log.w(TAG, "Warning: Showing green frame but isVerificationPassed is false - setting to true");
+            isVerificationPassed = true;
+        }
+        
         // Change the ID frame to green to indicate ready for capture
         FrameLayout idFrame = findViewById(R.id.id_frame);
         if (idFrame != null) {
             idFrame.setBackgroundResource(R.drawable.id_frame_green);
+            
+            // Change corner indicators to green
+            updateCornerIndicators(true);
+            
+            // Enable capture button when verification passes
+            if (btnCapture != null) {
+                btnCapture.setEnabled(true);
+                btnCapture.setAlpha(1.0f); // Make it fully visible
+                Log.d(TAG, "Capture button enabled in showGreenFrame()");
+            } else {
+                Log.e(TAG, "btnCapture is null in showGreenFrame()");
+            }
             
             // Add a subtle pulse animation to draw attention
             idFrame.animate()
@@ -797,21 +932,19 @@ public class IdCaptureActivity extends AppCompatActivity {
                 .start();
         }
         
-        // Also change corner indicators to green
-        updateCornerIndicators(true);
-        
-        // Mark green frame as visible
-        isGreenFrameVisible = true;
-        
         // Add a subtle glow effect to the status text
         TextView statusText = findViewById(R.id.tv_status);
         if (statusText != null) {
             statusText.setTextColor(0xFF4CAF50); // Green color
             statusText.setShadowLayer(10, 0, 0, 0x804CAF50); // Green glow
         }
+        
+        Log.d(TAG, "Green frame shown - isVerificationPassed: " + isVerificationPassed);
     }
     
     private void hideGreenFrame() {
+        isGreenFrameVisible = false;
+        
         // Change the ID frame back to white
         FrameLayout idFrame = findViewById(R.id.id_frame);
         if (idFrame != null) {
@@ -820,6 +953,12 @@ public class IdCaptureActivity extends AppCompatActivity {
         
         // Change corner indicators back to white
         updateCornerIndicators(false);
+        
+        // Disable capture button when verification fails or resets
+        if (btnCapture != null && isCapturing) {
+            btnCapture.setEnabled(false);
+            btnCapture.setAlpha(0.5f); // Make it semi-transparent
+        }
         
         // Reset status text color
         TextView statusText = findViewById(R.id.tv_status);
@@ -920,8 +1059,23 @@ public class IdCaptureActivity extends AppCompatActivity {
     }
     
     private void captureId() {
-        if (isProcessing) return;
+        if (isProcessing) {
+            Log.d(TAG, "Capture blocked: Already processing");
+            return;
+        }
         
+        // Check verification status
+        Log.d(TAG, "Capture button clicked - isVerificationPassed: " + isVerificationPassed);
+        Log.d(TAG, "Capture button enabled: " + (btnCapture != null && btnCapture.isEnabled()));
+        
+        // Only allow capture if verification passed
+        if (!isVerificationPassed) {
+            Log.w(TAG, "Capture blocked: Verification not passed yet");
+            Toast.makeText(this, "Please wait for ID verification to complete", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Log.d(TAG, "✅ Starting capture - verification passed");
         isProcessing = true;
         isCapturing = false; // Stop capturing mode
         processingOverlay.setVisibility(View.VISIBLE);

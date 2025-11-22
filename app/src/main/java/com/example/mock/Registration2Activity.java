@@ -53,6 +53,7 @@ public class Registration2Activity extends AppCompatActivity {
     Spinner spinnerVId;
     ImageView ivUploadF, ivUploadB;
     EditText etIdNumber;
+    LinearLayout backIdSection;
     CheckBox cbAgree;
     Button btnReg;
     Bitmap qrBitmap;
@@ -105,6 +106,7 @@ public class Registration2Activity extends AppCompatActivity {
         ivUploadF = findViewById(R.id.ivUploadF);
         ivUploadB = findViewById(R.id.ivUploadB);
         etIdNumber = findViewById(R.id.etidNumber);
+        backIdSection = findViewById(R.id.backIdSection);
         cbAgree = findViewById(R.id.cbAgree);
         btnReg = findViewById(R.id.btnReg);
         TextView tvAgreeText = findViewById(R.id.tvAgreeText);
@@ -231,6 +233,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("ID_CAPTURE", "Starting front ID capture");
             Intent intent = new Intent(this, IdCaptureActivity.class);
             intent.putExtra("id_type", "front");
+            intent.putExtra("selected_id_type", selectedIdType);
             startActivityForResult(intent, 1001);
         });
         
@@ -246,6 +249,7 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("ID_CAPTURE", "Starting back ID capture");
             Intent intent = new Intent(this, IdCaptureActivity.class);
             intent.putExtra("id_type", "back");
+            intent.putExtra("selected_id_type", selectedIdType);
             startActivityForResult(intent, 1002);
         });
 
@@ -255,8 +259,7 @@ public class Registration2Activity extends AppCompatActivity {
                 "Philippine Passport",
                 "Driver's License",
                 "PhilID (National ID)",
-                "UMID",
-                "SSS ID",
+                "UMID(SSS ID)",
                 "GSIS e-card",
                 "PhilHealth ID",
                 "TIN ID (BIR)",
@@ -302,6 +305,45 @@ public class Registration2Activity extends AppCompatActivity {
         };
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerVId.setAdapter(adapter);
+        
+        // Add listener to reset all ID data when ID type changes
+        spinnerVId.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            private String previousSelection = null;
+            
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String currentSelection = parent.getItemAtPosition(position).toString();
+                
+                // Show/hide back ID section based on ID type
+                // Passport doesn't have a back side, so hide it
+                if (currentSelection != null && currentSelection.equals("Philippine Passport")) {
+                    backIdSection.setVisibility(View.GONE);
+                } else {
+                    backIdSection.setVisibility(View.VISIBLE);
+                }
+                
+                // Check if this is a real change (not initial selection)
+                if (previousSelection != null && !previousSelection.equals(currentSelection) && 
+                    !currentSelection.equals("Select --") && !previousSelection.equals("Select --")) {
+                    
+                    Log.d("ID_TYPE_CHANGE", "ID type changed from " + previousSelection + " to " + currentSelection);
+                    
+                    // Reset all ID data
+                    resetAllIdData();
+                    
+                    Toast.makeText(Registration2Activity.this, 
+                        "ID type changed. Please upload new ID images.", 
+                        Toast.LENGTH_LONG).show();
+                }
+                
+                previousSelection = currentSelection;
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
 
         // Setup clickable "terms and privacy" text
         if (tvAgreeText != null) {
@@ -366,8 +408,18 @@ public class Registration2Activity extends AppCompatActivity {
                 return;
             }
 
-            if (idFrontPath == null || idBackPath == null) {
-                Log.d("REGISTRATION", "❌ Validation failed: Missing ID images - Front: " + (idFrontPath != null) + ", Back: " + (idBackPath != null));
+            // Check if back ID is required (Passport doesn't have back side)
+            boolean isPassport = selectedIdType != null && selectedIdType.equals("Philippine Passport");
+            
+            if (idFrontPath == null) {
+                Log.d("REGISTRATION", "❌ Validation failed: Missing front ID image");
+                Toast.makeText(this, "Please upload front ID image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Only require back ID if it's not a Passport
+            if (!isPassport && idBackPath == null) {
+                Log.d("REGISTRATION", "❌ Validation failed: Missing back ID image - Front: " + (idFrontPath != null) + ", Back: " + (idBackPath != null));
                 Toast.makeText(this, "Please upload front and back ID images", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -378,7 +430,8 @@ public class Registration2Activity extends AppCompatActivity {
             // Check if Bitmaps are null and initialize them if needed
             Log.d("REGISTRATION", "Checking bitmap status - Front: " + (frontBitmap != null) + ", Back: " + (backBitmap != null) + ", QR: " + (qrBitmap != null) + ", Role: " + role + ", isBoarder: " + isBoarder);
             
-            if (frontBitmap == null || backBitmap == null) {
+            // Only require back bitmap if it's not a Passport
+            if (frontBitmap == null || (!isPassport && backBitmap == null)) {
                 String errorMsg = "Error loading images: ";
                 if (frontBitmap == null) errorMsg += "Front image null. ";
                 if (backBitmap == null) errorMsg += "Back image null. ";
@@ -668,10 +721,21 @@ public class Registration2Activity extends AppCompatActivity {
                     
                     try {
                         byte[] frontData = AppHelper.getFileDataFromDrawable(getBaseContext(), frontBitmap);
-                        byte[] backData = AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap);
                         
                         Log.d("REGISTRATION", "Front file data size: " + (frontData != null ? frontData.length : "null"));
-                        Log.d("REGISTRATION", "Back file data size: " + (backData != null ? backData.length : "null"));
+                        
+                        // Check if back ID is required (Passport doesn't have back side)
+                        String selectedIdType = spinnerVId.getSelectedItem().toString();
+                        boolean isPassport = selectedIdType != null && selectedIdType.equals("Philippine Passport");
+                        
+                        // Only include back ID if it's not a Passport
+                        if (!isPassport && backBitmap != null) {
+                            byte[] backData = AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap);
+                            Log.d("REGISTRATION", "Back file data size: " + (backData != null ? backData.length : "null"));
+                            params.put("idBackFile", new DataPart("back.jpg", backData));
+                        } else {
+                            Log.d("REGISTRATION", "Back file data skipped - isPassport: " + isPassport + ", backBitmap: " + (backBitmap != null));
+                        }
                         
                         // Only include QR code for BH Owner
                         boolean isBoarder = "Boarder".equals(role);
@@ -685,7 +749,6 @@ public class Registration2Activity extends AppCompatActivity {
                         }
                         
                         params.put("idFrontFile", new DataPart("front.jpg", frontData));
-                        params.put("idBackFile", new DataPart("back.jpg", backData));
                         
                         // Include business permits in registration request (for BH Owner)
                         if (!isBoarder && !permitUploadItems.isEmpty()) {
@@ -748,16 +811,24 @@ public class Registration2Activity extends AppCompatActivity {
 
     /**
      * Verifies and sets front ID image if approved
+     * Uses ML Kit OCR and pattern detection to verify ID type matches selection
      */
     private void verifyAndSetFrontImage(Uri imageUri) {
+        // Get selected ID type
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         // Show loading message
         Toast.makeText(this, "Verifying front ID document...", Toast.LENGTH_SHORT).show();
         
-        // Use ID document specific verification
-        ImageVerification.verifyIdDocument(this, imageUri, new ImageVerification.VerificationCallback() {
+        // Use new ID verification system with ML Kit OCR
+        IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
             @Override
-            public void onVerificationComplete(boolean isApproved, String reason) {
-                if (isApproved) {
+            public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                if (result.isValid) {
                     // Set the image as selected
                     ivUploadF.setImageURI(imageUri); // show image
                     ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
@@ -773,7 +844,19 @@ public class Registration2Activity extends AppCompatActivity {
                             Toast.makeText(Registration2Activity.this, "Failed to load front image", Toast.LENGTH_SHORT).show();
                         } else {
                             Log.d("Registration2", "Front image loaded successfully, size: " + frontBitmap.getWidth() + "x" + frontBitmap.getHeight());
-                            Toast.makeText(Registration2Activity.this, "✅ Front ID document verified", Toast.LENGTH_SHORT).show();
+                            
+                            // Auto-fill ID number if extracted
+                            if (result.extractedIdNumber != null && !result.extractedIdNumber.isEmpty()) {
+                                etIdNumber.setText(result.extractedIdNumber);
+                                Log.d("Registration2", "Auto-filled ID number: " + result.extractedIdNumber);
+                            }
+                            
+                            // Show success message
+                            String message = result.reason;
+                            if (message.length() > 100) {
+                                message = message.substring(0, 100) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, message, Toast.LENGTH_LONG).show();
                         }
                     } catch (Exception e) {
                         Log.e("Registration2", "Error loading front image", e);
@@ -781,29 +864,45 @@ public class Registration2Activity extends AppCompatActivity {
                     }
                 } else {
                     // Show rejection reason
-                    Toast.makeText(Registration2Activity.this, "❌ Front ID document rejected: " + reason, Toast.LENGTH_LONG).show();
+                    String reason = result.reason;
+                    if (reason.length() > 150) {
+                        reason = reason.substring(0, 150) + "...";
+                    }
+                    Toast.makeText(Registration2Activity.this, reason, Toast.LENGTH_LONG).show();
+                    
+                    // Show detailed error in alert dialog for better visibility
+                    showIdVerificationError("Front ID Verification Failed", result.reason);
                 }
             }
             
             @Override
             public void onVerificationError(String error) {
-                Toast.makeText(Registration2Activity.this, "Front ID document verification failed: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(Registration2Activity.this, "Front ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                showIdVerificationError("Verification Error", error);
             }
         });
     }
 
     /**
      * Verifies and sets back ID image if approved
+     * Uses ML Kit OCR and pattern detection to verify ID type matches selection
      */
     private void verifyAndSetBackImage(Uri imageUri) {
+        // Get selected ID type
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         // Show loading message
         Toast.makeText(this, "Verifying back ID document...", Toast.LENGTH_SHORT).show();
         
-        // Use ID document specific verification
-        ImageVerification.verifyIdDocument(this, imageUri, new ImageVerification.VerificationCallback() {
+        // Use new ID verification system with ML Kit OCR
+        IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
             @Override
-            public void onVerificationComplete(boolean isApproved, String reason) {
-                if (isApproved) {
+            public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                if (result.isValid) {
                     // Set the image as selected
                     ivUploadB.setImageURI(imageUri); // show image
                     ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
@@ -819,7 +918,13 @@ public class Registration2Activity extends AppCompatActivity {
                             Toast.makeText(Registration2Activity.this, "Failed to load back image", Toast.LENGTH_SHORT).show();
                         } else {
                             Log.d("Registration2", "Back image loaded successfully, size: " + backBitmap.getWidth() + "x" + backBitmap.getHeight());
-                            Toast.makeText(Registration2Activity.this, "✅ Back ID document verified", Toast.LENGTH_SHORT).show();
+                            
+                            // Show success message
+                            String message = result.reason;
+                            if (message.length() > 100) {
+                                message = message.substring(0, 100) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, message, Toast.LENGTH_LONG).show();
                         }
                     } catch (Exception e) {
                         Log.e("Registration2", "Error loading back image", e);
@@ -827,15 +932,60 @@ public class Registration2Activity extends AppCompatActivity {
                     }
                 } else {
                     // Show rejection reason
-                    Toast.makeText(Registration2Activity.this, "❌ Back ID document rejected: " + reason, Toast.LENGTH_LONG).show();
+                    String reason = result.reason;
+                    if (reason.length() > 150) {
+                        reason = reason.substring(0, 150) + "...";
+                    }
+                    Toast.makeText(Registration2Activity.this, reason, Toast.LENGTH_LONG).show();
+                    
+                    // Show detailed error in alert dialog for better visibility
+                    showIdVerificationError("Back ID Verification Failed", result.reason);
                 }
             }
             
             @Override
             public void onVerificationError(String error) {
-                Toast.makeText(Registration2Activity.this, "Back ID document verification failed: " + error, Toast.LENGTH_LONG).show();
+                Toast.makeText(Registration2Activity.this, "Back ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                showIdVerificationError("Verification Error", error);
             }
         });
+    }
+    
+    /**
+     * Shows an alert dialog with ID verification error details
+     */
+    private void showIdVerificationError(String title, String message) {
+        new AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .setIcon(android.R.drawable.ic_dialog_alert)
+            .show();
+    }
+    
+    /**
+     * Resets all ID data when ID type is changed
+     */
+    private void resetAllIdData() {
+        Log.d("ID_RESET", "Resetting all ID data...");
+        
+        // Reset front ID
+        frontBitmap = null;
+        idFrontPath = null;
+        ivUploadF.setImageResource(R.drawable.upload);
+        ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Reset back ID
+        backBitmap = null;
+        idBackPath = null;
+        ivUploadB.setImageResource(R.drawable.upload);
+        ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Reset ID number
+        etIdNumber.setText("");
+        etIdNumber.clearFocus();
+        
+        Log.d("ID_RESET", "All ID data reset successfully");
     }
     
     @Override
@@ -868,25 +1018,66 @@ public class Registration2Activity extends AppCompatActivity {
             Log.d("ID_CAPTURE", "ID number is null: " + (idNumber == null));
             Log.d("ID_CAPTURE", "ID number is empty: " + (idNumber != null && idNumber.isEmpty()));
             
+            // Get selected ID type
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             // Load the captured image
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             if (bitmap != null) {
-                frontBitmap = bitmap;
-                idFrontPath = imagePath;
+                // Convert file path to URI for verification
+                Uri imageUri = Uri.fromFile(new java.io.File(imagePath));
                 
-                // Update UI
-                ivUploadF.setImageBitmap(bitmap);
-                ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
-                
-                // Auto-fill ID number if extracted
-                if (idNumber != null && !idNumber.isEmpty()) {
-                    etIdNumber.setText(idNumber);
-                    Log.d("ID_CAPTURE", "✅ Auto-filled ID number: " + idNumber);
-                    Toast.makeText(this, "✅ Front ID captured! ID number: " + idNumber, Toast.LENGTH_LONG).show();
-                } else {
-                    Log.d("ID_CAPTURE", "⚠️ No ID number extracted, user needs to enter manually");
-                    Toast.makeText(this, "✅ Front ID captured! Please enter ID number manually", Toast.LENGTH_LONG).show();
-                }
+                // Verify ID using new verification system
+                Toast.makeText(this, "Verifying front ID document...", Toast.LENGTH_SHORT).show();
+                IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+                    @Override
+                    public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                        if (result.isValid) {
+                            // Set the image
+                            frontBitmap = bitmap;
+                            idFrontPath = imagePath;
+                            
+                            // Update UI
+                            ivUploadF.setImageBitmap(bitmap);
+                            ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            
+                            // Auto-fill ID number (prefer extracted from verification, fallback to captured)
+                            String finalIdNumber = result.extractedIdNumber != null && !result.extractedIdNumber.isEmpty() 
+                                ? result.extractedIdNumber 
+                                : (idNumber != null && !idNumber.isEmpty() ? idNumber : "");
+                            
+                            if (!finalIdNumber.isEmpty()) {
+                                etIdNumber.setText(finalIdNumber);
+                                Log.d("ID_CAPTURE", "✅ Auto-filled ID number: " + finalIdNumber);
+                            }
+                            
+                            // Show success message
+                            String message = result.reason;
+                            if (message.length() > 100) {
+                                message = message.substring(0, 100) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, message, Toast.LENGTH_LONG).show();
+                        } else {
+                            // Verification failed
+                            String reason = result.reason;
+                            if (reason.length() > 150) {
+                                reason = reason.substring(0, 150) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, reason, Toast.LENGTH_LONG).show();
+                            showIdVerificationError("Front ID Verification Failed", result.reason);
+                        }
+                    }
+                    
+                    @Override
+                    public void onVerificationError(String error) {
+                        Toast.makeText(Registration2Activity.this, "Front ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                        showIdVerificationError("Verification Error", error);
+                    }
+                });
             } else {
                 Log.e("ID_CAPTURE", "❌ Failed to load front ID image");
                 Toast.makeText(this, "Failed to load front ID image", Toast.LENGTH_SHORT).show();
@@ -899,23 +1090,56 @@ public class Registration2Activity extends AppCompatActivity {
     
     private void handleBackIdResult(String imagePath, String idNumber) {
         try {
+            // Get selected ID type
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             // Load the captured image
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             if (bitmap != null) {
-                backBitmap = bitmap;
-                idBackPath = imagePath;
+                // Convert file path to URI for verification
+                Uri imageUri = Uri.fromFile(new java.io.File(imagePath));
                 
-                // Update UI
-                ivUploadB.setImageBitmap(bitmap);
-                ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
-                
-                // Show success message
-                if (idNumber != null && !idNumber.isEmpty()) {
-                    Log.d("ID_CAPTURE", "Back ID captured with ID number: " + idNumber);
-                    Toast.makeText(this, "✅ Back ID captured! ID number: " + idNumber, Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(this, "✅ Back ID captured!", Toast.LENGTH_LONG).show();
-                }
+                // Verify ID using new verification system
+                Toast.makeText(this, "Verifying back ID document...", Toast.LENGTH_SHORT).show();
+                IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+                    @Override
+                    public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                        if (result.isValid) {
+                            // Set the image
+                            backBitmap = bitmap;
+                            idBackPath = imagePath;
+                            
+                            // Update UI
+                            ivUploadB.setImageBitmap(bitmap);
+                            ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            
+                            // Show success message
+                            String message = result.reason;
+                            if (message.length() > 100) {
+                                message = message.substring(0, 100) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, message, Toast.LENGTH_LONG).show();
+                        } else {
+                            // Verification failed
+                            String reason = result.reason;
+                            if (reason.length() > 150) {
+                                reason = reason.substring(0, 150) + "...";
+                            }
+                            Toast.makeText(Registration2Activity.this, reason, Toast.LENGTH_LONG).show();
+                            showIdVerificationError("Back ID Verification Failed", result.reason);
+                        }
+                    }
+                    
+                    @Override
+                    public void onVerificationError(String error) {
+                        Toast.makeText(Registration2Activity.this, "Back ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                        showIdVerificationError("Verification Error", error);
+                    }
+                });
             } else {
                 Toast.makeText(this, "Failed to load back ID image", Toast.LENGTH_SHORT).show();
             }
