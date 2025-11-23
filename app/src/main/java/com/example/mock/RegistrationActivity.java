@@ -50,6 +50,7 @@ public class RegistrationActivity extends AppCompatActivity {
     TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
     TextView tvGcashNo, tvGcashQR;
     ImageView UploadQr, ivTogglePassword;
+    ProgressBar progressBarSection2, progressBarSection3, progressBarSection4, progressBarSection5;
     Button btnNext;
     boolean isPasswordVisible = false;
 
@@ -128,6 +129,12 @@ public class RegistrationActivity extends AppCompatActivity {
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        
+        // Get ProgressBars for section loading
+        progressBarSection2 = findViewById(R.id.progressBarSection2);
+        progressBarSection3 = findViewById(R.id.progressBarSection3);
+        progressBarSection4 = findViewById(R.id.progressBarSection4);
+        progressBarSection5 = findViewById(R.id.progressBarSection5);
         
         // Get section cards
         sectionAccountType = findViewById(R.id.sectionAccountType);
@@ -327,6 +334,9 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Setup phone number field with fixed +63 prefix and formatting
         setupPhoneNumberField();
+        
+        // Setup GCash number field with fixed +63 prefix and formatting
+        setupGcashNumberField();
         
         // Setup name field validations with input filters and real-time validation
         setupNameFieldValidation(etFirstName, tvFirstNameError, "First Name");
@@ -669,8 +679,14 @@ public class RegistrationActivity extends AppCompatActivity {
                     a.putExtra("email", etEmail.getText().toString().trim());
                     a.putExtra("password", etPassword.getText().toString().trim());
                     
+                    // Convert GCash format: +63 992 531 1409 -> 09925311409 (start with 0, no +63)
+                    String gcashFormatted = etGcashNum.getText().toString().trim();
+                    // Extract digits after +63 (skip "+63 ", get the 10 digits after)
+                    String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
+                    // Add 0 at the start: 09925311409 (11 digits starting with 0)
+                    String gcashNumber = "0" + gcashDigitsAfterPlus63;
                     // GCash number is required for both Boarder and BH Owner
-                    a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
+                    a.putExtra("gcashNum", gcashNumber);
                     
                     // QR code is only required for BH Owner
                     if (!isBoarder) {
@@ -890,13 +906,17 @@ public class RegistrationActivity extends AppCompatActivity {
                 return "GCash Number is required for BH Owner";
             }
         }
-        // GCash format: 09xxxxxxxxx (11 digits starting with 09)
-        String gcashDigits = gcashNum.replaceAll("[^0-9]", "");
-        if (gcashDigits.length() != 11) {
-            return "GCash Number must be 11 digits (09xxxxxxxxx)";
+        // Extract digits only (+63 represents 0, so +63 992 531 1409 = 09925311409)
+        if (!gcashNum.startsWith("+63")) {
+            return "GCash Number must start with +63";
         }
-        if (!gcashDigits.matches("^09\\d{9}$")) {
-            return "GCash Number must start with 09 (Philippine mobile format)";
+        String digitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
+        if (digitsAfterPlus63.length() != 10) {
+            return "GCash Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
+        }
+        // First digit after +63 should be 9 (Philippine mobile format)
+        if (!digitsAfterPlus63.startsWith("9")) {
+            return "GCash Number must start with 9 after +63 (Philippine mobile format)";
         }
         
         // 11. Validate GCash QR Code (only for BH Owner)
@@ -1021,6 +1041,130 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Prevent selection/deletion of +63 prefix
         etPhone.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == android.view.KeyEvent.KEYCODE_DEL) {
+                EditText editText = (EditText) v;
+                int cursorPosition = editText.getSelectionStart();
+                
+                // Prevent deleting +63
+                if (cursorPosition <= 4) { // +63 = 4 characters
+                    return true; // Consume the event
+                }
+            }
+            return false;
+        });
+    }
+    
+    /**
+     * Sets up GCash number field with fixed +63 prefix and formatting
+     * Format: +63 9XX XXX XXXX
+     */
+    private void setupGcashNumberField() {
+        // Set initial value to +63
+        etGcashNum.setText("+63 ");
+        etGcashNum.setSelection(etGcashNum.getText().length());
+        
+        etGcashNum.addTextChangedListener(new android.text.TextWatcher() {
+            private boolean isFormatting = false;
+            private String previousText = "+63 ";
+            
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                previousText = s.toString();
+            }
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Do nothing here
+            }
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (isFormatting) {
+                    return;
+                }
+                
+                isFormatting = true;
+                String currentText = s.toString();
+                
+                // Always ensure +63 is at the start
+                if (!currentText.startsWith("+63") || currentText.length() < 4) {
+                    // If user tries to delete +63, restore it
+                    etGcashNum.removeTextChangedListener(this);
+                    etGcashNum.setText("+63 ");
+                    etGcashNum.setSelection(etGcashNum.getText().length());
+                    etGcashNum.addTextChangedListener(this);
+                    isFormatting = false;
+                    return;
+                }
+                
+                // Extract only numbers after +63 (skip "+63 " = 4 characters)
+                // Safety check: ensure text is long enough before substring
+                String digitsOnly = currentText.length() >= 4 
+                    ? currentText.substring(4).replaceAll("[^0-9]", "")
+                    : "";
+                
+                // Limit to 10 digits (since +63 represents 0, total should be 11 digits: 0 + 10 digits = 11)
+                if (digitsOnly.length() > 10) {
+                    digitsOnly = digitsOnly.substring(0, 10);
+                }
+                
+                // Format as: +63 9XX XXX XXXX
+                // Example: +63 992 531 1409
+                StringBuilder formatted = new StringBuilder("+63 ");
+                
+                if (digitsOnly.length() > 0) {
+                    // First 3 digits (e.g., 992)
+                    if (digitsOnly.length() <= 3) {
+                        formatted.append(digitsOnly);
+                    } else {
+                        formatted.append(digitsOnly.substring(0, 3));
+                        formatted.append(" ");
+                        
+                        // Next 3 digits (e.g., 531)
+                        if (digitsOnly.length() <= 6) {
+                            formatted.append(digitsOnly.substring(3));
+                        } else {
+                            formatted.append(digitsOnly.substring(3, 6));
+                            formatted.append(" ");
+                            
+                            // Last 4 digits (e.g., 1409)
+                            if (digitsOnly.length() <= 10) {
+                                formatted.append(digitsOnly.substring(6));
+                            } else {
+                                formatted.append(digitsOnly.substring(6, 10));
+                            }
+                        }
+                    }
+                }
+                
+                // Update the text
+                etGcashNum.removeTextChangedListener(this);
+                etGcashNum.setText(formatted.toString());
+                
+                // Set cursor position - place it at the end of what was typed
+                // Format: +63 XXX XXX XXXX (10 digits)
+                int digitCount = digitsOnly.length();
+                int cursorPosition;
+                
+                if (digitCount == 0) {
+                    cursorPosition = 4; // After "+63 "
+                } else if (digitCount <= 3) {
+                    cursorPosition = 4 + digitCount; // After "+63 " + digits
+                } else if (digitCount <= 6) {
+                    cursorPosition = 5 + digitCount; // After "+63 " + first 3 + space + remaining
+                } else {
+                    cursorPosition = 6 + digitCount; // After "+63 " + first 3 + space + next 3 + space + remaining
+                }
+                
+                etGcashNum.setSelection(Math.min(cursorPosition, formatted.length()));
+                
+                etGcashNum.addTextChangedListener(this);
+                isFormatting = false;
+            }
+        });
+        
+        // Prevent selection/deletion of +63 prefix
+        etGcashNum.setOnKeyListener((v, keyCode, event) -> {
             if (keyCode == android.view.KeyEvent.KEYCODE_DEL) {
                 EditText editText = (EditText) v;
                 int cursorPosition = editText.getSelectionStart();
@@ -1605,6 +1749,45 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     /**
+     * Reveals a section with a loading animation (1-2 seconds delay)
+     * @param sectionWrapper The section wrapper to reveal
+     * @param progressBar The progress bar to show during loading
+     * @param delayMs Delay in milliseconds (default 1500ms = 1.5 seconds)
+     */
+    private void revealSectionWithLoading(View sectionWrapper, ProgressBar progressBar, int delayMs) {
+        if (sectionWrapper.getVisibility() == View.VISIBLE) {
+            return; // Already visible
+        }
+        
+        // Show progress bar
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+        
+        // Hide section initially
+        sectionWrapper.setVisibility(View.GONE);
+        
+        // Use Handler to delay section reveal
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            // Hide progress bar
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            
+            // Show section with animation
+            sectionWrapper.setVisibility(View.VISIBLE);
+            sectionWrapper.setAlpha(0f);
+            sectionWrapper.animate()
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setListener(null);
+            
+            // Update progress indicator
+            updateProgressIndicator();
+        }, delayMs);
+    }
+    
+    /**
      * Checks if Section I (Account Type) is complete and reveals Section II
      * Also hides Section II and all subsequent sections if Section I becomes incomplete
      */
@@ -1614,11 +1797,8 @@ public class RegistrationActivity extends AppCompatActivity {
         View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
         
         if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
-            // Section I is complete, reveal Section II
-            if (sectionIIWrapper.getVisibility() != View.VISIBLE) {
-                sectionIIWrapper.setVisibility(View.VISIBLE);
-                updateProgressIndicator();
-            }
+            // Section I is complete, reveal Section II with loading animation
+            revealSectionWithLoading(sectionIIWrapper, progressBarSection2, 1500);
         } else {
             // Section I is incomplete, hide Section II and all subsequent sections
             hideAllSubsequentSections(2);
@@ -1647,11 +1827,8 @@ public class RegistrationActivity extends AppCompatActivity {
         View sectionIIIWrapper = getSectionWrapper(sectionAddress);
         
         if (!firstName.isEmpty() && !lastName.isEmpty() && birthDateValid && phoneValid) {
-            // Section II is complete, reveal Section III
-            if (sectionIIIWrapper.getVisibility() != View.VISIBLE) {
-                sectionIIIWrapper.setVisibility(View.VISIBLE);
-                updateProgressIndicator();
-            }
+            // Section II is complete, reveal Section III with loading animation
+            revealSectionWithLoading(sectionIIIWrapper, progressBarSection3, 1500);
         } else {
             // Section II is incomplete, hide Section III and all subsequent sections
             hideAllSubsequentSections(3);
@@ -1678,11 +1855,8 @@ public class RegistrationActivity extends AppCompatActivity {
         View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
         
         if (provinceValid && municipalityValid && barangayValid && detailedAddressValid) {
-            // Section III is complete, reveal Section IV
-            if (sectionIVWrapper.getVisibility() != View.VISIBLE) {
-                sectionIVWrapper.setVisibility(View.VISIBLE);
-                updateProgressIndicator();
-            }
+            // Section III is complete, reveal Section IV with loading animation
+            revealSectionWithLoading(sectionIVWrapper, progressBarSection4, 1500);
         } else {
             // Section III is incomplete, hide Section IV and all subsequent sections
             hideAllSubsequentSections(4);
@@ -1727,14 +1901,9 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
         if (emailValid && passwordValid && emailValidationPassed) {
-            // Section IV is complete, reveal Section V
+            // Section IV is complete, reveal Section V with loading animation
             // Both Boarders and BH Owners need Section V (Boarders need GCash number, BH Owners need GCash number + QR code)
-            if (sectionVWrapper.getVisibility() != View.VISIBLE) {
-                sectionVWrapper.setVisibility(View.VISIBLE);
-                updateProgressIndicator();
-            } else {
-                updateProgressIndicator();
-            }
+            revealSectionWithLoading(sectionVWrapper, progressBarSection5, 1500);
         } else {
             // Section IV is incomplete, hide Section V
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
@@ -1754,7 +1923,10 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // For both Boarder and BH Owner, check if GCash number is provided
         String gcashNum = etGcashNum.getText().toString().trim();
-        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.replaceAll("[^0-9]", "").length() == 11;
+        // Check if it starts with +63 and has 10 digits after it
+        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.startsWith("+63") && 
+                                gcashNum.length() >= 14 && 
+                                gcashNum.substring(4).replaceAll("[^0-9]", "").length() >= 10;
         
         if (isBoarder) {
             // Boarders only need GCash number (no QR code required)
@@ -1786,6 +1958,9 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionIIWrapper.getVisibility() == View.VISIBLE) {
                 sectionIIWrapper.setVisibility(View.GONE);
             }
+            if (progressBarSection2 != null) {
+                progressBarSection2.setVisibility(View.GONE);
+            }
         }
         
         // Hide Section III (Address) if we're starting from section 3 onwards
@@ -1793,6 +1968,9 @@ public class RegistrationActivity extends AppCompatActivity {
             View sectionIIIWrapper = getSectionWrapper(sectionAddress);
             if (sectionIIIWrapper.getVisibility() == View.VISIBLE) {
                 sectionIIIWrapper.setVisibility(View.GONE);
+            }
+            if (progressBarSection3 != null) {
+                progressBarSection3.setVisibility(View.GONE);
             }
         }
         
@@ -1806,11 +1984,17 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvEmailValidation.setVisibility(View.GONE);
                 }
             }
+            if (progressBarSection4 != null) {
+                progressBarSection4.setVisibility(View.GONE);
+            }
         }
         
         // Hide Section V (Payment Info) if we're starting from section 5 onwards
         if (startSectionNumber <= 5) {
             View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+            if (progressBarSection5 != null) {
+                progressBarSection5.setVisibility(View.GONE);
+            }
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.GONE);
             }

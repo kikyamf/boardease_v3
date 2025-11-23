@@ -192,6 +192,16 @@
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
+            <!-- Loading indicator before Section 2 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
             <!-- Section 2: Personal Information -->
             <FrameLayout
                 android:layout_width="match_parent"
@@ -433,6 +443,16 @@
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
+            <!-- Loading indicator before Section 3 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
             <!-- Section 3: Permanent Address -->
             <FrameLayout
                 android:layout_width="match_parent"
@@ -568,6 +588,16 @@
                 android:layout_height="0dp"
                 android:visibility="gone" />
 
+            <!-- Loading indicator before Section 4 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
             <!-- Section 4: Login Credentials -->
             <FrameLayout
                 android:layout_width="match_parent"
@@ -670,6 +700,16 @@
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
+            <!-- Loading indicator before Section 5 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
             <!-- Section 5: Payment Information -->
             <FrameLayout
                 android:layout_width="match_parent"
@@ -716,7 +756,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@drawable/edittext_background"
-                        android:inputType="number"
+                        android:hint="+63"
+                        android:inputType="phone"
                         android:padding="10dp"
                         android:textColor="@color/black"
                         android:layout_marginBottom="12dp" />
