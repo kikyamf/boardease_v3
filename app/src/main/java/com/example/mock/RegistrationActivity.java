@@ -2226,9 +2226,6 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
         if (emailValid && passwordValid && emailValidationPassed) {
-            String selectedRole = spinnerRole.getSelectedItem().toString();
-            boolean isBoarder = "Boarder".equals(selectedRole);
-            
             if (isBoarder) {
                 // For Boarders: Show special message section instead of Section 5, then reveal Section 6
                 View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
