@@ -606,9 +606,6 @@ public class RegistrationActivity extends AppCompatActivity {
                 handleBackNavigation();
             }
         });
-        
-        // Initialize button state based on Section 1 completion
-        checkSectionICompletion();
     }
 
     /**
@@ -2127,18 +2124,10 @@ public class RegistrationActivity extends AppCompatActivity {
         if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
             // Section I is complete, reveal Section II with loading animation
             revealSectionWithLoading(sectionIIWrapper, progressBarSection2, 1500);
-            // Enable the Register button
-            if (btnNext != null) {
-                btnNext.setEnabled(true);
-            }
         } else {
             // Section I is incomplete, hide Section II and all subsequent sections
             hideAllSubsequentSections(2);
             updateProgressIndicator();
-            // Disable the Register button
-            if (btnNext != null) {
-                btnNext.setEnabled(false);
-            }
         }
     }
     

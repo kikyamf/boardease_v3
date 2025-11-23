@@ -1057,11 +1057,10 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginHorizontal="8dp"
-                android:background="@drawable/button_register_selector"
+                android:backgroundTint="#A18167"
                 android:text="Register"
                 android:textAllCaps="true"
-                android:textColor="@android:color/white"
-                android:enabled="false"/>
+                android:textColor="@android:color/white"/>
 
             <LinearLayout
                 android:orientation="horizontal"
