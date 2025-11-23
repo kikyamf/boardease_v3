@@ -49,8 +49,9 @@ import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.widget.ImageButton;
 import com.android.volley.AuthFailureError;
-import com.android.volley.toolbox.VolleyMultipartRequest;
-import com.android.volley.toolbox.VolleyMultipartRequest.DataPart;
+import com.android.volley.NetworkResponse;
+import com.example.mock.VolleyMultipartRequest;
+import com.example.mock.VolleyMultipartRequest.DataPart;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
