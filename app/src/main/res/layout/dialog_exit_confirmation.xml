@@ -47,14 +47,14 @@
             android:minWidth="100dp"
             android:textAllCaps="false" />
 
-        <!-- Continue Button -->
+        <!-- Leave Button -->
         <Button
             android:id="@+id/btnContinue"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:text="Continue"
+            android:text="Leave"
             android:textColor="@android:color/white"
-            android:backgroundTint="#A18167"
+            android:backgroundTint="#F44336"
             android:minWidth="100dp"
             android:textAllCaps="false" />
 
