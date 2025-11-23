@@ -1196,6 +1196,7 @@ public class RegistrationActivity extends AppCompatActivity {
         TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
         ImageView ivQrPhoto = dialogView.findViewById(R.id.ivQrPhoto);
         ProgressBar progressBarVerifying = dialogView.findViewById(R.id.progressBarVerifying);
+        com.google.android.material.card.MaterialCardView cardResultMessage = dialogView.findViewById(R.id.cardResultMessage);
         TextView tvResultMessage = dialogView.findViewById(R.id.tvResultMessage);
         Button btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
         
@@ -1228,7 +1229,7 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvDialogTitle.setText("Verification Successful");
                     tvResultMessage.setText("✅ Valid GCash QR code detected!");
                     tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_green_dark));
-                    tvResultMessage.setVisibility(View.VISIBLE);
+                    cardResultMessage.setVisibility(View.VISIBLE);
                     btnCloseDialog.setVisibility(View.VISIBLE);
                     
                     // Check section V completion after QR code is verified
@@ -1255,7 +1256,7 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvDialogTitle.setText("Verification Failed");
                     tvResultMessage.setText("❌ " + helpfulMessage);
                     tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_red_dark));
-                    tvResultMessage.setVisibility(View.VISIBLE);
+                    cardResultMessage.setVisibility(View.VISIBLE);
                     btnCloseDialog.setVisibility(View.VISIBLE);
                 }
                 

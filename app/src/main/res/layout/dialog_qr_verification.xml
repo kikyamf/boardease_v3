@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -16,17 +17,25 @@
         android:textStyle="bold"
         android:textColor="@android:color/black"
         android:gravity="center"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="20dp" />
 
-    <!-- Selected Photo Display -->
-    <ImageView
-        android:id="@+id/ivQrPhoto"
+    <!-- QR Photo Card -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:layout_marginBottom="16dp"
-        android:scaleType="centerCrop"
-        android:background="@android:color/darker_gray"
-        android:contentDescription="Selected QR Code Photo" />
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white">
+
+        <ImageView
+            android:id="@+id/ivQrPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/edittext_background"
+            android:contentDescription="Selected QR Code Photo" />
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Progress Bar -->
     <ProgressBar
@@ -35,34 +44,48 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginBottom="16dp"
-        android:visibility="visible" />
+        android:visibility="visible"
+        android:indeterminateTint="#A18167" />
 
-    <!-- Result Message -->
-    <TextView
-        android:id="@+id/tvResultMessage"
+    <!-- Result Message Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardResultMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Verifying QR code..."
-        android:textSize="16sp"
-        android:textColor="@android:color/black"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone" />
+        android:layout_marginBottom="20dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@android:color/white">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvResultMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Verifying QR code..."
+                android:textSize="16sp"
+                android:textColor="@android:color/black"
+                android:gravity="center"
+                android:layout_marginBottom="12dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Close Button -->
     <Button
         android:id="@+id/btnCloseDialog"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="Close"
+        android:textAllCaps="true"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#A18167"
         android:visibility="gone" />
 
 </LinearLayout>
-
-
-
-
-
-
-
-
