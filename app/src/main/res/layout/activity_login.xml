@@ -141,7 +141,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                    android:gravity="bottom"
                     android:layout_marginTop="20dp">
 
                     <CheckBox
@@ -149,7 +149,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Remember me"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:backgroundTint="#A18167"
                         android:textColor="@color/black" />
 
@@ -164,7 +164,10 @@
                         android:layout_height="wrap_content"
                         android:text="Forgot password?"
                         android:textColor="#A18167"
-                        android:textSize="14sp"/>
+                        android:textSize="12sp"
+                        android:gravity="bottom"
+                        android:includeFontPadding="false"
+                        android:layout_gravity="bottom"/>
                 </LinearLayout>
 
                 <!-- Login button -->

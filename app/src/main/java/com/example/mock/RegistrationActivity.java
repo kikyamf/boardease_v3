@@ -47,12 +47,29 @@ public class RegistrationActivity extends AppCompatActivity {
 
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etBarangay, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
+    TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
+    TextView tvGcashNo, tvGcashQR;
     ImageView UploadQr, ivTogglePassword;
+    ProgressBar progressBarSection2, progressBarSection3, progressBarSection4, progressBarSection5;
     Button btnNext;
     boolean isPasswordVisible = false;
 
     private Uri selectedQrUri; // store the selected image URI
     private Runnable validationRunnable; // for real-time email validation
+    
+    // Section cards for progressive reveal
+    private com.google.android.material.card.MaterialCardView sectionAccountType;
+    private com.google.android.material.card.MaterialCardView sectionPersonalInfo;
+    private com.google.android.material.card.MaterialCardView sectionAddress;
+    private com.google.android.material.card.MaterialCardView sectionLoginCredentials;
+    private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
+    
+    // Progress indicator circles
+    private TextView progressCircle1;
+    private TextView progressCircle2;
+    private TextView progressCircle3;
+    private TextView progressCircle4;
+    private TextView progressCircle5;
     
     // Address picker data
     private String selectedProvince = "";
@@ -97,18 +114,50 @@ public class RegistrationActivity extends AppCompatActivity {
 
         tvLogin = findViewById(R.id.tvLogin);
         tvEmailValidation = findViewById(R.id.tvEmailValidation);
+        
+        // Get error TextViews
+        tvFirstNameError = findViewById(R.id.tvFirstNameError);
+        tvLastNameError = findViewById(R.id.tvLastNameError);
+        tvMiddleNameError = findViewById(R.id.tvMiddleNameError);
+        tvBirthDateError = findViewById(R.id.tvBirthDateError);
+        tvBarangayError = findViewById(R.id.tvBarangayError);
+        tvDetailedAddressError = findViewById(R.id.tvDetailedAddressError);
+        
+        // Get GCash TextViews
+        tvGcashNo = findViewById(R.id.tvGcashNo);
+        tvGcashQR = findViewById(R.id.tvGcashQR);
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        
+        // Get ProgressBars for section loading
+        progressBarSection2 = findViewById(R.id.progressBarSection2);
+        progressBarSection3 = findViewById(R.id.progressBarSection3);
+        progressBarSection4 = findViewById(R.id.progressBarSection4);
+        progressBarSection5 = findViewById(R.id.progressBarSection5);
+        
+        // Get section cards
+        sectionAccountType = findViewById(R.id.sectionAccountType);
+        sectionPersonalInfo = findViewById(R.id.sectionPersonalInfo);
+        sectionAddress = findViewById(R.id.sectionAddress);
+        sectionLoginCredentials = findViewById(R.id.sectionLoginCredentials);
+        sectionPaymentInfo = findViewById(R.id.sectionPaymentInfo);
+        
+        // Get progress indicator circles
+        progressCircle1 = findViewById(R.id.progressCircle1);
+        progressCircle2 = findViewById(R.id.progressCircle2);
+        progressCircle3 = findViewById(R.id.progressCircle3);
+        progressCircle4 = findViewById(R.id.progressCircle4);
+        progressCircle5 = findViewById(R.id.progressCircle5);
+        
+        // Initialize progress indicator (Circle 1 is filled by default)
+        updateProgressIndicator();
         
         // Setup back button
         ImageView backButton = findViewById(R.id.backButton);
         if (backButton != null) {
             backButton.setOnClickListener(v -> {
-                // Go back to Login activity
-                Intent intent = new Intent(RegistrationActivity.this, Login.class);
-                startActivity(intent);
-                finish();
+                handleBackNavigation();
             });
         }
 
@@ -137,6 +186,9 @@ public class RegistrationActivity extends AppCompatActivity {
                     // Clear validation message if email is empty
                     tvEmailValidation.setVisibility(View.GONE);
                 }
+                
+                // Check section IV completion
+                checkSectionIVCompletion();
             }
         });
 
@@ -194,7 +246,7 @@ public class RegistrationActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRole.setAdapter(adapter);
 
-        // Setup role spinner listener to show/hide GCash fields
+        // Setup role spinner listener to show/hide GCash fields and check section completion
         spinnerRole.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
@@ -202,19 +254,33 @@ public class RegistrationActivity extends AppCompatActivity {
                 android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
                 
                 if ("Boarder".equals(selectedRole)) {
-                    // Hide GCash fields for Boarder
-                    llGcash.setVisibility(android.view.View.GONE);
-                } else {
-                    // Show GCash fields for BH Owner or other roles
+                    // Show GCash Number field only for Boarder (hide QR code)
                     llGcash.setVisibility(android.view.View.VISIBLE);
+                    tvGcashNo.setVisibility(android.view.View.VISIBLE);
+                    etGcashNum.setVisibility(android.view.View.VISIBLE);
+                    tvGcashQR.setVisibility(android.view.View.GONE);
+                    UploadQr.setVisibility(android.view.View.GONE);
+                } else if ("BH Owner".equals(selectedRole)) {
+                    // Show both GCash Number and QR code for BH Owner
+                    llGcash.setVisibility(android.view.View.VISIBLE);
+                    tvGcashNo.setVisibility(android.view.View.VISIBLE);
+                    etGcashNum.setVisibility(android.view.View.VISIBLE);
+                    tvGcashQR.setVisibility(android.view.View.VISIBLE);
+                    UploadQr.setVisibility(android.view.View.VISIBLE);
+                } else {
+                    // Hide all GCash fields for "Select --"
+                    llGcash.setVisibility(android.view.View.GONE);
                 }
+                
+                // Check if section I is complete and reveal section II
+                checkSectionICompletion();
             }
 
             @Override
             public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                // Show GCash fields by default if nothing selected
+                // Hide GCash fields by default if nothing selected
                 android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
-                llGcash.setVisibility(android.view.View.VISIBLE);
+                llGcash.setVisibility(android.view.View.GONE);
             }
         });
 
@@ -265,15 +331,36 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Setup phone number field with fixed +63 prefix and formatting
         setupPhoneNumberField();
-
-        //Set the calendar for the birthdate
+        
+        // Setup GCash number field with fixed +63 prefix and formatting
+        setupGcashNumberField();
+        
+        // Setup name field validations with input filters and real-time validation
+        setupNameFieldValidation(etFirstName, tvFirstNameError, "First Name");
+        setupNameFieldValidation(etLastName, tvLastNameError, "Last Name");
+        setupNameFieldValidation(etMiddleName, tvMiddleNameError, "Middle Name");
+        
+        // Setup address field validations
+        setupAddressFieldValidation();
+        
+        // Set the calendar for the birthdate with 18+ restriction
         etBirthDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final Calendar calendar = Calendar.getInstance();
-                int year = calendar.get(Calendar.YEAR);
-                int month = calendar.get(Calendar.MONTH);
-                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int currentYear = calendar.get(Calendar.YEAR);
+                int currentMonth = calendar.get(Calendar.MONTH);
+                int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
+                
+                // Calculate maximum allowed year (18 years ago)
+                int maxYear = currentYear - 18;
+                int maxMonth = currentMonth;
+                int maxDay = currentDay;
+                
+                // Default to 18 years ago
+                int defaultYear = maxYear;
+                int defaultMonth = maxMonth;
+                int defaultDay = maxDay;
 
                 DatePickerDialog datePickerDialog = new DatePickerDialog(
                         RegistrationActivity.this,
@@ -281,14 +368,53 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Format: MM/DD/YYYY
                             String date = (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear;
                             etBirthDate.setText(date);
+                            
+                            // Validate birth date and show error if needed
+                            validateBirthDate(date);
+                            
+                            // Check section II completion after birth date is set
+                            checkSectionIICompletion();
                         },
-                        year, month, day
+                        defaultYear, defaultMonth, defaultDay
                 );
 
-                // Optional: restrict future dates (no selecting birth date in future)
-                datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+                // Restrict dates: no future dates and must be at least 18 years old
+                Calendar maxDateCalendar = Calendar.getInstance();
+                maxDateCalendar.set(maxYear, maxMonth, maxDay);
+                datePickerDialog.getDatePicker().setMaxDate(maxDateCalendar.getTimeInMillis());
+                
+                // Set minimum date to 100 years ago (reasonable limit)
+                Calendar minDateCalendar = Calendar.getInstance();
+                minDateCalendar.set(currentYear - 100, 0, 1);
+                datePickerDialog.getDatePicker().setMinDate(minDateCalendar.getTimeInMillis());
 
                 datePickerDialog.show();
+            }
+        });
+        
+        // Setup listeners for section II fields to check completion
+        etFirstName.addTextChangedListener(createSectionIICheckListener());
+        etLastName.addTextChangedListener(createSectionIICheckListener());
+        etPhone.addTextChangedListener(createSectionIICheckListener());
+        
+        // Setup listeners for section III fields to check completion
+        etBarangay.addTextChangedListener(createSectionIIICheckListener());
+        etDetailedAddress.addTextChangedListener(createSectionIIICheckListener());
+        
+        // Setup listeners for section IV fields to check completion
+        etPassword.addTextChangedListener(createSectionIVCheckListener());
+        
+        // Setup listener for section V fields to check completion
+        etGcashNum.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionVCompletion();
             }
         });
 
@@ -371,8 +497,7 @@ public class RegistrationActivity extends AppCompatActivity {
         tvLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent a = new Intent(RegistrationActivity.this, Login.class);
-                startActivity(a);
+                handleBackNavigation();
             }
         });
     }
@@ -483,6 +608,8 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Email is valid - show success message
                             tvEmailValidation.setText("✓ " + message);
                             tvEmailValidation.setTextColor(getResources().getColor(android.R.color.black));
+                            // Check section IV completion after email validation
+                            checkSectionIVCompletion();
                         } else {
                             // Email validation failed - show error message
                             tvEmailValidation.setText("✗ " + message);
@@ -548,17 +675,23 @@ public class RegistrationActivity extends AppCompatActivity {
                     a.putExtra("email", etEmail.getText().toString().trim());
                     a.putExtra("password", etPassword.getText().toString().trim());
                     
-                    // Only add GCash data if not Boarder
+                    // Convert GCash format: +63 992 531 1409 -> 09925311409 (start with 0, no +63)
+                    String gcashFormatted = etGcashNum.getText().toString().trim();
+                    // Extract digits after +63 (skip "+63 ", get the 10 digits after)
+                    String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
+                    // Add 0 at the start: 09925311409 (11 digits starting with 0)
+                    String gcashNumber = "0" + gcashDigitsAfterPlus63;
+                    // GCash number is required for both Boarder and BH Owner
+                    a.putExtra("gcashNum", gcashNumber);
+                    
+                    // QR code is only required for BH Owner
                     if (!isBoarder) {
-                        a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
-                        
                         // if you want to send QR URI
                         if (selectedQrUri != null) {
                             a.putExtra("qrUri", selectedQrUri.toString());
                         }
                     } else {
-                        // Boarder doesn't need GCash
-                        a.putExtra("gcashNum", "");
+                        // Boarder doesn't need QR code
                         a.putExtra("qrUri", "");
                     }
 
@@ -760,22 +893,30 @@ public class RegistrationActivity extends AppCompatActivity {
             return "Password must contain at least one number";
         }
         
-        // 10. Validate GCash Number (only for BH Owner)
-        if (!isBoarder) {
-            String gcashNum = etGcashNum.getText().toString().trim();
-            if (gcashNum.isEmpty()) {
+        // 10. Validate GCash Number (required for both Boarder and BH Owner)
+        String gcashNum = etGcashNum.getText().toString().trim();
+        if (gcashNum.isEmpty()) {
+            if (isBoarder) {
+                return "GCash Number is required for Boarder";
+            } else {
                 return "GCash Number is required for BH Owner";
             }
-            // GCash format: 09xxxxxxxxx (11 digits starting with 09)
-            String gcashDigits = gcashNum.replaceAll("[^0-9]", "");
-            if (gcashDigits.length() != 11) {
-                return "GCash Number must be 11 digits (09xxxxxxxxx)";
-            }
-            if (!gcashDigits.matches("^09\\d{9}$")) {
-                return "GCash Number must start with 09 (Philippine mobile format)";
-            }
-            
-            // 11. Validate GCash QR Code (only for BH Owner)
+        }
+        // Extract digits only (+63 represents 0, so +63 992 531 1409 = 09925311409)
+        if (!gcashNum.startsWith("+63")) {
+            return "GCash Number must start with +63";
+        }
+        String gcashDigitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
+        if (gcashDigitsAfterPlus63.length() != 10) {
+            return "GCash Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
+        }
+        // First digit after +63 should be 9 (Philippine mobile format)
+        if (!gcashDigitsAfterPlus63.startsWith("9")) {
+            return "GCash Number must start with 9 after +63 (Philippine mobile format)";
+        }
+        
+        // 11. Validate GCash QR Code (only for BH Owner)
+        if (!isBoarder) {
             if (UploadQr.getDrawable() == null) {
                 return "GCash QR Code image is required for BH Owner";
             }
@@ -818,7 +959,7 @@ public class RegistrationActivity extends AppCompatActivity {
                 String currentText = s.toString();
                 
                 // Always ensure +63 is at the start
-                if (!currentText.startsWith("+63")) {
+                if (!currentText.startsWith("+63") || currentText.length() < 4) {
                     // If user tries to delete +63, restore it
                     etPhone.removeTextChangedListener(this);
                     etPhone.setText("+63 ");
@@ -829,7 +970,10 @@ public class RegistrationActivity extends AppCompatActivity {
                 }
                 
                 // Extract only numbers after +63 (skip "+63 " = 4 characters)
-                String digitsOnly = currentText.substring(4).replaceAll("[^0-9]", "");
+                // Safety check: ensure text is long enough before substring
+                String digitsOnly = currentText.length() >= 4 
+                    ? currentText.substring(4).replaceAll("[^0-9]", "")
+                    : "";
                 
                 // Limit to 10 digits (since +63 represents 0, total should be 11 digits: 0 + 10 digits = 11)
                 if (digitsOnly.length() > 10) {
@@ -907,6 +1051,130 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     /**
+     * Sets up GCash number field with fixed +63 prefix and formatting
+     * Format: +63 9XX XXX XXXX
+     */
+    private void setupGcashNumberField() {
+        // Set initial value to +63
+        etGcashNum.setText("+63 ");
+        etGcashNum.setSelection(etGcashNum.getText().length());
+        
+        etGcashNum.addTextChangedListener(new android.text.TextWatcher() {
+            private boolean isFormatting = false;
+            private String previousText = "+63 ";
+            
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                previousText = s.toString();
+            }
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Do nothing here
+            }
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (isFormatting) {
+                    return;
+                }
+                
+                isFormatting = true;
+                String currentText = s.toString();
+                
+                // Always ensure +63 is at the start
+                if (!currentText.startsWith("+63") || currentText.length() < 4) {
+                    // If user tries to delete +63, restore it
+                    etGcashNum.removeTextChangedListener(this);
+                    etGcashNum.setText("+63 ");
+                    etGcashNum.setSelection(etGcashNum.getText().length());
+                    etGcashNum.addTextChangedListener(this);
+                    isFormatting = false;
+                    return;
+                }
+                
+                // Extract only numbers after +63 (skip "+63 " = 4 characters)
+                // Safety check: ensure text is long enough before substring
+                String digitsOnly = currentText.length() >= 4 
+                    ? currentText.substring(4).replaceAll("[^0-9]", "")
+                    : "";
+                
+                // Limit to 10 digits (since +63 represents 0, total should be 11 digits: 0 + 10 digits = 11)
+                if (digitsOnly.length() > 10) {
+                    digitsOnly = digitsOnly.substring(0, 10);
+                }
+                
+                // Format as: +63 9XX XXX XXXX
+                // Example: +63 992 531 1409
+                StringBuilder formatted = new StringBuilder("+63 ");
+                
+                if (digitsOnly.length() > 0) {
+                    // First 3 digits (e.g., 992)
+                    if (digitsOnly.length() <= 3) {
+                        formatted.append(digitsOnly);
+                    } else {
+                        formatted.append(digitsOnly.substring(0, 3));
+                        formatted.append(" ");
+                        
+                        // Next 3 digits (e.g., 531)
+                        if (digitsOnly.length() <= 6) {
+                            formatted.append(digitsOnly.substring(3));
+                        } else {
+                            formatted.append(digitsOnly.substring(3, 6));
+                            formatted.append(" ");
+                            
+                            // Last 4 digits (e.g., 1409)
+                            if (digitsOnly.length() <= 10) {
+                                formatted.append(digitsOnly.substring(6));
+                            } else {
+                                formatted.append(digitsOnly.substring(6, 10));
+                            }
+                        }
+                    }
+                }
+                
+                // Update the text
+                etGcashNum.removeTextChangedListener(this);
+                etGcashNum.setText(formatted.toString());
+                
+                // Set cursor position - place it at the end of what was typed
+                // Format: +63 XXX XXX XXXX (10 digits)
+                int digitCount = digitsOnly.length();
+                int cursorPosition;
+                
+                if (digitCount == 0) {
+                    cursorPosition = 4; // After "+63 "
+                } else if (digitCount <= 3) {
+                    cursorPosition = 4 + digitCount; // After "+63 " + digits
+                } else if (digitCount <= 6) {
+                    cursorPosition = 5 + digitCount; // After "+63 " + first 3 + space + remaining
+                } else {
+                    cursorPosition = 6 + digitCount; // After "+63 " + first 3 + space + next 3 + space + remaining
+                }
+                
+                etGcashNum.setSelection(Math.min(cursorPosition, formatted.length()));
+                
+                etGcashNum.addTextChangedListener(this);
+                isFormatting = false;
+            }
+        });
+        
+        // Prevent selection/deletion of +63 prefix
+        etGcashNum.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == android.view.KeyEvent.KEYCODE_DEL) {
+                EditText editText = (EditText) v;
+                int cursorPosition = editText.getSelectionStart();
+                
+                // Prevent deleting +63
+                if (cursorPosition <= 4) { // +63 = 4 characters
+                    return true; // Consume the event
+                }
+            }
+            return false;
+        });
+    }
+    
+    /**
      * Verifies and sets QR image if approved
      */
     private void verifyAndSetQrImage(Uri imageUri) {
@@ -924,6 +1192,7 @@ public class RegistrationActivity extends AppCompatActivity {
         TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
         ImageView ivQrPhoto = dialogView.findViewById(R.id.ivQrPhoto);
         ProgressBar progressBarVerifying = dialogView.findViewById(R.id.progressBarVerifying);
+        com.google.android.material.card.MaterialCardView cardResultMessage = dialogView.findViewById(R.id.cardResultMessage);
         TextView tvResultMessage = dialogView.findViewById(R.id.tvResultMessage);
         Button btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
         
@@ -956,8 +1225,11 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvDialogTitle.setText("Verification Successful");
                     tvResultMessage.setText("✅ Valid GCash QR code detected!");
                     tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_green_dark));
-                    tvResultMessage.setVisibility(View.VISIBLE);
+                    cardResultMessage.setVisibility(View.VISIBLE);
                     btnCloseDialog.setVisibility(View.VISIBLE);
+                    
+                    // Check section V completion after QR code is verified
+                    checkSectionVCompletion();
                 } else {
                     Log.d("QR_VALIDATION", "❌ QR CODE VALIDATION FAILED");
                     Log.d("QR_VALIDATION", "Failure reason: " + reason);
@@ -980,7 +1252,7 @@ public class RegistrationActivity extends AppCompatActivity {
                     tvDialogTitle.setText("Verification Failed");
                     tvResultMessage.setText("❌ " + helpfulMessage);
                     tvResultMessage.setTextColor(ContextCompat.getColor(RegistrationActivity.this, android.R.color.holo_red_dark));
-                    tvResultMessage.setVisibility(View.VISIBLE);
+                    cardResultMessage.setVisibility(View.VISIBLE);
                     btnCloseDialog.setVisibility(View.VISIBLE);
                 }
                 
@@ -1041,6 +1313,8 @@ public class RegistrationActivity extends AppCompatActivity {
                     selectedBarangay = "";
                 }
                 updateCompleteAddress();
+                // Check section III completion
+                checkSectionIIICompletion();
             }
             
             @Override
@@ -1057,6 +1331,8 @@ public class RegistrationActivity extends AppCompatActivity {
                     selectedMunicipality = "";
                 }
                 updateCompleteAddress();
+                // Check section III completion
+                checkSectionIIICompletion();
             }
             
             @Override
@@ -1403,5 +1679,743 @@ public class RegistrationActivity extends AppCompatActivity {
         }
         
         etAddress.setText(completeAddress.toString());
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section II completion
+     */
+    private android.text.TextWatcher createSectionIICheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIICompletion();
+            }
+        };
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section III completion
+     */
+    private android.text.TextWatcher createSectionIIICheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIIICompletion();
+            }
+        };
+    }
+    
+    /**
+     * Creates a text watcher listener that checks section IV completion
+     */
+    private android.text.TextWatcher createSectionIVCheckListener() {
+        return new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                checkSectionIVCompletion();
+            }
+        };
+    }
+    
+    /**
+     * Gets the parent FrameLayout wrapper for a CardView to control visibility
+     */
+    private View getSectionWrapper(com.google.android.material.card.MaterialCardView cardView) {
+        if (cardView != null && cardView.getParent() instanceof ViewGroup) {
+            return (View) cardView.getParent();
+        }
+        return cardView;
+    }
+    
+    /**
+     * Reveals a section with a loading animation (1-2 seconds delay)
+     * @param sectionWrapper The section wrapper to reveal
+     * @param progressBar The progress bar to show during loading
+     * @param delayMs Delay in milliseconds (default 1500ms = 1.5 seconds)
+     */
+    private void revealSectionWithLoading(View sectionWrapper, ProgressBar progressBar, int delayMs) {
+        if (sectionWrapper.getVisibility() == View.VISIBLE) {
+            return; // Already visible
+        }
+        
+        // Show progress bar
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+        
+        // Hide section initially
+        sectionWrapper.setVisibility(View.GONE);
+        
+        // Use Handler to delay section reveal
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            // Hide progress bar
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            
+            // Show section with animation
+            sectionWrapper.setVisibility(View.VISIBLE);
+            sectionWrapper.setAlpha(0f);
+            sectionWrapper.animate()
+                    .alpha(1f)
+                    .setDuration(300)
+                    .setListener(null);
+            
+            // Update progress indicator
+            updateProgressIndicator();
+        }, delayMs);
+    }
+    
+    /**
+     * Checks if Section I (Account Type) is complete and reveals Section II
+     * Also hides Section II and all subsequent sections if Section I becomes incomplete
+     */
+    private void checkSectionICompletion() {
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        View sectionIWrapper = getSectionWrapper(sectionAccountType);
+        View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+        
+        if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
+            // Section I is complete, reveal Section II with loading animation
+            revealSectionWithLoading(sectionIIWrapper, progressBarSection2, 1500);
+        } else {
+            // Section I is incomplete, hide Section II and all subsequent sections
+            hideAllSubsequentSections(2);
+            updateProgressIndicator();
+        }
+    }
+    
+    /**
+     * Checks if Section II (Personal Information) is complete and reveals Section III
+     * Also hides Section III and all subsequent sections if Section II becomes incomplete
+     */
+    private void checkSectionIICompletion() {
+        // Check if all required fields in Section II are filled
+        String firstName = etFirstName.getText().toString().trim();
+        String lastName = etLastName.getText().toString().trim();
+        String birthDate = etBirthDate.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        
+        // Phone validation: should have at least +63 and 10 digits after it
+        boolean phoneValid = phone.length() >= 14 && phone.startsWith("+63") && 
+                            phone.substring(4).replaceAll("[^0-9]", "").length() >= 10;
+        
+        // Birth date validation: should match MM/DD/YYYY format
+        boolean birthDateValid = birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$");
+        
+        View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+        
+        if (!firstName.isEmpty() && !lastName.isEmpty() && birthDateValid && phoneValid) {
+            // Section II is complete, reveal Section III with loading animation
+            revealSectionWithLoading(sectionIIIWrapper, progressBarSection3, 1500);
+        } else {
+            // Section II is incomplete, hide Section III and all subsequent sections
+            hideAllSubsequentSections(3);
+            updateProgressIndicator();
+        }
+    }
+    
+    /**
+     * Checks if Section III (Permanent Address) is complete and reveals Section IV
+     * Also hides Section IV and all subsequent sections if Section III becomes incomplete
+     */
+    private void checkSectionIIICompletion() {
+        // Check if all required fields in Section III are filled
+        String province = spinnerProvince.getSelectedItem().toString();
+        String municipality = spinnerMunicipality.getSelectedItem().toString();
+        String barangay = etBarangay.getText().toString().trim();
+        String detailedAddress = etDetailedAddress.getText().toString().trim();
+        
+        boolean provinceValid = !province.equals("Select Province") && !province.isEmpty();
+        boolean municipalityValid = !municipality.equals("Select Municipality") && !municipality.isEmpty();
+        boolean barangayValid = !barangay.isEmpty();
+        boolean detailedAddressValid = !detailedAddress.isEmpty();
+        
+        View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+        
+        if (provinceValid && municipalityValid && barangayValid && detailedAddressValid) {
+            // Section III is complete, reveal Section IV with loading animation
+            revealSectionWithLoading(sectionIVWrapper, progressBarSection4, 1500);
+        } else {
+            // Section III is incomplete, hide Section IV and all subsequent sections
+            hideAllSubsequentSections(4);
+            updateProgressIndicator();
+        }
+    }
+    
+    /**
+     * Checks if Section IV (Login Credentials) is complete and reveals Section V
+     */
+    private void checkSectionIVCompletion() {
+        // Check if all required fields in Section IV are filled
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        
+        // Basic email format validation
+        boolean emailValid = !email.isEmpty() && email.contains("@") && email.contains(".");
+        
+        // Password validation: at least 8 characters
+        boolean passwordValid = password.length() >= 8;
+        
+        // For email validation status - if validation has been triggered and visible, it must pass
+        // If validation hasn't been triggered yet, we just need valid format
+        boolean emailValidationPassed = true;
+        if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+            String validationText = tvEmailValidation.getText().toString();
+            // If validation message is visible, check if it's successful (starts with ✓)
+            // If it shows an error (starts with ✗), validation failed
+            if (validationText.startsWith("✗")) {
+                emailValidationPassed = false;
+            } else if (validationText.startsWith("✓")) {
+                emailValidationPassed = true;
+            } else {
+                // Still validating, don't reveal next section yet
+                emailValidationPassed = false;
+            }
+        }
+        
+        View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
+        // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
+        if (emailValid && passwordValid && emailValidationPassed) {
+            // Section IV is complete, reveal Section V with loading animation
+            // Both Boarders and BH Owners need Section V (Boarders need GCash number, BH Owners need GCash number + QR code)
+            revealSectionWithLoading(sectionVWrapper, progressBarSection5, 1500);
+        } else {
+            // Section IV is incomplete, hide Section V
+            if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                sectionVWrapper.setVisibility(View.GONE);
+            }
+            updateProgressIndicator();
+        }
+    }
+    
+    /**
+     * Checks if Section V (Payment Information) completion
+     * Boarders need GCash number only, BH Owners need both GCash number and QR code
+     */
+    private void checkSectionVCompletion() {
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
+        // For both Boarder and BH Owner, check if GCash number is provided
+        String gcashNum = etGcashNum.getText().toString().trim();
+        // Check if it starts with +63 and has 10 digits after it
+        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.startsWith("+63") && 
+                                gcashNum.length() >= 14 && 
+                                gcashNum.substring(4).replaceAll("[^0-9]", "").length() >= 10;
+        
+        if (isBoarder) {
+            // Boarders only need GCash number (no QR code required)
+            // Section V completion doesn't reveal a new section, but we can use this for final validation
+            // This method is called when GCash fields are updated to ensure data is ready for submission
+            return;
+        }
+        
+        // For BH Owner, also check if QR code is provided
+        boolean qrCodeValid = selectedQrUri != null;
+        
+        // Section V completion doesn't reveal a new section, but we can use this for final validation
+        // This method is called when GCash fields are updated to ensure data is ready for submission
+    }
+    
+    /**
+     * Hides all subsequent sections starting from the given section number
+     * Used when an earlier section becomes incomplete to cascade hide all dependent sections
+     * @param startSectionNumber The section number to start hiding from (2 = Section II, 3 = Section III, etc.)
+     *                           All sections from this number onwards will be hidden
+     */
+    private void hideAllSubsequentSections(int startSectionNumber) {
+        // Section numbers: 2 = Section II (Personal Info), 3 = Section III (Address),
+        // 4 = Section IV (Login Credentials), 5 = Section V (Payment Info)
+        
+        // Hide Section II (Personal Info) if we're starting from section 2 onwards
+        if (startSectionNumber <= 2) {
+            View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+            if (sectionIIWrapper.getVisibility() == View.VISIBLE) {
+                sectionIIWrapper.setVisibility(View.GONE);
+            }
+            if (progressBarSection2 != null) {
+                progressBarSection2.setVisibility(View.GONE);
+            }
+        }
+        
+        // Hide Section III (Address) if we're starting from section 3 onwards
+        if (startSectionNumber <= 3) {
+            View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+            if (sectionIIIWrapper.getVisibility() == View.VISIBLE) {
+                sectionIIIWrapper.setVisibility(View.GONE);
+            }
+            if (progressBarSection3 != null) {
+                progressBarSection3.setVisibility(View.GONE);
+            }
+        }
+        
+        // Hide Section IV (Login Credentials) if we're starting from section 4 onwards
+        if (startSectionNumber <= 4) {
+            View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+            if (sectionIVWrapper.getVisibility() == View.VISIBLE) {
+                sectionIVWrapper.setVisibility(View.GONE);
+                // Also clear email validation message when hiding login section
+                if (tvEmailValidation.getVisibility() == View.VISIBLE) {
+                    tvEmailValidation.setVisibility(View.GONE);
+                }
+            }
+            if (progressBarSection4 != null) {
+                progressBarSection4.setVisibility(View.GONE);
+            }
+        }
+        
+        // Hide Section V (Payment Info) if we're starting from section 5 onwards
+        if (startSectionNumber <= 5) {
+            View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+            if (progressBarSection5 != null) {
+                progressBarSection5.setVisibility(View.GONE);
+            }
+            if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                sectionVWrapper.setVisibility(View.GONE);
+            }
+        }
+    }
+    
+    /**
+     * Updates the progress indicator circles based on which sections are visible/completed
+     * Circle 1 is always filled (Section 1 is always visible)
+     * Subsequent circles are filled when their corresponding section becomes visible
+     */
+    private void updateProgressIndicator() {
+        if (progressCircle1 == null || progressCircle2 == null || progressCircle3 == null ||
+            progressCircle4 == null || progressCircle5 == null) {
+            return; // Progress circles not initialized yet
+        }
+        
+        // Circle 1 is always filled (Section 1 is always visible)
+        progressCircle1.setBackgroundResource(R.drawable.progress_circle_filled);
+        progressCircle1.setTextColor(getResources().getColor(android.R.color.white));
+        
+        // Check visibility of each section wrapper and fill corresponding circle
+        View sectionIIWrapper = getSectionWrapper(sectionPersonalInfo);
+        if (sectionIIWrapper != null && sectionIIWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle2.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle2.setTextColor(getResources().getColor(android.R.color.white));
+        } else {
+            progressCircle2.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle2.setTextColor(0xFF666666);
+        }
+        
+        View sectionIIIWrapper = getSectionWrapper(sectionAddress);
+        if (sectionIIIWrapper != null && sectionIIIWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle3.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle3.setTextColor(getResources().getColor(android.R.color.white));
+        } else {
+            progressCircle3.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle3.setTextColor(0xFF666666);
+        }
+        
+        View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
+        if (sectionIVWrapper != null && sectionIVWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle4.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle4.setTextColor(getResources().getColor(android.R.color.white));
+        } else {
+            progressCircle4.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle4.setTextColor(0xFF666666);
+        }
+        
+        View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
+        if (sectionVWrapper != null && sectionVWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle5.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle5.setTextColor(getResources().getColor(android.R.color.white));
+        } else {
+            progressCircle5.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle5.setTextColor(0xFF666666);
+        }
+    }
+    
+    /**
+     * Sets up validation for name fields (First, Last, Middle)
+     * - Capital letters by default
+     * - Only letters, spaces, hyphens, apostrophes allowed
+     * - Min: 2 chars (Middle name can be optional)
+     * - Max: 50 chars
+     * - Real-time validation with visual feedback
+     */
+    private void setupNameFieldValidation(EditText editText, TextView errorTextView, String fieldName) {
+        // Add input filter to restrict characters (letters, spaces, hyphens, apostrophes only)
+        android.text.InputFilter[] filters = new android.text.InputFilter[] {
+            new android.text.InputFilter() {
+                @Override
+                public CharSequence filter(CharSequence source, int start, int end,
+                                         android.text.Spanned dest, int dstart, int dend) {
+                    // Allow letters, spaces, hyphens, and apostrophes
+                    for (int i = start; i < end; i++) {
+                        char c = source.charAt(i);
+                        if (!Character.isLetter(c) && c != ' ' && c != '-' && c != '\'') {
+                            return ""; // Reject the character
+                        }
+                    }
+                    return null; // Accept the input
+                }
+            },
+            new android.text.InputFilter.LengthFilter(50) // Max 50 characters
+        };
+        editText.setFilters(filters);
+        
+        // Add TextWatcher for real-time validation
+        editText.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString().trim();
+                String error = validateNameField(text, fieldName, fieldName.equals("Middle Name"));
+                showFieldError(editText, errorTextView, error);
+                
+                // Check section completion if it's First or Last name
+                if (fieldName.equals("First Name") || fieldName.equals("Last Name")) {
+                    checkSectionIICompletion();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Validates a name field and returns error message if invalid
+     */
+    private String validateNameField(String text, String fieldName, boolean isOptional) {
+        if (text.isEmpty()) {
+            if (isOptional) {
+                return null; // Middle name is optional
+            }
+            return fieldName + " is required";
+        }
+        
+        if (text.length() < 2) {
+            return fieldName + " must be at least 2 characters";
+        }
+        
+        if (text.length() > 50) {
+            return fieldName + " must not exceed 50 characters";
+        }
+        
+        // Check for invalid characters (only letters, spaces, hyphens, apostrophes allowed)
+        if (!text.matches("^[a-zA-Z\\s\\-']+$")) {
+            return fieldName + " can only contain letters, spaces, hyphens, and apostrophes";
+        }
+        
+        return null; // Valid
+    }
+    
+    /**
+     * Sets up validation for address fields (Barangay and Detailed Address)
+     * - Must start with capital letter
+     * - Minimum 3 characters
+     * - Real-time validation with visual feedback
+     */
+    private void setupAddressFieldValidation() {
+        // Barangay validation
+        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString();
+                
+                // Capitalize first letter if field is being edited
+                if (text.length() > 0 && Character.isLowerCase(text.charAt(0))) {
+                    int cursorPosition = etBarangay.getSelectionStart();
+                    s.replace(0, 1, String.valueOf(Character.toUpperCase(text.charAt(0))));
+                    etBarangay.setSelection(Math.min(cursorPosition, s.length()));
+                }
+                
+                String trimmedText = text.trim();
+                String error = validateAddressField(trimmedText, "Barangay");
+                showFieldError(etBarangay, tvBarangayError, error);
+                
+                checkSectionIIICompletion();
+            }
+        });
+        
+        // Detailed Address validation
+        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String text = s.toString();
+                
+                // Capitalize first letter if field is being edited
+                if (text.length() > 0 && Character.isLowerCase(text.charAt(0))) {
+                    int cursorPosition = etDetailedAddress.getSelectionStart();
+                    s.replace(0, 1, String.valueOf(Character.toUpperCase(text.charAt(0))));
+                    etDetailedAddress.setSelection(Math.min(cursorPosition, s.length()));
+                }
+                
+                String trimmedText = text.trim();
+                String error = validateAddressField(trimmedText, "Detailed Address");
+                showFieldError(etDetailedAddress, tvDetailedAddressError, error);
+                
+                checkSectionIIICompletion();
+            }
+        });
+    }
+    
+    /**
+     * Validates an address field (Barangay or Detailed Address)
+     */
+    private String validateAddressField(String text, String fieldName) {
+        if (text.isEmpty()) {
+            return fieldName + " is required";
+        }
+        
+        if (text.length() < 3) {
+            return fieldName + " must be at least 3 characters";
+        }
+        
+        // Check if starts with capital letter
+        if (!text.isEmpty() && !Character.isUpperCase(text.charAt(0))) {
+            return fieldName + " must start with a capital letter";
+        }
+        
+        return null; // Valid
+    }
+    
+    /**
+     * Validates birth date and shows error if user is not 18+ years old
+     */
+    private void validateBirthDate(String birthDate) {
+        if (birthDate == null || birthDate.isEmpty()) {
+            showFieldError(etBirthDate, tvBirthDateError, "Birth Date is required");
+            return;
+        }
+        
+        // Validate date format (MM/DD/YYYY)
+        if (!birthDate.matches("^\\d{1,2}/\\d{1,2}/\\d{4}$")) {
+            showFieldError(etBirthDate, tvBirthDateError, "Birth Date must be in MM/DD/YYYY format");
+            return;
+        }
+        
+        try {
+            String[] dateParts = birthDate.split("/");
+            int month = Integer.parseInt(dateParts[0]);
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+            
+            // Calculate age
+            Calendar birthCalendar = Calendar.getInstance();
+            birthCalendar.set(year, month - 1, day);
+            Calendar now = Calendar.getInstance();
+            int age = now.get(Calendar.YEAR) - birthCalendar.get(Calendar.YEAR);
+            if (now.get(Calendar.DAY_OF_YEAR) < birthCalendar.get(Calendar.DAY_OF_YEAR)) {
+                age--;
+            }
+            
+            if (age < 18) {
+                showFieldError(etBirthDate, tvBirthDateError, "You must be at least 18 years old to register");
+            } else {
+                showFieldError(etBirthDate, tvBirthDateError, null); // Clear error
+            }
+        } catch (Exception e) {
+            showFieldError(etBirthDate, tvBirthDateError, "Invalid date format");
+        }
+    }
+    
+    /**
+     * Shows or hides field error with visual feedback
+     * @param editText The EditText field
+     * @param errorTextView The TextView to show error message
+     * @param errorMessage The error message (null to clear error)
+     */
+    private void showFieldError(EditText editText, TextView errorTextView, String errorMessage) {
+        if (errorTextView == null || editText == null) {
+            return;
+        }
+        
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            // Show error
+            errorTextView.setText(errorMessage);
+            errorTextView.setVisibility(View.VISIBLE);
+            editText.setBackgroundResource(R.drawable.edittext_background_error);
+        } else {
+            // Clear error
+            errorTextView.setVisibility(View.GONE);
+            editText.setBackgroundResource(R.drawable.edittext_background);
+        }
+    }
+    
+    /**
+     * Checks if any field in the registration form has been filled
+     * @return true if at least one field has been filled, false otherwise
+     */
+    private boolean hasAnyFieldFilled() {
+        try {
+            // Check account type
+            if (spinnerRole != null && spinnerRole.getSelectedItem() != null) {
+                String selectedRole = spinnerRole.getSelectedItem().toString();
+                if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
+                    return true;
+                }
+            }
+            
+            // Check personal information fields
+            if (etFirstName != null && !etFirstName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etLastName != null && !etLastName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etMiddleName != null && !etMiddleName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etBirthDate != null && !etBirthDate.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etPhone != null) {
+                String phoneText = etPhone.getText().toString().trim();
+                // Phone field starts with "+63 ", so if it's longer, user has entered digits
+                if (phoneText.length() > 4) {
+                    return true;
+                }
+            }
+            
+            // Check address fields
+            if (spinnerProvince != null && spinnerProvince.getSelectedItem() != null) {
+                String province = spinnerProvince.getSelectedItem().toString();
+                if (!province.equals("Select Province") && !province.isEmpty()) {
+                    return true;
+                }
+            }
+            if (spinnerMunicipality != null && spinnerMunicipality.getSelectedItem() != null) {
+                String municipality = spinnerMunicipality.getSelectedItem().toString();
+                if (!municipality.equals("Select Municipality") && !municipality.isEmpty()) {
+                    return true;
+                }
+            }
+            if (etBarangay != null && !etBarangay.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etDetailedAddress != null && !etDetailedAddress.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            
+            // Check login credentials
+            if (etEmail != null && !etEmail.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etPassword != null && !etPassword.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            
+            // Check payment information
+            if (etGcashNum != null) {
+                String gcashText = etGcashNum.getText().toString().trim();
+                // GCash field starts with "+63 ", so if it's longer, user has entered digits
+                if (gcashText.length() > 4) {
+                    return true;
+                }
+            }
+            if (selectedQrUri != null) {
+                return true;
+            }
+        } catch (Exception e) {
+            // If any error occurs, assume fields might be filled to be safe
+            Log.e("RegistrationActivity", "Error checking filled fields: " + e.getMessage());
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Shows a confirmation dialog before navigating back
+     */
+    private void showExitConfirmationDialog() {
+        // Create custom dialog view
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_exit_confirmation, null);
+        
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+        
+        // Get dialog views
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnContinue = dialogView.findViewById(R.id.btnContinue);
+        
+        // Cancel button - dismiss dialog
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        // Continue button - proceed with exit
+        btnContinue.setOnClickListener(v -> {
+            dialog.dismiss();
+            navigateToLogin();
+        });
+        
+        // Show dialog
+        dialog.show();
+        
+        // Style the dialog window
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+    }
+    
+    /**
+     * Handles back navigation with confirmation if fields are filled
+     */
+    private void handleBackNavigation() {
+        if (hasAnyFieldFilled()) {
+            // Show confirmation dialog
+            showExitConfirmationDialog();
+        } else {
+            // No fields filled, proceed directly
+            navigateToLogin();
+        }
+    }
+    
+    /**
+     * Navigates to Login activity
+     */
+    private void navigateToLogin() {
+        Intent intent = new Intent(RegistrationActivity.this, Login.class);
+        startActivity(intent);
+        finish();
+    }
+    
+    /**
+     * Override back button press to show confirmation if fields are filled
+     */
+    @Override
+    public void onBackPressed() {
+        handleBackNavigation();
     }
 }

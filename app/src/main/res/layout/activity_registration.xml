@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -44,258 +45,541 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- Apply As Spinner -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Apply as"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
-
-            <Spinner
-                android:id="@+id/spinnerRole"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edittext_background"/>
-
-            <!-- First + Last Name -->
+            <!-- Progress Indicator -->
             <LinearLayout
+                android:id="@+id/progressIndicator"
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
+                android:layout_marginBottom="24dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp">
 
-                <!-- First Name -->
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="First Name"
-                        android:textSize="14sp"
-                        android:textColor="#000000"/>
-
-                    <EditText
-                        android:id="@+id/etFirstName"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/edittext_background"
-                        android:padding="10dp"
-                        android:textColor="#000000" />
-                </LinearLayout>
-
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="match_parent"/>
-
-                <!-- Last Name -->
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Last Name"
-                        android:textSize="14sp"
-                        android:textColor="#000000"/>
-
-                    <EditText
-                        android:id="@+id/etLastName"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/edittext_background"
-                        android:padding="10dp"
-                        android:textColor="#000000" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Suffix -->
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
+                <!-- Circle 1 -->
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Suffix (Optional)"
+                    android:id="@+id/progressCircle1"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="1"
+                    android:textColor="@android:color/white"
                     android:textSize="14sp"
-                    android:textColor="#000000"/>
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_filled" />
 
-                <Spinner
-                    android:id="@+id/spinnerSuffix"
+                <!-- Line 1-2 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666" />
+
+                <!-- Circle 2 -->
+                <TextView
+                    android:id="@+id/progressCircle2"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="2"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
+
+                <!-- Line 2-3 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666" />
+
+                <!-- Circle 3 -->
+                <TextView
+                    android:id="@+id/progressCircle3"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="3"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
+
+                <!-- Line 3-4 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666" />
+
+                <!-- Circle 4 -->
+                <TextView
+                    android:id="@+id/progressCircle4"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="4"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
+
+                <!-- Line 4-5 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666" />
+
+                <!-- Circle 5 -->
+                <TextView
+                    android:id="@+id/progressCircle5"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="5"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
+            </LinearLayout>
+
+            <!-- Section 1: Account Type -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionAccountType"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@drawable/edittext_background"
-                    android:padding="10dp"/>
-            </LinearLayout>
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
-            <!-- Middle + Birthdate -->
-            <LinearLayout
-                android:orientation="horizontal"
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Account Type"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Apply as"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="8dp" />
+
+                        <Spinner
+                            android:id="@+id/spinnerRole"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <!-- Loading indicator before Section 2 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
+            <!-- Section 2: Personal Information -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
 
-                <!-- Middle Name -->
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionPersonalInfo"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Personal Information"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="12dp" />
+
+                    <!-- First + Last Name -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <!-- First Name -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="First Name"
+                                android:textSize="14sp"
+                                android:textColor="#000000"/>
+
+                            <EditText
+                                android:id="@+id/etFirstName"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:background="@drawable/edittext_background"
+                                android:padding="10dp"
+                                android:textColor="#000000"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvFirstNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent"/>
+
+                        <!-- Last Name -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Last Name"
+                                android:textSize="14sp"
+                                android:textColor="#000000"/>
+
+                            <EditText
+                                android:id="@+id/etLastName"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:background="@drawable/edittext_background"
+                                android:padding="10dp"
+                                android:textColor="#000000"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvLastNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Suffix -->
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Suffix (Optional)"
+                            android:textSize="14sp"
+                            android:textColor="#000000"/>
+
+                        <Spinner
+                            android:id="@+id/spinnerSuffix"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"
+                            android:padding="10dp"/>
+                    </LinearLayout>
+
+                    <!-- Middle + Birthdate -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <!-- Middle Name -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Middle Name"
+                                android:textSize="14sp"
+                                android:textColor="#000000"/>
+
+                            <EditText
+                                android:id="@+id/etMiddleName"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:background="@drawable/edittext_background"
+                                android:padding="10dp"
+                                android:textColor="@color/black"
+                                android:inputType="textCapWords|textPersonName"
+                                android:maxLength="50" />
+
+                            <TextView
+                                android:id="@+id/tvMiddleNameError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent"/>
+
+                        <!-- Birth Date -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Birth Date"
+                                android:textSize="14sp"
+                                android:textColor="#000000"/>
+
+                            <EditText
+                                android:id="@+id/etBirthDate"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:background="@drawable/edittext_background"
+                                android:clickable="true"
+                                android:focusable="false"
+                                android:hint="MM/DD/YYYY"
+                                android:padding="10dp"
+                                android:textColor="@color/black" />
+
+                            <TextView
+                                android:id="@+id/tvBirthDateError"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textSize="11sp"
+                                android:textColor="#FF0000"
+                                android:visibility="gone"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Phone -->
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Phone Number"
+                            android:textSize="14sp"
+                            android:textColor="#000000"/>
+
+                        <EditText
+                            android:id="@+id/etPhone"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"
+                            android:hint="+63"
+                            android:inputType="phone"
+                            android:padding="10dp"
+                            android:textColor="@color/black" />
+                    </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <!-- Loading indicator before Section 3 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
+            <!-- Section 3: Permanent Address -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Permanent Address"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="12dp" />
+
+                    <!-- Province Selection -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Middle Name"
-                        android:textSize="14sp"
-                        android:textColor="#000000"/>
+                        android:text="Province *"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp"
+                        android:textColor="#666666"/>
 
-                    <EditText
-                        android:id="@+id/etMiddleName"
+                    <Spinner
+                        android:id="@+id/spinnerProvince"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="50dp"
                         android:background="@drawable/edittext_background"
                         android:padding="10dp"
-                        android:textColor="@color/black" />
-                </LinearLayout>
+                        android:layout_marginBottom="12dp" />
 
-                <Space
-                    android:layout_width="8dp"
-                    android:layout_height="match_parent"/>
-
-                <!-- Birth Date -->
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
+                    <!-- Municipality Selection -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Birth Date"
-                        android:textSize="14sp"
-                        android:textColor="#000000"/>
+                        android:text="Municipality/City *"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp"
+                        android:textColor="#666666"/>
+
+                    <Spinner
+                        android:id="@+id/spinnerMunicipality"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:background="@drawable/edittext_background"
+                        android:padding="10dp"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Barangay Input -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Barangay *"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp"
+                        android:textColor="#666666"/>
 
                     <EditText
-                        android:id="@+id/etBirthDate"
+                        android:id="@+id/etBarangay"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:background="@drawable/edittext_background"
-                        android:clickable="true"
-                        android:focusable="false"
-                        android:hint="MM/DD/YYYY"
+                        android:hint="Enter barangay"
                         android:padding="10dp"
-                        android:textColor="@color/black" />
-                </LinearLayout>
-            </LinearLayout>
+                        android:textColor="@color/black"
+                        android:inputType="textCapSentences"
+                        android:layout_marginBottom="4dp" />
 
-            <!-- Phone -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Phone Number"
-                android:textSize="14sp"
-                android:layout_marginTop="12dp"
-                android:textColor="#000000"/>
+                    <TextView
+                        android:id="@+id/tvBarangayError"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#FF0000"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginTop="2dp" />
 
-            <EditText
-                android:id="@+id/etPhone"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edittext_background"
-                android:hint="+63"
-                android:inputType="phone"
-                android:padding="10dp"
-                android:textColor="@color/black" />
+                    <!-- Detailed Address -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Detailed Address (Street, House No., etc.) *"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp"
+                        android:textColor="#666666"/>
 
-            <!-- Permanent Address -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Permanent Address"
-                android:textSize="14sp"
-                android:layout_marginTop="12dp"
-                android:textColor="#000000"/>
+                    <EditText
+                        android:id="@+id/etDetailedAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="70dp"
+                        android:background="@drawable/edittext_background"
+                        android:gravity="top"
+                        android:minLines="2"
+                        android:padding="10dp"
+                        android:textColor="@color/black"
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:hint="Enter street, house number, building name, etc." />
 
-            <!-- Province Selection -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Province *"
-                android:textSize="12sp"
-                android:layout_marginTop="8dp"
-                android:textColor="#666666"/>
-
-            <Spinner
-                android:id="@+id/spinnerProvince"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp" />
-
-            <!-- Municipality Selection -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Municipality/City *"
-                android:textSize="12sp"
-                android:layout_marginTop="8dp"
-                android:textColor="#666666"/>
-
-            <Spinner
-                android:id="@+id/spinnerMunicipality"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@drawable/edittext_background"
-                android:padding="10dp" />
-
-            <!-- Barangay Input -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Barangay *"
-                android:textSize="12sp"
-                android:layout_marginTop="8dp"
-                android:textColor="#666666"/>
-
-            <EditText
-                android:id="@+id/etBarangay"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edittext_background"
-                android:hint="Enter barangay"
-                android:padding="10dp"
-                android:textColor="@color/black" />
-
-            <!-- Detailed Address -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Detailed Address (Street, House No., etc.) *"
-                android:textSize="12sp"
-                android:layout_marginTop="8dp"
-                android:textColor="#666666"/>
-
-            <EditText
-                android:id="@+id/etDetailedAddress"
-                android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:background="@drawable/edittext_background"
-                android:gravity="top"
-                android:minLines="2"
-                android:padding="10dp"
-                android:textColor="@color/black"
-                android:hint="Enter street, house number, building name, etc." />
+                    <TextView
+                        android:id="@+id/tvDetailedAddressError"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#FF0000"
+                        android:visibility="gone"
+                        android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
 
             <!-- Hidden field for complete address -->
             <EditText
@@ -304,125 +588,209 @@
                 android:layout_height="0dp"
                 android:visibility="gone" />
 
-            <!-- Email -->
-            <TextView
+            <!-- Loading indicator before Section 4 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Email"
-                android:textSize="14sp"
-                android:layout_marginTop="12dp"
-                android:textColor="#000000"/>
-
-            <EditText
-                android:id="@+id/etEmail"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edittext_background"
-                android:inputType="textEmailAddress"
-                android:padding="10dp"
-                android:textColor="@color/black" />
-
-            <!-- Email Validation Message -->
-            <TextView
-                android:id="@+id/tvEmailValidation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginStart="8dp"
-                android:textSize="12sp"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
                 android:visibility="gone"
-                android:text=""
-                android:textColor="#FF0000" />
+                android:indeterminateTint="#A18167" />
 
-            <!-- Password -->
-            <TextView
+            <!-- Section 4: Login Credentials -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionLoginCredentials"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Login Credentials"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="12dp" />
+
+                    <!-- Email -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Email"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:layout_marginBottom="8dp"/>
+
+                    <EditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/edittext_background"
+                        android:inputType="textEmailAddress"
+                        android:padding="10dp"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="4dp" />
+
+                    <!-- Email Validation Message -->
+                    <TextView
+                        android:id="@+id/tvEmailValidation"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:layout_marginStart="8dp"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        android:text=""
+                        android:textColor="#FF0000" />
+
+                    <!-- Password -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Password"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:layout_marginBottom="8dp"/>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <EditText
+                            android:id="@+id/etPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"
+                            android:inputType="textPassword"
+                            android:padding="10dp"
+                            android:paddingEnd="50dp"
+                            android:textColor="@color/black" />
+
+                        <ImageView
+                            android:id="@+id/ivTogglePassword"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="15dp"
+                            android:src="@drawable/ic_eye_closed"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="4dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </RelativeLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <!-- Loading indicator before Section 5 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Password"
-                android:textSize="14sp"
-                android:layout_marginTop="12dp"
-                android:textColor="#000000"/>
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
 
-            <RelativeLayout
+            <!-- Section 5: Payment Information -->
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
 
-                <EditText
-                    android:id="@+id/etPassword"
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionPaymentInfo"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@drawable/edittext_background"
-                    android:inputType="textPassword"
-                    android:padding="10dp"
-                    android:paddingEnd="50dp"
-                    android:textColor="@color/black" />
-
-                <ImageView
-                    android:id="@+id/ivTogglePassword"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="15dp"
-                    android:src="@drawable/ic_eye_closed"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-            </RelativeLayout>
-
-            <!-- GCash -->
-            <LinearLayout
-                android:id="@+id/llGcash"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/tvGcashNo"
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Gcash No."
-                    android:textSize="14sp"
-                    android:layout_marginTop="12dp"
-                    android:textColor="#000000"/>
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
 
-                <EditText
-                    android:id="@+id/etGcashNum"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@drawable/edittext_background"
-                    android:inputType="number"
-                    android:padding="10dp"
-                    android:textColor="@color/black" />
+                    <LinearLayout
+                        android:id="@+id/llGcash"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvGcashQR"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Upload GCash QR Code"
-                    android:textSize="14sp"
-                    android:layout_marginTop="12dp"
-                    android:textColor="@android:color/black"/>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Payment Information"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="12dp" />
 
-                <ImageView
-                    android:id="@+id/UploadQr"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:src="@drawable/upload"
-                    android:scaleType="centerCrop"
-                    android:adjustViewBounds="true"
-                    android:background="@drawable/edittext_background"
-                    android:contentDescription="Upload QR" />
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/tvGcashNo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Gcash No."
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:layout_marginBottom="8dp"/>
+
+                    <EditText
+                        android:id="@+id/etGcashNum"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/edittext_background"
+                        android:hint="+63"
+                        android:inputType="phone"
+                        android:padding="10dp"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/tvGcashQR"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upload GCash QR Code"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:layout_marginBottom="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/UploadQr"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:src="@drawable/upload"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:background="@drawable/edittext_background"
+                        android:contentDescription="Upload QR" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
 
             <!-- NEXT Button -->
             <Button
                 android:id="@+id/btnNext"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="8dp"
                 android:backgroundTint="#A18167"
                 android:text="NEXT"
                 android:textAllCaps="true"
@@ -433,7 +801,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center_horizontal"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="wrap_content"
