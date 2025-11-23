@@ -48,6 +48,7 @@ public class RegistrationActivity extends AppCompatActivity {
     EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etBarangay, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
     TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
+    TextView tvGcashNo, tvGcashQR;
     ImageView UploadQr, ivTogglePassword;
     Button btnNext;
     boolean isPasswordVisible = false;
@@ -120,6 +121,10 @@ public class RegistrationActivity extends AppCompatActivity {
         tvBirthDateError = findViewById(R.id.tvBirthDateError);
         tvBarangayError = findViewById(R.id.tvBarangayError);
         tvDetailedAddressError = findViewById(R.id.tvDetailedAddressError);
+        
+        // Get GCash TextViews
+        tvGcashNo = findViewById(R.id.tvGcashNo);
+        tvGcashQR = findViewById(R.id.tvGcashQR);
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
@@ -245,11 +250,22 @@ public class RegistrationActivity extends AppCompatActivity {
                 android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
                 
                 if ("Boarder".equals(selectedRole)) {
-                    // Hide GCash fields for Boarder
-                    llGcash.setVisibility(android.view.View.GONE);
-                } else {
-                    // Show GCash fields for BH Owner or other roles
+                    // Show GCash Number field only for Boarder (hide QR code)
                     llGcash.setVisibility(android.view.View.VISIBLE);
+                    tvGcashNo.setVisibility(android.view.View.VISIBLE);
+                    etGcashNum.setVisibility(android.view.View.VISIBLE);
+                    tvGcashQR.setVisibility(android.view.View.GONE);
+                    UploadQr.setVisibility(android.view.View.GONE);
+                } else if ("BH Owner".equals(selectedRole)) {
+                    // Show both GCash Number and QR code for BH Owner
+                    llGcash.setVisibility(android.view.View.VISIBLE);
+                    tvGcashNo.setVisibility(android.view.View.VISIBLE);
+                    etGcashNum.setVisibility(android.view.View.VISIBLE);
+                    tvGcashQR.setVisibility(android.view.View.VISIBLE);
+                    UploadQr.setVisibility(android.view.View.VISIBLE);
+                } else {
+                    // Hide all GCash fields for "Select --"
+                    llGcash.setVisibility(android.view.View.GONE);
                 }
                 
                 // Check if section I is complete and reveal section II
@@ -258,9 +274,9 @@ public class RegistrationActivity extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                // Show GCash fields by default if nothing selected
+                // Hide GCash fields by default if nothing selected
                 android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
-                llGcash.setVisibility(android.view.View.VISIBLE);
+                llGcash.setVisibility(android.view.View.GONE);
             }
         });
 
@@ -653,17 +669,17 @@ public class RegistrationActivity extends AppCompatActivity {
                     a.putExtra("email", etEmail.getText().toString().trim());
                     a.putExtra("password", etPassword.getText().toString().trim());
                     
-                    // Only add GCash data if not Boarder
+                    // GCash number is required for both Boarder and BH Owner
+                    a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
+                    
+                    // QR code is only required for BH Owner
                     if (!isBoarder) {
-                        a.putExtra("gcashNum", etGcashNum.getText().toString().trim());
-                        
                         // if you want to send QR URI
                         if (selectedQrUri != null) {
                             a.putExtra("qrUri", selectedQrUri.toString());
                         }
                     } else {
-                        // Boarder doesn't need GCash
-                        a.putExtra("gcashNum", "");
+                        // Boarder doesn't need QR code
                         a.putExtra("qrUri", "");
                     }
 
@@ -865,22 +881,26 @@ public class RegistrationActivity extends AppCompatActivity {
             return "Password must contain at least one number";
         }
         
-        // 10. Validate GCash Number (only for BH Owner)
-        if (!isBoarder) {
-            String gcashNum = etGcashNum.getText().toString().trim();
-            if (gcashNum.isEmpty()) {
+        // 10. Validate GCash Number (required for both Boarder and BH Owner)
+        String gcashNum = etGcashNum.getText().toString().trim();
+        if (gcashNum.isEmpty()) {
+            if (isBoarder) {
+                return "GCash Number is required for Boarder";
+            } else {
                 return "GCash Number is required for BH Owner";
             }
-            // GCash format: 09xxxxxxxxx (11 digits starting with 09)
-            String gcashDigits = gcashNum.replaceAll("[^0-9]", "");
-            if (gcashDigits.length() != 11) {
-                return "GCash Number must be 11 digits (09xxxxxxxxx)";
-            }
-            if (!gcashDigits.matches("^09\\d{9}$")) {
-                return "GCash Number must start with 09 (Philippine mobile format)";
-            }
-            
-            // 11. Validate GCash QR Code (only for BH Owner)
+        }
+        // GCash format: 09xxxxxxxxx (11 digits starting with 09)
+        String gcashDigits = gcashNum.replaceAll("[^0-9]", "");
+        if (gcashDigits.length() != 11) {
+            return "GCash Number must be 11 digits (09xxxxxxxxx)";
+        }
+        if (!gcashDigits.matches("^09\\d{9}$")) {
+            return "GCash Number must start with 09 (Philippine mobile format)";
+        }
+        
+        // 11. Validate GCash QR Code (only for BH Owner)
+        if (!isBoarder) {
             if (UploadQr.getDrawable() == null) {
                 return "GCash QR Code image is required for BH Owner";
             }
@@ -923,7 +943,7 @@ public class RegistrationActivity extends AppCompatActivity {
                 String currentText = s.toString();
                 
                 // Always ensure +63 is at the start
-                if (!currentText.startsWith("+63")) {
+                if (!currentText.startsWith("+63") || currentText.length() < 4) {
                     // If user tries to delete +63, restore it
                     etPhone.removeTextChangedListener(this);
                     etPhone.setText("+63 ");
@@ -934,7 +954,10 @@ public class RegistrationActivity extends AppCompatActivity {
                 }
                 
                 // Extract only numbers after +63 (skip "+63 " = 4 characters)
-                String digitsOnly = currentText.substring(4).replaceAll("[^0-9]", "");
+                // Safety check: ensure text is long enough before substring
+                String digitsOnly = currentText.length() >= 4 
+                    ? currentText.substring(4).replaceAll("[^0-9]", "")
+                    : "";
                 
                 // Limit to 10 digits (since +63 represents 0, total should be 11 digits: 0 + 10 digits = 11)
                 if (digitsOnly.length() > 10) {
@@ -1705,12 +1728,11 @@ public class RegistrationActivity extends AppCompatActivity {
         // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
         if (emailValid && passwordValid && emailValidationPassed) {
             // Section IV is complete, reveal Section V
-            // Only show Section V if not a Boarder (Boarders don't need payment info)
-            if (!isBoarder && sectionVWrapper.getVisibility() != View.VISIBLE) {
+            // Both Boarders and BH Owners need Section V (Boarders need GCash number, BH Owners need GCash number + QR code)
+            if (sectionVWrapper.getVisibility() != View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.VISIBLE);
                 updateProgressIndicator();
-            } else if (isBoarder) {
-                // Boarder doesn't need section 5, but section 4 is complete
+            } else {
                 updateProgressIndicator();
             }
         } else {
@@ -1724,20 +1746,24 @@ public class RegistrationActivity extends AppCompatActivity {
     
     /**
      * Checks if Section V (Payment Information) completion
-     * This section is only for BH Owner, so we check accordingly
+     * Boarders need GCash number only, BH Owners need both GCash number and QR code
      */
     private void checkSectionVCompletion() {
         String selectedRole = spinnerRole.getSelectedItem().toString();
         boolean isBoarder = "Boarder".equals(selectedRole);
         
+        // For both Boarder and BH Owner, check if GCash number is provided
+        String gcashNum = etGcashNum.getText().toString().trim();
+        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.replaceAll("[^0-9]", "").length() == 11;
+        
         if (isBoarder) {
-            // Boarders don't need payment info, so section is always "complete" once revealed
+            // Boarders only need GCash number (no QR code required)
+            // Section V completion doesn't reveal a new section, but we can use this for final validation
+            // This method is called when GCash fields are updated to ensure data is ready for submission
             return;
         }
         
-        // For BH Owner, check if GCash number and QR code are provided
-        String gcashNum = etGcashNum.getText().toString().trim();
-        boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.replaceAll("[^0-9]", "").length() == 11;
+        // For BH Owner, also check if QR code is provided
         boolean qrCodeValid = selectedQrUri != null;
         
         // Section V completion doesn't reveal a new section, but we can use this for final validation
