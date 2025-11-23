@@ -729,6 +729,42 @@
                 android:visibility="gone"
                 android:indeterminateTint="#A18167" />
 
+            <!-- Special Message Section for Boarders (replaces Section 5) -->
+            <FrameLayout
+                android:id="@+id/sectionBoarderMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="24dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Boarder applicants does not have to fill step 5. Proceed now to step 6"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
             <!-- Section 5: Payment Information -->
             <FrameLayout
                 android:layout_width="match_parent"

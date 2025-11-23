@@ -120,6 +120,7 @@ public class RegistrationActivity extends AppCompatActivity {
     private com.google.android.material.card.MaterialCardView sectionLoginCredentials;
     private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
     private com.google.android.material.card.MaterialCardView sectionAdditionalInfo;
+    private View sectionBoarderMessage;
     
     // Progress indicator circles
     private TextView progressCircle1;
@@ -202,6 +203,7 @@ public class RegistrationActivity extends AppCompatActivity {
         sectionLoginCredentials = findViewById(R.id.sectionLoginCredentials);
         sectionPaymentInfo = findViewById(R.id.sectionPaymentInfo);
         sectionAdditionalInfo = findViewById(R.id.sectionAdditionalInfo);
+        sectionBoarderMessage = findViewById(R.id.sectionBoarderMessage);
         
         // Initialize Section 6 fields
         spinnerVId = findViewById(R.id.spinnerVId);
@@ -325,18 +327,19 @@ public class RegistrationActivity extends AppCompatActivity {
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
                 String selectedRole = parent.getItemAtPosition(position).toString();
                 android.widget.LinearLayout llGcash = findViewById(R.id.llGcash);
+                View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
                 
                 if ("Boarder".equals(selectedRole)) {
-                    // Show GCash Number field only for Boarder (hide QR code)
-                    llGcash.setVisibility(android.view.View.VISIBLE);
-                    tvGcashNo.setVisibility(android.view.View.VISIBLE);
-                    etGcashNum.setVisibility(android.view.View.VISIBLE);
-                    tvGcashQR.setVisibility(android.view.View.GONE);
-                    UploadQr.setVisibility(android.view.View.GONE);
+                    // Hide Section 5 for Boarders (they'll see the message section instead)
+                    if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                        sectionVWrapper.setVisibility(View.GONE);
+                    }
                     // Hide business permit section for Boarder
                     if (businessPermitSection != null) {
                         businessPermitSection.setVisibility(View.GONE);
                     }
+                    // Hide GCash section completely for Boarders
+                    llGcash.setVisibility(android.view.View.GONE);
                 } else if ("BH Owner".equals(selectedRole)) {
                     // Show both GCash Number and QR code for BH Owner
                     llGcash.setVisibility(android.view.View.VISIBLE);
@@ -344,6 +347,10 @@ public class RegistrationActivity extends AppCompatActivity {
                     etGcashNum.setVisibility(android.view.View.VISIBLE);
                     tvGcashQR.setVisibility(android.view.View.VISIBLE);
                     UploadQr.setVisibility(android.view.View.VISIBLE);
+                    // Hide boarder message section for BH Owner
+                    if (sectionBoarderMessage != null && sectionBoarderMessage.getVisibility() == View.VISIBLE) {
+                        sectionBoarderMessage.setVisibility(View.GONE);
+                    }
                     // Show business permit section for BH Owner
                     if (businessPermitSection != null) {
                         businessPermitSection.setVisibility(View.VISIBLE);
@@ -358,6 +365,13 @@ public class RegistrationActivity extends AppCompatActivity {
                     // Hide business permit section
                     if (businessPermitSection != null) {
                         businessPermitSection.setVisibility(View.GONE);
+                    }
+                    // Hide both Section 5 and boarder message
+                    if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                        sectionVWrapper.setVisibility(View.GONE);
+                    }
+                    if (sectionBoarderMessage != null && sectionBoarderMessage.getVisibility() == View.VISIBLE) {
+                        sectionBoarderMessage.setVisibility(View.GONE);
                     }
                 }
                 
@@ -789,13 +803,14 @@ public class RegistrationActivity extends AppCompatActivity {
         String selectedRole = spinnerRole.getSelectedItem().toString();
         boolean isBoarder = "Boarder".equals(selectedRole);
         
-        // QR code is only required for BH Owner
-        if (!isBoarder && (selectedQrUri == null || qrBitmap == null)) {
-            return "GCash QR code is required for BH Owner. Please upload your GCash QR code.";
-        }
-        
-        // Business permits are required for BH Owner (at least one)
+        // GCash and QR code are only required for BH Owner (Boarders skip Section 5)
         if (!isBoarder) {
+            // QR code is required for BH Owner
+            if (selectedQrUri == null || qrBitmap == null) {
+                return "GCash QR code is required for BH Owner. Please upload your GCash QR code.";
+            }
+            
+            // Business permits are required for BH Owner (at least one)
             boolean hasPermits = false;
             for (PermitUploadItem item : permitUploadItems) {
                 if (item.bitmap != null) {
@@ -1006,30 +1021,26 @@ public class RegistrationActivity extends AppCompatActivity {
             return "Password must contain at least one number";
         }
         
-        // 10. Validate GCash Number (required for both Boarder and BH Owner)
-        String gcashNum = etGcashNum.getText().toString().trim();
-        if (gcashNum.isEmpty()) {
-            if (isBoarder) {
-                return "GCash Number is required for Boarder";
-            } else {
+        // 10. Validate GCash Number (only required for BH Owner, not for Boarder)
+        if (!isBoarder) {
+            String gcashNum = etGcashNum.getText().toString().trim();
+            if (gcashNum.isEmpty()) {
                 return "GCash Number is required for BH Owner";
             }
-        }
-        // Extract digits only (+63 represents 0, so +63 992 531 1409 = 09925311409)
-        if (!gcashNum.startsWith("+63")) {
-            return "GCash Number must start with +63";
-        }
-        String gcashDigitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
-        if (gcashDigitsAfterPlus63.length() != 10) {
-            return "GCash Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
-        }
-        // First digit after +63 should be 9 (Philippine mobile format)
-        if (!gcashDigitsAfterPlus63.startsWith("9")) {
-            return "GCash Number must start with 9 after +63 (Philippine mobile format)";
-        }
-        
-        // 11. Validate GCash QR Code (only for BH Owner)
-        if (!isBoarder) {
+            // Extract digits only (+63 represents 0, so +63 992 531 1409 = 09925311409)
+            if (!gcashNum.startsWith("+63")) {
+                return "GCash Number must start with +63";
+            }
+            String gcashDigitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
+            if (gcashDigitsAfterPlus63.length() != 10) {
+                return "GCash Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
+            }
+            // First digit after +63 should be 9 (Philippine mobile format)
+            if (!gcashDigitsAfterPlus63.startsWith("9")) {
+                return "GCash Number must start with 9 after +63 (Philippine mobile format)";
+            }
+            
+            // 11. Validate GCash QR Code (only for BH Owner)
             if (UploadQr.getDrawable() == null) {
                 return "GCash QR Code image is required for BH Owner";
             }
@@ -2215,16 +2226,54 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Section IV is complete if email format is valid, password is valid, and validation passed (if triggered)
         if (emailValid && passwordValid && emailValidationPassed) {
-            // Section IV is complete, reveal Section V with loading animation
-            // Both Boarders and BH Owners need Section V (Boarders need GCash number, BH Owners need GCash number + QR code)
-            revealSectionWithLoading(sectionVWrapper, progressBarSection5, 1500);
+            String selectedRole = spinnerRole.getSelectedItem().toString();
+            boolean isBoarder = "Boarder".equals(selectedRole);
             
-            // Also check if Section V is complete to reveal Section VI
-            checkSectionVCompletion();
+            if (isBoarder) {
+                // For Boarders: Show special message section instead of Section 5, then reveal Section 6
+                View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
+                
+                // Show boarder message section
+                if (sectionBoarderMessage != null && sectionBoarderMessage.getVisibility() != View.VISIBLE) {
+                    sectionBoarderMessage.setVisibility(View.VISIBLE);
+                    sectionBoarderMessage.setAlpha(0f);
+                    sectionBoarderMessage.animate()
+                            .alpha(1f)
+                            .setDuration(300)
+                            .setListener(null);
+                }
+                
+                // Hide Section 5 for Boarders
+                if (sectionVWrapper.getVisibility() == View.VISIBLE) {
+                    sectionVWrapper.setVisibility(View.GONE);
+                }
+                
+                // After delay, reveal Section 6
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (sectionVIWrapper.getVisibility() != View.VISIBLE) {
+                        revealSectionWithLoading(sectionVIWrapper, progressBarSection6, 1500);
+                    }
+                    updateProgressIndicator();
+                }, 2000); // 2 second delay before showing Section 6
+            } else {
+                // For BH Owners: Show Section V with loading animation
+                revealSectionWithLoading(sectionVWrapper, progressBarSection5, 1500);
+                
+                // Hide boarder message section
+                if (sectionBoarderMessage != null) {
+                    sectionBoarderMessage.setVisibility(View.GONE);
+                }
+                
+                // Also check if Section V is complete to reveal Section VI
+                checkSectionVCompletion();
+            }
         } else {
-            // Section IV is incomplete, hide Section V
+            // Section IV is incomplete, hide Section V and boarder message
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.GONE);
+            }
+            if (sectionBoarderMessage != null && sectionBoarderMessage.getVisibility() == View.VISIBLE) {
+                sectionBoarderMessage.setVisibility(View.GONE);
             }
             updateProgressIndicator();
         }
@@ -2232,32 +2281,27 @@ public class RegistrationActivity extends AppCompatActivity {
     
     /**
      * Checks if Section V (Payment Information) completion
-     * Boarders need GCash number only, BH Owners need both GCash number and QR code
+     * BH Owners need both GCash number and QR code
+     * Boarders skip Section 5 entirely (handled in checkSectionIVCompletion)
      */
     private void checkSectionVCompletion() {
         String selectedRole = spinnerRole.getSelectedItem().toString();
         boolean isBoarder = "Boarder".equals(selectedRole);
         
-        // For both Boarder and BH Owner, check if GCash number is provided
+        // Boarders don't use Section 5, so return early
+        if (isBoarder) {
+            return;
+        }
+        
+        // For BH Owner, check if GCash number and QR code are provided
         String gcashNum = etGcashNum.getText().toString().trim();
         // Check if it starts with +63 and has 10 digits after it
         boolean gcashNumValid = !gcashNum.isEmpty() && gcashNum.startsWith("+63") && 
                                 gcashNum.length() >= 14 && 
                                 gcashNum.substring(4).replaceAll("[^0-9]", "").length() >= 10;
+        boolean qrCodeValid = selectedQrUri != null;
         
         View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
-        
-        if (isBoarder) {
-            // Boarders only need GCash number (no QR code required)
-            // Section V is complete, reveal Section VI with loading animation
-            if (gcashNumValid && sectionVIWrapper.getVisibility() != View.VISIBLE) {
-                revealSectionWithLoading(sectionVIWrapper, progressBarSection6, 1500);
-            }
-            return;
-        }
-        
-        // For BH Owner, also check if QR code is provided
-        boolean qrCodeValid = selectedQrUri != null;
         
         // Section V is complete, reveal Section VI with loading animation
         if (gcashNumValid && qrCodeValid && sectionVIWrapper.getVisibility() != View.VISIBLE) {
@@ -2321,6 +2365,10 @@ public class RegistrationActivity extends AppCompatActivity {
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
                 sectionVWrapper.setVisibility(View.GONE);
             }
+            // Also hide boarder message section
+            if (sectionBoarderMessage != null) {
+                sectionBoarderMessage.setVisibility(View.GONE);
+            }
         }
         
         // Hide Section VI (Additional Info) if we're starting from section 6 onwards
@@ -2379,7 +2427,9 @@ public class RegistrationActivity extends AppCompatActivity {
         }
         
         View sectionVWrapper = getSectionWrapper(sectionPaymentInfo);
-        if (sectionVWrapper != null && sectionVWrapper.getVisibility() == View.VISIBLE) {
+        // Circle 5 is filled if Section 5 is visible OR if boarder message is visible (for Boarders)
+        if ((sectionVWrapper != null && sectionVWrapper.getVisibility() == View.VISIBLE) ||
+            (sectionBoarderMessage != null && sectionBoarderMessage.getVisibility() == View.VISIBLE)) {
             progressCircle5.setBackgroundResource(R.drawable.progress_circle_filled);
             progressCircle5.setTextColor(getResources().getColor(android.R.color.white));
         } else {
