@@ -157,10 +157,7 @@ public class RegistrationActivity extends AppCompatActivity {
         ImageView backButton = findViewById(R.id.backButton);
         if (backButton != null) {
             backButton.setOnClickListener(v -> {
-                // Go back to Login activity
-                Intent intent = new Intent(RegistrationActivity.this, Login.class);
-                startActivity(intent);
-                finish();
+                handleBackNavigation();
             });
         }
 
@@ -500,8 +497,7 @@ public class RegistrationActivity extends AppCompatActivity {
         tvLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent a = new Intent(RegistrationActivity.this, Login.class);
-                startActivity(a);
+                handleBackNavigation();
             }
         });
     }
@@ -2276,5 +2272,150 @@ public class RegistrationActivity extends AppCompatActivity {
             errorTextView.setVisibility(View.GONE);
             editText.setBackgroundResource(R.drawable.edittext_background);
         }
+    }
+    
+    /**
+     * Checks if any field in the registration form has been filled
+     * @return true if at least one field has been filled, false otherwise
+     */
+    private boolean hasAnyFieldFilled() {
+        try {
+            // Check account type
+            if (spinnerRole != null && spinnerRole.getSelectedItem() != null) {
+                String selectedRole = spinnerRole.getSelectedItem().toString();
+                if (!selectedRole.equals("Select --") && !selectedRole.isEmpty()) {
+                    return true;
+                }
+            }
+            
+            // Check personal information fields
+            if (etFirstName != null && !etFirstName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etLastName != null && !etLastName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etMiddleName != null && !etMiddleName.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etBirthDate != null && !etBirthDate.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etPhone != null) {
+                String phoneText = etPhone.getText().toString().trim();
+                // Phone field starts with "+63 ", so if it's longer, user has entered digits
+                if (phoneText.length() > 4) {
+                    return true;
+                }
+            }
+            
+            // Check address fields
+            if (spinnerProvince != null && spinnerProvince.getSelectedItem() != null) {
+                String province = spinnerProvince.getSelectedItem().toString();
+                if (!province.equals("Select Province") && !province.isEmpty()) {
+                    return true;
+                }
+            }
+            if (spinnerMunicipality != null && spinnerMunicipality.getSelectedItem() != null) {
+                String municipality = spinnerMunicipality.getSelectedItem().toString();
+                if (!municipality.equals("Select Municipality") && !municipality.isEmpty()) {
+                    return true;
+                }
+            }
+            if (etBarangay != null && !etBarangay.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etDetailedAddress != null && !etDetailedAddress.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            
+            // Check login credentials
+            if (etEmail != null && !etEmail.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            if (etPassword != null && !etPassword.getText().toString().trim().isEmpty()) {
+                return true;
+            }
+            
+            // Check payment information
+            if (etGcashNum != null) {
+                String gcashText = etGcashNum.getText().toString().trim();
+                // GCash field starts with "+63 ", so if it's longer, user has entered digits
+                if (gcashText.length() > 4) {
+                    return true;
+                }
+            }
+            if (selectedQrUri != null) {
+                return true;
+            }
+        } catch (Exception e) {
+            // If any error occurs, assume fields might be filled to be safe
+            Log.e("RegistrationActivity", "Error checking filled fields: " + e.getMessage());
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Shows a confirmation dialog before navigating back
+     */
+    private void showExitConfirmationDialog() {
+        // Create custom dialog view
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_exit_confirmation, null);
+        
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+        
+        // Get dialog views
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnContinue = dialogView.findViewById(R.id.btnContinue);
+        
+        // Cancel button - dismiss dialog
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        // Continue button - proceed with exit
+        btnContinue.setOnClickListener(v -> {
+            dialog.dismiss();
+            navigateToLogin();
+        });
+        
+        // Show dialog
+        dialog.show();
+        
+        // Style the dialog window
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+    }
+    
+    /**
+     * Handles back navigation with confirmation if fields are filled
+     */
+    private void handleBackNavigation() {
+        if (hasAnyFieldFilled()) {
+            // Show confirmation dialog
+            showExitConfirmationDialog();
+        } else {
+            // No fields filled, proceed directly
+            navigateToLogin();
+        }
+    }
+    
+    /**
+     * Navigates to Login activity
+     */
+    private void navigateToLogin() {
+        Intent intent = new Intent(RegistrationActivity.this, Login.class);
+        startActivity(intent);
+        finish();
+    }
+    
+    /**
+     * Override back button press to show confirmation if fields are filled
+     */
+    @Override
+    public void onBackPressed() {
+        handleBackNavigation();
     }
 }
