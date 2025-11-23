@@ -59,4 +59,7 @@ dependencies {
     
     // ML Kit for OCR (Free, Offline)
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    
+    // MPAndroidChart for revenue analytics charts
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

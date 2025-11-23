@@ -35,8 +35,25 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.MarkerView;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.utils.MPPointF;
+import android.content.Context;
+
 
 public class OwnerHomeFragment extends Fragment {
 
@@ -44,11 +61,12 @@ public class OwnerHomeFragment extends Fragment {
     private int userId = -1; // default to -1
 
     // UI elements
-    private TextView tvOwnerName, tvListingsCount, tvBoardersCount, tvViewsCount, tvPopularTitle, tvPopularVisits;
+    private TextView tvOwnerName, tvListingsCount, tvBoardersCount, tvViewsCount, tvPopularTitle, tvPopularVisits, tvTotalRevenue;
     private ImageView imgPopularListing, ivNotification, ivMessage;
     private View badgeMsg, badgeNotif;
     private TextView badgeCount, badgeNotifCount;
     private LinearLayout numofListings, layoutTotalBoarders;
+    private com.github.mikephil.charting.charts.LineChart chartMonthlyRevenue;
     
     // Store popular listing data for navigation
     private int popularListingBhId = -1;
@@ -133,10 +151,19 @@ public class OwnerHomeFragment extends Fragment {
             imgPopularListing = view.findViewById(R.id.imgPopularListing);
             numofListings = view.findViewById(R.id.noofListings);
             layoutTotalBoarders = view.findViewById(R.id.layoutTotalBoarders);
+            tvTotalRevenue = view.findViewById(R.id.tvTotalRevenue);
+            chartMonthlyRevenue = view.findViewById(R.id.chartMonthlyRevenue);
             ivNotification = view.findViewById(R.id.ivNotification);
             ivMessage = view.findViewById(R.id.ivMessage);
             badgeMsg = view.findViewById(R.id.badgeMsg);
             badgeNotif = view.findViewById(R.id.badgeNotif);
+            
+            // Initialize chart
+            if (chartMonthlyRevenue != null) {
+                initializeMonthlyRevenueChart();
+            }
+            
+            // Revenue analytics views
             
             // Create a TextView for message badge count if it doesn't exist
             if (badgeMsg != null) {
@@ -329,10 +356,15 @@ public class OwnerHomeFragment extends Fragment {
 
     private void fetchOwnerDashboardData() {
         String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_dashboard.php";
+        Log.d("OwnerHomeFragment", "=== FETCHING OWNER DASHBOARD DATA ===");
+        Log.d("OwnerHomeFragment", "URL: " + url);
+        Log.d("OwnerHomeFragment", "User ID: " + userId);
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
-                    Log.d("OwnerHomeFragment", "Server Response: " + response);
+                    Log.d("OwnerHomeFragment", "=== SERVER RESPONSE RECEIVED ===");
+                    Log.d("OwnerHomeFragment", "Response length: " + (response != null ? response.length() : 0) + " characters");
+                    Log.d("OwnerHomeFragment", "Full Server Response: " + response);
 
                     if (response == null || response.trim().isEmpty()) {
                         Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
@@ -340,12 +372,67 @@ public class OwnerHomeFragment extends Fragment {
                     }
 
                     try {
+                        Log.d("OwnerHomeFragment", "=== PARSING JSON RESPONSE ===");
                         JSONObject obj = new JSONObject(response);
+                        Log.d("OwnerHomeFragment", "JSON parsed successfully");
+                        
+                        // List all top-level keys
+                        JSONArray keys = obj.names();
+                        if (keys != null) {
+                            List<String> keyList = new ArrayList<>();
+                            for (int i = 0; i < keys.length(); i++) {
+                                keyList.add(keys.getString(i));
+                            }
+                            Log.d("OwnerHomeFragment", "Top-level keys in response: " + keyList.toString());
+                        }
 
                         // Validate JSON content
                         if (!obj.has("owner_name")) {
+                            Log.e("OwnerHomeFragment", "ERROR: Missing owner_name in response");
+                            Log.e("OwnerHomeFragment", "Available keys: " + (keys != null ? keys.toString() : "none"));
                             Toast.makeText(getContext(), "Invalid server response", Toast.LENGTH_SHORT).show();
                             return;
+                        }
+                        
+                        // Log revenue and charts availability
+                        boolean hasRevenue = obj.has("revenue");
+                        boolean hasCharts = obj.has("charts");
+                        Log.d("OwnerHomeFragment", "=== CHECKING DATA AVAILABILITY ===");
+                        Log.d("OwnerHomeFragment", "Has revenue object: " + hasRevenue);
+                        Log.d("OwnerHomeFragment", "Has charts object: " + hasCharts);
+                        
+                        if (hasRevenue) {
+                            try {
+                                JSONObject revenueObj = obj.getJSONObject("revenue");
+                                Log.d("OwnerHomeFragment", "=== REVENUE OBJECT ===");
+                                JSONArray revenueKeys = revenueObj.names();
+                                String revenueKeysStr = revenueKeys != null ? revenueKeys.toString() : "null";
+                                Log.d("OwnerHomeFragment", "Revenue object keys: " + revenueKeysStr);
+                                Log.d("OwnerHomeFragment", "Revenue object full: " + revenueObj.toString(2));
+                            } catch (JSONException e) {
+                                Log.e("OwnerHomeFragment", "ERROR parsing revenue object: " + e.getMessage());
+                            }
+                        } else {
+                            Log.w("OwnerHomeFragment", "WARNING: Revenue object is MISSING from response!");
+                        }
+                        
+                        if (hasCharts) {
+                            try {
+                                JSONObject chartsObj = obj.getJSONObject("charts");
+                                JSONArray chartsKeys = chartsObj.names();
+                                if (chartsKeys != null) {
+                                    List<String> chartKeyList = new ArrayList<>();
+                                    for (int i = 0; i < chartsKeys.length(); i++) {
+                                        chartKeyList.add(chartsKeys.getString(i));
+                                    }
+                                    Log.d("OwnerHomeFragment", "Charts object keys: " + chartKeyList.toString());
+                                }
+                                Log.d("OwnerHomeFragment", "Charts object full: " + chartsObj.toString(2));
+                            } catch (JSONException e) {
+                                Log.e("OwnerHomeFragment", "ERROR parsing charts object: " + e.getMessage());
+                            }
+                        } else {
+                            Log.w("OwnerHomeFragment", "WARNING: Charts object is MISSING from response!");
                         }
 
                         // Owner name
@@ -363,6 +450,35 @@ public class OwnerHomeFragment extends Fragment {
                         // Views count
                         int viewsCount = obj.optInt("views_count", 0);
                         tvViewsCount.setText(String.valueOf(viewsCount));
+                        
+                        // Revenue data - Total Revenue
+                        JSONObject revenue = obj.optJSONObject("revenue");
+                        if (revenue != null) {
+                            double totalRevenue = revenue.optDouble("total_revenue", 0.0);
+                            if (Double.isNaN(totalRevenue) || Double.isInfinite(totalRevenue)) {
+                                totalRevenue = 0.0;
+                            }
+                            tvTotalRevenue.setText(formatCurrency(totalRevenue));
+                        } else {
+                            tvTotalRevenue.setText("₱0.00");
+                        }
+                        
+                        // Monthly revenue chart - get from charts object (same as AnalyticsActivity)
+                        JSONObject charts = obj.optJSONObject("charts");
+                        if (charts != null) {
+                            JSONArray monthlyData = charts.optJSONArray("monthly_revenue");
+                            if (monthlyData != null && monthlyData.length() > 0) {
+                                populateMonthlyRevenueChart(monthlyData);
+                            } else if (chartMonthlyRevenue != null) {
+                                chartMonthlyRevenue.setNoDataText("No revenue data available");
+                                chartMonthlyRevenue.setNoDataTextColor(0xFF999999);
+                                chartMonthlyRevenue.invalidate();
+                            }
+                        } else if (chartMonthlyRevenue != null) {
+                            chartMonthlyRevenue.setNoDataText("No revenue data available");
+                            chartMonthlyRevenue.setNoDataTextColor(0xFF999999);
+                            chartMonthlyRevenue.invalidate();
+                        }
 
                         // Popular listing
                         JSONObject popular = obj.optJSONObject("popular_listing");
@@ -372,13 +488,29 @@ public class OwnerHomeFragment extends Fragment {
                             tvPopularVisits.setText(popular.optInt("visits", 0) + " bookings");
 
                             String imageUrl = popular.optString("image_path", "");
-                            if (!imageUrl.isEmpty()) {
+                            if (!imageUrl.isEmpty() && imageUrl.trim().length() > 0) {
+                                Log.d("OwnerHomeFragment", "Loading popular listing image: " + imageUrl);
                                 Glide.with(getContext())
                                         .load(imageUrl)
                                         .placeholder(R.drawable.sample_listing)
                                         .error(R.drawable.sample_listing)
+                                        .fallback(R.drawable.sample_listing)
+                                        .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                                            @Override
+                                            public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
+                                                Log.e("OwnerHomeFragment", "Failed to load popular listing image: " + imageUrl, e);
+                                                return false; // Let Glide handle the error
+                                            }
+
+                                            @Override
+                                            public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                                                Log.d("OwnerHomeFragment", "Successfully loaded popular listing image");
+                                                return false;
+                                            }
+                                        })
                                         .into(imgPopularListing);
                             } else {
+                                Log.d("OwnerHomeFragment", "No image URL provided, using placeholder");
                                 imgPopularListing.setImageResource(R.drawable.sample_listing);
                             }
                         } else {
@@ -403,8 +535,16 @@ public class OwnerHomeFragment extends Fragment {
                     }
                 },
                 error -> {
-                    Toast.makeText(getContext(), "Error fetching dashboard", Toast.LENGTH_SHORT).show();
-                    Log.e("OwnerHomeFragment", "Volley Error: " + error.getMessage(), error);
+                    Log.e("OwnerHomeFragment", "=== VOLLEY ERROR ===");
+                    Log.e("OwnerHomeFragment", "Error message: " + error.getMessage());
+                    Log.e("OwnerHomeFragment", "Error network response: " + (error.networkResponse != null ? 
+                        "Status: " + error.networkResponse.statusCode + ", Data: " + 
+                        new String(error.networkResponse.data) : "null"));
+                    Log.e("OwnerHomeFragment", "Error class: " + error.getClass().getName());
+                    if (error.getCause() != null) {
+                        Log.e("OwnerHomeFragment", "Error cause: " + error.getCause().getMessage(), error.getCause());
+                    }
+                    Toast.makeText(getContext(), "Error fetching dashboard: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     // Stop refresh indicator on error
                     if (swipeRefreshLayout != null) {
                         swipeRefreshLayout.setRefreshing(false);
@@ -420,6 +560,194 @@ public class OwnerHomeFragment extends Fragment {
         };
 
         Volley.newRequestQueue(getContext()).add(request);
+    }
+    
+    private String formatCurrency(double amount) {
+        if (Double.isNaN(amount) || Double.isInfinite(amount) || amount == 0) {
+            return "₱0.00";
+        }
+        java.text.DecimalFormat formatter = new java.text.DecimalFormat("₱#,##0.00");
+        return formatter.format(amount);
+    }
+    
+    private void initializeMonthlyRevenueChart() {
+        if (chartMonthlyRevenue == null) return;
+        
+        chartMonthlyRevenue.getDescription().setEnabled(false);
+        chartMonthlyRevenue.setTouchEnabled(true);
+        chartMonthlyRevenue.setDragEnabled(true);
+        chartMonthlyRevenue.setScaleEnabled(true);
+        chartMonthlyRevenue.setPinchZoom(true);
+        chartMonthlyRevenue.getLegend().setEnabled(true);
+        chartMonthlyRevenue.getLegend().setTextSize(11f);
+        chartMonthlyRevenue.getLegend().setTextColor(0xFF333333);
+        chartMonthlyRevenue.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        chartMonthlyRevenue.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        
+        XAxis xAxis = chartMonthlyRevenue.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setLabelRotationAngle(-45f);
+        xAxis.setTextSize(11f);
+        xAxis.setTextColor(0xFF333333);
+        xAxis.setDrawGridLines(true);
+        xAxis.setGridColor(0xFFE0E0E0);
+        
+        YAxis leftAxis = chartMonthlyRevenue.getAxisLeft();
+        leftAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                if (value >= 1000) {
+                    return String.format("%.0fK", value / 1000);
+                }
+                return String.format("%.0f", value);
+            }
+        });
+        leftAxis.setTextSize(11f);
+        leftAxis.setTextColor(0xFF333333);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(0xFFE0E0E0);
+        
+        chartMonthlyRevenue.getAxisRight().setEnabled(false);
+        chartMonthlyRevenue.setHighlightPerTapEnabled(true);
+    }
+    
+    private void populateMonthlyRevenueChart(JSONArray monthlyData) {
+        if (chartMonthlyRevenue == null || monthlyData == null || monthlyData.length() == 0) {
+            return;
+        }
+        
+        List<Entry> entries = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        
+        try {
+            for (int i = 0; i < monthlyData.length(); i++) {
+                JSONObject item = monthlyData.getJSONObject(i);
+                float revenue = (float) item.getDouble("revenue");
+                String monthLabel = item.getString("month_label");
+                
+                entries.add(new Entry(i, revenue));
+                labels.add(monthLabel);
+            }
+            
+            LineDataSet dataSet = new LineDataSet(entries, "Revenue");
+            dataSet.setColor(0xFF2196F3);
+            dataSet.setValueTextColor(0xFF333333);
+            dataSet.setValueTextSize(10f);
+            dataSet.setLineWidth(2.5f);
+            dataSet.setCircleColor(0xFF2196F3);
+            dataSet.setCircleRadius(5f);
+            dataSet.setCircleHoleColor(0xFFFFFFFF);
+            dataSet.setCircleHoleRadius(2.5f);
+            dataSet.setDrawCircleHole(true);
+            dataSet.setFillColor(0xFF2196F3);
+            dataSet.setFillAlpha(60);
+            dataSet.setDrawFilled(true);
+            dataSet.setDrawValues(false);
+            // Format values to show exact currency amount when clicked
+            dataSet.setValueFormatter(new ValueFormatter() {
+                @Override
+                public String getFormattedValue(float value) {
+                    return formatCurrency(value);
+                }
+            });
+            
+            // Create custom marker for exact values on click
+            ChartMarker marker = new ChartMarker(getContext(), labels, true); // true = is currency
+            chartMonthlyRevenue.setMarker(marker);
+            
+            LineData lineData = new LineData(dataSet);
+            chartMonthlyRevenue.setData(lineData);
+            chartMonthlyRevenue.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
+            chartMonthlyRevenue.invalidate();
+            chartMonthlyRevenue.post(() -> {
+                chartMonthlyRevenue.notifyDataSetChanged();
+                chartMonthlyRevenue.invalidate();
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Log.e("OwnerHomeFragment", "Error parsing monthly revenue data: " + e.getMessage());
+        }
+    }
+    
+    // Custom Marker for charts that show currency values
+    private static class ChartMarker extends MarkerView {
+        private TextView tvContent;
+        private List<String> labels;
+        private boolean isCurrency;
+        
+        public ChartMarker(Context context, List<String> labels, boolean isCurrency) {
+            super(context, R.layout.chart_marker);
+            this.labels = labels;
+            this.isCurrency = isCurrency;
+        }
+        
+        @Override
+        public void refreshContent(Entry e, Highlight highlight) {
+            if (tvContent == null) {
+                tvContent = findViewById(R.id.tvContent);
+            }
+            
+            float value = e.getY();
+            
+            String formattedValue;
+            
+            if (isCurrency) {
+                // Format as exact currency (no abbreviations)
+                java.text.DecimalFormat formatter = new java.text.DecimalFormat("₱#,##0.00");
+                formattedValue = formatter.format(value);
+            } else {
+                // Format as exact number
+                formattedValue = String.format("%.0f", value);
+            }
+            
+            if (tvContent != null) {
+                tvContent.setText(formattedValue);
+            }
+            super.refreshContent(e, highlight);
+        }
+        
+        @Override
+        public MPPointF getOffset() {
+            return new MPPointF(-(getWidth() / 2), -getHeight());
+        }
+        
+        @Override
+        public MPPointF getOffsetForDrawingAtPoint(float posX, float posY) {
+            MPPointF offset = getOffset();
+            MPPointF offset2 = new MPPointF();
+            
+            offset2.x = offset.x;
+            offset2.y = offset.y;
+            
+            com.github.mikephil.charting.charts.Chart chart = getChartView();
+            if (chart == null) {
+                return offset2;
+            }
+            
+            float width = getWidth();
+            float height = getHeight();
+            
+            // Adjust horizontal position to stay within chart bounds
+            if (posX + offset2.x < 0) {
+                // Too far left - align to left edge
+                offset2.x = -posX;
+            } else if (posX + width + offset2.x > chart.getWidth()) {
+                // Too far right - align to right edge
+                offset2.x = chart.getWidth() - posX - width;
+            }
+            
+            // Adjust vertical position to stay within chart bounds
+            if (posY + offset2.y < 0) {
+                // Too far up - show below instead
+                offset2.y = 10;
+            } else if (posY + height + offset2.y > chart.getHeight()) {
+                // Too far down - show above instead
+                offset2.y = -height - 10;
+            }
+            
+            return offset2;
+        }
     }
 
     private void checkUnreadMessages() {
@@ -885,4 +1213,7 @@ public class OwnerHomeFragment extends Fragment {
         stopPeriodicNotificationCheck();
         stopPeriodicMessageCheck();
     }
+    
+    // Chart methods removed - moved to AnalyticsActivity
+    // All revenue analytics and charts are now in AnalyticsActivity
 }

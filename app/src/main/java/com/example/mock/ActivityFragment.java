@@ -17,7 +17,7 @@ public class ActivityFragment extends Fragment {
 
     private static final String TAG = "ActivityFragment";
     private static final String ARG_USER_ID = "user_id";
-    private LinearLayout layoutBookings, layoutPaymentStatus, layoutBoardersRented, layoutMaintenanceRequests, layoutReviews;
+    private LinearLayout layoutBookings, layoutPaymentStatus, layoutBoardersRented, layoutMaintenanceRequests, layoutAnalytics, layoutReviews;
     private int userId;
 
     public static ActivityFragment newInstance(int userId) {
@@ -60,6 +60,7 @@ public class ActivityFragment extends Fragment {
         layoutPaymentStatus = view.findViewById(R.id.layoutPaymentStatus);
         layoutBoardersRented = view.findViewById(R.id.layoutBoardersRented);
         layoutMaintenanceRequests = view.findViewById(R.id.layoutMaintenanceRequests);
+        layoutAnalytics = view.findViewById(R.id.layoutAnalytics);
         layoutReviews = view.findViewById(R.id.layoutReviews);
 
         // Click Events
@@ -67,6 +68,7 @@ public class ActivityFragment extends Fragment {
         layoutPaymentStatus.setOnClickListener(v -> openActivityDetails("payment_status"));
         layoutBoardersRented.setOnClickListener(v -> openActivityDetails("boarders_rented"));
         layoutMaintenanceRequests.setOnClickListener(v -> openMaintenanceRequestsActivity());
+        layoutAnalytics.setOnClickListener(v -> openAnalyticsActivity());
         layoutReviews.setOnClickListener(v -> openReviewsActivity());
 
         return view;
@@ -93,6 +95,12 @@ public class ActivityFragment extends Fragment {
 
     private void openReviewsActivity() {
         Intent intent = new Intent(getContext(), ReviewsActivity.class);
+        intent.putExtra("user_id", userId);
+        startActivity(intent);
+    }
+
+    private void openAnalyticsActivity() {
+        Intent intent = new Intent(getContext(), AnalyticsActivity.class);
         intent.putExtra("user_id", userId);
         startActivity(intent);
     }

@@ -238,7 +238,96 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Today's Bookings -->
+        <!-- Total Revenue Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:foreground="@drawable/custom_ripple_effect"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@null">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <!-- Left Side Text -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_weight="1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:fontFamily="@font/poppins_medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Revenue"
+                        android:textSize="20sp"
+                        android:textColor="#333333"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_bold" />
+                </LinearLayout>
+
+                <!-- Number on Right Side -->
+                <TextView
+                    android:id="@+id/tvTotalRevenue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="₱0.00"
+                    android:textSize="32sp"
+                    android:textColor="#2196F3"
+                    android:fontFamily="@font/poppins_bold" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Monthly Revenue Chart Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monthly Revenue"
+            android:textSize="18sp"
+            android:layout_marginTop="24dp"
+            android:textColor="#333333"
+            android:fontFamily="@font/poppins_medium" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:stateListAnimator="@null">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/chartMonthlyRevenue"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Popular Listing Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

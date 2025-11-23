@@ -1,0 +1,1118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/arrowleft"
+            android:contentDescription="Back"
+            android:layout_centerVertical="true"/>
+
+        <TextView
+            android:id="@+id/tvHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analytics Dashboard"
+            android:textSize="20sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold"
+            android:layout_centerInParent="true"/>
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true" />
+
+    </RelativeLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <!-- Revenue Analytics Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Revenue Overview"
+                android:textSize="18sp"
+                android:layout_marginTop="5dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <!-- Total Revenue Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#E3F2FD"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total"
+                            android:textSize="14sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Revenue"
+                            android:textSize="20sp"
+                            android:textColor="#333333"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvTotalRevenue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₱0.00"
+                        android:textSize="28sp"
+                        android:textColor="#2196F3"
+                        android:fontFamily="@font/poppins_bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Revenue Cards Row (Monthly & Weekly) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <!-- Monthly Revenue Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#F3E5F5"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Monthly"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvMonthlyRevenue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="20sp"
+                            android:textColor="#9C27B0"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Weekly Revenue Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#FFF3E0"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="This Week"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvWeeklyRevenue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="20sp"
+                            android:textColor="#FF9800"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Payment Status Row (Paid & Unpaid) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <!-- Paid Payments Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#E8F5E9"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Paid"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvPaidAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="18sp"
+                            android:textColor="#4CAF50"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvPaidCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 payments"
+                            android:textSize="11sp"
+                            android:textColor="#999999"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Unpaid Payments Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#FFEBEE"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Unpaid"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvUnpaidAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="18sp"
+                            android:textColor="#F44336"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvUnpaidCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 payments"
+                            android:textSize="11sp"
+                            android:textColor="#999999"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Boarding House Revenue Breakdown -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRevenueByBh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#E3F2FD"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Revenue by Boarding House"
+                            android:textSize="18sp"
+                            android:textColor="#333333"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <ImageView
+                            android:id="@+id/ivExpandRevenue"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_arrow_down"
+                            android:tint="#666666"
+                            android:contentDescription="Expand/Collapse" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutBoardingHouses"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="12dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Total Bookings Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total Bookings"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#E3F2FD"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All Time"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvTotalBookings"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#2196F3"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#E8F5E9"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="This Month"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvMonthlyBookings"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#4CAF50"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Occupancy Rate Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Occupancy Rate"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardOverallOccupancy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFF3E0"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Overall Occupancy"
+                                android:textSize="14sp"
+                                android:textColor="#555555"
+                                android:fontFamily="@font/poppins_medium" />
+
+                            <TextView
+                                android:id="@+id/tvOverallOccupancy"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0%"
+                                android:textSize="28sp"
+                                android:textColor="#FF9800"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/poppins_bold"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:gravity="end"
+                                android:layout_marginEnd="8dp">
+
+                                <TextView
+                                    android:id="@+id/tvOccupiedRooms"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0 occupied"
+                                    android:textSize="12sp"
+                                    android:textColor="#666666"
+                                    android:fontFamily="@font/poppins_regular" />
+
+                                <TextView
+                                    android:id="@+id/tvAvailableRooms"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0 available"
+                                    android:textSize="12sp"
+                                    android:textColor="#666666"
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:id="@+id/ivExpandOccupancy"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_arrow_down"
+                                android:tint="#666666"
+                                android:contentDescription="Expand/Collapse" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutBhOccupancy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="12dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Payment Status Summary Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Payment Status Summary"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <!-- Paid -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="#E8F5E9"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Paid"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvPaidPaymentsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="20sp"
+                            android:textColor="#4CAF50"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvPaidPaymentsAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="10sp"
+                            android:textColor="#999999"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Pending -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="#FFF3E0"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pending"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvPendingPaymentsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="20sp"
+                            android:textColor="#FF9800"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvPendingPaymentsAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="10sp"
+                            android:textColor="#999999"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Overdue -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:backgroundTint="#FFEBEE"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Overdue"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvOverduePaymentsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="20sp"
+                            android:textColor="#F44336"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvOverduePaymentsAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱0.00"
+                            android:textSize="10sp"
+                            android:textColor="#999999"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Room Availability Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Room Availability"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#E3F2FD"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Occupied"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvOccupiedRoomsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="28sp"
+                            android:textColor="#2196F3"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:backgroundTint="#E8F5E9"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Available"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvAvailableRoomsCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="28sp"
+                            android:textColor="#4CAF50"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- New Applications Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Applications"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="#FFF3E0"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pending"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvPendingApplications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#FF9800"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="#E8F5E9"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Approved"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvApprovedApplications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#4CAF50"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:backgroundTint="#FFEBEE"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="8dp"
+                    app:strokeWidth="0dp"
+                    android:stateListAnimator="@null">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Rejected"
+                            android:textSize="12sp"
+                            android:textColor="#555555"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvRejectedApplications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textColor="#F44336"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Sales Charts Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sales Charts"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium" />
+
+            <!-- Monthly Revenue Chart -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFFFFF"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Monthly Revenue"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:layout_marginBottom="12dp" />
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/chartMonthlyRevenue"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Top-Paying Rooms Chart -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFFFFF"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Top-Paying Rooms"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:layout_marginBottom="12dp" />
+
+                    <com.github.mikephil.charting.charts.HorizontalBarChart
+                        android:id="@+id/chartTopRooms"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Payment Activity Over Time Chart -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFFFFF"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp"
+                android:stateListAnimator="@null">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Payment Activity (Last 30 Days)"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:fontFamily="@font/poppins_semibold"
+                        android:layout_marginBottom="12dp" />
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/chartPaymentActivity"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</LinearLayout>
+
