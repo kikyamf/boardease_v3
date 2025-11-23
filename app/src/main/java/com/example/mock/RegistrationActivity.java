@@ -10,8 +10,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 
@@ -31,9 +33,24 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import android.content.ContentResolver;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ClickableSpan;
+import android.text.style.UnderlineSpan;
+import android.text.method.LinkMovementMethod;
+import android.view.LayoutInflater;
+import android.widget.ImageButton;
+import com.android.volley.AuthFailureError;
+import com.android.volley.toolbox.VolleyMultipartRequest;
+import com.android.volley.toolbox.VolleyMultipartRequest.DataPart;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -50,7 +67,45 @@ public class RegistrationActivity extends AppCompatActivity {
     TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
     TextView tvGcashNo, tvGcashQR;
     ImageView UploadQr, ivTogglePassword;
-    ProgressBar progressBarSection2, progressBarSection3, progressBarSection4, progressBarSection5;
+    ProgressBar progressBarSection2, progressBarSection3, progressBarSection4, progressBarSection5, progressBarSection6;
+    
+    // Section 6 fields (from Registration2Activity)
+    Spinner spinnerVId;
+    ImageView ivUploadF, ivUploadB;
+    EditText etIdNumber;
+    LinearLayout backIdSection;
+    CheckBox cbAgree;
+    TextView tvAgreeText;
+    private View businessPermitSection;
+    private ViewGroup businessPermitContainer;
+    private Button btnAddPermit;
+    
+    // ID and permit data
+    private String idFrontPath = null;
+    private String idBackPath = null;
+    private Bitmap frontBitmap;
+    private Bitmap backBitmap;
+    private Bitmap qrBitmap;
+    private boolean isRegistering = false;
+    
+    // Business Permit data
+    private static class PermitUploadItem {
+        View itemView;
+        ImageView imageView;
+        Button removeButton;
+        Bitmap bitmap;
+        Uri uri;
+        int index;
+    }
+    private List<PermitUploadItem> permitUploadItems = new ArrayList<>();
+    private static final int MAX_PERMITS = 3;
+    private int nextPermitIndex = 0;
+    private List<ActivityResultLauncher<String>> permitImageLaunchers = new ArrayList<>();
+    private PermitUploadItem currentPermitItemForLauncher = null;
+    
+    // Image launchers for ID
+    private ActivityResultLauncher<String> pickFrontImageLauncher;
+    private ActivityResultLauncher<String> pickBackImageLauncher;
     Button btnNext;
     boolean isPasswordVisible = false;
 
@@ -63,6 +118,7 @@ public class RegistrationActivity extends AppCompatActivity {
     private com.google.android.material.card.MaterialCardView sectionAddress;
     private com.google.android.material.card.MaterialCardView sectionLoginCredentials;
     private com.google.android.material.card.MaterialCardView sectionPaymentInfo;
+    private com.google.android.material.card.MaterialCardView sectionAdditionalInfo;
     
     // Progress indicator circles
     private TextView progressCircle1;
@@ -70,6 +126,7 @@ public class RegistrationActivity extends AppCompatActivity {
     private TextView progressCircle3;
     private TextView progressCircle4;
     private TextView progressCircle5;
+    private TextView progressCircle6;
     
     // Address picker data
     private String selectedProvince = "";
@@ -135,6 +192,7 @@ public class RegistrationActivity extends AppCompatActivity {
         progressBarSection3 = findViewById(R.id.progressBarSection3);
         progressBarSection4 = findViewById(R.id.progressBarSection4);
         progressBarSection5 = findViewById(R.id.progressBarSection5);
+        progressBarSection6 = findViewById(R.id.progressBarSection6);
         
         // Get section cards
         sectionAccountType = findViewById(R.id.sectionAccountType);
@@ -142,6 +200,19 @@ public class RegistrationActivity extends AppCompatActivity {
         sectionAddress = findViewById(R.id.sectionAddress);
         sectionLoginCredentials = findViewById(R.id.sectionLoginCredentials);
         sectionPaymentInfo = findViewById(R.id.sectionPaymentInfo);
+        sectionAdditionalInfo = findViewById(R.id.sectionAdditionalInfo);
+        
+        // Initialize Section 6 fields
+        spinnerVId = findViewById(R.id.spinnerVId);
+        ivUploadF = findViewById(R.id.ivUploadF);
+        ivUploadB = findViewById(R.id.ivUploadB);
+        etIdNumber = findViewById(R.id.etIdNumber);
+        backIdSection = findViewById(R.id.backIdSection);
+        cbAgree = findViewById(R.id.cbAgree);
+        tvAgreeText = findViewById(R.id.tvAgreeText);
+        businessPermitSection = findViewById(R.id.businessPermitSection);
+        businessPermitContainer = findViewById(R.id.businessPermitContainer);
+        btnAddPermit = findViewById(R.id.btnAddPermit);
         
         // Get progress indicator circles
         progressCircle1 = findViewById(R.id.progressCircle1);
@@ -149,6 +220,7 @@ public class RegistrationActivity extends AppCompatActivity {
         progressCircle3 = findViewById(R.id.progressCircle3);
         progressCircle4 = findViewById(R.id.progressCircle4);
         progressCircle5 = findViewById(R.id.progressCircle5);
+        progressCircle6 = findViewById(R.id.progressCircle6);
         
         // Initialize progress indicator (Circle 1 is filled by default)
         updateProgressIndicator();
@@ -260,6 +332,10 @@ public class RegistrationActivity extends AppCompatActivity {
                     etGcashNum.setVisibility(android.view.View.VISIBLE);
                     tvGcashQR.setVisibility(android.view.View.GONE);
                     UploadQr.setVisibility(android.view.View.GONE);
+                    // Hide business permit section for Boarder
+                    if (businessPermitSection != null) {
+                        businessPermitSection.setVisibility(View.GONE);
+                    }
                 } else if ("BH Owner".equals(selectedRole)) {
                     // Show both GCash Number and QR code for BH Owner
                     llGcash.setVisibility(android.view.View.VISIBLE);
@@ -267,9 +343,21 @@ public class RegistrationActivity extends AppCompatActivity {
                     etGcashNum.setVisibility(android.view.View.VISIBLE);
                     tvGcashQR.setVisibility(android.view.View.VISIBLE);
                     UploadQr.setVisibility(android.view.View.VISIBLE);
+                    // Show business permit section for BH Owner
+                    if (businessPermitSection != null) {
+                        businessPermitSection.setVisibility(View.VISIBLE);
+                        // Create first permit upload item if not already created
+                        if (permitUploadItems.isEmpty()) {
+                            createPermitUploadItem();
+                        }
+                    }
                 } else {
                     // Hide all GCash fields for "Select --"
                     llGcash.setVisibility(android.view.View.GONE);
+                    // Hide business permit section
+                    if (businessPermitSection != null) {
+                        businessPermitSection.setVisibility(View.GONE);
+                    }
                 }
                 
                 // Check if section I is complete and reveal section II
@@ -334,6 +422,9 @@ public class RegistrationActivity extends AppCompatActivity {
         
         // Setup GCash number field with fixed +63 prefix and formatting
         setupGcashNumberField();
+        
+        // Setup Section 6 fields (Additional Personal Information)
+        setupSection6Fields();
         
         // Setup name field validations with input filters and real-time validation
         setupNameFieldValidation(etFirstName, tvFirstNameError, "First Name");
@@ -456,7 +547,7 @@ public class RegistrationActivity extends AppCompatActivity {
         btnNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Validate all fields
+                // Validate all fields including Section 6
                 String validationError = validateAllFields();
                 if (validationError != null && !validationError.isEmpty()) {
                     showValidationErrorModal(validationError);
@@ -465,7 +556,7 @@ public class RegistrationActivity extends AppCompatActivity {
 
                 // If validation passed, check email validation status
                 String email = etEmail.getText().toString().trim();
-                Log.d("RegistrationActivity", "=== NEXT BUTTON CLICKED ===");
+                Log.d("RegistrationActivity", "=== REGISTER BUTTON CLICKED ===");
                 Log.d("RegistrationActivity", "Email: " + email);
                 Log.d("RegistrationActivity", "Validation visibility: " + (tvEmailValidation.getVisibility() == View.VISIBLE ? "VISIBLE" : "GONE"));
                 
@@ -474,9 +565,9 @@ public class RegistrationActivity extends AppCompatActivity {
                     Log.d("RegistrationActivity", "Validation text: " + validationText);
                     
                     if (validationText.startsWith("✓")) {
-                        // Email is already validated, proceed directly
-                        Log.d("RegistrationActivity", "Email validation PASSED - proceeding to next activity");
-                        proceedToNextActivity();
+                        // Email is already validated, proceed to registration
+                        Log.d("RegistrationActivity", "Email validation PASSED - proceeding to registration");
+                        proceedToRegistration();
                     } else if (validationText.startsWith("✗")) {
                         // Email validation failed, show error
                         Log.d("RegistrationActivity", "Email validation FAILED - blocking user");
@@ -540,12 +631,12 @@ public class RegistrationActivity extends AppCompatActivity {
                             tvEmailValidation.setText("✓ " + message);
                             tvEmailValidation.setTextColor(getResources().getColor(android.R.color.black));
                             
-                            // Proceed to next activity after a short delay
+                            // Proceed to registration after a short delay
                             etEmail.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Log.d("RegistrationActivity", "Delayed proceedToNextActivity called");
-                                    proceedToNextActivity();
+                                    Log.d("RegistrationActivity", "Delayed proceedToRegistration called");
+                                    proceedToRegistration();
                                 }
                             }, 1000); // 1 second delay to show the success message
                         } else {
@@ -643,9 +734,9 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     /**
-     * Proceeds to next activity after email validation
+     * Proceeds to registration after email validation and Section 6 validation
      */
-    private void proceedToNextActivity() {
+    private void proceedToRegistration() {
         // Check if email validation was successful
         if (tvEmailValidation.getVisibility() != View.VISIBLE || 
             !tvEmailValidation.getText().toString().startsWith("✓")) {
@@ -653,49 +744,70 @@ public class RegistrationActivity extends AppCompatActivity {
             return;
         }
         
-                    Intent a = new Intent(RegistrationActivity.this, Registration2Activity.class);
-
-                    String selectedRole = spinnerRole.getSelectedItem().toString();
-                    boolean isBoarder = "Boarder".equals(selectedRole);
-                    
-                    a.putExtra("role", selectedRole);
-                    a.putExtra("firstName", etFirstName.getText().toString().trim());
-                    a.putExtra("middleName", etMiddleName.getText().toString().trim());
-                    a.putExtra("lastName", etLastName.getText().toString().trim());
-                    a.putExtra("suffix", spinnerSuffix.getSelectedItem().toString());
-                    a.putExtra("birthDate", etBirthDate.getText().toString().trim());
-                    // Convert phone format: +63 992 531 1409 -> 09925311409 (start with 0, no +63)
-                    String phoneFormatted = etPhone.getText().toString().trim();
-                    // Extract digits after +63 (skip "+63 ", get the 10 digits after)
-                    String digitsAfterPlus63 = phoneFormatted.substring(4).replaceAll("[^0-9]", "");
-                    // Add 0 at the start: 09925311409 (11 digits starting with 0)
-                    String phoneNumber = "0" + digitsAfterPlus63;
-                    a.putExtra("phone", phoneNumber);
-                    a.putExtra("address", etAddress.getText().toString().trim());
-                    a.putExtra("email", etEmail.getText().toString().trim());
-                    a.putExtra("password", etPassword.getText().toString().trim());
-                    
-                    // Convert GCash format: +63 992 531 1409 -> 09925311409 (start with 0, no +63)
-                    String gcashFormatted = etGcashNum.getText().toString().trim();
-                    // Extract digits after +63 (skip "+63 ", get the 10 digits after)
-                    String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
-                    // Add 0 at the start: 09925311409 (11 digits starting with 0)
-                    String gcashNumber = "0" + gcashDigitsAfterPlus63;
-                    // GCash number is required for both Boarder and BH Owner
-                    a.putExtra("gcashNum", gcashNumber);
-                    
-                    // QR code is only required for BH Owner
-                    if (!isBoarder) {
-                        // if you want to send QR URI
-                        if (selectedQrUri != null) {
-                            a.putExtra("qrUri", selectedQrUri.toString());
-                        }
-                    } else {
-                        // Boarder doesn't need QR code
-                        a.putExtra("qrUri", "");
-                    }
-
-                    startActivity(a);
+        // Validate Section 6 fields
+        String section6Error = validateSection6Fields();
+        if (section6Error != null && !section6Error.isEmpty()) {
+            showValidationErrorModal(section6Error);
+            return;
+        }
+        
+        // All validations passed, proceed with registration
+        performRegistration();
+    }
+    
+    /**
+     * Validates Section 6 fields (ID, ID images, terms agreement)
+     * @return Error message if validation fails, null if valid
+     */
+    private String validateSection6Fields() {
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            return "Please select a valid ID type";
+        }
+        
+        String idNumber = etIdNumber.getText().toString().trim();
+        if (idNumber.isEmpty()) {
+            return "Please enter your ID number";
+        }
+        
+        if (idFrontPath == null || frontBitmap == null) {
+            return "Please upload front ID image";
+        }
+        
+        // Check if back ID is required (Passport doesn't have back side)
+        boolean isPassport = selectedIdType.equals("Philippine Passport");
+        if (!isPassport && (idBackPath == null || backBitmap == null)) {
+            return "Please upload front and back ID images";
+        }
+        
+        if (!cbAgree.isChecked()) {
+            return "You must agree to the terms and privacy policy to continue";
+        }
+        
+        // Check role-specific requirements
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        
+        // QR code is only required for BH Owner
+        if (!isBoarder && (selectedQrUri == null || qrBitmap == null)) {
+            return "GCash QR code is required for BH Owner. Please upload your GCash QR code.";
+        }
+        
+        // Business permits are required for BH Owner (at least one)
+        if (!isBoarder) {
+            boolean hasPermits = false;
+            for (PermitUploadItem item : permitUploadItems) {
+                if (item.bitmap != null) {
+                    hasPermits = true;
+                    break;
+                }
+            }
+            if (!hasPermits) {
+                return "At least one business permit is required for BH Owner. Please upload your business permit(s).";
+            }
+        }
+        
+        return null; // All validations passed
     }
 
     /**
@@ -1175,6 +1287,200 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     /**
+     * Sets up Section 6 fields (ID selection, image uploads, business permits, terms)
+     */
+    private void setupSection6Fields() {
+        // Setup ID type spinner
+        String[] idTypes = {
+            "Select --",
+            "Philippine Passport",
+            "Driver's License",
+            "PhilID (National ID)",
+            "UMID(SSS ID)",
+            "GSIS e-card",
+            "PhilHealth ID",
+            "TIN ID (BIR)",
+            "Voter's ID",
+            "Postal ID"
+        };
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+            this,
+            android.R.layout.simple_spinner_item,
+            idTypes
+        ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000);
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerVId.setAdapter(adapter);
+        
+        // Setup ID type change listener
+        spinnerVId.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selectedIdType = parent.getItemAtPosition(position).toString();
+                // Show/hide back ID section based on ID type
+                if (selectedIdType.equals("Philippine Passport")) {
+                    backIdSection.setVisibility(View.GONE);
+                } else {
+                    backIdSection.setVisibility(View.VISIBLE);
+                }
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Setup image pickers for ID
+        pickFrontImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    String selectedIdType = spinnerVId.getSelectedItem().toString();
+                    if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                        Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    verifyAndSetFrontImage(uri);
+                }
+            }
+        );
+        
+        pickBackImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    String selectedIdType = spinnerVId.getSelectedItem().toString();
+                    if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                        Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    verifyAndSetBackImage(uri);
+                }
+            }
+        );
+        
+        // Setup ID image click listeners
+        ivUploadF.setOnClickListener(v -> {
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent intent = new Intent(this, IdCaptureActivity.class);
+            intent.putExtra("id_type", "front");
+            intent.putExtra("selected_id_type", selectedIdType);
+            startActivityForResult(intent, 1001);
+        });
+        
+        ivUploadB.setOnClickListener(v -> {
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent intent = new Intent(this, IdCaptureActivity.class);
+            intent.putExtra("id_type", "back");
+            intent.putExtra("selected_id_type", selectedIdType);
+            startActivityForResult(intent, 1002);
+        });
+        
+        // Pre-register permit image launchers (must be done during onCreate)
+        for (int i = 0; i < MAX_PERMITS; i++) {
+            ActivityResultLauncher<String> permitLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null && currentPermitItemForLauncher != null) {
+                        handlePermitImageSelection(currentPermitItemForLauncher, uri);
+                        currentPermitItemForLauncher = null;
+                    }
+                }
+            );
+            permitImageLaunchers.add(permitLauncher);
+        }
+        
+        // Setup business permit section (only for BH Owner)
+        // Initially hide it, will be shown when role is selected
+        if (businessPermitSection != null) {
+            businessPermitSection.setVisibility(View.GONE);
+        }
+        
+        // Setup add permit button listener (will be used when BH Owner is selected)
+        if (btnAddPermit != null) {
+            btnAddPermit.setOnClickListener(v -> {
+                if (permitUploadItems.size() < MAX_PERMITS) {
+                    createPermitUploadItem();
+                    updateAddPermitButtonVisibility();
+                } else {
+                    Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        
+        // Setup terms and privacy checkbox
+        if (tvAgreeText != null) {
+            String fullText = "Agree with terms and privacy";
+            SpannableString spannableString = new SpannableString(fullText);
+            String clickableText = "terms and privacy";
+            int startIndex = fullText.indexOf(clickableText);
+            int endIndex = startIndex + clickableText.length();
+            
+            if (startIndex >= 0) {
+                ClickableSpan clickableSpan = new ClickableSpan() {
+                    @Override
+                    public void onClick(View widget) {
+                        showTermsPrivacyDialog();
+                    }
+                };
+                spannableString.setSpan(clickableSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                spannableString.setSpan(new UnderlineSpan(), startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            
+            tvAgreeText.setText(spannableString);
+            tvAgreeText.setMovementMethod(LinkMovementMethod.getInstance());
+        }
+        
+        // Initialize QR bitmap from selectedQrUri if available
+        if (selectedQrUri != null) {
+            try {
+                ContentResolver resolver = getContentResolver();
+                qrBitmap = BitmapFactory.decodeStream(resolver.openInputStream(selectedQrUri));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
      * Verifies and sets QR image if approved
      */
     private void verifyAndSetQrImage(Uri imageUri) {
@@ -1219,6 +1525,16 @@ public class RegistrationActivity extends AppCompatActivity {
                     selectedQrUri = imageUri;
                     UploadQr.setImageURI(imageUri); // show the image in ImageView
                     UploadQr.setScaleType(ImageView.ScaleType.CENTER_CROP); // Ensure proper display
+                    
+                    // Load QR bitmap
+                    try {
+                        ContentResolver resolver = getContentResolver();
+                        qrBitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+                        Log.d("QR_VALIDATION", "QR bitmap loaded successfully");
+                    } catch (Exception e) {
+                        Log.e("QR_VALIDATION", "Error loading QR bitmap: " + e.getMessage());
+                    }
+                    
                     Log.d("QR_VALIDATION", "QR image set successfully");
                     
                     // Show success result
@@ -1901,6 +2217,9 @@ public class RegistrationActivity extends AppCompatActivity {
             // Section IV is complete, reveal Section V with loading animation
             // Both Boarders and BH Owners need Section V (Boarders need GCash number, BH Owners need GCash number + QR code)
             revealSectionWithLoading(sectionVWrapper, progressBarSection5, 1500);
+            
+            // Also check if Section V is complete to reveal Section VI
+            checkSectionVCompletion();
         } else {
             // Section IV is incomplete, hide Section V
             if (sectionVWrapper.getVisibility() == View.VISIBLE) {
@@ -1925,18 +2244,24 @@ public class RegistrationActivity extends AppCompatActivity {
                                 gcashNum.length() >= 14 && 
                                 gcashNum.substring(4).replaceAll("[^0-9]", "").length() >= 10;
         
+        View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
+        
         if (isBoarder) {
             // Boarders only need GCash number (no QR code required)
-            // Section V completion doesn't reveal a new section, but we can use this for final validation
-            // This method is called when GCash fields are updated to ensure data is ready for submission
+            // Section V is complete, reveal Section VI with loading animation
+            if (gcashNumValid && sectionVIWrapper.getVisibility() != View.VISIBLE) {
+                revealSectionWithLoading(sectionVIWrapper, progressBarSection6, 1500);
+            }
             return;
         }
         
         // For BH Owner, also check if QR code is provided
         boolean qrCodeValid = selectedQrUri != null;
         
-        // Section V completion doesn't reveal a new section, but we can use this for final validation
-        // This method is called when GCash fields are updated to ensure data is ready for submission
+        // Section V is complete, reveal Section VI with loading animation
+        if (gcashNumValid && qrCodeValid && sectionVIWrapper.getVisibility() != View.VISIBLE) {
+            revealSectionWithLoading(sectionVIWrapper, progressBarSection6, 1500);
+        }
     }
     
     /**
@@ -1996,6 +2321,17 @@ public class RegistrationActivity extends AppCompatActivity {
                 sectionVWrapper.setVisibility(View.GONE);
             }
         }
+        
+        // Hide Section VI (Additional Info) if we're starting from section 6 onwards
+        if (startSectionNumber <= 6) {
+            View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
+            if (progressBarSection6 != null) {
+                progressBarSection6.setVisibility(View.GONE);
+            }
+            if (sectionVIWrapper != null && sectionVIWrapper.getVisibility() == View.VISIBLE) {
+                sectionVIWrapper.setVisibility(View.GONE);
+            }
+        }
     }
     
     /**
@@ -2005,7 +2341,7 @@ public class RegistrationActivity extends AppCompatActivity {
      */
     private void updateProgressIndicator() {
         if (progressCircle1 == null || progressCircle2 == null || progressCircle3 == null ||
-            progressCircle4 == null || progressCircle5 == null) {
+            progressCircle4 == null || progressCircle5 == null || progressCircle6 == null) {
             return; // Progress circles not initialized yet
         }
         
@@ -2048,6 +2384,15 @@ public class RegistrationActivity extends AppCompatActivity {
         } else {
             progressCircle5.setBackgroundResource(R.drawable.progress_circle_hollow);
             progressCircle5.setTextColor(0xFF666666);
+        }
+        
+        View sectionVIWrapper = getSectionWrapper(sectionAdditionalInfo);
+        if (sectionVIWrapper != null && sectionVIWrapper.getVisibility() == View.VISIBLE) {
+            progressCircle6.setBackgroundResource(R.drawable.progress_circle_filled);
+            progressCircle6.setTextColor(getResources().getColor(android.R.color.white));
+        } else {
+            progressCircle6.setBackgroundResource(R.drawable.progress_circle_hollow);
+            progressCircle6.setTextColor(0xFF666666);
         }
     }
     
@@ -2409,6 +2754,587 @@ public class RegistrationActivity extends AppCompatActivity {
         Intent intent = new Intent(RegistrationActivity.this, Login.class);
         startActivity(intent);
         finish();
+    }
+    
+    /**
+     * Verifies and sets front ID image if approved
+     */
+    private void verifyAndSetFrontImage(Uri imageUri) {
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Toast.makeText(this, "Verifying front ID document...", Toast.LENGTH_SHORT).show();
+        
+        IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                if (result.isValid) {
+                    ivUploadF.setImageURI(imageUri);
+                    ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    idFrontPath = imageUri.toString();
+                    
+                    try {
+                        ContentResolver resolver = getContentResolver();
+                        frontBitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+                        if (frontBitmap != null && result.extractedIdNumber != null && !result.extractedIdNumber.isEmpty()) {
+                            etIdNumber.setText(result.extractedIdNumber);
+                        }
+                        Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Log.e("RegistrationActivity", "Error loading front image", e);
+                        Toast.makeText(RegistrationActivity.this, "Error loading front image", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(RegistrationActivity.this, "Front ID verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    /**
+     * Verifies and sets back ID image if approved
+     */
+    private void verifyAndSetBackImage(Uri imageUri) {
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType == null || selectedIdType.equals("Select --")) {
+            Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Toast.makeText(this, "Verifying back ID document...", Toast.LENGTH_SHORT).show();
+        
+        IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+            @Override
+            public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                if (result.isValid) {
+                    ivUploadB.setImageURI(imageUri);
+                    ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    idBackPath = imageUri.toString();
+                    
+                    try {
+                        ContentResolver resolver = getContentResolver();
+                        backBitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+                        Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        Log.e("RegistrationActivity", "Error loading back image", e);
+                        Toast.makeText(RegistrationActivity.this, "Error loading back image", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                }
+            }
+            
+            @Override
+            public void onVerificationError(String error) {
+                Toast.makeText(RegistrationActivity.this, "Back ID verification failed: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    
+    /**
+     * Performs the registration by sending data to server
+     */
+    private void performRegistration() {
+        if (isRegistering) {
+            Toast.makeText(this, "Registration in progress, please wait...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        String idNumber = etIdNumber.getText().toString().trim();
+        boolean isAgreed = cbAgree.isChecked();
+        String selectedRole = spinnerRole.getSelectedItem().toString();
+        boolean isBoarder = "Boarder".equals(selectedRole);
+        boolean isPassport = selectedIdType.equals("Philippine Passport");
+        
+        // Set registering flag
+        isRegistering = true;
+        btnNext.setEnabled(false);
+        btnNext.setText("Registering...");
+        
+        // Prepare data
+        String firstName = etFirstName.getText().toString().trim();
+        String middleName = etMiddleName.getText().toString().trim();
+        String lastName = etLastName.getText().toString().trim();
+        String suffix = spinnerSuffix.getSelectedItem().toString();
+        String birthDate = etBirthDate.getText().toString().trim();
+        String phoneFormatted = etPhone.getText().toString().trim();
+        String digitsAfterPlus63 = phoneFormatted.substring(4).replaceAll("[^0-9]", "");
+        String phoneNumber = "0" + digitsAfterPlus63;
+        String address = etAddress.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        String gcashFormatted = etGcashNum.getText().toString().trim();
+        String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
+        String gcashNumber = "0" + gcashDigitsAfterPlus63;
+        
+        String UPLOAD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/insert_registration.php";
+        
+        VolleyMultipartRequest request = new VolleyMultipartRequest(Request.Method.POST, UPLOAD_URL,
+            response -> {
+                String responseString = new String(response.data);
+                Log.d("RegistrationActivity", "Raw server response: " + responseString);
+                
+                try {
+                    if (responseString.trim().startsWith("<")) {
+                        Log.e("RegistrationActivity", "ERROR: Server returned HTML instead of JSON");
+                        Toast.makeText(this, "Server error: Invalid response format", Toast.LENGTH_LONG).show();
+                        isRegistering = false;
+                        btnNext.setEnabled(true);
+                        btnNext.setText("Register");
+                        return;
+                    }
+                    
+                    JSONObject obj = new JSONObject(responseString);
+                    String message = obj.getString("message");
+                    boolean success = obj.getBoolean("success");
+                    
+                    isRegistering = false;
+                    btnNext.setEnabled(true);
+                    btnNext.setText("Register");
+                    
+                    if (success) {
+                        int permitsInserted = obj.optInt("permits_inserted", 0);
+                        if (permitsInserted > 0) {
+                            Log.d("RegistrationActivity", "Business permits saved: " + permitsInserted);
+                        }
+                        proceedToVerification(obj, message);
+                    } else {
+                        if (message.contains("Duplicate entry") && message.contains("email")) {
+                            Toast.makeText(this, "This email is already registered. Please use a different email or try logging in.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } catch (JSONException e) {
+                    Log.e("RegistrationActivity", "JSON parsing error: " + e.getMessage());
+                    isRegistering = false;
+                    btnNext.setEnabled(true);
+                    btnNext.setText("Register");
+                    Toast.makeText(this, "Server response error. Please try again.", Toast.LENGTH_LONG).show();
+                }
+            },
+            error -> {
+                Log.e("RegistrationActivity", "Network error: " + error.getMessage());
+                isRegistering = false;
+                btnNext.setEnabled(true);
+                btnNext.setText("Register");
+                Toast.makeText(this, "Registration failed: " + (error.getMessage() != null ? error.getMessage() : "Network error"), Toast.LENGTH_LONG).show();
+            }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = super.getHeaders();
+                if (headers == null) {
+                    headers = new HashMap<>();
+                }
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+            
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("role", selectedRole);
+                params.put("firstName", firstName);
+                params.put("middleName", middleName);
+                params.put("lastName", lastName);
+                params.put("suffix", suffix != null ? suffix : "None");
+                params.put("birthDate", birthDate);
+                params.put("phone", phoneNumber);
+                params.put("address", address);
+                params.put("email", email);
+                params.put("password", password);
+                
+                if (!isBoarder) {
+                    params.put("gcashNum", gcashNumber != null ? gcashNumber : "");
+                } else {
+                    params.put("gcashNum", "");
+                }
+                
+                params.put("idType", selectedIdType);
+                params.put("idNumber", idNumber);
+                params.put("isAgreed", String.valueOf(isAgreed));
+                return params;
+            }
+            
+            @Override
+            protected Map<String, DataPart> getByteData() {
+                Map<String, DataPart> params = new HashMap<>();
+                
+                try {
+                    byte[] frontData = AppHelper.getFileDataFromDrawable(getBaseContext(), frontBitmap);
+                    params.put("idFrontFile", new DataPart("front.jpg", frontData));
+                    
+                    if (!isPassport && backBitmap != null) {
+                        byte[] backData = AppHelper.getFileDataFromDrawable(getBaseContext(), backBitmap);
+                        params.put("idBackFile", new DataPart("back.jpg", backData));
+                    }
+                    
+                    if (!isBoarder && qrBitmap != null) {
+                        byte[] qrData = AppHelper.getFileDataFromDrawable(getBaseContext(), qrBitmap);
+                        params.put("qrFile", new DataPart("qr.jpg", qrData));
+                    }
+                    
+                    // Include business permits
+                    if (!isBoarder && !permitUploadItems.isEmpty()) {
+                        int permitIndex = 1;
+                        for (PermitUploadItem permitItem : permitUploadItems) {
+                            if (permitItem.bitmap != null) {
+                                byte[] permitData = AppHelper.getFileDataFromDrawable(getBaseContext(), permitItem.bitmap);
+                                if (permitData != null && permitData.length > 0) {
+                                    String permitKey = "permitFile" + permitIndex;
+                                    params.put(permitKey, new DataPart("permit" + permitIndex + ".jpg", permitData));
+                                    permitIndex++;
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e("RegistrationActivity", "Error creating file data: " + e.getMessage());
+                }
+                return params;
+            }
+        };
+        
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(30000, 3, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        Volley.newRequestQueue(this).add(request);
+    }
+    
+    /**
+     * Proceeds to verification or login after successful registration
+     */
+    private void proceedToVerification(JSONObject obj, String message) {
+        try {
+            boolean requiresVerification = obj.optBoolean("requires_verification", false);
+            if (requiresVerification) {
+                Intent intent = new Intent(RegistrationActivity.this, EmailVerificationActivity.class);
+                intent.putExtra("email", etEmail.getText().toString().trim());
+                startActivity(intent);
+                finish();
+            } else {
+                Intent intent = new Intent(RegistrationActivity.this, Login.class);
+                startActivity(intent);
+                finish();
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error in proceedToVerification: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Creates a new business permit upload item
+     */
+    private void createPermitUploadItem() {
+        if (permitUploadItems.size() >= MAX_PERMITS) {
+            Toast.makeText(this, "Maximum of " + MAX_PERMITS + " business permits allowed", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        int permitIndex = nextPermitIndex++;
+        PermitUploadItem item = new PermitUploadItem();
+        item.index = permitIndex;
+        
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.VERTICAL);
+        itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        
+        TextView label = new TextView(this);
+        label.setText("Business Permit " + (permitUploadItems.size() + 1));
+        label.setTextColor(getResources().getColor(android.R.color.black));
+        label.setTextSize(14);
+        label.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        label.setPadding(0, 0, 0, 8);
+        itemLayout.addView(label);
+        
+        ImageView permitImageView = new ImageView(this);
+        permitImageView.setId(View.generateViewId());
+        float density = getResources().getDisplayMetrics().density;
+        int heightInPixels = (int) (200 * density);
+        permitImageView.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            heightInPixels
+        ));
+        permitImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        permitImageView.setAdjustViewBounds(true);
+        permitImageView.setBackgroundResource(R.drawable.edittext_background);
+        permitImageView.setImageResource(R.drawable.upload);
+        permitImageView.setPadding(0, 0, 0, 8);
+        itemLayout.addView(permitImageView);
+        
+        Button removeButton = new Button(this);
+        removeButton.setText("Remove");
+        removeButton.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        removeButton.setBackgroundTintList(getResources().getColorStateList(android.R.color.holo_red_dark));
+        removeButton.setTextColor(getResources().getColor(android.R.color.white));
+        removeButton.setVisibility(View.GONE);
+        itemLayout.addView(removeButton);
+        
+        if (permitUploadItems.size() > 0) {
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) itemLayout.getLayoutParams();
+            params.topMargin = 16;
+            itemLayout.setLayoutParams(params);
+        }
+        
+        item.itemView = itemLayout;
+        item.imageView = permitImageView;
+        item.removeButton = removeButton;
+        
+        int launcherIndex = permitUploadItems.size();
+        if (launcherIndex < permitImageLaunchers.size()) {
+            ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(launcherIndex);
+            permitImageView.setOnClickListener(v -> {
+                currentPermitItemForLauncher = item;
+                permitLauncher.launch("image/*");
+            });
+        }
+        
+        removeButton.setOnClickListener(v -> removePermitUploadItem(item));
+        
+        businessPermitContainer.addView(itemLayout);
+        permitUploadItems.add(item);
+        updateAddPermitButtonVisibility();
+    }
+    
+    /**
+     * Handles when a permit image is selected
+     */
+    private void handlePermitImageSelection(PermitUploadItem item, Uri imageUri) {
+        try {
+            ContentResolver resolver = getContentResolver();
+            Bitmap bitmap = BitmapFactory.decodeStream(resolver.openInputStream(imageUri));
+            
+            if (bitmap != null) {
+                item.bitmap = bitmap;
+                item.uri = imageUri;
+                item.imageView.setImageBitmap(bitmap);
+                item.imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                
+                if (permitUploadItems.size() > 1) {
+                    for (PermitUploadItem permitItem : permitUploadItems) {
+                        permitItem.removeButton.setVisibility(View.VISIBLE);
+                    }
+                }
+                
+                updateAddPermitButtonVisibility();
+                Toast.makeText(this, "Business permit uploaded successfully", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Failed to load permit image", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error loading permit image: " + e.getMessage());
+            Toast.makeText(this, "Error loading permit image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Removes a permit upload item
+     */
+    private void removePermitUploadItem(PermitUploadItem item) {
+        try {
+            int itemIndex = permitUploadItems.indexOf(item);
+            if (itemIndex == -1) return;
+            
+            businessPermitContainer.removeView(item.itemView);
+            permitUploadItems.remove(item);
+            
+            for (int i = 0; i < permitUploadItems.size(); i++) {
+                PermitUploadItem permitItem = permitUploadItems.get(i);
+                ViewGroup itemLayout = (ViewGroup) permitItem.itemView;
+                TextView label = (TextView) itemLayout.getChildAt(0);
+                label.setText("Business Permit " + (i + 1));
+                
+                ImageView imageView = permitItem.imageView;
+                if (i < permitImageLaunchers.size()) {
+                    ActivityResultLauncher<String> permitLauncher = permitImageLaunchers.get(i);
+                    imageView.setOnClickListener(v -> {
+                        currentPermitItemForLauncher = permitItem;
+                        permitLauncher.launch("image/*");
+                    });
+                }
+            }
+            
+            if (permitUploadItems.size() <= 1) {
+                for (PermitUploadItem permitItem : permitUploadItems) {
+                    permitItem.removeButton.setVisibility(View.GONE);
+                }
+            }
+            
+            updateAddPermitButtonVisibility();
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error removing permit item: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Updates the visibility of the add permit button
+     */
+    private void updateAddPermitButtonVisibility() {
+        boolean hasUploadedPermits = false;
+        for (PermitUploadItem item : permitUploadItems) {
+            if (item.bitmap != null) {
+                hasUploadedPermits = true;
+                break;
+            }
+        }
+        
+        if (hasUploadedPermits && permitUploadItems.size() < MAX_PERMITS) {
+            btnAddPermit.setVisibility(View.VISIBLE);
+        } else {
+            btnAddPermit.setVisibility(View.GONE);
+        }
+    }
+    
+    /**
+     * Shows the Terms and Privacy dialog
+     */
+    private void showTermsPrivacyDialog() {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_terms_privacy, null);
+            builder.setView(dialogView);
+            
+            ImageButton btnCloseTerms = dialogView.findViewById(R.id.btnCloseTerms);
+            Button btnCloseTermsDialog = dialogView.findViewById(R.id.btnCloseTermsDialog);
+            
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            
+            if (btnCloseTerms != null) {
+                btnCloseTerms.setOnClickListener(v -> dialog.dismiss());
+            }
+            if (btnCloseTermsDialog != null) {
+                btnCloseTermsDialog.setOnClickListener(v -> dialog.dismiss());
+            }
+            
+            dialog.show();
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error showing Terms and Privacy dialog: " + e.getMessage());
+            Toast.makeText(this, "Error loading Terms and Privacy", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Handles activity result from ID capture
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (resultCode == RESULT_OK && data != null) {
+            String imagePath = data.getStringExtra("image_path");
+            String idNumber = data.getStringExtra("id_number");
+            String idType = data.getStringExtra("id_type");
+            
+            if (requestCode == 1001) { // Front ID
+                handleFrontIdResult(imagePath, idNumber);
+            } else if (requestCode == 1002) { // Back ID
+                handleBackIdResult(imagePath, idNumber);
+            }
+        }
+    }
+    
+    private void handleFrontIdResult(String imagePath, String idNumber) {
+        try {
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            if (bitmap != null) {
+                Uri imageUri = Uri.fromFile(new java.io.File(imagePath));
+                Toast.makeText(this, "Verifying front ID document...", Toast.LENGTH_SHORT).show();
+                
+                IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+                    @Override
+                    public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                        if (result.isValid) {
+                            frontBitmap = bitmap;
+                            idFrontPath = imagePath;
+                            ivUploadF.setImageBitmap(bitmap);
+                            ivUploadF.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            
+                            String finalIdNumber = result.extractedIdNumber != null && !result.extractedIdNumber.isEmpty() 
+                                ? result.extractedIdNumber 
+                                : (idNumber != null && !idNumber.isEmpty() ? idNumber : "");
+                            
+                            if (!finalIdNumber.isEmpty()) {
+                                etIdNumber.setText(finalIdNumber);
+                            }
+                            
+                            Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    
+                    @Override
+                    public void onVerificationError(String error) {
+                        Toast.makeText(RegistrationActivity.this, "Front ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error handling front ID result: " + e.getMessage());
+        }
+    }
+    
+    private void handleBackIdResult(String imagePath, String idNumber) {
+        try {
+            String selectedIdType = spinnerVId.getSelectedItem().toString();
+            if (selectedIdType == null || selectedIdType.equals("Select --")) {
+                Toast.makeText(this, "Please select a valid ID type first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            if (bitmap != null) {
+                Uri imageUri = Uri.fromFile(new java.io.File(imagePath));
+                Toast.makeText(this, "Verifying back ID document...", Toast.LENGTH_SHORT).show();
+                
+                IdVerificationHelper.verifyIdDocument(this, imageUri, selectedIdType, new IdVerificationHelper.VerificationCallback() {
+                    @Override
+                    public void onVerificationComplete(IdVerificationHelper.VerificationResult result) {
+                        if (result.isValid) {
+                            backBitmap = bitmap;
+                            idBackPath = imagePath;
+                            ivUploadB.setImageBitmap(bitmap);
+                            ivUploadB.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(RegistrationActivity.this, result.reason, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    
+                    @Override
+                    public void onVerificationError(String error) {
+                        Toast.makeText(RegistrationActivity.this, "Back ID verification failed: " + error, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.e("RegistrationActivity", "Error handling back ID result: " + e.getMessage());
+        }
     }
     
     /**
