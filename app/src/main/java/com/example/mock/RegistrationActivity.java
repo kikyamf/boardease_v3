@@ -910,12 +910,12 @@ public class RegistrationActivity extends AppCompatActivity {
         if (!gcashNum.startsWith("+63")) {
             return "GCash Number must start with +63";
         }
-        String digitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
-        if (digitsAfterPlus63.length() != 10) {
+        String gcashDigitsAfterPlus63 = gcashNum.substring(4).replaceAll("[^0-9]", "");
+        if (gcashDigitsAfterPlus63.length() != 10) {
             return "GCash Number must have 10 digits after +63 (e.g., +63 992 531 1409)";
         }
         // First digit after +63 should be 9 (Philippine mobile format)
-        if (!digitsAfterPlus63.startsWith("9")) {
+        if (!gcashDigitsAfterPlus63.startsWith("9")) {
             return "GCash Number must start with 9 after +63 (Philippine mobile format)";
         }
         
