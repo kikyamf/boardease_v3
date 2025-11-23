@@ -44,6 +44,7 @@ import android.graphics.BitmapFactory;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.UnderlineSpan;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
@@ -1475,6 +1476,8 @@ public class RegistrationActivity extends AppCompatActivity {
                 };
                 spannableString.setSpan(clickableSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannableString.setSpan(new UnderlineSpan(), startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                // Set brown color for clickable text
+                spannableString.setSpan(new ForegroundColorSpan(0xFFA18167), startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             
             tvAgreeText.setText(spannableString);
