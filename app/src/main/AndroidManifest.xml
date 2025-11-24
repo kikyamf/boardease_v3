@@ -51,9 +51,6 @@
             android:name=".RegistrationActivity"
             android:exported="false" />
         <activity
-            android:name=".Registration2Activity"
-            android:exported="false" />
-        <activity
             android:name=".EmailVerificationActivity"
             android:exported="true"
             android:launchMode="singleTop">

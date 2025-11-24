@@ -38,7 +38,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="16dp"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
             android:orientation="vertical"
@@ -138,6 +139,25 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:text="5"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow" />
+
+                <!-- Line 5-6 -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#666666" />
+
+                <!-- Circle 6 -->
+                <TextView
+                    android:id="@+id/progressCircle6"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="6"
                     android:textColor="#666666"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -710,6 +730,42 @@
                 android:visibility="gone"
                 android:indeterminateTint="#A18167" />
 
+            <!-- Special Message Section for Boarders (replaces Section 5) -->
+            <FrameLayout
+                android:id="@+id/sectionBoarderMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="24dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Boarder applicants does not have to fill step 5. Proceed now to step 6"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
             <!-- Section 5: Payment Information -->
             <FrameLayout
                 android:layout_width="match_parent"
@@ -784,7 +840,218 @@
                 </com.google.android.material.card.MaterialCardView>
             </FrameLayout>
 
-            <!-- NEXT Button -->
+            <!-- Loading indicator before Section 6 -->
+            <ProgressBar
+                android:id="@+id/progressBarSection6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginVertical="16dp"
+                android:visibility="gone"
+                android:indeterminateTint="#A18167" />
+
+            <!-- Section 6: Additional Personal Information for Verification -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/sectionAdditionalInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    app:cardBackgroundColor="@android:color/white">
+
+                    <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Additional Personal Information for Verification"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/black"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- Valid ID label -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Valid ID"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:layout_marginBottom="8dp"/>
+
+                        <Spinner
+                            android:id="@+id/spinnerVId"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/edittext_background"
+                            android:layout_marginBottom="12dp"/>
+
+                        <!-- Upload Front ID -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Upload Front ID photo"
+                                android:textSize="14sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="8dp"/>
+
+                            <ImageView
+                                android:id="@+id/ivUploadF"
+                                android:layout_width="match_parent"
+                                android:layout_height="200dp"
+                                android:src="@drawable/upload"
+                                android:scaleType="centerCrop"
+                                android:adjustViewBounds="true"
+                                android:background="@drawable/edittext_background"
+                                android:contentDescription="Upload Front ID" />
+                        </LinearLayout>
+
+                        <!-- Upload Back ID -->
+                        <LinearLayout
+                            android:id="@+id/backIdSection"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Upload Back ID photo"
+                                android:textSize="14sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="8dp"/>
+
+                            <ImageView
+                                android:id="@+id/ivUploadB"
+                                android:layout_width="match_parent"
+                                android:layout_height="200dp"
+                                android:src="@drawable/upload"
+                                android:scaleType="centerCrop"
+                                android:adjustViewBounds="true"
+                                android:background="@drawable/edittext_background"
+                                android:contentDescription="Upload Back ID" />
+                        </LinearLayout>
+
+                        <!-- ID Number -->
+                        <LinearLayout
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="ID Number"
+                                android:textSize="14sp"
+                                android:textColor="#000000"
+                                android:layout_marginBottom="8dp"/>
+
+                            <EditText
+                                android:id="@+id/etIdNumber"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:background="@drawable/edittext_background"
+                                android:inputType="number"
+                                android:padding="10dp"
+                                android:textColor="@color/black" />
+                        </LinearLayout>
+
+                        <!-- Business Permit Section (Only for BH Owner) -->
+                        <LinearLayout
+                            android:id="@+id/businessPermitSection"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Business Permits"
+                                android:textColor="#000000"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="As a Boarding House Owner, you are required to upload your business permit(s) for verification. This helps ensure compliance with local regulations and builds trust with potential boarders. You can upload up to 3 business permits."
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:lineSpacingExtra="2dp"
+                                android:layout_marginBottom="12dp" />
+
+                            <LinearLayout
+                                android:id="@+id/businessPermitContainer"
+                                android:orientation="vertical"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="12dp" />
+
+                            <Button
+                                android:id="@+id/btnAddPermit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="#A18167"
+                                android:text="Add Another Business Permit"
+                                android:textAllCaps="false"
+                                android:textColor="@android:color/white"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <!-- CheckBox with clickable terms and privacy -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="8dp">
+
+                            <CheckBox
+                                android:id="@+id/cbAgree"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="#A18167"
+                                android:checked="false"
+                                android:padding="4dp"
+                                android:text=""
+                                android:textColor="@color/black" />
+
+                            <TextView
+                                android:id="@+id/tvAgreeText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Agree with terms and privacy"
+                                android:textColor="@color/black"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <!-- Register Button -->
             <Button
                 android:id="@+id/btnNext"
                 android:layout_width="match_parent"
@@ -792,7 +1059,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginHorizontal="8dp"
                 android:backgroundTint="#A18167"
-                android:text="NEXT"
+                android:text="Register"
                 android:textAllCaps="true"
                 android:textColor="@android:color/white"/>
 
