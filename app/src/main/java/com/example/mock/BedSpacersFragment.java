@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -42,6 +44,9 @@ public class BedSpacersFragment extends Fragment {
     private View emptyState;
     private BedSpacersAdapter adapter;
     private List<PrivateRoomsFragment.RoomData> roomList;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressDialog loadingDialog;
+    private boolean isFirstLoad = true;
 
     public static BedSpacersFragment newInstance(int bhId) {
         BedSpacersFragment fragment = new BedSpacersFragment();
@@ -64,6 +69,7 @@ public class BedSpacersFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_bed_spacers, container, false);
         
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         recyclerView = view.findViewById(R.id.recyclerView);
         emptyState = view.findViewById(R.id.emptyState);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -72,6 +78,20 @@ public class BedSpacersFragment extends Fragment {
         adapter = new BedSpacersAdapter(roomList, this::onRoomClick, this::onEditRoom, this::onDeleteRoom);
         recyclerView.setAdapter(adapter);
         
+        // Setup pull-to-refresh
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            isFirstLoad = false; // Not first load when user manually refreshes
+            fetchRooms();
+        });
+        
+        // Set refresh colors
+        swipeRefreshLayout.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        );
+        
         // Fetch rooms data
         fetchRooms();
         
@@ -79,10 +99,16 @@ public class BedSpacersFragment extends Fragment {
     }
 
     public void refreshData() {
+        isFirstLoad = false; // Not first load when auto-refreshing
         fetchRooms();
     }
 
     private void fetchRooms() {
+        // Show loading dialog only on first load
+        if (isFirstLoad) {
+            showLoadingDialog();
+        }
+        
         RequestQueue queue = Volley.newRequestQueue(getContext());
         StringRequest request = new StringRequest(Request.Method.POST, GET_ROOMS_URL,
                 response -> {
@@ -93,12 +119,22 @@ public class BedSpacersFragment extends Fragment {
                         // Check if response is empty or contains HTML
                         if (response.trim().isEmpty()) {
                             Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                            hideLoadingDialog();
+                            isFirstLoad = false;
                             return;
                         }
                         
                         if (response.trim().startsWith("<")) {
                             Toast.makeText(getContext(), "Server returned HTML instead of JSON. Check PHP errors.", Toast.LENGTH_LONG).show();
                             System.out.println("HTML Response: " + response);
+                            if (swipeRefreshLayout != null) {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                            hideLoadingDialog();
+                            isFirstLoad = false;
                             return;
                         }
                         
@@ -171,11 +207,24 @@ public class BedSpacersFragment extends Fragment {
                         e.printStackTrace();
                         System.out.println("DEBUG: JSON parsing error: " + e.getMessage());
                         Toast.makeText(getContext(), "Error parsing room data: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    } finally {
+                        // Stop refresh indicator and hide loading dialog
+                        if (swipeRefreshLayout != null) {
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
+                        hideLoadingDialog();
+                        isFirstLoad = false; // Mark as loaded
                     }
                 },
                 error -> {
                     System.out.println("DEBUG: Network error: " + error.getMessage());
                     Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Stop refresh indicator on error and hide loading dialog
+                    if (swipeRefreshLayout != null) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                    hideLoadingDialog();
+                    isFirstLoad = false; // Mark as loaded even on error
                 }
         ) {
             @Override
@@ -358,6 +407,43 @@ public class BedSpacersFragment extends Fragment {
         };
         
         queue.add(request);
+    }
+    
+    private void showLoadingDialog() {
+        try {
+            if (getContext() == null || getActivity() == null || getActivity().isFinishing()) {
+                return;
+            }
+            if (loadingDialog != null && loadingDialog.isShowing()) {
+                loadingDialog.dismiss();
+            }
+            loadingDialog = new ProgressDialog(getContext());
+            loadingDialog.setMessage("Loading rooms...");
+            loadingDialog.setCancelable(false);
+            loadingDialog.setIndeterminate(true);
+            if (!getActivity().isFinishing() && !getActivity().isDestroyed()) {
+                loadingDialog.show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void hideLoadingDialog() {
+        try {
+            if (loadingDialog != null && loadingDialog.isShowing()) {
+                loadingDialog.dismiss();
+            }
+            loadingDialog = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        hideLoadingDialog();
     }
 }
 

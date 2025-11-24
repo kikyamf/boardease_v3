@@ -5,6 +5,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import java.util.List;
+
 public class RoomPagerAdapter extends FragmentStateAdapter {
 
     private int bhId;
@@ -37,17 +39,32 @@ public class RoomPagerAdapter extends FragmentStateAdapter {
     public void refreshData() {
         // Refresh both fragments by calling their refreshData methods
         try {
-            // Get the current fragments and call their refreshData methods
-            Fragment privateRoomsFragment = fragmentActivity.getSupportFragmentManager()
-                    .findFragmentByTag("f" + 0);
-            Fragment bedSpacersFragment = fragmentActivity.getSupportFragmentManager()
-                    .findFragmentByTag("f" + 1);
-            
-            if (privateRoomsFragment instanceof PrivateRoomsFragment) {
-                ((PrivateRoomsFragment) privateRoomsFragment).refreshData();
+            // Get all fragments from the fragment manager and refresh matching ones
+            List<Fragment> fragments = fragmentActivity.getSupportFragmentManager().getFragments();
+            for (Fragment fragment : fragments) {
+                if (fragment != null && fragment.isAdded()) {
+                    if (fragment instanceof PrivateRoomsFragment) {
+                        ((PrivateRoomsFragment) fragment).refreshData();
+                    } else if (fragment instanceof BedSpacersFragment) {
+                        ((BedSpacersFragment) fragment).refreshData();
+                    }
+                }
             }
-            if (bedSpacersFragment instanceof BedSpacersFragment) {
-                ((BedSpacersFragment) bedSpacersFragment).refreshData();
+            
+            // Also try to find fragments by ViewPager2's tag format as fallback
+            // ViewPager2 uses tag format: "f" + getItemId(position)
+            for (int i = 0; i < getItemCount(); i++) {
+                long itemId = getItemId(i);
+                Fragment fragment = fragmentActivity.getSupportFragmentManager()
+                        .findFragmentByTag("f" + itemId);
+                
+                if (fragment != null && fragment.isAdded()) {
+                    if (fragment instanceof PrivateRoomsFragment) {
+                        ((PrivateRoomsFragment) fragment).refreshData();
+                    } else if (fragment instanceof BedSpacersFragment) {
+                        ((BedSpacersFragment) fragment).refreshData();
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
