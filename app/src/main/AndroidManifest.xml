@@ -161,6 +161,15 @@
             android:name=".PaymentDetailsActivity"
             android:exported="false" />
         <activity
+            android:name=".PaymentSummaryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentCalendarActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PaymentHistoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ActivityDetailsActivity"
             android:exported="false" />
         <activity

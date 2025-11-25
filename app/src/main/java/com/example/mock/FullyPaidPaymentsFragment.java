@@ -169,6 +169,11 @@ public class FullyPaidPaymentsFragment extends Fragment {
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_FULLY_PAID);
                     startActivityForResult(intent, 1001);
                 }
+
+                @Override
+                public void onSendReminder(PaymentData payment) {
+                    // Not used for fully paid payments
+                }
             };
             
             if (adapter == null) {

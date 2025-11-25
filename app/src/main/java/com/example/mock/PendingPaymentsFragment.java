@@ -169,6 +169,11 @@ public class PendingPaymentsFragment extends Fragment {
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_REMAINING);
                     startActivityForResult(intent, 1001);
                 }
+
+                @Override
+                public void onSendReminder(PaymentData payment) {
+                    // Not used for pending payments
+                }
             };
             
             if (adapter == null) {

@@ -178,6 +178,11 @@ public class AllPaymentsFragment extends Fragment {
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_ALL);
                     startActivityForResult(intent, 1001);
                 }
+
+                @Override
+                public void onSendReminder(PaymentData payment) {
+                    // Not used for all payments - handled in overdue tab
+                }
             };
             
             if (adapter == null) {

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
+import java.util.Locale;
 
 public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHolder> {
     
@@ -19,6 +20,7 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
     public static final int VIEW_TYPE_FULLY_PAID = 1;
     public static final int VIEW_TYPE_REMAINING = 2;
     public static final int VIEW_TYPE_PENDING = 3;
+    public static final int VIEW_TYPE_OVERDUE = 4;
     
     private List<PaymentData> payments;
     private Context context;
@@ -29,6 +31,7 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         void onMarkAsPaid(PaymentData payment);
         void onMarkAsOverdue(PaymentData payment);
         void onViewDetails(PaymentData payment);
+        void onSendReminder(PaymentData payment);
     }
     
     public PaymentAdapter(List<PaymentData> payments) {
@@ -79,6 +82,10 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
                 view = LayoutInflater.from(context)
                         .inflate(R.layout.item_payment, parent, false);
                 return new ViewHolder(view, VIEW_TYPE_PENDING);
+            case VIEW_TYPE_OVERDUE:
+                view = LayoutInflater.from(context)
+                        .inflate(R.layout.item_payment, parent, false);
+                return new ViewHolder(view, VIEW_TYPE_OVERDUE);
             case VIEW_TYPE_ALL:
             default:
                 view = LayoutInflater.from(context)
@@ -106,15 +113,24 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             case VIEW_TYPE_PENDING:
                 bindPendingViewHolder(holder, payment);
                 break;
+            case VIEW_TYPE_OVERDUE:
+                bindOverdueViewHolder(holder, payment);
+                break;
             case VIEW_TYPE_ALL:
             default:
                 bindAllPaymentsViewHolder(holder, payment);
                 break;
         }
         
-        // Set click listener
+        // Set click listener - for overdue, show reminder modal instead of payment details
         if (actionListener != null) {
-            holder.itemView.setOnClickListener(v -> actionListener.onViewDetails(payment));
+            if (holder.viewType == VIEW_TYPE_OVERDUE) {
+                holder.itemView.setOnClickListener(v -> {
+                    actionListener.onSendReminder(payment);
+                });
+            } else {
+                holder.itemView.setOnClickListener(v -> actionListener.onViewDetails(payment));
+            }
         }
     }
     
@@ -421,6 +437,190 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         // Hide elements not used in remaining view
         if (holder.tvRentalStatus != null) holder.tvRentalStatus.setVisibility(View.GONE);
         if (holder.tvPaymentDate != null) holder.tvPaymentDate.setVisibility(View.GONE);
+    }
+    
+    private void bindOverdueViewHolder(ViewHolder holder, PaymentData payment) {
+        // For overdue payments: show due amount (what needs to be paid on due date), due date, and days overdue
+        
+        // Change label from "Amount Paid" to "Amount to be Paid" since nothing has been paid yet
+        if (holder.tvAmountPaidLabel != null) {
+            holder.tvAmountPaidLabel.setText("Amount to be Paid");
+        }
+        
+        // Show DUE AMOUNT (what needs to be paid on due date) - this is the original amount due, not remaining
+        // Example: If 5000 was due, show 5000 (even if they paid some, show the original due amount)
+        if (holder.tvAmountPaid != null) {
+            String dueAmount = null;
+            
+            // First try: use totalAmount (this is the payment amount that was due for this period)
+            String totalAmount = payment.getTotalAmount();
+            if (totalAmount != null && !totalAmount.isEmpty()) {
+                // Remove currency symbol and format
+                String cleanAmount = totalAmount.replace("₱", "").replace(",", "").trim();
+                if (!cleanAmount.isEmpty() && !cleanAmount.equals("0") && !cleanAmount.equals("0.00")) {
+                    try {
+                        double amount = Double.parseDouble(cleanAmount);
+                        if (amount > 0) {
+                            dueAmount = cleanAmount;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Invalid number
+                    }
+                }
+            }
+            
+            // Fallback: use totalAmountForBooking if totalAmount is not available
+            if (dueAmount == null || dueAmount.isEmpty() || dueAmount.equals("0") || dueAmount.equals("0.00")) {
+                String bookingTotal = payment.getTotalAmountForBooking();
+                if (bookingTotal != null && !bookingTotal.isEmpty()) {
+                    try {
+                        double amount = Double.parseDouble(bookingTotal);
+                        if (amount > 0) {
+                            dueAmount = bookingTotal;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Invalid number
+                    }
+                }
+            }
+            
+            // Final fallback
+            if (dueAmount == null || dueAmount.isEmpty() || dueAmount.equals("0") || dueAmount.equals("0.00")) {
+                dueAmount = "0.00";
+            }
+            
+            holder.tvAmountPaid.setText("₱" + formatAmount(dueAmount));
+        }
+        
+        // Show total amount (pila tanan ang bayran all in all - total amount for entire booking)
+        // This should be the total amount for all periods in the booking, regardless of payment status
+        if (holder.tvTotalAmount != null) {
+            holder.tvTotalAmount.setVisibility(View.VISIBLE);
+            // Use totalAmountForBooking (total for all periods in the booking, maski naka paid pa)
+            String bookingTotal = payment.getTotalAmountForBooking();
+            if (bookingTotal != null && !bookingTotal.isEmpty()) {
+                try {
+                    double amount = Double.parseDouble(bookingTotal);
+                    if (amount > 0) {
+                        holder.tvTotalAmount.setText("₱" + formatAmount(bookingTotal));
+                    } else {
+                        // Fallback to regular totalAmount
+                        String totalAmount = payment.getTotalAmount();
+                        if (totalAmount != null && !totalAmount.isEmpty() && !totalAmount.equals("₱0.00")) {
+                            holder.tvTotalAmount.setText(totalAmount);
+                        } else {
+                            holder.tvTotalAmount.setText("₱0.00");
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // Fallback to regular totalAmount
+                    String totalAmount = payment.getTotalAmount();
+                    if (totalAmount != null && !totalAmount.isEmpty() && !totalAmount.equals("₱0.00")) {
+                        holder.tvTotalAmount.setText(totalAmount);
+                    } else {
+                        holder.tvTotalAmount.setText("₱0.00");
+                    }
+                }
+            } else {
+                // Fallback to regular totalAmount
+                String totalAmount = payment.getTotalAmount();
+                if (totalAmount != null && !totalAmount.isEmpty() && !totalAmount.equals("₱0.00")) {
+                    holder.tvTotalAmount.setText(totalAmount);
+                } else {
+                    holder.tvTotalAmount.setText("₱0.00");
+                }
+            }
+        }
+        
+        // Hide remaining amount
+        if (holder.tvRemainingAmount != null) {
+            holder.tvRemainingAmount.setVisibility(View.GONE);
+        }
+        
+        // Set DUE DATE and DAYS OVERDUE (use the overdue payment's due date, not next due date)
+        // The due_date should be from the payment breakdown that is overdue
+        if (holder.tvPaymentDate != null) {
+            String dueDateStr = payment.getDueDate();
+            // Make sure we're using the overdue payment's due date, not the next due date
+            // If due_date is empty or seems to be a future date, we should still use it if it's the overdue one
+            if (dueDateStr == null || dueDateStr.isEmpty()) {
+                // Fallback to payment_date if due_date not available (but this shouldn't happen for overdue)
+                dueDateStr = payment.getPaymentDate();
+            }
+            
+            if (dueDateStr != null && !dueDateStr.isEmpty()) {
+                try {
+                    // Parse due date
+                    java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                    String datePart = dueDateStr.split(" ")[0]; // Take only date part
+                    java.util.Date dueDate = inputFormat.parse(datePart);
+                    
+                    // Calculate days overdue
+                    java.util.Date today = new java.util.Date();
+                    long diffInMillis = today.getTime() - dueDate.getTime();
+                    long diffInDays = diffInMillis / (1000 * 60 * 60 * 24);
+                    
+                    // Format due date for display
+                    java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+                    String formattedDueDate = outputFormat.format(dueDate);
+                    
+                    if (diffInDays > 0) {
+                        holder.tvPaymentDate.setText("Due: " + formattedDueDate + " (" + diffInDays + " day" + (diffInDays > 1 ? "s" : "") + " overdue)");
+                    } else {
+                        holder.tvPaymentDate.setText("Due: " + formattedDueDate);
+                    }
+                } catch (Exception e) {
+                    // If parsing fails, just show the date as is
+                    holder.tvPaymentDate.setText("Due: " + dueDateStr);
+                }
+            } else {
+                holder.tvPaymentDate.setText("Due: N/A");
+            }
+        }
+        
+        // Hide the rectangle status badge (tvPaymentStatus) - we only show the red OVERDUE badge
+        if (holder.tvPaymentStatus != null) {
+            holder.tvPaymentStatus.setVisibility(View.GONE);
+        }
+        
+        // Set red border for overdue (similar to pending but red)
+        View cardView = holder.itemView;
+        if (cardView instanceof androidx.cardview.widget.CardView) {
+            android.graphics.drawable.GradientDrawable borderDrawable = new android.graphics.drawable.GradientDrawable();
+            borderDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            borderDrawable.setColor(Color.parseColor("#FFFFFF"));
+            borderDrawable.setStroke((int)(2 * context.getResources().getDisplayMetrics().density), Color.parseColor("#F44336")); // Red border, 2dp width
+            borderDrawable.setCornerRadius(8 * context.getResources().getDisplayMetrics().density); // 8dp corner radius
+            cardView.setBackground(borderDrawable);
+        }
+        
+        // Show OVERDUE badge only (red) - hide any other badges that might have been set
+        if (holder.tvStatusBadge != null) {
+            holder.tvStatusBadge.setVisibility(View.VISIBLE);
+            holder.tvStatusBadge.setText("OVERDUE");
+            holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_rounded_red);
+            holder.tvStatusBadge.setTextColor(android.graphics.Color.WHITE);
+        }
+        
+        // Set rental status (if view exists)
+        if (holder.tvRentalStatus != null) {
+            holder.tvRentalStatus.setText(payment.getRentalStatus());
+        }
+        
+        // Hide payment progress for overdue (since unpaid, progress is 0%)
+        if (holder.progressBarPayment != null) {
+            holder.progressBarPayment.setVisibility(View.GONE);
+        }
+        
+        // Hide progress text for overdue
+        if (holder.tvProgressPercent != null) {
+            holder.tvProgressPercent.setVisibility(View.GONE);
+        }
+        
+        // Hide payment progress text
+        if (holder.tvPaymentProgress != null) {
+            holder.tvPaymentProgress.setVisibility(View.GONE);
+        }
     }
     
     private void bindPendingViewHolder(ViewHolder holder, PaymentData payment) {
@@ -1014,6 +1214,7 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         TextView tvPaymentStatus, tvRentalStatus, tvPaymentDate;
         TextView tvPaymentProgress, tvProgressPercent, tvRemainingAmount;
         TextView tvStatusBadge; // Badge for "Fully Paid" status at top right
+        TextView tvAmountPaidLabel; // Label for "Amount Paid" / "Amount to be Paid"
         android.widget.ProgressBar progressBarPayment;
         com.google.android.material.button.MaterialButton btnViewDetails;
         
@@ -1037,6 +1238,7 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             progressBarPayment = itemView.findViewById(R.id.progressBarPayment);
             tvRemainingAmount = itemView.findViewById(R.id.tvRemainingAmount);
             tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge); // Status badge for "Fully Paid"
+            tvAmountPaidLabel = itemView.findViewById(R.id.tvAmountPaidLabel); // Label for amount paid
             btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
         }
     }

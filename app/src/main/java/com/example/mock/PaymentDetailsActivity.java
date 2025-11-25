@@ -971,6 +971,11 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
     public void onViewDetails(PaymentData payment) {
         // Already viewing details
     }
+
+    @Override
+    public void onSendReminder(PaymentData payment) {
+        // Not used in payment details
+    }
 }
 
 

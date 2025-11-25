@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -15,7 +16,7 @@ public class PaymentSummaryActivity extends AppCompatActivity {
     private TextView tvTotalPayments, tvPendingPayments, tvPaidPayments, tvOverduePayments;
     private TextView tvTotalAmount, tvPendingAmount, tvPaidAmount, tvOverdueAmount;
     private TextView tvCollectionRate;
-    private Button btnRefresh, btnMarkOverdue;
+    private Button btnRefresh, btnMarkOverdue, btnViewCalendar;
     
     private PaymentApiService paymentApiService;
     private ProgressDialog progressDialog;
@@ -62,6 +63,7 @@ public class PaymentSummaryActivity extends AppCompatActivity {
         
         btnRefresh = findViewById(R.id.btnRefresh);
         btnMarkOverdue = findViewById(R.id.btnMarkOverdue);
+        btnViewCalendar = findViewById(R.id.btnViewCalendar);
     }
 
     private void setupClickListeners() {
@@ -69,6 +71,10 @@ public class PaymentSummaryActivity extends AppCompatActivity {
         
         btnRefresh.setOnClickListener(v -> loadPaymentSummary());
         btnMarkOverdue.setOnClickListener(v -> markPaymentsAsOverdue());
+        btnViewCalendar.setOnClickListener(v -> {
+            Intent intent = new Intent(PaymentSummaryActivity.this, PaymentCalendarActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void loadPaymentSummary() {

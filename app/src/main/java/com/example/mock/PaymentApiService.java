@@ -47,6 +47,21 @@ public class PaymentApiService {
         void onError(String error);
     }
 
+    public interface PaymentCalendarCallback {
+        void onSuccess(List<CalendarPaymentData> calendarData);
+        void onError(String error);
+    }
+
+    public interface OverdueUpdateCallback {
+        void onSuccess(String message, int totalUpdated, int notificationsSent, int notificationsSkipped);
+        void onError(String error);
+    }
+
+    public interface PaymentReminderCallback {
+        void onSuccess(String message);
+        void onError(String error);
+    }
+
     // Get all payments
     public void getAllPayments(int ownerId, PaymentListCallback callback) {
         String url = BASE_URL + "get_payment_status.php";
@@ -529,6 +544,67 @@ public class PaymentApiService {
         requestQueue.add(request);
     }
 
+    // Get payments for calendar view
+    public void getPaymentsCalendar(int ownerId, int month, int year, PaymentCalendarCallback callback) {
+        String url = BASE_URL + "get_payments_calendar.php";
+        
+        Log.d(TAG, "getPaymentsCalendar - Requesting calendar data for ownerId: " + ownerId + ", month: " + month + ", year: " + year);
+        
+        JSONObject params = new JSONObject();
+        try {
+            params.put("owner_id", ownerId);
+            params.put("month", month);
+            params.put("year", year);
+        } catch (JSONException e) {
+            Log.e(TAG, "getPaymentsCalendar - Error creating request parameters", e);
+            callback.onError("Error creating request parameters");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
+                response -> {
+                    try {
+                        Log.d(TAG, "getPaymentsCalendar - Response received: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            JSONArray calendarArray = response.getJSONArray("data");
+                            List<CalendarPaymentData> calendarData = parseCalendarData(calendarArray);
+                            Log.d(TAG, "getPaymentsCalendar - Parsed " + calendarData.size() + " calendar entries");
+                            callback.onSuccess(calendarData);
+                        } else {
+                            String errorMsg = response.optString("error", "Unknown error");
+                            Log.e(TAG, "getPaymentsCalendar - Server returned error: " + errorMsg);
+                            callback.onError(errorMsg);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "getPaymentsCalendar - Error parsing response", e);
+                        callback.onError("Error parsing response: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "getPaymentsCalendar - Volley error", error);
+                    callback.onError("Network error: " + error.getMessage());
+                });
+
+        requestQueue.add(request);
+    }
+
+    // Parse calendar data from JSON array
+    private List<CalendarPaymentData> parseCalendarData(JSONArray jsonArray) {
+        List<CalendarPaymentData> calendarData = new ArrayList<>();
+        try {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject dateJson = jsonArray.getJSONObject(i);
+                CalendarPaymentData data = CalendarPaymentData.fromJson(dateJson);
+                if (data != null) {
+                    calendarData.add(data);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing calendar data", e);
+        }
+        return calendarData;
+    }
+
     // Parse payment list from JSON array
     private List<PaymentData> parsePaymentList(JSONArray jsonArray) {
         List<PaymentData> payments = new ArrayList<>();
@@ -613,5 +689,107 @@ public class PaymentApiService {
         public double getPaidAmount() { return paidAmount; }
         public double getOverdueAmount() { return overdueAmount; }
         public double getCollectionRate() { return collectionRate; }
+    }
+
+    // Auto-mark overdue payments
+    public void autoMarkOverdue(OverdueUpdateCallback callback) {
+        String url = BASE_URL + "auto_mark_overdue.php";
+        
+        Log.d(TAG, "autoMarkOverdue - Requesting overdue update");
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        Log.d(TAG, "autoMarkOverdue - Response received: " + response.toString());
+                        if (response.getBoolean("success")) {
+                            String message = response.optString("message", "Overdue payments updated");
+                            int totalUpdated = response.optInt("total_updated", 0);
+                            int notificationsSent = response.optInt("notifications_sent", 0);
+                            int notificationsSkipped = response.optInt("notifications_skipped", 0);
+                            
+                            Log.d(TAG, "autoMarkOverdue - Parsed: notificationsSent=" + notificationsSent + ", notificationsSkipped=" + notificationsSkipped);
+                            
+                            callback.onSuccess(message, totalUpdated, notificationsSent, notificationsSkipped);
+                        } else {
+                            String errorMsg = response.optString("error", "Unknown error");
+                            Log.e(TAG, "autoMarkOverdue - Server returned error: " + errorMsg);
+                            callback.onError(errorMsg);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "autoMarkOverdue - Error parsing response", e);
+                        callback.onError("Error parsing response: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "autoMarkOverdue - Volley error", error);
+                    String errorMsg = "Network error: " + (error.getMessage() != null ? error.getMessage() : "Unknown error");
+                    callback.onError(errorMsg);
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+
+        requestQueue.add(request);
+    }
+
+    // Send payment reminder
+    public void sendPaymentReminder(int paymentId, int boarderUserId, PaymentReminderCallback callback) {
+        String url = BASE_URL + "send_payment_reminder.php";
+        
+        JSONObject params = new JSONObject();
+        try {
+            params.put("payment_id", paymentId);
+            params.put("boarder_user_id", boarderUserId);
+        } catch (JSONException e) {
+            callback.onError("Error creating request parameters");
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, params,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            String message = response.optString("message", "Payment reminder sent successfully");
+                            callback.onSuccess(message);
+                        } else {
+                            callback.onError(response.optString("error", "Unknown error"));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing response", e);
+                        callback.onError("Error parsing response");
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Volley error", error);
+                    String errorMessage = "Network error";
+                    if (error instanceof com.android.volley.TimeoutError) {
+                        errorMessage = "Request timeout. Please check your connection and try again.";
+                    } else if (error.getMessage() != null) {
+                        errorMessage = "Network error: " + error.getMessage();
+                    }
+                    callback.onError(errorMessage);
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("ngrok-skip-browser-warning", "true");
+                return headers;
+            }
+        };
+
+        // Set timeout to 30 seconds
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                30000, // 30 seconds timeout
+                1, // Max retries
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+
+        requestQueue.add(request);
     }
 }

@@ -345,48 +345,50 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="center">
 
-            <Button
-                android:id="@+id/btnRefresh"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Refresh"
-                android:background="@drawable/bg_button_primary"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                android:padding="12dp" />
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnRefresh"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Refresh"
+                    android:background="@drawable/bg_button_primary"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:padding="12dp" />
+
+                <Button
+                    android:id="@+id/btnMarkOverdue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Mark Overdue"
+                    android:background="@drawable/bg_button_danger"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:padding="12dp" />
+            </LinearLayout>
 
             <Button
-                android:id="@+id/btnMarkOverdue"
-                android:layout_width="0dp"
+                android:id="@+id/btnViewCalendar"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="Mark Overdue"
-                android:background="@drawable/bg_button_danger"
+                android:text="📅 View Payment Calendar"
+                android:background="@drawable/bg_button_primary"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
                 android:padding="12dp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

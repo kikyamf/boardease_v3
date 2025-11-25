@@ -139,6 +139,11 @@ public class CompletedPaymentsFragment extends Fragment {
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_ALL);
                     startActivityForResult(intent, 1001);
                 }
+
+                @Override
+                public void onSendReminder(PaymentData payment) {
+                    // Not used for completed payments
+                }
             };
             
             if (adapter == null) {

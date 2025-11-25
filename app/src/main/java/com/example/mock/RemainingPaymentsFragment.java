@@ -169,6 +169,11 @@ public class RemainingPaymentsFragment extends Fragment {
                     intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_REMAINING);
                     startActivityForResult(intent, 1001);
                 }
+
+                @Override
+                public void onSendReminder(PaymentData payment) {
+                    // Not used for remaining payments
+                }
             };
             
             if (adapter == null) {
