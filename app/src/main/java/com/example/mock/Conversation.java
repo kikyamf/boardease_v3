@@ -618,146 +618,161 @@ public class Conversation extends AppCompatActivity {
 
     private void sendIndividualMessageWithNotification(String messageText, MessageModel messageModel) {
         String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/send_message.php";
-        
+
         android.util.Log.d("SendMessage", "=== SENDING INDIVIDUAL MESSAGE ===");
         android.util.Log.d("SendMessage", "URL: " + url);
         android.util.Log.d("SendMessage", "Sender ID: " + currentUserId);
         android.util.Log.d("SendMessage", "Receiver ID: " + otherUserId);
         android.util.Log.d("SendMessage", "Message: " + messageText);
-        
+
         RequestQueue queue = Volley.newRequestQueue(this);
-        
+
         // Create request parameters
         java.util.Map<String, String> params = new java.util.HashMap<>();
         params.put("sender_id", String.valueOf(currentUserId));
         params.put("receiver_id", String.valueOf(otherUserId));
         params.put("message", messageText);
-        
+
         android.util.Log.d("SendMessage", "Request params: " + params.toString());
-        
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params),
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                url,
+                new JSONObject(params),
                 response -> {
                     try {
                         android.util.Log.d("SendMessage", "Response received: " + response.toString());
                         if (response.getBoolean("success")) {
                             android.util.Log.d("SendMessage", "Message sent successfully!");
-                            // Update message status to "Sent"
                             messageModel.setStatus("Sent");
                             messageAdapter.notifyDataSetChanged();
                             Toast.makeText(this, "Message sent with notification!", Toast.LENGTH_SHORT).show();
                         } else {
                             android.util.Log.e("SendMessage", "Failed to send message: " + response.getString("message"));
-                            // Update message status to "Failed"
                             messageModel.setStatus("Failed");
                             messageAdapter.notifyDataSetChanged();
-                            Toast.makeText(this, "Failed to send message: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Failed: " + response.getString("message"), Toast.LENGTH_SHORT).show();
                         }
-                        // Reset sending flag and last sent message
+
                         isSendingMessage = false;
                         lastSentMessage = "";
+
                     } catch (JSONException e) {
                         android.util.Log.e("SendMessage", "JSON parsing error", e);
-                        e.printStackTrace();
                         messageModel.setStatus("Failed");
                         messageAdapter.notifyDataSetChanged();
                         Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
-                        // Reset sending flag and last sent message
+
                         isSendingMessage = false;
                         lastSentMessage = "";
                     }
                 },
                 error -> {
                     android.util.Log.e("SendMessage", "Network error", error);
-                    android.util.Log.e("SendMessage", "Error details: " + error.getMessage());
+                    android.util.Log.e("SendMessage", "Error details: " + error.toString());
+
                     if (error.networkResponse != null) {
                         android.util.Log.e("SendMessage", "Network response code: " + error.networkResponse.statusCode);
                         android.util.Log.e("SendMessage", "Network response data: " + new String(error.networkResponse.data));
                     }
-                    // Update message status to "Failed"
+
                     messageModel.setStatus("Failed");
                     messageAdapter.notifyDataSetChanged();
-                    Toast.makeText(this, "Error sending message: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    // Reset sending flag
+                    Toast.makeText(this, "Error sending message: " + error.toString(), Toast.LENGTH_SHORT).show();
+
                     isSendingMessage = false;
-                });
-        
+                }
+        );
+
+        // ⭐ ADD TIMEOUT HERE ⭐
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                15000, // 15 seconds timeout (recommended for ngrok)
+                com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+
         queue.add(request);
     }
 
+
     private void sendGroupMessageWithNotification(String messageText, MessageModel messageModel) {
         String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/send_group_message.php";
-        
+
         android.util.Log.d("SendGroupMessage", "=== SENDING GROUP MESSAGE ===");
         android.util.Log.d("SendGroupMessage", "URL: " + url);
         android.util.Log.d("SendGroupMessage", "Sender ID: " + currentUserId);
         android.util.Log.d("SendGroupMessage", "Group ID: " + groupId);
         android.util.Log.d("SendGroupMessage", "Message: " + messageText);
-        
+
         RequestQueue queue = Volley.newRequestQueue(this);
-        
+
         // Create request parameters
         java.util.Map<String, String> params = new java.util.HashMap<>();
         params.put("sender_id", String.valueOf(currentUserId));
         params.put("group_id", String.valueOf(groupId));
         params.put("message", messageText);
-        
+
         android.util.Log.d("SendGroupMessage", "Request params: " + params.toString());
-        
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(params),
+
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                url,
+                new JSONObject(params),
                 response -> {
                     try {
                         android.util.Log.d("SendGroupMessage", "Response received: " + response.toString());
                         if (response.getBoolean("success")) {
                             android.util.Log.d("SendGroupMessage", "Group message sent successfully!");
-                            // Update message status to "Sent"
                             messageModel.setStatus("Sent");
                             messageAdapter.notifyDataSetChanged();
                             Toast.makeText(this, "Group message sent with notifications!", Toast.LENGTH_SHORT).show();
                         } else {
                             android.util.Log.e("SendGroupMessage", "Failed to send group message: " + response.getString("message"));
-                            // Update message status to "Failed"
                             messageModel.setStatus("Failed");
                             messageAdapter.notifyDataSetChanged();
-                            Toast.makeText(this, "Failed to send group message: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Failed: " + response.getString("message"), Toast.LENGTH_SHORT).show();
                         }
-                        // Reset sending flag and last sent message
+
                         isSendingMessage = false;
                         lastSentMessage = "";
+
                     } catch (JSONException e) {
                         android.util.Log.e("SendGroupMessage", "JSON parsing error", e);
-                        e.printStackTrace();
                         messageModel.setStatus("Failed");
                         messageAdapter.notifyDataSetChanged();
                         Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
-                        // Reset sending flag and last sent message
+
                         isSendingMessage = false;
                         lastSentMessage = "";
                     }
                 },
                 error -> {
                     android.util.Log.e("SendGroupMessage", "Network error", error);
-                    android.util.Log.e("SendGroupMessage", "Error details: " + error.getMessage());
+                    android.util.Log.e("SendGroupMessage", "Error details: " + error.toString());
+
                     if (error.networkResponse != null) {
                         android.util.Log.e("SendGroupMessage", "Network response code: " + error.networkResponse.statusCode);
                         android.util.Log.e("SendGroupMessage", "Network response data: " + new String(error.networkResponse.data));
                     }
-                    // Update message status to "Failed"
+
                     messageModel.setStatus("Failed");
                     messageAdapter.notifyDataSetChanged();
-                    Toast.makeText(this, "Error sending group message: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                    // Reset sending flag
+                    Toast.makeText(this, "Error sending group message: " + error.toString(), Toast.LENGTH_SHORT).show();
+
                     isSendingMessage = false;
-                });
-        
-        // Set timeout for group messages (longer timeout)
+                }
+        );
+
+        // ⭐ Apply timeout here (same as individual message) ⭐
         request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
-            15000, // 15 seconds timeout
-            com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+                15000, // 15 seconds timeout (ngrok-friendly)
+                com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
         ));
-        
+
         queue.add(request);
     }
+
 
     private void showGroupMembers() {
         // Use get_group_members.php endpoint to get real group members
