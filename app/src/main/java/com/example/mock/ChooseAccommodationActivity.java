@@ -44,11 +44,27 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     
     private int boardingHouseId;
     private RequestQueue requestQueue;
+    private int currentUserId;
+    private boolean hasActiveBooking = false;
+    private String currentBookingStatus = ""; // Store booking status (Pending or Confirmed)
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_accommodation);
+        
+        // Get current user ID from SharedPreferences
+        android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+        String userIdString = prefs.getString("user_id", null);
+        if (userIdString != null) {
+            try {
+                currentUserId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                currentUserId = 0;
+            }
+        } else {
+            currentUserId = 0;
+        }
         
         // Get data from intent
         getIntentData();
@@ -62,8 +78,13 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         // Initialize request queue
         requestQueue = Volley.newRequestQueue(this);
         
-        // Load accommodations
-        loadAccommodations();
+        // Check for active booking first, then load accommodations
+        if (currentUserId > 0) {
+            checkActiveBooking();
+        } else {
+            // If no user ID, proceed to load accommodations (button will be disabled if no rooms available)
+            loadAccommodations();
+        }
     }
     
     private void getIntentData() {
@@ -229,6 +250,32 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
             return;
         }
         
+        // Check if all rooms are occupied (no available rooms)
+        boolean allRoomsOccupied = true;
+        int totalRooms = 0;
+        int totalAvailableRooms = 0;
+        
+        for (int i = 0; i < categoryNames.length(); i++) {
+            String categoryName = categoryNames.getString(i);
+            JSONArray roomsInCategory = roomsByCategory.getJSONArray(categoryName);
+            
+            for (int j = 0; j < roomsInCategory.length(); j++) {
+                JSONObject room = roomsInCategory.getJSONObject(j);
+                totalRooms++;
+                int availableRooms = room.optInt("available_rooms", 0);
+                totalAvailableRooms += availableRooms;
+                
+                if (availableRooms > 0) {
+                    allRoomsOccupied = false;
+                }
+            }
+        }
+        
+        // Show modal if all rooms are occupied (and boarder doesn't have active booking)
+        if (allRoomsOccupied && totalRooms > 0 && !hasActiveBooking) {
+            showAllRoomsOccupiedModal();
+        }
+        
         for (int i = 0; i < categoryNames.length(); i++) {
             String categoryName = categoryNames.getString(i);
             JSONArray roomsInCategory = roomsByCategory.getJSONArray(categoryName);
@@ -379,6 +426,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         // Availability (actual available rooms)
         TextView tvAvailability = new TextView(this);
         int availableRooms = -1;
+        String roomCategory = room.optString("room_category", "");
         
         // Check if available_rooms exists in the response
         if (room.has("available_rooms") && !room.isNull("available_rooms")) {
@@ -390,12 +438,25 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
             Log.d(TAG, "Room " + room.optString("room_name") + " - available_rooms not in response, using total_rooms: " + availableRooms);
         }
         
-        if (availableRooms == 0) {
-            tvAvailability.setText("No available rooms as of the moment");
-            tvAvailability.setTextColor(getResources().getColor(R.color.red));
+        // For Bed Spacer, show only room units count (no capacity ratio)
+        if ("Bed Spacer".equals(roomCategory)) {
+            // Show room units count
+            if (availableRooms == 0) {
+                tvAvailability.setText("No available rooms as of the moment");
+                tvAvailability.setTextColor(getResources().getColor(R.color.red));
+            } else {
+                tvAvailability.setText("Room(s): " + availableRooms);
+                tvAvailability.setTextColor(getResources().getColor(R.color.green));
+            }
         } else {
-            tvAvailability.setText("Room(s): " + availableRooms);
-            tvAvailability.setTextColor(getResources().getColor(R.color.green));
+            // For Private Room, show available rooms count
+            if (availableRooms == 0) {
+                tvAvailability.setText("No available rooms as of the moment");
+                tvAvailability.setTextColor(getResources().getColor(R.color.red));
+            } else {
+                tvAvailability.setText("Room(s): " + availableRooms);
+                tvAvailability.setTextColor(getResources().getColor(R.color.green));
+            }
         }
         tvAvailability.setTextSize(14);
         
@@ -420,28 +481,84 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         );
         btnSelect.setLayoutParams(btnParams);
         
-        // Set click listener for Select button
-        int bhrId = room.getInt("bhr_id");
-        btnSelect.setOnClickListener(v -> {
-            try {
-                // Create a copy of the room object and add bh_id if not present
-                JSONObject roomData = new JSONObject(room.toString());
-                if (!roomData.has("bh_id") && boardingHouseId > 0) {
-                    roomData.put("bh_id", boardingHouseId);
-                    Log.d(TAG, "Added bh_id to room_data: " + boardingHouseId);
-                }
-                
-                Intent intent = new Intent(this, BookingActivity.class);
-                intent.putExtra("bhr_id", bhrId);
-                intent.putExtra("room_data", roomData.toString());
-                intent.putExtra("bh_id", boardingHouseId); // Also pass as separate extra for safety
-                Log.d(TAG, "Starting BookingActivity with bh_id: " + boardingHouseId + ", bhr_id: " + bhrId);
-                startActivity(intent);
-            } catch (JSONException e) {
-                Log.e(TAG, "Error creating room_data: " + e.getMessage());
-                Toast.makeText(this, "Error loading room data", Toast.LENGTH_SHORT).show();
+        // Check if button should be disabled
+        boolean shouldDisable = false;
+        String disableReason = "";
+        
+        // Disable if boarder has active booking
+        if (hasActiveBooking) {
+            shouldDisable = true;
+            disableReason = "You already have an active booking";
+        }
+        
+        // For Bed Spacer, disable only if capacity is full (occupied >= total)
+        // For Private Room, disable if no available rooms
+        if ("Bed Spacer".equals(roomCategory)) {
+            int occupiedCapacity = room.optInt("occupied_capacity", 0);
+            int totalCapacity = room.optInt("total_capacity", 0);
+            
+            if (totalCapacity > 0 && occupiedCapacity >= totalCapacity) {
+                // Bed Spacer is at full capacity
+                shouldDisable = true;
+                disableReason = "Room is at full capacity";
             }
-        });
+            // If capacity not full, button should be enabled (even if available_rooms == 0)
+        } else {
+            // For Private Room, disable if no available rooms
+            if (availableRooms == 0) {
+                shouldDisable = true;
+                disableReason = "No available rooms";
+            }
+        }
+        
+        // Make variables final for lambda expression
+        final boolean finalHasActiveBooking = hasActiveBooking;
+        final int finalAvailableRooms = availableRooms;
+        
+        // Set button state
+        if (shouldDisable) {
+            btnSelect.setEnabled(false);
+            btnSelect.setAlpha(0.5f); // Make it look disabled
+            btnSelect.setText("Select"); // Keep text as "Select" only
+            // Set click listener that shows modal
+            btnSelect.setOnClickListener(v -> {
+                if (finalHasActiveBooking) {
+                    // Show appropriate modal based on booking status
+                    if ("Pending".equals(currentBookingStatus)) {
+                        showPendingBookingModal();
+                    } else {
+                        showActiveBookingModal();
+                    }
+                } else if (finalAvailableRooms == 0) {
+                    showNoAvailableRoomsModal();
+                }
+            });
+        } else {
+            btnSelect.setEnabled(true);
+            btnSelect.setAlpha(1.0f);
+            // Set click listener for Select button
+            int bhrId = room.getInt("bhr_id");
+            btnSelect.setOnClickListener(v -> {
+                try {
+                    // Create a copy of the room object and add bh_id if not present
+                    JSONObject roomData = new JSONObject(room.toString());
+                    if (!roomData.has("bh_id") && boardingHouseId > 0) {
+                        roomData.put("bh_id", boardingHouseId);
+                        Log.d(TAG, "Added bh_id to room_data: " + boardingHouseId);
+                    }
+                    
+                    Intent intent = new Intent(this, BookingActivity.class);
+                    intent.putExtra("bhr_id", bhrId);
+                    intent.putExtra("room_data", roomData.toString());
+                    intent.putExtra("bh_id", boardingHouseId); // Also pass as separate extra for safety
+                    Log.d(TAG, "Starting BookingActivity with bh_id: " + boardingHouseId + ", bhr_id: " + bhrId);
+                    startActivity(intent);
+                } catch (JSONException e) {
+                    Log.e(TAG, "Error creating room_data: " + e.getMessage());
+                    Toast.makeText(this, "Error loading room data", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
         
         // Add views to card content
         cardContent.addView(tvRoomName);
@@ -601,6 +718,314 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     private void showNoAccommodations() {
         layoutAccommodations.setVisibility(View.GONE);
         tvNoAccommodations.setVisibility(View.VISIBLE);
+    }
+    
+    private void checkActiveBooking() {
+        if (currentUserId <= 0) {
+            // No user ID, proceed to load accommodations
+            loadAccommodations();
+            return;
+        }
+        
+        String url = BASE_URL + "check_active_booking.php?user_id=" + currentUserId;
+        Log.d(TAG, "Checking active booking for user_id: " + currentUserId);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            
+                            if (success) {
+                                hasActiveBooking = jsonResponse.getBoolean("has_active_booking");
+                                currentBookingStatus = jsonResponse.optString("booking_status", "");
+                                Log.d(TAG, "Active booking check: " + hasActiveBooking + ", status: " + currentBookingStatus);
+                                
+                                if (hasActiveBooking) {
+                                    // Show different modal based on booking status
+                                    if ("Pending".equals(currentBookingStatus)) {
+                                        // Booking is pending approval - show pending booking modal
+                                        showPendingBookingModal();
+                                    } else {
+                                        // Booking is confirmed - show active booking modal
+                                        showActiveBookingModal();
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Error checking active booking: " + jsonResponse.optString("error", "Unknown error"));
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON parsing error in checkActiveBooking: " + e.getMessage());
+                        }
+                        
+                        // Load accommodations after checking active booking
+                        loadAccommodations();
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Error checking active booking: " + error.getMessage());
+                        // Proceed to load accommodations even if check fails
+                        loadAccommodations();
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        requestQueue.add(stringRequest);
+    }
+    
+    /**
+     * Show modal dialog when boarder has an active booking
+     */
+    private void showActiveBookingModal() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        
+        // Create custom view for the dialog
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.black));
+        
+        // Title
+        TextView titleView = new TextView(this);
+        titleView.setText("Active Booking Found");
+        titleView.setTextSize(20);
+        try {
+            Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
+            titleView.setTypeface(boldTypeface);
+        } catch (Exception e) {
+            titleView.setTypeface(null, Typeface.BOLD);
+        }
+        titleView.setTextColor(getResources().getColor(android.R.color.white));
+        titleView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams titleParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        titleParams.setMargins(0, 0, 0, 24);
+        titleView.setLayoutParams(titleParams);
+        
+        // Message
+        TextView messageView = new TextView(this);
+        messageView.setText("You already have an active booking. Please complete your current stay before booking another room.\n\nYou can view your current booking in the Bookings section.");
+        messageView.setTextSize(16);
+        messageView.setTextColor(getResources().getColor(android.R.color.white));
+        messageView.setLineSpacing(8, 1.2f);
+        messageView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        messageParams.setMargins(0, 0, 0, 32);
+        messageView.setLayoutParams(messageParams);
+        
+        layout.addView(titleView);
+        layout.addView(messageView);
+        
+        builder.setView(layout);
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Button uses default color (no custom styling)
+    }
+    
+    /**
+     * Show modal dialog when boarder has a pending booking (waiting for approval)
+     */
+    private void showPendingBookingModal() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        
+        // Create custom view for the dialog
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.black));
+        
+        // Title
+        TextView titleView = new TextView(this);
+        titleView.setText("Pending Booking");
+        titleView.setTextSize(20);
+        try {
+            Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
+            titleView.setTypeface(boldTypeface);
+        } catch (Exception e) {
+            titleView.setTypeface(null, Typeface.BOLD);
+        }
+        titleView.setTextColor(getResources().getColor(android.R.color.white));
+        titleView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams titleParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        titleParams.setMargins(0, 0, 0, 24);
+        titleView.setLayoutParams(titleParams);
+        
+        // Message
+        TextView messageView = new TextView(this);
+        messageView.setText("You have a pending booking that is waiting for owner approval. Please wait for your booking to be approved before booking another room.\n\nYou can check the status of your booking in the Bookings section.");
+        messageView.setTextSize(16);
+        messageView.setTextColor(getResources().getColor(android.R.color.white));
+        messageView.setLineSpacing(8, 1.2f);
+        messageView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        messageParams.setMargins(0, 0, 0, 32);
+        messageView.setLayoutParams(messageParams);
+        
+        layout.addView(titleView);
+        layout.addView(messageView);
+        
+        builder.setView(layout);
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Button uses default color (no custom styling)
+    }
+    
+    /**
+     * Show modal dialog when room has no available units
+     */
+    private void showNoAvailableRoomsModal() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        
+        // Create custom view for the dialog
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.black));
+        
+        // Title
+        TextView titleView = new TextView(this);
+        titleView.setText("No Available Rooms");
+        titleView.setTextSize(20);
+        try {
+            Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
+            titleView.setTypeface(boldTypeface);
+        } catch (Exception e) {
+            titleView.setTypeface(null, Typeface.BOLD);
+        }
+        titleView.setTextColor(getResources().getColor(android.R.color.white));
+        titleView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams titleParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        titleParams.setMargins(0, 0, 0, 24);
+        titleView.setLayoutParams(titleParams);
+        
+        // Message
+        TextView messageView = new TextView(this);
+        messageView.setText("Sorry, this room is currently fully occupied. All room units are booked.\n\nPlease check back later or choose a different room type.");
+        messageView.setTextSize(16);
+        messageView.setTextColor(getResources().getColor(android.R.color.white));
+        messageView.setLineSpacing(8, 1.2f);
+        messageView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        messageParams.setMargins(0, 0, 0, 32);
+        messageView.setLayoutParams(messageParams);
+        
+        layout.addView(titleView);
+        layout.addView(messageView);
+        
+        builder.setView(layout);
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Button uses default color (no custom styling)
+    }
+    
+    /**
+     * Show modal dialog when all rooms are occupied
+     */
+    private void showAllRoomsOccupiedModal() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        
+        // Create custom view for the dialog
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.black));
+        
+        // Title
+        TextView titleView = new TextView(this);
+        titleView.setText("All Rooms Occupied");
+        titleView.setTextSize(20);
+        try {
+            Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
+            titleView.setTypeface(boldTypeface);
+        } catch (Exception e) {
+            titleView.setTypeface(null, Typeface.BOLD);
+        }
+        titleView.setTextColor(getResources().getColor(android.R.color.white));
+        titleView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams titleParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        titleParams.setMargins(0, 0, 0, 24);
+        titleView.setLayoutParams(titleParams);
+        
+        // Message
+        TextView messageView = new TextView(this);
+        messageView.setText("Sorry, all rooms in this boarding house are currently fully occupied. All available room units have been booked.\n\nPlease check back later or search for other boarding houses.");
+        messageView.setTextSize(16);
+        messageView.setTextColor(getResources().getColor(android.R.color.white));
+        messageView.setLineSpacing(8, 1.2f);
+        messageView.setGravity(android.view.Gravity.CENTER);
+        
+        android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        messageParams.setMargins(0, 0, 0, 32);
+        messageView.setLayoutParams(messageParams);
+        
+        layout.addView(titleView);
+        layout.addView(messageView);
+        
+        builder.setView(layout);
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Button uses default color (no custom styling)
     }
 }
 

@@ -170,6 +170,9 @@
             android:name=".PaymentHistoryActivity"
             android:exported="false" />
         <activity
+            android:name=".MaintenanceHistoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ActivityDetailsActivity"
             android:exported="false" />
         <activity

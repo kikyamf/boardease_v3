@@ -29,7 +29,7 @@
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Analytics Dashboard"
+            android:text="Analytics"
             android:textSize="20sp"
             android:textColor="#000000"
             android:fontFamily="@font/poppins_bold"

@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.mock.adapters.BoardingHouseAdapter;
 import com.example.mock.adapters.BoardingHouseCarouselAdapter;
@@ -75,6 +76,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private TextView badgeCount;
     private View badgeNotif;
     private TextView badgeNotifCount;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     // Adapters
     private BoardingHouseCarouselAdapter recommendedAdapter;
@@ -248,6 +250,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
 
     private void initializeViews(View view) {
         try {
+            swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
             etSearch = view.findViewById(R.id.etSearch);
             ivClearSearch = view.findViewById(R.id.ivClearSearch);
             rvRecommendedBH = view.findViewById(R.id.rvRecommendedBH);
@@ -429,6 +432,38 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
 
     private void setupClickListeners() {
         android.util.Log.d("BoarderHomeFragment", "setupClickListeners called");
+        
+        // Setup pull-to-refresh
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    // Reset flags to reload data
+                    dataLoaded = false;
+                    recommendedFiltered = false;
+                    nearbyFiltered = false;
+                    
+                    // Clear existing data
+                    if (allBoardingHouses != null) {
+                        allBoardingHouses.clear();
+                    }
+                    if (recommendedBoardingHouses != null) {
+                        recommendedBoardingHouses.clear();
+                    }
+                    if (nearbyBoardingHouses != null) {
+                        nearbyBoardingHouses.clear();
+                    }
+                    
+                    // Reload data
+                    loadBoarderInfo();
+                    
+                    // Refresh badge counts
+                    loadUnreadCount();
+                    loadNotificationCount();
+                }
+            });
+        }
+        
         // Search functionality
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
@@ -1432,6 +1467,11 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private void hideProgressBars() {
         if (progressBarRecommended != null) {
             progressBarRecommended.setVisibility(View.GONE);
+        }
+        
+        // Stop pull-to-refresh indicator
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(false);
         }
         if (progressBarNearby != null) {
             progressBarNearby.setVisibility(View.GONE);

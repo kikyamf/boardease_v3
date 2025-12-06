@@ -358,11 +358,26 @@ public class BedSpacersFragment extends Fragment {
                             JSONArray unitsArray = jsonResponse.getJSONArray("units");
                             List<RoomUnitsAdapter.RoomUnit> unitList = new ArrayList<>();
                             
+                            // Get room category from response
+                            String roomCategory = jsonResponse.optString("room_category", "");
+                            
                             for (int i = 0; i < unitsArray.length(); i++) {
                                 JSONObject unitObj = unitsArray.getJSONObject(i);
                                 RoomUnitsAdapter.RoomUnit unit = new RoomUnitsAdapter.RoomUnit();
                                 unit.roomNumber = unitObj.getString("room_number");
                                 unit.status = unitObj.getString("status");
+                                
+                                // For Bed Spacer, add capacity information
+                                if ("Bed Spacer".equals(roomCategory)) {
+                                    unit.capacityDisplay = unitObj.optString("capacity_display", "");
+                                    unit.totalCapacity = unitObj.optInt("total_capacity", 0);
+                                    unit.occupiedCapacity = unitObj.optInt("occupied_capacity", 0);
+                                } else {
+                                    unit.capacityDisplay = "";
+                                    unit.totalCapacity = 0;
+                                    unit.occupiedCapacity = 0;
+                                }
+                                
                                 unitList.add(unit);
                             }
                             

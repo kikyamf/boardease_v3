@@ -77,6 +77,7 @@ public class BoarderProfileFragment extends Fragment {
     private LinearLayout layoutNotifications;
     private LinearLayout layoutMessages;
     private LinearLayout layoutPaymentHistory;
+    private LinearLayout layoutMaintenanceHistory;
     private LinearLayout layoutAboutApp;
     
     // Pull-to-refresh
@@ -130,6 +131,7 @@ public class BoarderProfileFragment extends Fragment {
             layoutNotifications = view.findViewById(R.id.layoutNotifications);
             layoutMessages = view.findViewById(R.id.layoutMessages);
             layoutPaymentHistory = view.findViewById(R.id.layoutPaymentHistory);
+            layoutMaintenanceHistory = view.findViewById(R.id.layoutMaintenanceHistory);
             layoutAboutApp = view.findViewById(R.id.layoutAboutApp);
             
             // Sign out
@@ -288,6 +290,19 @@ public class BoarderProfileFragment extends Fragment {
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Error opening payment history", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            // Maintenance History
+            if (layoutMaintenanceHistory != null) {
+                layoutMaintenanceHistory.setOnClickListener(v -> {
+                    try {
+                        Intent intent = new Intent(getActivity(), MaintenanceHistoryActivity.class);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error opening maintenance history", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
