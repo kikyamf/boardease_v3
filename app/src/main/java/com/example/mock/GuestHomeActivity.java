@@ -54,6 +54,10 @@ public class GuestHomeActivity extends AppCompatActivity {
 
     private static final String TAG = "GuestHomeActivity";
     private static final String GET_ALL_BOARDING_HOUSES_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_all_boarding_houses_public.php";
+    
+    // Mapbox API Configuration
+    // Get your access token from: https://account.mapbox.com/access-tokens/
+    private static final String MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibmFtem1hcDA0IiwiYSI6ImNtanhubnN3MzJncTMzZHFzNHc4azB2MWUifQ.84NPjWYDgq3i20GLhbFTtg";
 
     // Views
     private EditText etSearch;
@@ -943,7 +947,7 @@ public class GuestHomeActivity extends AppCompatActivity {
         tvDescription.setPadding(0, 0, 0, 0);
         detailsLayout.addView(tvDescription);
 
-        // Map Preview Container using WebView with iframe HTML (initially hidden)
+        // Map Preview Container using WebView (initially hidden)
         WebView webViewMap = new WebView(this);
         int mapHeight = (int)(getResources().getDisplayMetrics().density * 150); // 150dp height
         LinearLayout.LayoutParams mapParams = new LinearLayout.LayoutParams(
@@ -955,57 +959,98 @@ public class GuestHomeActivity extends AppCompatActivity {
         webViewMap.setVisibility(View.GONE); // Initially hidden
         webViewMap.setBackgroundColor(0xFFF5F5F5);
         
-        // Configure WebView for iframe
+        // Configure WebView for Mapbox GL JS
         webViewMap.getSettings().setJavaScriptEnabled(true);
         webViewMap.getSettings().setBuiltInZoomControls(false);
         webViewMap.getSettings().setDisplayZoomControls(false);
         webViewMap.getSettings().setSupportZoom(false);
         webViewMap.getSettings().setUseWideViewPort(true);
         webViewMap.getSettings().setLoadWithOverviewMode(true);
+        webViewMap.getSettings().setDomStorageEnabled(true); // Required for Mapbox
+        webViewMap.getSettings().setAllowFileAccess(true);
+        webViewMap.getSettings().setAllowContentAccess(true);
+        // Enable mixed content for Mapbox resources
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            webViewMap.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
         webViewMap.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         webViewMap.setHorizontalScrollBarEnabled(false);
         webViewMap.setVerticalScrollBarEnabled(false);
+        
+        // Set WebChromeClient to capture console messages and errors
+        webViewMap.setWebChromeClient(new android.webkit.WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                Log.d(TAG, "WebView Console [" + consoleMessage.messageLevel() + "]: " + consoleMessage.message() + 
+                      " -- From line " + consoleMessage.lineNumber() + " of " + consoleMessage.sourceId());
+                return true;
+            }
+        });
         
         // Set WebViewClient to intercept clicks and handle page loading
         webViewMap.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                Log.d(TAG, "Google Maps iframe page finished loading");
+                Log.d(TAG, "Mapbox map page finished loading");
+                // Wait a bit then check if map loaded and resize if needed
+                view.postDelayed(() -> {
+                    view.evaluateJavascript(
+                        "try { " +
+                        "  if (typeof mapboxgl !== 'undefined' && typeof map !== 'undefined') { " +
+                        "    console.log('Mapbox GL JS loaded successfully'); " +
+                        "    map.resize(); " +
+                        "    'success'; " +
+                        "  } else { " +
+                        "    console.error('Mapbox GL JS not loaded - mapboxgl:', typeof mapboxgl, 'map:', typeof map); " +
+                        "    'error'; " +
+                        "  } " +
+                        "} catch(e) { " +
+                        "  console.error('Error checking map:', e.message); " +
+                        "  'error'; " +
+                        "}", null);
+                }, 500);
             }
             
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Log.e(TAG, "Error loading map: " + description + " (Code: " + errorCode + ")");
+                Log.e(TAG, "Error loading map: " + description + " (Code: " + errorCode + "), URL: " + failingUrl);
+                // Show error message in WebView
+                view.loadDataWithBaseURL(null, 
+                    "<html><body style='margin:0; padding:20px; text-align:center;'><p style='color:red;'>Error loading map: " + 
+                    description + "</p><p>Please check your internet connection and try again.</p></body></html>", 
+                    "text/html", "UTF-8", null);
+            }
+            
+            @Override
+            public void onReceivedError(WebView view, android.webkit.WebResourceRequest request, android.webkit.WebResourceError error) {
+                Log.e(TAG, "Error loading map resource: " + error.getDescription() + " (Code: " + error.getErrorCode() + "), URL: " + request.getUrl());
+                if (request.isForMainFrame()) {
+                    view.loadDataWithBaseURL(null, 
+                        "<html><body style='margin:0; padding:20px; text-align:center;'><p style='color:red;'>Error loading map: " + 
+                        error.getDescription() + "</p><p>Please check your internet connection and try again.</p></body></html>", 
+                        "text/html", "UTF-8", null);
+                }
             }
             
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
-                // Intercept ALL navigation attempts - if it's trying to navigate away from embed, open Maps app
+                // Allow Mapbox resources to load
                 String url = request.getUrl().toString();
                 Log.d(TAG, "Intercepted URL in preview: " + url);
                 
-                if (url != null && (url.contains("google.com/maps") || url.contains("maps.google.com"))) {
-                    // Check if it's NOT the embed URL - if it's a regular Google Maps URL, open in app
-                    // Embed URLs typically have: output=embed or mapclient=embed
-                    boolean isEmbedUrl = url.contains("output=embed") || url.contains("mapclient=embed");
-                    
-                    if (!isEmbedUrl) {
-                        // This is "View larger map" or similar - open in Google Maps app
-                        Log.d(TAG, "Non-embed URL detected - opening Google Maps app for: " + location);
-                        openMapForAddress(location);
-                        return true; // Block the default navigation
-                    } else {
-                        // Check if URL changed significantly (different coordinates or removed embed params)
-                        // This might indicate "View larger map" was clicked
-                        String currentUrl = view.getUrl();
-                        if (currentUrl != null && !url.equals(currentUrl) && url.contains("google.com/maps")) {
-                            Log.d(TAG, "URL changed significantly - might be View larger map, opening app");
-                            openMapForAddress(location);
-                            return true;
-                        }
-                        // It's still an embed URL, allow it to load
-                        Log.d(TAG, "Embed URL detected, allowing navigation within iframe");
-                        return false;
+                // Allow Mapbox API and resources
+                if (url != null && (url.contains("mapbox.com") || url.contains("mapboxgl"))) {
+                    return false; // Allow these resources to load
+                }
+                
+                // For other URLs, open in external app/browser
+                if (url != null && !url.startsWith("data:") && !url.startsWith("file://")) {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+                        startActivity(intent);
+                        return true; // Block navigation in WebView
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error opening URL: " + e.getMessage());
                     }
                 }
                 return false;
@@ -1013,55 +1058,67 @@ public class GuestHomeActivity extends AppCompatActivity {
             
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                // Intercept ALL navigation attempts - if it's trying to navigate away from embed, open Maps app
+                // Allow Mapbox resources to load
                 Log.d(TAG, "Intercepted URL in preview (legacy): " + url);
                 
-                if (url != null && (url.contains("google.com/maps") || url.contains("maps.google.com"))) {
-                    // Check if it's NOT the embed URL - if it's a regular Google Maps URL, open in app
-                    boolean isEmbedUrl = url.contains("output=embed") || url.contains("mapclient=embed");
-                    
-                    if (!isEmbedUrl) {
-                        // This is "View larger map" or similar - open in Google Maps app
-                        Log.d(TAG, "Non-embed URL detected (legacy) - opening Google Maps app for: " + location);
-                        openMapForAddress(location);
-                        return true; // Block the default navigation
-                    } else {
-                        // Check if URL changed significantly (different coordinates or removed embed params)
-                        String currentUrl = view.getUrl();
-                        if (currentUrl != null && !url.equals(currentUrl) && url.contains("google.com/maps")) {
-                            Log.d(TAG, "URL changed significantly (legacy) - might be View larger map, opening app");
-                            openMapForAddress(location);
-                            return true;
-                        }
-                        // It's still an embed URL, allow it to load
-                        Log.d(TAG, "Embed URL detected (legacy), allowing navigation within iframe");
-                        return false;
+                // Allow Mapbox API and resources
+                if (url != null && (url.contains("mapbox.com") || url.contains("mapboxgl"))) {
+                    return false; // Allow these resources to load
+                }
+                
+                // For other URLs, open in external app/browser
+                if (url != null && !url.startsWith("data:") && !url.startsWith("file://")) {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+                        startActivity(intent);
+                        return true; // Block navigation in WebView
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error opening URL: " + e.getMessage());
                     }
                 }
                 return false;
             }
         });
         
-        // Generate Google Maps Embed API URL
-        String mapEmbedUrl = generateMapEmbedUrl(location);
-        Log.d(TAG, "Loading Google Maps Embed API for address: " + location + ", URL: " + mapEmbedUrl);
+        // Store map data but DON'T load yet - lazy load when user clicks map icon
+        final String bhName = name != null ? name : "Boarding House";
+        final String finalLocation = location; // Make final for use in inner class
+        final boolean[] mapLoaded = {false}; // Track if map has been loaded
         
-        // Create HTML with iframe to properly embed Google Maps
-        if (mapEmbedUrl != null && !mapEmbedUrl.isEmpty()) {
-            String htmlContent = generateMapIframeHtml(mapEmbedUrl);
-            webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
-        }
+        // Make map clickable to open full screen modal
+        // Use long-press and double-tap to avoid interfering with map interactions
+        webViewMap.setLongClickable(true);
+        webViewMap.setOnLongClickListener(v -> {
+            Log.d(TAG, "Map preview long-pressed - opening full screen modal");
+            openFullScreenMap(finalLocation, bhName);
+            return true; // Consume the event
+        });
         
-        // Make map preview clickable to open Google Maps app directly
-        // Also intercept any navigation attempts from the iframe
-        webViewMap.setOnClickListener(v -> {
-            Log.d(TAG, "Map preview clicked - opening Google Maps app");
-            openMapForAddress(location);
+        // Also add double-tap detection as alternative
+        webViewMap.setOnTouchListener(new View.OnTouchListener() {
+            private long lastTapTime = 0;
+            private static final long DOUBLE_TAP_DELAY = 300; // 300ms for double tap
+            
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastTapTime < DOUBLE_TAP_DELAY) {
+                        // Double tap detected - open modal
+                        Log.d(TAG, "Map preview double-tapped - opening full screen modal");
+                        openFullScreenMap(finalLocation, bhName);
+                        lastTapTime = 0; // Reset
+                        return true;
+                    }
+                    lastTapTime = currentTime;
+                }
+                return false; // Let WebView handle other events
+            }
         });
         
         detailsLayout.addView(webViewMap);
         
-        // Toggle map visibility when icon is clicked
+        // Toggle map visibility when icon is clicked - LAZY LOAD the map only when shown
         ivMapIcon.setOnClickListener(v -> {
             boolean isMapVisible = webViewMap.getVisibility() == View.VISIBLE;
             if (isMapVisible) {
@@ -1074,6 +1131,30 @@ public class GuestHomeActivity extends AppCompatActivity {
                 webViewMap.setVisibility(View.VISIBLE);
                 ivMapIcon.setImageResource(R.drawable.ic_close); // Close icon
                 ivMapIcon.setColorFilter(0xFFA18167); // Brown color
+                
+                // LAZY LOAD: Only load map HTML when user clicks to show it
+                if (!mapLoaded[0]) {
+                    Log.d(TAG, "Lazy loading map for address: " + finalLocation);
+                    String htmlContent = generateMapboxMapHtml(finalLocation, bhName);
+                    webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+                    mapLoaded[0] = true;
+                    
+                    // Force resize after a delay to ensure proper rendering
+                    webViewMap.postDelayed(() -> {
+                        if (webViewMap.getVisibility() == View.VISIBLE) {
+                            webViewMap.evaluateJavascript(
+                                "if (typeof map !== 'undefined') { map.resize(); console.log('Map resized'); }", null);
+                        }
+                    }, 500);
+                } else {
+                    // Map already loaded, just resize it
+                    webViewMap.postDelayed(() -> {
+                        if (webViewMap.getVisibility() == View.VISIBLE) {
+                            webViewMap.evaluateJavascript(
+                                "if (typeof map !== 'undefined') { map.resize(); console.log('Map resized'); }", null);
+                        }
+                    }, 100);
+                }
             }
         });
 
@@ -1133,64 +1214,118 @@ public class GuestHomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
     
-    private String generateMapEmbedUrl(String address) {
+    private String generateMapboxMapHtml(String address, String locationName) {
         try {
-            // Generate Google Maps Embed API URL format
-            String encodedAddress = android.net.Uri.encode(address);
-            Log.d(TAG, "Generating Google Maps Embed API URL for address: " + address);
+            // Escape for JavaScript strings (not HTML)
+            String escapedAddress = (address != null ? address : "")
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\n", " ")
+                .replace("\r", " ");
+            String escapedName = (locationName != null ? locationName : "Boarding House")
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\n", " ")
+                .replace("\r", " ");
             
-            // Google Maps Embed API format
-            // Note: For production, you'll need to add your Google Maps API key
-            // Get your API key from: https://console.cloud.google.com/google/maps-apis
-            String apiKey = ""; // Add your Google Maps API key here if needed
+            // Use Mapbox access token from class constant
+            String mapboxAccessToken = MAPBOX_ACCESS_TOKEN;
             
-            // Google Maps Embed API URL format
-            // Format: https://www.google.com/maps/embed/v1/place?key=API_KEY&q=ADDRESS&zoom=ZOOM
-            String embedUrl;
-            if (apiKey != null && !apiKey.isEmpty()) {
-                // With API key (recommended for production)
-                embedUrl = "https://www.google.com/maps/embed/v1/place?key=" + apiKey + 
-                          "&q=" + encodedAddress + 
-                          "&zoom=15";
-            } else {
-                // Use the standard Google Maps embed format (works without API key)
-                embedUrl = "https://www.google.com/maps?q=" + encodedAddress + 
-                          "&output=embed&zoom=15";
-            }
-            
-            Log.d(TAG, "Generated Google Maps Embed API URL: " + embedUrl);
-            return embedUrl;
+            // Generate HTML with Mapbox GL JS
+            // Uses Mapbox Geocoding API for better address matching
+            return "<!DOCTYPE html>" +
+                   "<html>" +
+                   "<head>" +
+                   "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
+                   "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
+                   "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
+                   "<style>" +
+                   "* { margin: 0; padding: 0; box-sizing: border-box; } " +
+                   "html, body { width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0; position: relative; } " +
+                   "#map { width: 100%; height: 100%; margin: 0; padding: 0; min-height: 150px; } " +
+                   ".mapboxgl-popup-content { padding: 12px; font-family: Arial, sans-serif; } " +
+                   ".mapboxgl-popup-content b { font-size: 14px; color: #333; } " +
+                   ".mapboxgl-popup-content p { margin: 4px 0 0 0; font-size: 12px; color: #666; } " +
+                   "</style>" +
+                   "</head>" +
+                   "<body style=\"margin:0; padding:0; overflow:hidden; width:100%; height:100%;\">" +
+                   "<div id=\"map\" style=\"width:100%; height:100%; min-height:150px;\"></div>" +
+                   "<script>" +
+                   "console.log('Initializing Mapbox map...'); " +
+                   "mapboxgl.accessToken = '" + mapboxAccessToken + "'; " +
+                   "var map = new mapboxgl.Map({ " +
+                   "  container: 'map', " +
+                   "  style: 'mapbox://styles/mapbox/streets-v12', " +
+                   "  center: [120.9842, 14.5995], " +
+                   "  zoom: 13, " +
+                   "  attributionControl: false " +
+                   "}); " +
+                   "var address = '" + escapedAddress + "'; " +
+                   "var locationName = '" + escapedName + "'; " +
+                   "console.log('Address to geocode:', address); " +
+                   "map.on('load', function() { " +
+                   "  console.log('Map loaded successfully, starting geocoding...'); " +
+                   "  fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=' + mapboxgl.accessToken + '&limit=1') " +
+                   "    .then(response => { " +
+                   "      console.log('Geocoding response status:', response.status); " +
+                   "      if (!response.ok) { " +
+                   "        throw new Error('Geocoding API error: ' + response.status); " +
+                   "      } " +
+                   "      return response.json(); " +
+                   "    }) " +
+                   "    .then(data => { " +
+                   "      console.log('Geocoding response data:', JSON.stringify(data)); " +
+                   "      if (data && data.features && data.features.length > 0) { " +
+                   "        var coordinates = data.features[0].center; " +
+                   "        var lon = coordinates[0]; " +
+                   "        var lat = coordinates[1]; " +
+                   "        console.log('Found coordinates:', lon, lat); " +
+                   "        map.flyTo({ center: [lon, lat], zoom: 15, duration: 1000 }); " +
+                   "        var marker = new mapboxgl.Marker({ color: '#FF6B6B' }) " +
+                   "          .setLngLat([lon, lat]) " +
+                   "          .addTo(map); " +
+                   "        var popup = new mapboxgl.Popup({ offset: 25 }) " +
+                   "          .setHTML('<b>' + locationName + '</b><p>' + address + '</p>'); " +
+                   "        marker.setPopup(popup); " +
+                   "        popup.addTo(map); " +
+                   "        console.log('Marker added successfully'); " +
+                   "      } else { " +
+                   "        console.error('Address not found:', address); " +
+                   "        console.log('Geocoding data:', data); " +
+                   "        map.flyTo({ center: [120.9842, 14.5995], zoom: 13, duration: 1000 }); " +
+                   "      } " +
+                   "    }) " +
+                   "    .catch(error => { " +
+                   "      console.error('Geocoding error:', error); " +
+                   "      console.error('Error details:', error.message); " +
+                   "      map.flyTo({ center: [120.9842, 14.5995], zoom: 13, duration: 1000 }); " +
+                   "    }); " +
+                   "}); " +
+                   "map.on('error', function(e) { " +
+                   "  console.error('Map error:', e); " +
+                   "}); " +
+                   "map.on('render', function() { " +
+                   "  console.log('Map rendered'); " +
+                   "}); " +
+                   "// Ensure map container has proper dimensions and resize " +
+                   "setTimeout(function() { " +
+                   "  if (map) { " +
+                   "    map.resize(); " +
+                   "    console.log('Map resized'); " +
+                   "  } " +
+                   "}, 500); " +
+                   "</script>" +
+                   "</body>" +
+                   "</html>";
         } catch (Exception e) {
-            Log.e(TAG, "Error generating map embed URL: " + e.getMessage(), e);
-            return null;
+            Log.e(TAG, "Error generating Mapbox map HTML: " + e.getMessage(), e);
+            return "<html><body style='margin:0; padding:20px;'><p>Error loading map</p></body></html>";
         }
     }
     
-    private String generateMapIframeHtml(String embedUrl) {
-        // Generate HTML with iframe to properly embed Google Maps
-        // This satisfies Google Maps Embed API requirement for iframe usage
-        return "<!DOCTYPE html>" +
-               "<html>" +
-               "<head>" +
-               "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-               "<style>" +
-               "body { margin: 0; padding: 0; overflow: hidden; } " +
-               "iframe { width: 100%; height: 100%; border: 0; } " +
-               "</style>" +
-               "</head>" +
-               "<body>" +
-               "<iframe src=\"" + embedUrl + "\" " +
-               "width=\"100%\" " +
-               "height=\"100%\" " +
-               "frameborder=\"0\" " +
-               "style=\"border:0\" " +
-               "allowfullscreen>" +
-               "</iframe>" +
-               "</body>" +
-               "</html>";
-    }
-    
-    private void openFullScreenMap(String address) {
+    private void openFullScreenMap(String address, String bhName) {
         try {
             Log.d(TAG, "Opening full screen map for address: " + address);
             
@@ -1286,11 +1421,11 @@ public class GuestHomeActivity extends AppCompatActivity {
                 }
             });
             
-            // Load the non-embed version of Google Maps directly (full screen map)
-            String encodedAddress = android.net.Uri.encode(address);
-            String fullScreenMapUrl = "https://www.google.com/maps?q=" + encodedAddress + "&z=15";
-            Log.d(TAG, "Loading full screen map (non-embed) with URL: " + fullScreenMapUrl);
-            fullScreenWebView.loadUrl(fullScreenMapUrl);
+            // Load Mapbox map (full screen map)
+            String locationName = bhName != null ? bhName : "Boarding House";
+            String htmlContent = generateMapboxMapHtml(address, locationName);
+            Log.d(TAG, "Loading full screen Mapbox map");
+            fullScreenWebView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
             
             // Create container with close button - NO PADDING, NO MARGINS
             android.widget.FrameLayout container = new android.widget.FrameLayout(this);
@@ -1390,32 +1525,17 @@ public class GuestHomeActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "Error opening full screen map: " + e.getMessage(), e);
-            // Fallback to opening in Google Maps app
+            // Fallback to opening in map app
             openMapForAddress(address);
         }
     }
     
     private void openMapForAddress(String address) {
         try {
-            Log.d(TAG, "Attempting to open Google Maps app for address: " + address);
+            Log.d(TAG, "Attempting to open map app for address: " + address);
             String encodedAddress = android.net.Uri.encode(address);
             
-            // Method 1: Try to open Google Maps app directly using package name
-            try {
-                Intent mapIntent = new Intent(android.content.Intent.ACTION_VIEW);
-                mapIntent.setData(android.net.Uri.parse("geo:0,0?q=" + encodedAddress));
-                mapIntent.setPackage("com.google.android.apps.maps"); // Force Google Maps app
-                
-                if (mapIntent.resolveActivity(getPackageManager()) != null) {
-                    Log.d(TAG, "Opening Google Maps app directly");
-                    startActivity(mapIntent);
-                    return;
-                }
-            } catch (Exception e) {
-                Log.d(TAG, "Google Maps app not found, trying alternative methods");
-            }
-            
-            // Method 2: Try geo URI without package name (lets user choose)
+            // Method 1: Try generic geo URI (works with any map app)
             try {
                 Intent mapIntent = new Intent(android.content.Intent.ACTION_VIEW);
                 mapIntent.setData(android.net.Uri.parse("geo:0,0?q=" + encodedAddress));
@@ -1426,29 +1546,27 @@ public class GuestHomeActivity extends AppCompatActivity {
                     return;
                 }
             } catch (Exception e) {
-                Log.d(TAG, "Geo URI failed, trying web browser");
+                Log.e(TAG, "Error opening map via geo URI: " + e.getMessage());
             }
             
-            // Method 3: Try Google Maps URL scheme
+            // Method 2: Try Mapbox URL
             try {
                 Intent mapIntent = new Intent(android.content.Intent.ACTION_VIEW);
-                mapIntent.setData(android.net.Uri.parse("https://www.google.com/maps/search/?api=1&query=" + encodedAddress));
-                mapIntent.setPackage("com.google.android.apps.maps"); // Try to force Google Maps
+                mapIntent.setData(android.net.Uri.parse("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodedAddress + ".html"));
                 
                 if (mapIntent.resolveActivity(getPackageManager()) != null) {
-                    Log.d(TAG, "Opening Google Maps app via URL");
+                    Log.d(TAG, "Opening map via Mapbox URL");
                     startActivity(mapIntent);
                     return;
                 }
             } catch (Exception e) {
-                Log.d(TAG, "Google Maps URL failed");
+                Log.e(TAG, "Error opening map via Mapbox URL: " + e.getMessage());
             }
             
-            // Fallback: Open in web browser
-            Intent webIntent = new Intent(android.content.Intent.ACTION_VIEW);
-            webIntent.setData(android.net.Uri.parse("https://www.google.com/maps/search/?api=1&query=" + encodedAddress));
-            Log.d(TAG, "Falling back to web browser");
-            startActivity(webIntent);
+            // Method 3: Fallback to browser with Google Maps (better fallback for address search)
+            Intent browserIntent = new Intent(android.content.Intent.ACTION_VIEW);
+            browserIntent.setData(android.net.Uri.parse("https://www.google.com/maps/search/?api=1&query=" + encodedAddress));
+            startActivity(browserIntent);
             
         } catch (Exception e) {
             Log.e(TAG, "Error opening map: " + e.getMessage(), e);
