@@ -947,17 +947,60 @@ public class GuestHomeActivity extends AppCompatActivity {
         tvDescription.setPadding(0, 0, 0, 0);
         detailsLayout.addView(tvDescription);
 
-        // Map Preview Container using WebView (initially hidden)
-        WebView webViewMap = new WebView(this);
+        // Map Preview Container - wrap WebView in FrameLayout to add hint overlay
         int mapHeight = (int)(getResources().getDisplayMetrics().density * 150); // 150dp height
-        LinearLayout.LayoutParams mapParams = new LinearLayout.LayoutParams(
+        android.widget.FrameLayout mapContainer = new android.widget.FrameLayout(this);
+        LinearLayout.LayoutParams mapContainerParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             mapHeight
         );
-        mapParams.setMargins(0, (int)(getResources().getDisplayMetrics().density * 8), 0, 0);
-        webViewMap.setLayoutParams(mapParams);
-        webViewMap.setVisibility(View.GONE); // Initially hidden
+        mapContainerParams.setMargins(0, (int)(getResources().getDisplayMetrics().density * 8), 0, 0);
+        mapContainer.setLayoutParams(mapContainerParams);
+        mapContainer.setVisibility(View.GONE); // Initially hidden
+        
+        // Create WebView for map
+        WebView webViewMap = new WebView(this);
+        android.widget.FrameLayout.LayoutParams webViewParams = new android.widget.FrameLayout.LayoutParams(
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        webViewMap.setLayoutParams(webViewParams);
         webViewMap.setBackgroundColor(0xFFF5F5F5);
+        
+        // Create full screen icon button on top-right corner
+        android.widget.ImageButton fullScreenIconButton = new android.widget.ImageButton(this);
+        fullScreenIconButton.setImageResource(R.drawable.fullscreen); // Full screen icon
+        android.widget.FrameLayout.LayoutParams fullScreenButtonParams = new android.widget.FrameLayout.LayoutParams(
+            (int)(getResources().getDisplayMetrics().density * 30),
+            (int)(getResources().getDisplayMetrics().density * 30)
+        );
+        fullScreenButtonParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        fullScreenButtonParams.setMargins(
+            (int)(getResources().getDisplayMetrics().density * 4),
+            (int)(getResources().getDisplayMetrics().density * 4),
+            (int)(getResources().getDisplayMetrics().density * 4),
+            (int)(getResources().getDisplayMetrics().density * 4)
+        );
+        fullScreenIconButton.setLayoutParams(fullScreenButtonParams);
+        
+        // Create rounded background for the button
+        float buttonCornerRadius = getResources().getDisplayMetrics().density * 8; // 8dp rounded corners
+        android.graphics.drawable.GradientDrawable roundedBackground = new android.graphics.drawable.GradientDrawable();
+        roundedBackground.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        roundedBackground.setCornerRadius(buttonCornerRadius);
+        roundedBackground.setColor(0xCC000000); // Semi-transparent black background
+        fullScreenIconButton.setBackground(roundedBackground);
+        
+        fullScreenIconButton.setPadding(
+            (int)(getResources().getDisplayMetrics().density * 6),
+            (int)(getResources().getDisplayMetrics().density * 6),
+            (int)(getResources().getDisplayMetrics().density * 6),
+            (int)(getResources().getDisplayMetrics().density * 6)
+        );
+        fullScreenIconButton.setColorFilter(0xFFFFFFFF); // White icon
+        fullScreenIconButton.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        fullScreenIconButton.setClickable(true);
+        fullScreenIconButton.setFocusable(true);
         
         // Configure WebView for Mapbox GL JS
         webViewMap.getSettings().setJavaScriptEnabled(true);
@@ -1085,6 +1128,12 @@ public class GuestHomeActivity extends AppCompatActivity {
         final String finalLocation = location; // Make final for use in inner class
         final boolean[] mapLoaded = {false}; // Track if map has been loaded
         
+        // Open full screen map when icon is clicked (set after variables are defined)
+        fullScreenIconButton.setOnClickListener(v -> {
+            Log.d(TAG, "Full screen icon clicked - opening full screen modal");
+            openFullScreenMap(finalLocation, bhName);
+        });
+        
         // Make map clickable to open full screen modal
         // Use long-press and double-tap to avoid interfering with map interactions
         webViewMap.setLongClickable(true);
@@ -1116,19 +1165,23 @@ public class GuestHomeActivity extends AppCompatActivity {
             }
         });
         
-        detailsLayout.addView(webViewMap);
+        // Add WebView and full screen icon button to container
+        mapContainer.addView(webViewMap);
+        mapContainer.addView(fullScreenIconButton);
+        
+        detailsLayout.addView(mapContainer);
         
         // Toggle map visibility when icon is clicked - LAZY LOAD the map only when shown
         ivMapIcon.setOnClickListener(v -> {
-            boolean isMapVisible = webViewMap.getVisibility() == View.VISIBLE;
+            boolean isMapVisible = mapContainer.getVisibility() == View.VISIBLE;
             if (isMapVisible) {
                 // Hide map, show map icon
-                webViewMap.setVisibility(View.GONE);
+                mapContainer.setVisibility(View.GONE);
                 ivMapIcon.setImageResource(R.drawable.ic_map);
                 ivMapIcon.setColorFilter(0xFFA18167); // Brown color
             } else {
                 // Show map, show close icon
-                webViewMap.setVisibility(View.VISIBLE);
+                mapContainer.setVisibility(View.VISIBLE);
                 ivMapIcon.setImageResource(R.drawable.ic_close); // Close icon
                 ivMapIcon.setColorFilter(0xFFA18167); // Brown color
                 
@@ -1141,7 +1194,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                     
                     // Force resize after a delay to ensure proper rendering
                     webViewMap.postDelayed(() -> {
-                        if (webViewMap.getVisibility() == View.VISIBLE) {
+                        if (mapContainer.getVisibility() == View.VISIBLE) {
                             webViewMap.evaluateJavascript(
                                 "if (typeof map !== 'undefined') { map.resize(); console.log('Map resized'); }", null);
                         }
@@ -1149,7 +1202,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 } else {
                     // Map already loaded, just resize it
                     webViewMap.postDelayed(() -> {
-                        if (webViewMap.getVisibility() == View.VISIBLE) {
+                        if (mapContainer.getVisibility() == View.VISIBLE) {
                             webViewMap.evaluateJavascript(
                                 "if (typeof map !== 'undefined') { map.resize(); console.log('Map resized'); }", null);
                         }
@@ -1248,6 +1301,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                    ".mapboxgl-popup-content { padding: 12px; font-family: Arial, sans-serif; } " +
                    ".mapboxgl-popup-content b { font-size: 14px; color: #333; } " +
                    ".mapboxgl-popup-content p { margin: 4px 0 0 0; font-size: 12px; color: #666; } " +
+                   ".mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { display: none !important; } " +
                    "</style>" +
                    "</head>" +
                    "<body style=\"margin:0; padding:0; overflow:hidden; width:100%; height:100%;\">" +
@@ -1459,7 +1513,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 closeButton.setBackgroundColor(0xCC000000);
             }
             
-            int buttonSize = (int)(getResources().getDisplayMetrics().density * 48);
+            int buttonSize = (int)(getResources().getDisplayMetrics().density * 40);
             android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(
                 buttonSize,
                 buttonSize
@@ -1469,10 +1523,10 @@ public class GuestHomeActivity extends AppCompatActivity {
                                   (int)(getResources().getDisplayMetrics().density * 16), 0);
             closeButton.setLayoutParams(closeParams);
             closeButton.setPadding(
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12)
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10)
             );
             closeButton.setClickable(true);
             closeButton.setFocusable(true);

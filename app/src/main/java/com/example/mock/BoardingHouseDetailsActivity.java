@@ -272,10 +272,10 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                         return true; // Block navigation in WebView
                     } catch (Exception e) {
                         Log.e(TAG, "Error opening URL: " + e.getMessage());
-                    }
+                            }
                 }
-                return false;
-            }
+                        return false;
+                    }
         });
         
         // Make map preview clickable to open full screen modal
@@ -303,7 +303,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                     if (currentTime - lastTapTime < DOUBLE_TAP_DELAY) {
                         // Double tap detected - open modal
                         Log.d(TAG, "Map preview double-tapped - opening full screen modal");
-                        if (boardingHouseDetails != null) {
+            if (boardingHouseDetails != null) {
                             String address = boardingHouseDetails.getBhAddress();
                             String bhName = boardingHouseDetails.getBhName() != null ? boardingHouseDetails.getBhName() : "Boarding House";
                             openFullScreenMap(address, bhName);
@@ -316,6 +316,81 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                 return false; // Let WebView handle other events
             }
         });
+        
+        // Add info icon button and hint overlay to inform users they can expand the map
+        // Wrap WebView in FrameLayout and add hint overlay
+        android.view.ViewParent parent = webViewMap.getParent();
+        if (parent instanceof android.view.ViewGroup) {
+            android.view.ViewGroup parentGroup = (android.view.ViewGroup) parent;
+            int index = parentGroup.indexOfChild(webViewMap);
+            
+            // Create FrameLayout container
+            android.widget.FrameLayout mapContainer = new android.widget.FrameLayout(this);
+            android.view.ViewGroup.LayoutParams originalParams = webViewMap.getLayoutParams();
+            mapContainer.setLayoutParams(originalParams);
+            
+            // Remove WebView from original parent
+            parentGroup.removeView(webViewMap);
+            
+            // Add WebView to container
+            android.widget.FrameLayout.LayoutParams webViewParams = new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            );
+            webViewMap.setLayoutParams(webViewParams);
+            mapContainer.addView(webViewMap);
+            
+            // Create full screen icon button on top-right corner
+            android.widget.ImageButton fullScreenIconButton = new android.widget.ImageButton(this);
+            fullScreenIconButton.setImageResource(R.drawable.fullscreen); // Full screen icon
+            android.widget.FrameLayout.LayoutParams fullScreenButtonParams = new android.widget.FrameLayout.LayoutParams(
+                (int)(getResources().getDisplayMetrics().density * 30),
+                (int)(getResources().getDisplayMetrics().density * 30)
+            );
+            fullScreenButtonParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            fullScreenButtonParams.setMargins(
+                (int)(getResources().getDisplayMetrics().density * 4),
+                (int)(getResources().getDisplayMetrics().density * 4),
+                (int)(getResources().getDisplayMetrics().density * 4),
+                (int)(getResources().getDisplayMetrics().density * 4)
+            );
+            fullScreenIconButton.setLayoutParams(fullScreenButtonParams);
+            
+            // Create rounded background for the button
+            float buttonCornerRadius = getResources().getDisplayMetrics().density * 8; // 8dp rounded corners
+            android.graphics.drawable.GradientDrawable roundedBackground = new android.graphics.drawable.GradientDrawable();
+            roundedBackground.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            roundedBackground.setCornerRadius(buttonCornerRadius);
+            roundedBackground.setColor(0xCC000000); // Semi-transparent black background
+            fullScreenIconButton.setBackground(roundedBackground);
+            
+            fullScreenIconButton.setPadding(
+                (int)(getResources().getDisplayMetrics().density * 6),
+                (int)(getResources().getDisplayMetrics().density * 6),
+                (int)(getResources().getDisplayMetrics().density * 6),
+                (int)(getResources().getDisplayMetrics().density * 6)
+            );
+            fullScreenIconButton.setColorFilter(0xFFFFFFFF); // White icon
+            fullScreenIconButton.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            fullScreenIconButton.setClickable(true);
+            fullScreenIconButton.setFocusable(true);
+            
+            // Open full screen map when icon is clicked
+            fullScreenIconButton.setOnClickListener(v -> {
+                Log.d(TAG, "Full screen icon clicked - opening full screen modal");
+                if (boardingHouseDetails != null) {
+                    String address = boardingHouseDetails.getBhAddress();
+                    String bhName = boardingHouseDetails.getBhName() != null ? boardingHouseDetails.getBhName() : "Boarding House";
+                    openFullScreenMap(address, bhName);
+                }
+            });
+            
+            // Add full screen icon button to container
+            mapContainer.addView(fullScreenIconButton);
+            
+            // Add container to original parent at same index
+            parentGroup.addView(mapContainer, index);
+        }
     }
     
     private void setupClickListeners() {
@@ -1057,8 +1132,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         // Create HTML with Mapbox GL JS to display map with pin marker
         String htmlContent = generateMapboxMapHtml(address, bhName);
-        webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
-    }
+            webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+        }
     
     private String generateMapboxMapHtml(String address, String locationName) {
         try {
@@ -1071,22 +1146,23 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
             
             // Generate HTML with Mapbox GL JS
             // Uses Mapbox Geocoding API for better address matching
-            return "<!DOCTYPE html>" +
-                   "<html>" +
-                   "<head>" +
-                   "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
+        return "<!DOCTYPE html>" +
+               "<html>" +
+               "<head>" +
+               "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
                    "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
                    "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
-                   "<style>" +
-                   "* { margin: 0; padding: 0; box-sizing: border-box; } " +
-                   "html, body { width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0; } " +
+               "<style>" +
+               "* { margin: 0; padding: 0; box-sizing: border-box; } " +
+               "html, body { width: 100%; height: 100%; overflow: hidden; margin: 0; padding: 0; } " +
                    "#map { width: 100%; height: 100%; margin: 0; padding: 0; } " +
                    ".mapboxgl-popup-content { padding: 12px; font-family: Arial, sans-serif; } " +
                    ".mapboxgl-popup-content b { font-size: 14px; color: #333; } " +
                    ".mapboxgl-popup-content p { margin: 4px 0 0 0; font-size: 12px; color: #666; } " +
-                   "</style>" +
-                   "</head>" +
-                   "<body style=\"margin:0; padding:0; overflow:hidden;\">" +
+                   ".mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { display: none !important; } " +
+               "</style>" +
+               "</head>" +
+               "<body style=\"margin:0; padding:0; overflow:hidden;\">" +
                    "<div id=\"map\"></div>" +
                    "<script>" +
                    "mapboxgl.accessToken = '" + mapboxAccessToken + "'; " +
@@ -1094,7 +1170,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                    "  container: 'map', " +
                    "  style: 'mapbox://styles/mapbox/streets-v12', " +
                    "  center: [120.9842, 14.5995], " + // Default to Manila, Philippines
-                   "  zoom: 13 " +
+                   "  zoom: 13, " +
+                   "  attributionControl: false " +
                    "}); " +
                    "var address = '" + escapedAddress + "'; " +
                    "var locationName = '" + escapedName + "'; " +
@@ -1123,8 +1200,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                    "    }); " +
                    "}); " +
                    "</script>" +
-                   "</body>" +
-                   "</html>";
+               "</body>" +
+               "</html>";
         } catch (Exception e) {
             Log.e(TAG, "Error generating Mapbox map HTML: " + e.getMessage(), e);
             return "<html><body style='margin:0; padding:20px;'><p>Error loading map</p></body></html>";
@@ -1263,7 +1340,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                 closeButton.setBackgroundColor(0xCC000000);
             }
             
-            int buttonSize = (int)(getResources().getDisplayMetrics().density * 48);
+            int buttonSize = (int)(getResources().getDisplayMetrics().density * 40);
             android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(
                 buttonSize,
                 buttonSize
@@ -1273,10 +1350,10 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
                                   (int)(getResources().getDisplayMetrics().density * 16), 0);
             closeButton.setLayoutParams(closeParams);
             closeButton.setPadding(
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12),
-                (int)(getResources().getDisplayMetrics().density * 12)
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10),
+                (int)(getResources().getDisplayMetrics().density * 10)
             );
             closeButton.setClickable(true);
             closeButton.setFocusable(true);
