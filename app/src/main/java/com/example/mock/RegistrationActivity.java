@@ -3174,9 +3174,14 @@ public class RegistrationActivity extends AppCompatActivity {
         String address = etAddress.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String gcashFormatted = etGcashNum.getText().toString().trim();
-        String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
-        String gcashNumber = "0" + gcashDigitsAfterPlus63;
+        String gcashNumber = "";
+        if (!isBoarder) {
+             String gcashFormatted = etGcashNum.getText().toString().trim();
+             if (gcashFormatted.length() >= 4) {
+                 String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
+                 gcashNumber = "0" + gcashDigitsAfterPlus63;
+             }
+        }
         
         String UPLOAD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/insert_registration.php";
         
