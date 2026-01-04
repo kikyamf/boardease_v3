@@ -68,6 +68,10 @@ public class RegistrationActivity extends AppCompatActivity {
     TextView tvLogin, tvEmailValidation;
     TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
     TextView tvGcashNo, tvGcashQR;
+    // Password Criteria TextViews
+    TextView tvCriteriaLength, tvCriteriaUpper, tvCriteriaLower, tvCriteriaDigit, tvCriteriaSpecial;
+    // Store password validation status
+    private boolean isPasswordCriteriaMet = false;
     ImageView UploadQr, ivTogglePassword;
     ProgressBar progressBarSection2, progressBarSection3, progressBarSection4, progressBarSection5, progressBarSection6;
     
@@ -189,6 +193,15 @@ public class RegistrationActivity extends AppCompatActivity {
 
         UploadQr = findViewById(R.id.UploadQr);
         ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        
+        // Password Criteria TextViews
+        tvCriteriaLength = findViewById(R.id.tvCriteriaLength);
+        tvCriteriaUpper = findViewById(R.id.tvCriteriaUpper);
+        tvCriteriaLower = findViewById(R.id.tvCriteriaLower);
+        tvCriteriaDigit = findViewById(R.id.tvCriteriaDigit);
+        tvCriteriaSpecial = findViewById(R.id.tvCriteriaSpecial);
+        
+        setupPasswordValidation();
         
         // Get ProgressBars for section loading
         progressBarSection2 = findViewById(R.id.progressBarSection2);
@@ -1001,22 +1014,8 @@ public class RegistrationActivity extends AppCompatActivity {
         }
         
         // 9. Validate Password
-        String password = etPassword.getText().toString();
-        if (password.isEmpty()) {
-            return "Password is required";
-        }
-        if (password.length() < 8) {
-            return "Password must be at least 8 characters long";
-        }
-        if (password.length() > 50) {
-            return "Password must be maximum 50 characters long";
-        }
-        // Password must contain at least one letter and one number
-        if (!password.matches(".*[a-zA-Z].*")) {
-            return "Password must contain at least one letter";
-        }
-        if (!password.matches(".*[0-9].*")) {
-            return "Password must contain at least one number";
+        if (!isPasswordCriteriaMet) {
+            return "Password must meet all complexity requirements";
         }
         
         // 10. Validate GCash Number (only required for BH Owner, not for Boarder)
@@ -1042,6 +1041,46 @@ public class RegistrationActivity extends AppCompatActivity {
             if (UploadQr.getDrawable() == null) {
                 return "GCash QR Code image is required for BH Owner";
             }
+        }
+        
+        // 12. Validate Section 6 (ID, Agreement)
+        String selectedIdType = spinnerVId.getSelectedItem().toString();
+        if (selectedIdType.equals("Select --")) {
+            return "Please select a Valid ID Type";
+        }
+        
+        String idNumber = etIdNumber.getText().toString().trim();
+        if (idNumber.isEmpty()) {
+            return "ID Number is required";
+        }
+        
+        // Check ID Images
+        if (frontBitmap == null) {
+            return "Front ID image is required";
+        }
+        
+        // Back ID required unless Passport
+        if (!selectedIdType.equals("Philippine Passport") && backBitmap == null) {
+            return "Back ID image is required";
+        }
+        
+        // Validate Business Permits (Only for BH Owner)
+        if (!isBoarder) {
+             boolean hasPermit = false;
+             for (PermitUploadItem item : permitUploadItems) {
+                 if (item.bitmap != null) {
+                     hasPermit = true;
+                     break;
+                 }
+             }
+             if (!hasPermit) {
+                 return "At least one Business Permit is required for BH Owner";
+             }
+        }
+        
+        // Validate Terms Agreement
+        if (!cbAgree.isChecked()) {
+            return "You must agree to the Terms and Conditions";
         }
         
         // All validations passed
@@ -2383,8 +2422,8 @@ public class RegistrationActivity extends AppCompatActivity {
         // Basic email format validation
         boolean emailValid = !email.isEmpty() && email.contains("@") && email.contains(".");
         
-        // Password validation: at least 8 characters
-        boolean passwordValid = password.length() >= 8;
+        // Password validation: uses the flag updated by Real-time text watcher
+        boolean passwordValid = isPasswordCriteriaMet;
         
         // For email validation status - if validation has been triggered and visible, it must pass
         // If validation hasn't been triggered yet, we just need valid format
@@ -2456,6 +2495,62 @@ public class RegistrationActivity extends AppCompatActivity {
                 sectionBoarderMessage.setVisibility(View.GONE);
             }
             updateProgressIndicator();
+        }
+    }
+    
+    /**
+     * Sets up real-time password validation logic
+     * Updates UI to show which criteria are met
+     */
+    private void setupPasswordValidation() {
+        etPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                String password = s.toString();
+                
+                // Check conditions
+                boolean lengthMet = password.length() >= 8;
+                boolean upperMet = !password.equals(password.toLowerCase());
+                boolean lowerMet = !password.equals(password.toUpperCase());
+                boolean digitMet = password.matches(".*\\d.*");
+                boolean specialMet = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*");
+                
+                // Update UI Colors (Green if met, Default Gray if not)
+                updateCriteriaView(tvCriteriaLength, lengthMet);
+                updateCriteriaView(tvCriteriaUpper, upperMet);
+                updateCriteriaView(tvCriteriaLower, lowerMet);
+                updateCriteriaView(tvCriteriaDigit, digitMet);
+                updateCriteriaView(tvCriteriaSpecial, specialMet);
+                
+                // Update global status
+                isPasswordCriteriaMet = lengthMet && upperMet && lowerMet && digitMet && specialMet;
+                
+                // Check if this section is now complete
+                checkSectionIVCompletion();
+            }
+        });
+    }
+    
+    private void updateCriteriaView(TextView view, boolean isMet) {
+        if (view == null) return;
+        if (isMet) {
+            view.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            String text = view.getText().toString();
+            if (!text.startsWith("✓ ")) {
+                view.setText("✓ " + text.replace("• ", ""));
+            }
+        } else {
+            view.setTextColor(0xFF666666); // Gray
+            String text = view.getText().toString();
+            if (text.startsWith("✓ ")) {
+                view.setText("• " + text.replace("✓ ", ""));
+            }
         }
     }
     
@@ -3079,9 +3174,15 @@ public class RegistrationActivity extends AppCompatActivity {
         String address = etAddress.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String gcashFormatted = etGcashNum.getText().toString().trim();
-        String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
-        String gcashNumber = "0" + gcashDigitsAfterPlus63;
+        String tempGcashNumber = "";
+        if (!isBoarder) {
+             String gcashFormatted = etGcashNum.getText().toString().trim();
+             if (gcashFormatted.length() >= 4) {
+                 String gcashDigitsAfterPlus63 = gcashFormatted.substring(4).replaceAll("[^0-9]", "");
+                 tempGcashNumber = "0" + gcashDigitsAfterPlus63;
+             }
+        }
+        final String gcashNumber = tempGcashNumber;
         
         String UPLOAD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/insert_registration.php";
         
