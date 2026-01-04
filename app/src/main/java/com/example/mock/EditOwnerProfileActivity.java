@@ -56,8 +56,8 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     
     private ImageView ivProfilePic, ivBack;
     private EditText etFirstName, etMiddleName, etLastName, etPhoneNumber, etAddress, btnBirthdate;
-    private EditText etBarangay, etDetailedAddress;
-    private Spinner spinnerSuffix, spinnerProvince, spinnerMunicipality;
+    private EditText etDetailedAddress;
+    private Spinner spinnerSuffix, spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private Button btnSaveChanges;
     
     private Calendar calendar;
@@ -116,7 +116,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         etAddress = findViewById(R.id.etAddress);
         spinnerProvince = findViewById(R.id.spinnerProvince);
         spinnerMunicipality = findViewById(R.id.spinnerMunicipality);
-        etBarangay = findViewById(R.id.etBarangay);
+        spinnerBarangay = findViewById(R.id.spinnerBarangay);
         etDetailedAddress = findViewById(R.id.etDetailedAddress);
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
 
@@ -168,6 +168,43 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     }
     
     private void initializeAddressPicker() {
+        // Initialize barangay spinner with default option
+        String[] defaultBarangayArray = {"Select Barangay"};
+        ArrayAdapter<String> defaultBarangayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, defaultBarangayArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        defaultBarangayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBarangay.setAdapter(defaultBarangayAdapter);
+        
         loadProvinces();
         
         spinnerProvince.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -201,9 +238,25 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 if (position > 0) {
-                    selectedMunicipality = parent.getItemAtPosition(position).toString();
+                    String newMunicipality = parent.getItemAtPosition(position).toString();
+                    
+                    // If municipality changed, reset barangay
+                    if (!newMunicipality.equals(selectedMunicipality)) {
+                        clearBarangay();
+                        selectedBarangay = "";
+                        
+                        // Set new municipality and load barangays
+                        selectedMunicipality = newMunicipality;
+                        loadBarangays(selectedMunicipality);
+                    } else {
+                        // Same municipality selected, just update
+                        selectedMunicipality = newMunicipality;
+                    }
                 } else {
+                    // "Select Municipality" selected
                     selectedMunicipality = "";
+                    clearBarangay();
+                    selectedBarangay = "";
                 }
                 updateCompleteAddress();
             }
@@ -212,18 +265,20 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
         
-        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
+        // Set up barangay selection listener
+        spinnerBarangay.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            
-            @Override
-            public void afterTextChanged(android.text.Editable s) {
-                selectedBarangay = s.toString().trim();
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) { // Skip "Select Barangay" option
+                    selectedBarangay = parent.getItemAtPosition(position).toString();
+                } else {
+                    selectedBarangay = "";
+                }
                 updateCompleteAddress();
             }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
         
         etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
@@ -431,6 +486,8 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
                                     for (int i = 0; i < municipalityNames.length; i++) {
                                         if (municipalityNames[i].equals(selectedMunicipality)) {
                                             spinnerMunicipality.setSelection(i);
+                                            // Load barangays for the selected municipality
+                                            loadBarangays(selectedMunicipality);
                                             break;
                                         }
                                     }
@@ -450,6 +507,127 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             queue.add(request);
         } catch (Exception e) {
             Log.e(TAG, "Error encoding province name: " + e.getMessage());
+        }
+    }
+    
+    private void loadBarangays(String municipality) {
+        loadBarangaysWithCallback(municipality, null);
+    }
+    
+    private void loadBarangaysWithCallback(String municipality, Runnable callback) {
+        try {
+            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=barangays&municipality_name=" + 
+                java.net.URLEncoder.encode(municipality, "UTF-8");
+            
+            com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+                Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            org.json.JSONArray barangaysArray = response.getJSONArray("data");
+                            
+                            if (barangaysArray.length() > 0) {
+                                String[] barangayNames = new String[barangaysArray.length() + 1];
+                                barangayNames[0] = "Select Barangay";
+                                
+                                for (int i = 0; i < barangaysArray.length(); i++) {
+                                    org.json.JSONObject barangay = barangaysArray.getJSONObject(i);
+                                    barangayNames[i + 1] = barangay.getString("name");
+                                }
+                                
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, barangayNames) {
+                                    @Override
+                                    public View getView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getView(position, convertView, parent);
+                                        TextView textView = (TextView) view;
+                                        textView.setTextColor(0xFF000000);
+                                        textView.setTextSize(16);
+                                        return view;
+                                    }
+
+                                    @Override
+                                    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getDropDownView(position, convertView, parent);
+                                        if (view instanceof TextView) {
+                                            TextView textView = (TextView) view;
+                                            textView.setTextColor(0xFFFFFFFF);
+                                            textView.setTextSize(16);
+                                            textView.setPadding(16, 16, 16, 16);
+                                            textView.setBackgroundColor(0xFF2C2C2C);
+                                        } else {
+                                            TextView textView = view.findViewById(android.R.id.text1);
+                                            if (textView != null) {
+                                                textView.setTextColor(0xFFFFFFFF);
+                                                textView.setTextSize(16);
+                                                textView.setPadding(16, 16, 16, 16);
+                                            }
+                                            view.setBackgroundColor(0xFF2C2C2C);
+                                        }
+                                        return view;
+                                    }
+                                };
+                                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                spinnerBarangay.setAdapter(adapter);
+                                
+                                // Try to set selection if barangay was previously selected
+                                if (!selectedBarangay.isEmpty()) {
+                                    boolean found = false;
+                                    // First try exact match (case-insensitive)
+                                    for (int i = 1; i < barangayNames.length; i++) {
+                                        if (barangayNames[i].equalsIgnoreCase(selectedBarangay)) {
+                                            spinnerBarangay.setSelection(i);
+                                            selectedBarangay = barangayNames[i]; // Update to match the actual value
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    // If not found, try partial match (contains)
+                                    if (!found) {
+                                        String normalizedSelected = selectedBarangay.trim().toLowerCase();
+                                        for (int i = 1; i < barangayNames.length; i++) {
+                                            String normalizedBarangay = barangayNames[i].trim().toLowerCase();
+                                            if (normalizedBarangay.contains(normalizedSelected) || 
+                                                normalizedSelected.contains(normalizedBarangay)) {
+                                                spinnerBarangay.setSelection(i);
+                                                selectedBarangay = barangayNames[i]; // Update to match the actual value
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    // If still not found, try removing "City" suffix and matching
+                                    if (!found) {
+                                        String selectedWithoutCity = selectedBarangay.replaceAll("(?i)\\s*City\\s*$", "").trim();
+                                        for (int i = 1; i < barangayNames.length; i++) {
+                                            String barangayWithoutCity = barangayNames[i].replaceAll("(?i)\\s*City\\s*$", "").trim();
+                                            if (barangayWithoutCity.equalsIgnoreCase(selectedWithoutCity)) {
+                                                spinnerBarangay.setSelection(i);
+                                                selectedBarangay = barangayNames[i]; // Update to match the actual value
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Execute callback if provided
+                                if (callback != null) {
+                                    runOnUiThread(callback);
+                                }
+                            }
+                        }
+                    } catch (org.json.JSONException e) {
+                        Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Error loading barangays: " + error.getMessage());
+                }
+            );
+            
+            RequestQueue queue = Volley.newRequestQueue(this);
+            queue.add(request);
+        } catch (Exception e) {
+            Log.e(TAG, "Error encoding municipality name: " + e.getMessage());
         }
     }
     
@@ -492,8 +670,43 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     }
     
     private void clearBarangay() {
-        if (etBarangay != null) {
-            etBarangay.setText("");
+        // Clear barangay spinner
+        String[] emptyArray = {"Select Barangay"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        if (spinnerBarangay != null) {
+            spinnerBarangay.setAdapter(adapter);
         }
         selectedBarangay = "";
     }
@@ -614,9 +827,8 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
         if (!selectedDetailedAddress.isEmpty()) {
             etDetailedAddress.setText(selectedDetailedAddress);
         }
-        if (!selectedBarangay.isEmpty()) {
-            etBarangay.setText(selectedBarangay);
-        }
+        // Note: Barangay will be set after barangays are loaded in loadBarangays() method
+        // The selectedBarangay variable is already set above, and loadBarangays() will handle setting the spinner
         
         if (!selectedProvince.isEmpty()) {
             setProvinceSelection(selectedProvince);
@@ -669,8 +881,64 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
                 if (adapter.getItem(i).equals(municipalityName)) {
                     spinnerMunicipality.setSelection(i, false);
                     selectedMunicipality = municipalityName;
+                    // Load barangays for the selected municipality, then set barangay selection
+                    loadBarangaysWithCallback(selectedMunicipality, () -> setBarangaySelection(selectedBarangay));
                     spinnerMunicipality.postDelayed(() -> updateCompleteAddress(), 100);
                     break;
+                }
+            }
+        }
+    }
+    
+    private void setBarangaySelection(String barangayName) {
+        android.widget.SpinnerAdapter spinnerAdapter = spinnerBarangay.getAdapter();
+        if (spinnerAdapter instanceof ArrayAdapter && !barangayName.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerAdapter;
+            
+            // Try exact match first
+            boolean found = false;
+            for (int i = 0; i < adapter.getCount(); i++) {
+                String item = adapter.getItem(i);
+                if (item != null && item.equalsIgnoreCase(barangayName)) {
+                    spinnerBarangay.setSelection(i, false);
+                    selectedBarangay = item;
+                    found = true;
+                    break;
+                }
+            }
+            
+            // If not found, try partial match (contains)
+            if (!found) {
+                String normalizedSelected = barangayName.trim().toLowerCase();
+                for (int i = 1; i < adapter.getCount(); i++) {
+                    String item = adapter.getItem(i);
+                    if (item != null) {
+                        String normalizedItem = item.trim().toLowerCase();
+                        if (normalizedItem.contains(normalizedSelected) || 
+                            normalizedSelected.contains(normalizedItem)) {
+                            spinnerBarangay.setSelection(i, false);
+                            selectedBarangay = item;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If still not found, try removing "City" suffix and matching
+            if (!found) {
+                String selectedWithoutCity = barangayName.replaceAll("(?i)\\s*City\\s*$", "").trim();
+                for (int i = 1; i < adapter.getCount(); i++) {
+                    String item = adapter.getItem(i);
+                    if (item != null) {
+                        String itemWithoutCity = item.replaceAll("(?i)\\s*City\\s*$", "").trim();
+                        if (itemWithoutCity.equalsIgnoreCase(selectedWithoutCity)) {
+                            spinnerBarangay.setSelection(i, false);
+                            selectedBarangay = item;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -1092,9 +1360,8 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             return false;
         }
         
-        if (etBarangay.getText().toString().trim().isEmpty()) {
-            etBarangay.setError("Barangay is required");
-            etBarangay.requestFocus();
+        if (spinnerBarangay.getSelectedItemPosition() == 0) {
+            Toast.makeText(this, "Please select a barangay", Toast.LENGTH_SHORT).show();
             return false;
         }
         

@@ -335,7 +335,7 @@
                     android:padding="16dp"
                     android:layout_marginBottom="8dp" />
 
-                <!-- Barangay Input -->
+                <!-- Barangay Selection -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -345,17 +345,12 @@
                     android:fontFamily="@font/poppins_regular"
                     android:layout_marginBottom="4dp" />
 
-                <EditText
-                    android:id="@+id/etBarangay"
+                <Spinner
+                    android:id="@+id/spinnerBarangay"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:background="@drawable/modern_edittext_focused"
                     android:padding="16dp"
-                    android:hint="Enter barangay"
-                    android:textColor="#212529"
-                    android:textColorHint="#6C757D"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="16sp"
                     android:layout_marginBottom="8dp" />
 
                 <!-- Detailed Address -->
