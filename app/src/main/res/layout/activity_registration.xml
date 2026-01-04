@@ -538,7 +538,7 @@
                         android:padding="10dp"
                         android:layout_marginBottom="12dp" />
 
-                    <!-- Barangay Input -->
+                    <!-- Barangay Selection -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -547,16 +547,13 @@
                         android:layout_marginBottom="8dp"
                         android:textColor="#666666"/>
 
-                    <EditText
-                        android:id="@+id/etBarangay"
+                    <Spinner
+                        android:id="@+id/spinnerBarangay"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="50dp"
                         android:background="@drawable/edittext_background"
-                        android:hint="Enter barangay"
                         android:padding="10dp"
-                        android:textColor="@color/black"
-                        android:inputType="textCapSentences"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="12dp" />
 
                     <TextView
                         android:id="@+id/tvBarangayError"

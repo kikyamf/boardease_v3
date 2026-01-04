@@ -62,9 +62,9 @@ import androidx.core.content.ContextCompat;
 
 public class RegistrationActivity extends AppCompatActivity {
 
-    Spinner spinnerRole, spinnerSuffix, spinnerProvince, spinnerMunicipality;
+    Spinner spinnerRole, spinnerSuffix, spinnerProvince, spinnerMunicipality, spinnerBarangay;
 
-    EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etBarangay, etEmail, etPassword, etGcashNum;
+    EditText etFirstName, etLastName, etMiddleName, etBirthDate, etPhone, etAddress, etDetailedAddress, etEmail, etPassword, etGcashNum;
     TextView tvLogin, tvEmailValidation;
     TextView tvFirstNameError, tvLastNameError, tvMiddleNameError, tvBirthDateError, tvBarangayError, tvDetailedAddressError;
     TextView tvGcashNo, tvGcashQR;
@@ -158,6 +158,7 @@ public class RegistrationActivity extends AppCompatActivity {
         spinnerSuffix = findViewById(R.id.spinnerSuffix);
         spinnerProvince = findViewById(R.id.spinnerProvince);
         spinnerMunicipality = findViewById(R.id.spinnerMunicipality);
+        spinnerBarangay = findViewById(R.id.spinnerBarangay);
 
         etBirthDate = findViewById(R.id.etBirthDate);
         etFirstName = findViewById(R.id.etFirstName);
@@ -167,7 +168,6 @@ public class RegistrationActivity extends AppCompatActivity {
         etPhone = findViewById(R.id.etPhone);
         etAddress = findViewById(R.id.etAddress);
         etDetailedAddress = findViewById(R.id.etDetailedAddress);
-        etBarangay = findViewById(R.id.etBarangay);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etGcashNum = findViewById(R.id.etGcashNum);
@@ -505,7 +505,7 @@ public class RegistrationActivity extends AppCompatActivity {
         etPhone.addTextChangedListener(createSectionIICheckListener());
         
         // Setup listeners for section III fields to check completion
-        etBarangay.addTextChangedListener(createSectionIIICheckListener());
+        // Note: Barangay is now a spinner, so it has its own listener in initializeAddressPicker()
         etDetailedAddress.addTextChangedListener(createSectionIIICheckListener());
         
         // Setup listeners for section IV fields to check completion
@@ -962,7 +962,7 @@ public class RegistrationActivity extends AppCompatActivity {
         // 7. Validate Address
         String province = spinnerProvince.getSelectedItem().toString();
         String municipality = spinnerMunicipality.getSelectedItem().toString();
-        String barangay = etBarangay.getText().toString().trim();
+        String barangay = spinnerBarangay.getSelectedItem().toString();
         String detailedAddress = etDetailedAddress.getText().toString().trim();
         
         if (province.equals("Select Province") || province.isEmpty()) {
@@ -971,11 +971,8 @@ public class RegistrationActivity extends AppCompatActivity {
         if (municipality.equals("Select Municipality") || municipality.isEmpty()) {
             return "Please select a Municipality/City";
         }
-        if (barangay.isEmpty()) {
-            return "Barangay is required";
-        }
-        if (barangay.length() < 2 || barangay.length() > 100) {
-            return "Barangay must be 2-100 characters long";
+        if (barangay.equals("Select Barangay") || barangay.isEmpty()) {
+            return "Please select a Barangay";
         }
         if (detailedAddress.isEmpty()) {
             return "Detailed Address (Street, House No., etc.) is required";
@@ -1612,6 +1609,43 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     private void initializeAddressPicker() {
+        // Initialize barangay spinner with default option
+        String[] defaultBarangayArray = {"Select Barangay"};
+        ArrayAdapter<String> defaultBarangayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, defaultBarangayArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        defaultBarangayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBarangay.setAdapter(defaultBarangayAdapter);
+        
         // Load provinces first
         loadProvinces();
         
@@ -1657,9 +1691,25 @@ public class RegistrationActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
                 if (position > 0) { // Skip "Select Municipality" option
-                    selectedMunicipality = parent.getItemAtPosition(position).toString();
+                    String newMunicipality = parent.getItemAtPosition(position).toString();
+                    
+                    // If municipality changed, reset barangay
+                    if (!newMunicipality.equals(selectedMunicipality)) {
+                        clearBarangay();
+                        selectedBarangay = "";
+                        
+                        // Set new municipality and load barangays
+                        selectedMunicipality = newMunicipality;
+                        loadBarangays(selectedMunicipality);
+                    } else {
+                        // Same municipality selected, just update
+                        selectedMunicipality = newMunicipality;
+                    }
                 } else {
+                    // "Select Municipality" selected
                     selectedMunicipality = "";
+                    clearBarangay();
+                    selectedBarangay = "";
                 }
                 updateCompleteAddress();
                 // Check section III completion
@@ -1670,19 +1720,22 @@ public class RegistrationActivity extends AppCompatActivity {
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
         
-        // Set up barangay input listener
-        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
+        // Set up barangay selection listener
+        spinnerBarangay.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            
-            @Override
-            public void afterTextChanged(android.text.Editable s) {
-                selectedBarangay = s.toString().trim();
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (position > 0) { // Skip "Select Barangay" option
+                    selectedBarangay = parent.getItemAtPosition(position).toString();
+                } else {
+                    selectedBarangay = "";
+                }
                 updateCompleteAddress();
+                // Check section III completion
+                checkSectionIIICompletion();
             }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
         
         // Set up detailed address listener
@@ -1940,6 +1993,99 @@ public class RegistrationActivity extends AppCompatActivity {
         }
     }
     
+    private void loadBarangays(String municipality) {
+        try {
+            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=barangays&municipality_name=" + URLEncoder.encode(municipality, "UTF-8");
+        
+        com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+            com.android.volley.Request.Method.GET, url, null,
+            response -> {
+                try {
+                    if (response.getBoolean("success")) {
+                        org.json.JSONArray barangaysArray = response.getJSONArray("data");
+                        
+                        if (barangaysArray.length() > 0) {
+                            String[] barangayNames = new String[barangaysArray.length() + 1];
+                            barangayNames[0] = "Select Barangay";
+                            
+                            for (int i = 0; i < barangaysArray.length(); i++) {
+                                org.json.JSONObject barangay = barangaysArray.getJSONObject(i);
+                                barangayNames[i + 1] = barangay.getString("name");
+                            }
+                            
+                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                                this, android.R.layout.simple_spinner_item, barangayNames) {
+                                @Override
+                                public View getView(int position, View convertView, ViewGroup parent) {
+                                    View view = super.getView(position, convertView, parent);
+                                    TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                                    if (textView != null) {
+                                        textView.setTextColor(0xFF000000); // Black text color for selected item
+                                    }
+                                    return view;
+                                }
+                                
+                                @Override
+                                public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                    View view = super.getDropDownView(position, convertView, parent);
+                                    if (view instanceof TextView) {
+                                        TextView textView = (TextView) view;
+                                        textView.setTextColor(0xFFFFFFFF);
+                                        textView.setTextSize(16);
+                                        textView.setPadding(16, 16, 16, 16);
+                                        textView.setBackgroundColor(0xFF2C2C2C);
+                                    } else {
+                                        TextView textView = view.findViewById(android.R.id.text1);
+                                        if (textView != null) {
+                                            textView.setTextColor(0xFFFFFFFF);
+                                            textView.setTextSize(16);
+                                            textView.setPadding(16, 16, 16, 16);
+                                        }
+                                        view.setBackgroundColor(0xFF2C2C2C);
+                                    }
+                                    return view;
+                                }
+                            };
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                            spinnerBarangay.setAdapter(adapter);
+                        } else {
+                            // No barangays found
+                            Log.w("AddressPicker", "No barangays found for municipality: " + municipality);
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "No barangays available for this municipality.", Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    }
+                } catch (org.json.JSONException e) {
+                    Log.e("AddressPicker", "JSON parsing error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                Log.e("AddressPicker", "Error loading barangays: " + error.getMessage());
+                // Show user-friendly message
+                if (error.networkResponse != null) {
+                    String data = new String(error.networkResponse.data);
+                    Log.e("AddressPicker", "Response data: " + data);
+                }
+                
+                // Check if it's due to no data (empty response)
+                if (error.getMessage().contains("org.json.JSONException: No value for data")) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "No barangays available for this municipality.", Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        );
+        
+        com.android.volley.RequestQueue queue = com.android.volley.toolbox.Volley.newRequestQueue(this);
+        queue.add(request);
+        } catch (Exception e) {
+            Log.e("AddressPicker", "Error encoding municipality name: " + e.getMessage());
+            Toast.makeText(this, "Error loading barangays", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
     private void clearMunicipalityAndBarangay() {
         String[] emptyArray = {"Select Municipality"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
@@ -1980,9 +2126,43 @@ public class RegistrationActivity extends AppCompatActivity {
     }
     
     private void clearBarangay() {
-        // Clear barangay EditText
-        if (etBarangay != null) {
-            etBarangay.setText("");
+        // Clear barangay spinner
+        String[] emptyArray = {"Select Barangay"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        if (spinnerBarangay != null) {
+            spinnerBarangay.setAdapter(adapter);
         }
         selectedBarangay = "";
     }
@@ -2172,12 +2352,12 @@ public class RegistrationActivity extends AppCompatActivity {
         // Check if all required fields in Section III are filled
         String province = spinnerProvince.getSelectedItem().toString();
         String municipality = spinnerMunicipality.getSelectedItem().toString();
-        String barangay = etBarangay.getText().toString().trim();
+        String barangay = spinnerBarangay.getSelectedItem().toString();
         String detailedAddress = etDetailedAddress.getText().toString().trim();
         
         boolean provinceValid = !province.equals("Select Province") && !province.isEmpty();
         boolean municipalityValid = !municipality.equals("Select Municipality") && !municipality.isEmpty();
-        boolean barangayValid = !barangay.isEmpty();
+        boolean barangayValid = !barangay.equals("Select Barangay") && !barangay.isEmpty();
         boolean detailedAddressValid = !detailedAddress.isEmpty();
         
         View sectionIVWrapper = getSectionWrapper(sectionLoginCredentials);
@@ -2532,32 +2712,8 @@ public class RegistrationActivity extends AppCompatActivity {
      * - Real-time validation with visual feedback
      */
     private void setupAddressFieldValidation() {
-        // Barangay validation
-        etBarangay.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            
-            @Override
-            public void afterTextChanged(android.text.Editable s) {
-                String text = s.toString();
-                
-                // Capitalize first letter if field is being edited
-                if (text.length() > 0 && Character.isLowerCase(text.charAt(0))) {
-                    int cursorPosition = etBarangay.getSelectionStart();
-                    s.replace(0, 1, String.valueOf(Character.toUpperCase(text.charAt(0))));
-                    etBarangay.setSelection(Math.min(cursorPosition, s.length()));
-                }
-                
-                String trimmedText = text.trim();
-                String error = validateAddressField(trimmedText, "Barangay");
-                showFieldError(etBarangay, tvBarangayError, error);
-                
-                checkSectionIIICompletion();
-            }
-        });
+        // Barangay is now a spinner, so validation is handled in the spinner listener
+        // No text watcher needed for spinner
         
         // Detailed Address validation
         etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
@@ -2718,7 +2874,7 @@ public class RegistrationActivity extends AppCompatActivity {
                     return true;
                 }
             }
-            if (etBarangay != null && !etBarangay.getText().toString().trim().isEmpty()) {
+            if (spinnerBarangay != null && spinnerBarangay.getSelectedItemPosition() > 0) {
                 return true;
             }
             if (etDetailedAddress != null && !etDetailedAddress.getText().toString().trim().isEmpty()) {
