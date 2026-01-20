@@ -61,7 +61,7 @@ public class Login extends AppCompatActivity {
     private static final String KEY_SAVED_EMAIL = "saved_email";
 
     // Server URL - Update this path if login.php is in a different location
-    private static final String LOGIN_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/login.php";
+    private static final String LOGIN_URL = "https://boardease.calapebohol.com/login.php";
 
 
     @Override

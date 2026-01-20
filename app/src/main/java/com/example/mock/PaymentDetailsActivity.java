@@ -139,7 +139,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         if (imgProfile != null) {
             String profilePicture = payment.getProfilePicture();
             if (profilePicture != null && !profilePicture.isEmpty()) {
-                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicture;
+                String fullImageUrl = "https://boardease.calapebohol.com/" + profilePicture;
                 Glide.with(this)
                         .load(fullImageUrl)
                         .placeholder(R.drawable.ic_profile)
@@ -510,7 +510,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             layoutPaymentProof.setVisibility(View.VISIBLE);
             
             // Build full URL if it's a relative path
-            String baseUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+            String baseUrl = "https://boardease.calapebohol.com/";
             String urlToProcess = paymentProofUrl.trim();
             String finalFullUrl;
             

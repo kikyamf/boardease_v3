@@ -48,9 +48,9 @@ import java.util.Map;
 public class EditOwnerProfileActivity extends AppCompatActivity {
 
     private static final String TAG = "EditOwnerProfile";
-    private static final String GET_OWNER_PROFILE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_profile.php";
-    private static final String UPDATE_OWNER_PROFILE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_owner_profile.php";
-    private static final String UPLOAD_PROFILE_PIC_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/upload_profile_picture.php";
+    private static final String GET_OWNER_PROFILE_URL = "https://boardease.calapebohol.com/get_owner_profile.php";
+    private static final String UPDATE_OWNER_PROFILE_URL = "https://boardease.calapebohol.com/update_owner_profile.php";
+    private static final String UPLOAD_PROFILE_PIC_URL = "https://boardease.calapebohol.com/upload_profile_picture.php";
     
     private static final int PICK_IMAGE_REQUEST = 1;
     
@@ -297,7 +297,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     }
 
     private void loadProvinces() {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=provinces";
+        String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=provinces";
         
         com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
             Request.Method.GET, url, null,
@@ -429,7 +429,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     
     private void loadMunicipalities(String province) {
         try {
-            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=municipalities&province_name=" + 
+            String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=municipalities&province_name=" + 
                 java.net.URLEncoder.encode(province, "UTF-8");
             
             com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
@@ -516,7 +516,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     
     private void loadBarangaysWithCallback(String municipality, Runnable callback) {
         try {
-            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=barangays&municipality_name=" + 
+            String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=barangays&municipality_name=" + 
                 java.net.URLEncoder.encode(municipality, "UTF-8");
             
             com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
@@ -946,7 +946,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
     
     private void loadMunicipalitiesWithCallback(String province, Runnable callback) {
         try {
-            String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_address_api.php?action=municipalities&province_name=" + 
+            String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=municipalities&province_name=" + 
                 java.net.URLEncoder.encode(province, "UTF-8");
             
             com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
@@ -1153,7 +1153,7 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
                 currentProfilePicPath = profilePicPath;
-                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "https://boardease.calapebohol.com/" + profilePicPath;
                 Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)

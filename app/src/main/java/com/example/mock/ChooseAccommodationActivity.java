@@ -33,7 +33,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     
     private static final String TAG = "ChooseAccommodation";
     // Local development URL - Update this to match your local IP
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
     private static final String API_URL = BASE_URL + "get_boarding_house_rooms.php";
     private static final String FALLBACK_API_URL = BASE_URL + "get_boarding_house_details1.php";
     

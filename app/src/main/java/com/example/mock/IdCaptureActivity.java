@@ -369,7 +369,7 @@ public class IdCaptureActivity extends AppCompatActivity {
         // Make API call
         StringRequest request = new StringRequest(
             Request.Method.POST,
-            "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_id_detection_api.php",
+            "https://boardease.calapebohol.com/philippine_id_detection_api.php",
             response -> {
                 Log.d(TAG, "Philippine ID API Response: " + response);
                 try {
@@ -1241,7 +1241,7 @@ public class IdCaptureActivity extends AppCompatActivity {
         // Make API call
         StringRequest request = new StringRequest(
             Request.Method.POST,
-            "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/philippine_id_detection_api.php",
+            "https://boardease.calapebohol.com/philippine_id_detection_api.php",
             response -> {
                 Log.d(TAG, "Philippine ID Field Extraction Response: " + response);
                 try {

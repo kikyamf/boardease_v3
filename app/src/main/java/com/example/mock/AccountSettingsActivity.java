@@ -35,9 +35,9 @@ import java.util.Map;
 public class AccountSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = "AccountSettings";
-    private static final String GET_ACCOUNT_INFO_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_account_info.php";
-    private static final String CHANGE_EMAIL_VERIFICATION_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/change_email_verification.php";
-    private static final String UPDATE_PASSWORD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_account_info.php";
+    private static final String GET_ACCOUNT_INFO_URL = "https://boardease.calapebohol.com/get_account_info.php";
+    private static final String CHANGE_EMAIL_VERIFICATION_URL = "https://boardease.calapebohol.com/change_email_verification.php";
+    private static final String UPDATE_PASSWORD_URL = "https://boardease.calapebohol.com/update_account_info.php";
 
     private int userId;
     private ProgressDialog progressDialog;

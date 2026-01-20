@@ -122,7 +122,7 @@ public class BookingHistoryFragment extends Fragment {
             // Don't show any loading indicator
         }
         
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_booking_history.php?user_id=" + userId + "&user_type=owner";
+        String url = "https://boardease.calapebohol.com/get_booking_history.php?user_id=" + userId + "&user_type=owner";
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {

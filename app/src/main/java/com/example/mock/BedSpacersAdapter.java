@@ -62,7 +62,7 @@ public class BedSpacersAdapter extends RecyclerView.Adapter<BedSpacersAdapter.Vi
         
         // Load first image if available
         if (room.imagePaths != null && !room.imagePaths.isEmpty()) {
-            String imageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + room.imagePaths.get(0);
+            String imageUrl = "https://boardease.calapebohol.com/" + room.imagePaths.get(0);
             System.out.println("DEBUG: Loading bed spacer image: " + imageUrl);
             Glide.with(holder.itemView.getContext())
                     .load(imageUrl)

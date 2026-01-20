@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class PaymentApiService {
     private static final String TAG = "PaymentApiService";
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
     
     private Context context;
     private RequestQueue requestQueue;

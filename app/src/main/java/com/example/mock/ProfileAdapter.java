@@ -68,7 +68,7 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
             holder.profileImage.setBackgroundResource(R.drawable.circle_bg);
             holder.profileImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
             holder.profileImage.setPadding(0, 0, 0, 0);
-            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            String fullImageUrl = "https://boardease.calapebohol.com/" + profilePictureUrl;
             Glide.with(context)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)

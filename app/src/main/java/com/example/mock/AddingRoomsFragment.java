@@ -78,12 +78,12 @@ public class AddingRoomsFragment extends Fragment {
     private static ArrayList<RoomFormData> savedRoomData = new ArrayList<>();
 
     // PHP Endpoints
-    private static final String ADD_BH_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/add_boarding_house.php";
-    private static final String UPDATE_BH_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_boarding_house.php";
-    private static final String UPLOAD_BH_IMAGE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/upload_bh_image.php";
-    private static final String ADD_ROOM_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/add_room.php";
-    private static final String UPDATE_ROOM_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_room.php";
-    private static final String UPLOAD_ROOM_IMAGE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/upload_room_image.php";
+    private static final String ADD_BH_URL = "https://boardease.calapebohol.com/add_boarding_house.php";
+    private static final String UPDATE_BH_URL = "https://boardease.calapebohol.com/update_boarding_house.php";
+    private static final String UPLOAD_BH_IMAGE_URL = "https://boardease.calapebohol.com/upload_bh_image.php";
+    private static final String ADD_ROOM_URL = "https://boardease.calapebohol.com/add_room.php";
+    private static final String UPDATE_ROOM_URL = "https://boardease.calapebohol.com/update_room.php";
+    private static final String UPLOAD_ROOM_IMAGE_URL = "https://boardease.calapebohol.com/upload_room_image.php";
 
     public AddingRoomsFragment() {}
 

@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void sendTokenToServer(String token) {
         // Server URL - update this to match your server path
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/register_device_token.php";
+        String url = "https://boardease.calapebohol.com/register_device_token.php";
         
         // Create request using Volley
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,

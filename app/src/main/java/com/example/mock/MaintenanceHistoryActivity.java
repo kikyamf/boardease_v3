@@ -56,7 +56,7 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
     private String currentFilter = "all";
     private boolean isFromPullRefresh = false;
     
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
     private static final String TAG = "MaintenanceHistoryActivity";
     
     @Override

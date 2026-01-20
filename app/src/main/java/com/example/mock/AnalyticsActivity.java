@@ -201,7 +201,7 @@ public class AnalyticsActivity extends AppCompatActivity {
     }
     
     private void fetchOwnerDashboardData() {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_dashboard.php";
+        String url = "https://boardease.calapebohol.com/get_owner_dashboard.php";
         
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {

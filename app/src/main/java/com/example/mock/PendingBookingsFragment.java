@@ -123,7 +123,7 @@ public class PendingBookingsFragment extends Fragment {
             // Don't show any loading indicator
         }
         
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
+        String url = "https://boardease.calapebohol.com/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -440,7 +440,7 @@ public class PendingBookingsFragment extends Fragment {
     private void loadPaymentProofForDialog(BookingData booking, android.widget.ImageView imgPaymentProof, 
                                           TextView tvNoProof, LinearLayout layoutPaymentProof) {
         // Fetch payment proof from the booking's payment record
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_payment_proof_by_booking.php?booking_id=" + booking.getBookingId();
+        String url = "https://boardease.calapebohol.com/get_payment_proof_by_booking.php?booking_id=" + booking.getBookingId();
         
         com.android.volley.RequestQueue requestQueue = com.android.volley.toolbox.Volley.newRequestQueue(getContext());
         com.android.volley.toolbox.StringRequest request = new com.android.volley.toolbox.StringRequest(
@@ -466,7 +466,7 @@ public class PendingBookingsFragment extends Fragment {
                             layoutPaymentProof.setVisibility(View.VISIBLE);
                             
                             // Build full URL
-                            String baseUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+                            String baseUrl = "https://boardease.calapebohol.com/";
                             String urlToProcess = proofUrl.trim();
                             String finalFullUrl;
                             
@@ -539,7 +539,7 @@ public class PendingBookingsFragment extends Fragment {
     private void confirmApproveBooking(BookingData booking) {
         showProgressDialog("Approving booking...");
         
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/approve_booking.php";
+        String url = "https://boardease.calapebohol.com/approve_booking.php";
         
         JSONObject requestBody = new JSONObject();
         try {
@@ -578,7 +578,7 @@ public class PendingBookingsFragment extends Fragment {
     private void declineBooking(BookingData booking) {
         showProgressDialog("Declining booking...");
         
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/decline_booking.php";
+        String url = "https://boardease.calapebohol.com/decline_booking.php";
         
         JSONObject requestBody = new JSONObject();
         try {

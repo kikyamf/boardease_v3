@@ -277,7 +277,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void loadUsersForMessaging(boolean isRefresh) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_users_for_messaging.php?current_user_id=" + currentUserId;
+        String url = "https://boardease.calapebohol.com/get_users_for_messaging.php?current_user_id=" + currentUserId;
         
         Log.d("Messages", "Loading users from URL: " + url);
         
@@ -389,7 +389,7 @@ public class Messages extends AppCompatActivity {
         if (showLoading) {
             showProgressDialog("Loading messages...");
         }
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_chat_list.php?user_id=" + currentUserId;
+        String url = "https://boardease.calapebohol.com/get_chat_list.php?user_id=" + currentUserId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -659,7 +659,7 @@ public class Messages extends AppCompatActivity {
 
     private void updateSuggestions(String query, List<ProfileModel> suggestions, SearchResultAdapter adapter) {
         // Use search_users.php endpoint for real-time search
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/search_users.php?current_user_id=" + currentUserId + "&search_term=" + query;
+        String url = "https://boardease.calapebohol.com/search_users.php?current_user_id=" + currentUserId + "&search_term=" + query;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -862,7 +862,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void deleteChat(ChatModel chat) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
+        String url = "https://boardease.calapebohol.com/delete_chat.php";
         
         android.util.Log.d("DeleteChat", "=== DELETING CHAT ===");
         android.util.Log.d("DeleteChat", "URL: " + url);
@@ -913,7 +913,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void leaveGroupChat(ChatModel chat) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
+        String url = "https://boardease.calapebohol.com/delete_chat.php";
         
         android.util.Log.d("LeaveGroupChat", "=== LEAVING GROUP CHAT ===");
         android.util.Log.d("LeaveGroupChat", "URL: " + url);
@@ -964,7 +964,7 @@ public class Messages extends AppCompatActivity {
     }
     
     private void deleteGroupChat(ChatModel chat) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_chat.php";
+        String url = "https://boardease.calapebohol.com/delete_chat.php";
         
         android.util.Log.d("DeleteGroupChat", "=== DELETING GROUP CHAT ===");
         android.util.Log.d("DeleteGroupChat", "URL: " + url);
@@ -1016,7 +1016,7 @@ public class Messages extends AppCompatActivity {
     
     private void verifyGroupOwnership(ChatModel chat, int currentUserId) {
         // Verify if current user is the owner of the group chat
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_group_info.php?group_id=" + chat.getGroupId();
+        String url = "https://boardease.calapebohol.com/get_group_info.php?group_id=" + chat.getGroupId();
         
         android.util.Log.d("VerifyOwnership", "Verifying ownership for group: " + chat.getGroupId());
         

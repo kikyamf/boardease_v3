@@ -84,7 +84,7 @@ public class BoarderProfileFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     
     // API URL
-    private static final String GET_BOARDER_PROFILE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_owner_profile.php";
+    private static final String GET_BOARDER_PROFILE_URL = "https://boardease.calapebohol.com/get_owner_profile.php";
 
     public BoarderProfileFragment() {
         // Required empty public constructor
@@ -496,7 +496,7 @@ public class BoarderProfileFragment extends Fragment {
             // Load profile picture
             String profilePicPath = profileData.optString("profile_picture", "");
             if (!profilePicPath.isEmpty()) {
-                String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicPath;
+                String fullImageUrl = "https://boardease.calapebohol.com/" + profilePicPath;
                 // Check if fragment is still attached before loading image
                 if (isAdded() && getContext() != null && ivProfilePic != null) {
                     Glide.with(requireContext())

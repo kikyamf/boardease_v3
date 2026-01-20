@@ -216,7 +216,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void updateBoardingHouseOnServer() {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_boarding_houses.php";
+        String url = "https://boardease.calapebohol.com/update_boarding_houses.php";
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
@@ -307,7 +307,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void fetchBoardingHouseDetails() {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_boarding_houses.php";
+        String url = "https://boardease.calapebohol.com/get_boarding_houses.php";
         
         // Clear existing images to avoid duplication
         imageUris.clear();
@@ -478,7 +478,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
     
     private void deleteRemovedImagesFromDatabase() {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_bh_images.php";
+        String url = "https://boardease.calapebohol.com/delete_bh_images.php";
         
         System.out.println("DEBUG: Starting database deletion...");
         System.out.println("DEBUG: BH ID: " + bhId);
@@ -609,7 +609,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     }
 
     private void uploadSingleImage(Uri imageUri, int index) {
-        String url = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/upload_bh_image.php";
+        String url = "https://boardease.calapebohol.com/upload_bh_image.php";
         
         // Optimized upload - removed debug logs for faster performance
         

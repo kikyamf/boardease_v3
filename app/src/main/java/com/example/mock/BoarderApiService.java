@@ -19,7 +19,7 @@ import java.util.List;
 
 public class BoarderApiService {
     private static final String TAG = "BoarderApiService";
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
     
     private Context context;
     private RequestQueue requestQueue;

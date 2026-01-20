@@ -37,8 +37,8 @@ import java.util.Map;
 public class PendingMaintenanceFragment extends Fragment {
 
     private static final String TAG = "PendingMaintenance";
-    private static final String GET_MAINTENANCE_REQUESTS_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_maintenance_requests.php";
-    private static final String UPDATE_MAINTENANCE_STATUS_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_maintenance_status.php";
+    private static final String GET_MAINTENANCE_REQUESTS_URL = "https://boardease.calapebohol.com/get_maintenance_requests.php";
+    private static final String UPDATE_MAINTENANCE_STATUS_URL = "https://boardease.calapebohol.com/update_maintenance_status.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyLayout;

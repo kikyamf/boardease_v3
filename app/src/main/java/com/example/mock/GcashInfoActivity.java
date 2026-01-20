@@ -43,9 +43,9 @@ import java.util.Map;
 public class GcashInfoActivity extends AppCompatActivity {
 
     private static final String TAG = "GcashInfo";
-    private static final String GET_GCASH_INFO_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_gcash_info.php";
-    private static final String UPDATE_GCASH_INFO_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/update_gcash_info.php";
-    private static final String BOARD_EASE2_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/";
+    private static final String GET_GCASH_INFO_URL = "https://boardease.calapebohol.com/get_gcash_info.php";
+    private static final String UPDATE_GCASH_INFO_URL = "https://boardease.calapebohol.com/update_gcash_info.php";
+    private static final String BOARD_EASE2_URL = "https://boardease.calapebohol.com/";
 
     private int userId;
     private ProgressDialog progressDialog;

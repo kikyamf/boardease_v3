@@ -101,11 +101,11 @@ public class BoarderBookingFragment extends Fragment {
     private static final String TAG = "BoarderBookingFragment";
     // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.6/boardease_v3/"
     // If your XAMPP document root is boardease_v3, use: "http://192.168.1.6/"
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/";
-    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
-    private static final String GET_BOOKINGS_URL = BASE_URL + "BoardEase2/get_boarder_bookings.php";
-    private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "BoardEase2/get_unpaid_payment_breakdowns.php";
-    private static final String GET_BH_DETAILS_URL = BASE_URL + "BoardEase2/get_boarding_house_details1.php";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "";
+    private static final String GET_BOOKINGS_URL = BASE_URL + "get_boarder_bookings.php";
+    private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "get_unpaid_payment_breakdowns.php";
+    private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details1.php";
     private static final String SUBMIT_PAYMENT_URL = BOARD_EASE2_URL + "submit_payment.php";
     
     // Request queue
@@ -1898,7 +1898,7 @@ public class BoarderBookingFragment extends Fragment {
             int roomId = booking.getRoomId();
             
             // API URL - using local IP address
-            String url = BASE_URL + "BoardEase2/submit_maintenance_request.php";
+            String url = BASE_URL + "submit_maintenance_request.php";
             
             // Create JSON request body
             JSONObject requestBody = new JSONObject();
@@ -2277,8 +2277,8 @@ public class BoarderBookingFragment extends Fragment {
             // Try multiple possible IPs - user can update this based on their network
             // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php"
             // If your XAMPP document root is boardease_v3, use: "http://192.168.1.5/BoardEase2/submit_review.php"
-            String localhostUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/";
-            String url = localhostUrl + "BoardEase2/submit_review.php";
+            String localhostUrl = "https://boardease.calapebohol.com/";
+            String url = localhostUrl + "submit_review.php";
             
             Log.d(TAG, "=== REVIEW SUBMISSION DEBUG ===");
             Log.d(TAG, "Submitting review to: " + url);
@@ -2376,7 +2376,7 @@ public class BoarderBookingFragment extends Fragment {
                         } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
                             errorMessage = "Error: " + error.getMessage();
                         } else {
-                            String testUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/submit_review.php";
+                            String testUrl = "https://boardease.calapebohol.com/submit_review.php";
                             errorMessage = "Failed to connect to server.\n\nTest this URL in your device's browser:\n" + testUrl + "\n\nIf browser can't access it, check:\n• Same WiFi network\n• XAMPP running\n• Firewall settings";
                         }
                         

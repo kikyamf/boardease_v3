@@ -42,8 +42,8 @@ import java.util.Map;
 public class BookingActivity extends AppCompatActivity {
     
     private static final String TAG = "BookingActivity";
-    private static final String BASE_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/";
-    private static final String BOARD_EASE2_URL = BASE_URL + "BoardEase2/";
+    private static final String BASE_URL = "https://boardease.calapebohol.com/";
+    private static final String BOARD_EASE2_URL = BASE_URL + "";
     private static final String GET_ROOM_UNITS_URL = BOARD_EASE2_URL + "get_room_units1.php";
     private static final String BOOKING_API_URL = BOARD_EASE2_URL + "create_booking.php";
     

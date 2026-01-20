@@ -53,7 +53,7 @@ import java.util.Map;
 public class GuestHomeActivity extends AppCompatActivity {
 
     private static final String TAG = "GuestHomeActivity";
-    private static final String GET_ALL_BOARDING_HOUSES_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_all_boarding_houses_public.php";
+    private static final String GET_ALL_BOARDING_HOUSES_URL = "https://boardease.calapebohol.com/get_all_boarding_houses_public.php";
     
     // Mapbox API Configuration
     // Get your access token from: https://account.mapbox.com/access-tokens/
@@ -480,7 +480,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 if (imagePath.startsWith("http")) {
                     imagePaths.add(imagePath);
                 } else {
-                    imagePaths.add("https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imagePath);
+                    imagePaths.add("https://boardease.calapebohol.com/" + imagePath);
                 }
             }
             
@@ -522,7 +522,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                                 if (imgPath.startsWith("/")) {
                                     imgPath = imgPath.substring(1);
                                 }
-                                fullUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imgPath;
+                                fullUrl = "https://boardease.calapebohol.com/" + imgPath;
                             }
                             // Avoid duplicates
                             if (!imagePaths.contains(fullUrl)) {
@@ -677,7 +677,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                         if (imgUrl.startsWith("/")) {
                             imgUrl = imgUrl.substring(1);
                         }
-                        finalUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imgUrl;
+                        finalUrl = "https://boardease.calapebohol.com/" + imgUrl;
                     }
                     imageUrls.add(finalUrl);
                     Log.d(TAG, "Adding image URL to slider: " + finalUrl);
@@ -689,7 +689,7 @@ public class GuestHomeActivity extends AppCompatActivity {
                 if (imageUrl.startsWith("/")) {
                     imageUrl = imageUrl.substring(1);
                 }
-                imageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + imageUrl;
+                imageUrl = "https://boardease.calapebohol.com/" + imageUrl;
             }
             imageUrls.add(imageUrl);
             Log.d(TAG, "Using single image URL: " + imageUrl);

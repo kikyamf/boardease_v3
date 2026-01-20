@@ -35,9 +35,9 @@ import java.util.Map;
 public class PrivateRoomsFragment extends Fragment {
 
     private static final String ARG_BH_ID = "bh_id";
-    private static final String GET_ROOMS_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_rooms.php";
-    private static final String DELETE_ROOM_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/delete_room.php";
-    private static final String GET_ROOM_UNITS_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_room_units.php";
+    private static final String GET_ROOMS_URL = "https://boardease.calapebohol.com/get_rooms.php";
+    private static final String DELETE_ROOM_URL = "https://boardease.calapebohol.com/delete_room.php";
+    private static final String GET_ROOM_UNITS_URL = "https://boardease.calapebohol.com/get_room_units.php";
 
     private int bhId;
     private RecyclerView recyclerView;

@@ -117,7 +117,7 @@ public class BoarderStayDetailsActivity extends AppCompatActivity {
 
         // Load profile picture
         if (profilePicture != null && !profilePicture.isEmpty()) {
-            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePicture;
+            String fullImageUrl = "https://boardease.calapebohol.com/" + profilePicture;
             Glide.with(this)
                     .load(fullImageUrl)
                     .placeholder(R.drawable.btn_profile)

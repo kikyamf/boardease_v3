@@ -1037,7 +1037,7 @@ public class ImageVerification {
         RequestQueue queue = Volley.newRequestQueue(context);
         
         // Use our own server-side QR validation endpoint
-        String validationUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/validate_qr_code_standalone.php";
+        String validationUrl = "https://boardease.calapebohol.com/validate_qr_code_standalone.php";
         
         // Build request parameters
         JSONObject params = new JSONObject();

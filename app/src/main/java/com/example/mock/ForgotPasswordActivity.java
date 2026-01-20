@@ -40,7 +40,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private RequestQueue requestQueue;
 
-    private static final String FORGOT_PASSWORD_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/forgot_password.php";
+    private static final String FORGOT_PASSWORD_URL = "https://boardease.calapebohol.com/forgot_password.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

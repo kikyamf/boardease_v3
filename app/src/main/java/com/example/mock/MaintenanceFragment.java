@@ -33,7 +33,7 @@ import java.util.List;
 public class MaintenanceFragment extends Fragment {
 
     private static final String TAG = "MaintenanceFragment";
-    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_maintenance_logs.php";
+    private static final String API_URL = "https://boardease.calapebohol.com/get_maintenance_logs.php";
 
     private RecyclerView recyclerView;
     private LinearLayout emptyState;

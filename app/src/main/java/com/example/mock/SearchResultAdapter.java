@@ -51,7 +51,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
         // Load profile picture from URL if available, otherwise use default
         String profilePictureUrl = profile.getProfilePictureUrl();
         if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
-            String fullImageUrl = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/" + profilePictureUrl;
+            String fullImageUrl = "https://boardease.calapebohol.com/" + profilePictureUrl;
             Glide.with(context)
                     .load(fullImageUrl)
                     .placeholder(profile.getImageResId())

@@ -30,7 +30,7 @@ import java.util.List;
 public class PopularListingBookingsActivity extends AppCompatActivity {
 
     private static final String TAG = "PopularListingBookings";
-    private static final String API_URL = "https://reflective-perkily-jakobe.ngrok-free.dev/BoardEase2/get_popular_listing_bookings.php";
+    private static final String API_URL = "https://boardease.calapebohol.com/get_popular_listing_bookings.php";
 
     private int userId;
     private int bhId;
