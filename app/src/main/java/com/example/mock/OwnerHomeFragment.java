@@ -354,170 +354,153 @@ public class OwnerHomeFragment extends Fragment {
         return view;
     }
 
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Background update
+            fetchOwnerDashboardDataInternal(false);
+            // Also refresh badge counts
+            checkUnreadMessages();
+            checkUnreadNotifications();
+            pollingHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+    
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+    
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        
+        // Check for unread messages and show badge
+        checkUnreadMessages();
+        
+        // Check for unread notifications and show badge
+        checkUnreadNotifications();
+        
+        startPolling();
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+    }
+
     private void fetchOwnerDashboardData() {
+        // Manual call (first time or swipe refresh)
+        fetchOwnerDashboardDataInternal(true);
+    }
+
+    private void fetchOwnerDashboardDataInternal(boolean showLoading) {
         String url = "https://boardease.calapebohol.com/get_owner_dashboard.php";
-        Log.d("OwnerHomeFragment", "=== FETCHING OWNER DASHBOARD DATA ===");
-        Log.d("OwnerHomeFragment", "URL: " + url);
-        Log.d("OwnerHomeFragment", "User ID: " + userId);
+        if (showLoading) {
+            Log.d("OwnerHomeFragment", "=== FETCHING OWNER DASHBOARD DATA ===");
+        }
 
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
-                    Log.d("OwnerHomeFragment", "=== SERVER RESPONSE RECEIVED ===");
-                    Log.d("OwnerHomeFragment", "Response length: " + (response != null ? response.length() : 0) + " characters");
-                    Log.d("OwnerHomeFragment", "Full Server Response: " + response);
+                    if (showLoading) {
+                        Log.d("OwnerHomeFragment", "=== SERVER RESPONSE RECEIVED ===");
+                    }
+                    
+                    if (getContext() == null) return;
 
                     if (response == null || response.trim().isEmpty()) {
-                        Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                        if (showLoading) {
+                            Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                        }
                         return;
                     }
 
                     try {
-                        Log.d("OwnerHomeFragment", "=== PARSING JSON RESPONSE ===");
                         JSONObject obj = new JSONObject(response);
-                        Log.d("OwnerHomeFragment", "JSON parsed successfully");
                         
-                        // List all top-level keys
-                        JSONArray keys = obj.names();
-                        if (keys != null) {
-                            List<String> keyList = new ArrayList<>();
-                            for (int i = 0; i < keys.length(); i++) {
-                                keyList.add(keys.getString(i));
-                            }
-                            Log.d("OwnerHomeFragment", "Top-level keys in response: " + keyList.toString());
-                        }
-
                         // Validate JSON content
                         if (!obj.has("owner_name")) {
-                            Log.e("OwnerHomeFragment", "ERROR: Missing owner_name in response");
-                            Log.e("OwnerHomeFragment", "Available keys: " + (keys != null ? keys.toString() : "none"));
-                            Toast.makeText(getContext(), "Invalid server response", Toast.LENGTH_SHORT).show();
+                             if (showLoading) {
+                                Log.e("OwnerHomeFragment", "ERROR: Missing owner_name in response");
+                                Toast.makeText(getContext(), "Invalid server response", Toast.LENGTH_SHORT).show();
+                             }
                             return;
                         }
                         
-                        // Log revenue and charts availability
-                        boolean hasRevenue = obj.has("revenue");
-                        boolean hasCharts = obj.has("charts");
-                        Log.d("OwnerHomeFragment", "=== CHECKING DATA AVAILABILITY ===");
-                        Log.d("OwnerHomeFragment", "Has revenue object: " + hasRevenue);
-                        Log.d("OwnerHomeFragment", "Has charts object: " + hasCharts);
-                        
-                        if (hasRevenue) {
-                            try {
-                                JSONObject revenueObj = obj.getJSONObject("revenue");
-                                Log.d("OwnerHomeFragment", "=== REVENUE OBJECT ===");
-                                JSONArray revenueKeys = revenueObj.names();
-                                String revenueKeysStr = revenueKeys != null ? revenueKeys.toString() : "null";
-                                Log.d("OwnerHomeFragment", "Revenue object keys: " + revenueKeysStr);
-                                Log.d("OwnerHomeFragment", "Revenue object full: " + revenueObj.toString(2));
-                            } catch (JSONException e) {
-                                Log.e("OwnerHomeFragment", "ERROR parsing revenue object: " + e.getMessage());
-                            }
-                        } else {
-                            Log.w("OwnerHomeFragment", "WARNING: Revenue object is MISSING from response!");
-                        }
-                        
-                        if (hasCharts) {
-                            try {
-                                JSONObject chartsObj = obj.getJSONObject("charts");
-                                JSONArray chartsKeys = chartsObj.names();
-                                if (chartsKeys != null) {
-                                    List<String> chartKeyList = new ArrayList<>();
-                                    for (int i = 0; i < chartsKeys.length(); i++) {
-                                        chartKeyList.add(chartsKeys.getString(i));
-                                    }
-                                    Log.d("OwnerHomeFragment", "Charts object keys: " + chartKeyList.toString());
-                                }
-                                Log.d("OwnerHomeFragment", "Charts object full: " + chartsObj.toString(2));
-                            } catch (JSONException e) {
-                                Log.e("OwnerHomeFragment", "ERROR parsing charts object: " + e.getMessage());
-                            }
-                        } else {
-                            Log.w("OwnerHomeFragment", "WARNING: Charts object is MISSING from response!");
-                        }
-
                         // Owner name
                         String ownerName = obj.optString("owner_name", "Owner");
-                        tvOwnerName.setText(ownerName);
+                        if (tvOwnerName != null) tvOwnerName.setText(ownerName);
 
                         // Listings count
                         int listingsCount = obj.optInt("listings_count", 0);
-                        tvListingsCount.setText(String.valueOf(listingsCount));
+                        if (tvListingsCount != null) tvListingsCount.setText(String.valueOf(listingsCount));
 
                         // Boarders count
                         int boardersCount = obj.optInt("boarders_count", 0);
-                        tvBoardersCount.setText(String.valueOf(boardersCount));
+                        if (tvBoardersCount != null) tvBoardersCount.setText(String.valueOf(boardersCount));
 
                         // Views count
                         int viewsCount = obj.optInt("views_count", 0);
-                        tvViewsCount.setText(String.valueOf(viewsCount));
+                        if (tvViewsCount != null) tvViewsCount.setText(String.valueOf(viewsCount));
                         
                         // Revenue data - Total Revenue
                         JSONObject revenue = obj.optJSONObject("revenue");
-                        if (revenue != null) {
-                            double totalRevenue = revenue.optDouble("total_revenue", 0.0);
-                            if (Double.isNaN(totalRevenue) || Double.isInfinite(totalRevenue)) {
-                                totalRevenue = 0.0;
+                        if (tvTotalRevenue != null) {
+                            if (revenue != null) {
+                                double totalRevenue = revenue.optDouble("total_revenue", 0.0);
+                                if (Double.isNaN(totalRevenue) || Double.isInfinite(totalRevenue)) {
+                                    totalRevenue = 0.0;
+                                }
+                                tvTotalRevenue.setText(formatCurrency(totalRevenue));
+                            } else {
+                                tvTotalRevenue.setText("₱0.00");
                             }
-                            tvTotalRevenue.setText(formatCurrency(totalRevenue));
-                        } else {
-                            tvTotalRevenue.setText("₱0.00");
                         }
                         
-                        // Monthly revenue chart - get from charts object (same as AnalyticsActivity)
-                        JSONObject charts = obj.optJSONObject("charts");
-                        if (charts != null) {
-                            JSONArray monthlyData = charts.optJSONArray("monthly_revenue");
-                            if (monthlyData != null && monthlyData.length() > 0) {
-                                populateMonthlyRevenueChart(monthlyData);
-                            } else if (chartMonthlyRevenue != null) {
-                                chartMonthlyRevenue.setNoDataText("No revenue data available");
-                                chartMonthlyRevenue.setNoDataTextColor(0xFF999999);
-                                chartMonthlyRevenue.invalidate();
+                        // Only update heavy chart data if it's a full reload OR if we really want real-time charts
+                        // For polling, maybe skip chart updates to save redraws unless necessary?
+                        // Let's safe-guard chart updates
+                        if (chartMonthlyRevenue != null) {
+                            JSONObject charts = obj.optJSONObject("charts");
+                            if (charts != null) {
+                                JSONArray monthlyData = charts.optJSONArray("monthly_revenue");
+                                if (monthlyData != null && monthlyData.length() > 0) {
+                                    populateMonthlyRevenueChart(monthlyData);
+                                }
                             }
-                        } else if (chartMonthlyRevenue != null) {
-                            chartMonthlyRevenue.setNoDataText("No revenue data available");
-                            chartMonthlyRevenue.setNoDataTextColor(0xFF999999);
-                            chartMonthlyRevenue.invalidate();
                         }
 
-                        // Popular listing
+                        // Popular listing update
                         JSONObject popular = obj.optJSONObject("popular_listing");
                         if (popular != null) {
                             popularListingBhId = popular.optInt("bh_id", -1);
-                            tvPopularTitle.setText(popular.optString("bh_name", "No Listing"));
-                            tvPopularVisits.setText(popular.optInt("visits", 0) + " bookings");
+                            if (tvPopularTitle != null) tvPopularTitle.setText(popular.optString("bh_name", "No Listing"));
+                            if (tvPopularVisits != null) tvPopularVisits.setText(popular.optInt("visits", 0) + " bookings");
 
                             String imageUrl = popular.optString("image_path", "");
-                            if (!imageUrl.isEmpty() && imageUrl.trim().length() > 0) {
-                                Log.d("OwnerHomeFragment", "Loading popular listing image: " + imageUrl);
-                                Glide.with(getContext())
-                                        .load(imageUrl)
-                                        .placeholder(R.drawable.sample_listing)
-                                        .error(R.drawable.sample_listing)
-                                        .fallback(R.drawable.sample_listing)
-                                        .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
-                                            @Override
-                                            public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
-                                                Log.e("OwnerHomeFragment", "Failed to load popular listing image: " + imageUrl, e);
-                                                return false; // Let Glide handle the error
-                                            }
-
-                                            @Override
-                                            public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
-                                                Log.d("OwnerHomeFragment", "Successfully loaded popular listing image");
-                                                return false;
-                                            }
-                                        })
-                                        .into(imgPopularListing);
-                            } else {
-                                Log.d("OwnerHomeFragment", "No image URL provided, using placeholder");
-                                imgPopularListing.setImageResource(R.drawable.sample_listing);
+                            if (imgPopularListing != null) {
+                                if (!imageUrl.isEmpty() && imageUrl.trim().length() > 0) {
+                                    Glide.with(getContext())
+                                            .load(imageUrl)
+                                            .placeholder(R.drawable.sample_listing)
+                                            .error(R.drawable.sample_listing)
+                                            .fallback(R.drawable.sample_listing)
+                                            .into(imgPopularListing);
+                                } else {
+                                    imgPopularListing.setImageResource(R.drawable.sample_listing);
+                                }
                             }
                         } else {
                             popularListingBhId = -1;
-                            tvPopularTitle.setText("No Popular Listing");
-                            tvPopularVisits.setText("0 bookings");
-                            imgPopularListing.setImageResource(R.drawable.sample_listing);
+                            if (tvPopularTitle != null) tvPopularTitle.setText("No Popular Listing");
+                            if (tvPopularVisits != null) tvPopularVisits.setText("0 bookings");
+                            if (imgPopularListing != null) imgPopularListing.setImageResource(R.drawable.sample_listing);
                         }
                         
                         // Mark data as loaded after successful parsing
@@ -525,8 +508,9 @@ public class OwnerHomeFragment extends Fragment {
 
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "JSON Parsing error", Toast.LENGTH_SHORT).show();
-                        Log.e("OwnerHomeFragment", "JSON Parse Error: " + e.getMessage());
+                        if (showLoading) {
+                            Toast.makeText(getContext(), "JSON Parsing error", Toast.LENGTH_SHORT).show();
+                        }
                     } finally {
                         // Stop refresh indicator
                         if (swipeRefreshLayout != null) {
@@ -535,16 +519,10 @@ public class OwnerHomeFragment extends Fragment {
                     }
                 },
                 error -> {
-                    Log.e("OwnerHomeFragment", "=== VOLLEY ERROR ===");
-                    Log.e("OwnerHomeFragment", "Error message: " + error.getMessage());
-                    Log.e("OwnerHomeFragment", "Error network response: " + (error.networkResponse != null ? 
-                        "Status: " + error.networkResponse.statusCode + ", Data: " + 
-                        new String(error.networkResponse.data) : "null"));
-                    Log.e("OwnerHomeFragment", "Error class: " + error.getClass().getName());
-                    if (error.getCause() != null) {
-                        Log.e("OwnerHomeFragment", "Error cause: " + error.getCause().getMessage(), error.getCause());
+                    if (showLoading) {
+                        Log.e("OwnerHomeFragment", "=== VOLLEY ERROR ===");
+                         Toast.makeText(getContext(), "Error fetching dashboard: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     }
-                    Toast.makeText(getContext(), "Error fetching dashboard: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     // Stop refresh indicator on error
                     if (swipeRefreshLayout != null) {
                         swipeRefreshLayout.setRefreshing(false);
@@ -554,7 +532,6 @@ public class OwnerHomeFragment extends Fragment {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("user_id", String.valueOf(userId));
-                Log.d("OwnerHomeFragment", "Sending user_id: " + userId);
                 return params;
             }
         };
@@ -1176,8 +1153,7 @@ public class OwnerHomeFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         // Stop periodic checks
-        stopPeriodicNotificationCheck();
-        stopPeriodicMessageCheck();
+        stopPolling();
         
         // Unregister broadcast receiver
         if (badgeUpdateReceiver != null && getContext() != null) {
@@ -1189,30 +1165,7 @@ public class OwnerHomeFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Only refresh badge counts, don't reload data
-        // Check for unread messages when returning to this fragment
-        checkUnreadMessages();
-        // Check for unread notifications when returning to this fragment
-        checkUnreadNotifications();
-        
-        // Also check notifications periodically for real-time updates
-        startPeriodicNotificationCheck();
-        
-        // Start periodic message check
-        startPeriodicMessageCheck();
-        // Don't reload data - it's already loaded and cached
-    }
-    
-    @Override
-    public void onPause() {
-        super.onPause();
-        // Stop periodic checks when fragment is not visible
-        stopPeriodicNotificationCheck();
-        stopPeriodicMessageCheck();
-    }
+
     
     // Chart methods removed - moved to AnalyticsActivity
     // All revenue analytics and charts are now in AnalyticsActivity

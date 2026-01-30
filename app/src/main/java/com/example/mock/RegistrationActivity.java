@@ -2543,10 +2543,10 @@ public class RegistrationActivity extends AppCompatActivity {
             view.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
             String text = view.getText().toString();
             if (!text.startsWith("✓ ")) {
-                view.setText("✓ " + text.replace("• ", ""));
+                view.setText("✓ " + text.replace("• ", "").replace("✓ ", ""));
             }
         } else {
-            view.setTextColor(0xFF666666); // Gray
+            view.setTextColor(getResources().getColor(android.R.color.holo_red_dark)); // Red for unmet
             String text = view.getText().toString();
             if (text.startsWith("✓ ")) {
                 view.setText("• " + text.replace("✓ ", ""));

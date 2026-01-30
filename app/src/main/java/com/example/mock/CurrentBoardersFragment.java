@@ -157,7 +157,47 @@ public class CurrentBoardersFragment extends Fragment {
         recyclerView.setAdapter(adapter);
     }
 
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Background update
+            if (userId > 0) {
+                loadCurrentBoarders(false);
+            }
+            pollingHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+    
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+    
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (userId > 0) {
+            startPolling();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+        hideProgressDialog();
+    }
+
     private void loadCurrentBoarders() {
+        loadCurrentBoarders(true);
+    }
+
+    private void loadCurrentBoarders(boolean showLoading) {
         // Final check - try to get user_id from SharedPreferences if still 0
         if (userId <= 0 && getContext() != null) {
             android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
@@ -174,16 +214,24 @@ public class CurrentBoardersFragment extends Fragment {
         
         if (userId <= 0) {
             Log.e(TAG, "Invalid user_id: " + userId + ". Cannot load current boarders.");
-            showEmptyState();
+            if (showLoading) {
+                showEmptyState();
+            }
             return;
         }
 
-        showProgressDialog("Loading current boarders...");
+        if (showLoading) {
+            showProgressDialog("Loading current boarders...");
+        }
 
         boarderApiService.getCurrentBoarders(userId, new BoarderApiService.BoarderApiCallback() {
             @Override
             public void onSuccess(List<BoarderData> boarders) {
-                hideProgressDialog();
+                if (getContext() == null) return;
+                
+                if (showLoading) {
+                    hideProgressDialog();
+                }
                 currentBoarders.clear();
                 currentBoarders.addAll(boarders);
                 adapter.notifyDataSetChanged();
@@ -193,10 +241,16 @@ public class CurrentBoardersFragment extends Fragment {
 
             @Override
             public void onError(String error) {
-                hideProgressDialog();
-                Log.e(TAG, "Error loading current boarders: " + error);
-                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
-                showEmptyState();
+                if (getContext() == null) return;
+                
+                if (showLoading) {
+                    hideProgressDialog();
+                    Log.e(TAG, "Error loading current boarders: " + error);
+                    Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    showEmptyState();
+                } else {
+                     Log.e(TAG, "Error polling current boarders: " + error);
+                }
             }
         });
     }

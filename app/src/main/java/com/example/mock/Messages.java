@@ -58,6 +58,19 @@ public class Messages extends AppCompatActivity {
     private boolean isFirstLoad = true; // Flag to control loading dialog
     private int refreshCallCount = 0; // Track refresh API calls
 
+    // Polling for realtime updates
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private static final long POLLING_INTERVAL = 3000; // 3 seconds
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Load data silently (false = no loading dialog, true = isRefresh)
+            loadChatList(false, true);
+            // Schedule next run
+            pollingHandler.postDelayed(this, POLLING_INTERVAL);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,9 +157,39 @@ public class Messages extends AppCompatActivity {
         
         // Load real data from database
         loadUsersForMessaging();
-        loadChatList();
+        
+        // Initial load will be handled by onResume -> startPolling
+        // loadChatList(); 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh chat list to update unread indicators when returning from conversation
+        // Don't show loading dialog when coming back from conversation
+        // loadChatList(false); // Replaced by polling
+        
+        // Start polling
+        startPolling();
     }
     
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop polling
+        stopPolling();
+        hideProgressDialog();
+    }
+
+    private void startPolling() {
+        // Run immediately
+        pollingHandler.post(pollingRunnable);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
     private void setupSwipeRefresh() {
         if (swipeRefreshLayout == null) {
             Log.e("Messages", "SwipeRefreshLayout is null! Check if the view ID is correct in the layout file.");
@@ -179,13 +222,13 @@ public class Messages extends AppCompatActivity {
         }
     }
     
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Refresh chat list to update unread indicators when returning from conversation
-        // Don't show loading dialog when coming back from conversation
-        loadChatList(false);
-    }
+    // @Override
+    // protected void onResume() {
+    //    super.onResume();
+    //    // Refresh chat list to update unread indicators when returning from conversation
+    //    // Don't show loading dialog when coming back from conversation
+    //    loadChatList(false);
+    // }
     
     @Override
     protected void onStart() {
@@ -385,7 +428,10 @@ public class Messages extends AppCompatActivity {
     }
     
     private void loadChatList(boolean showLoading, boolean isRefresh) {
-        android.util.Log.d("Messages", "loadChatList called for user: " + currentUserId + ", showLoading: " + showLoading);
+        // If polling (isRefresh=true and showLoading=false), don't log every time to avoid spam
+        if (showLoading || !isRefresh) {
+            android.util.Log.d("Messages", "loadChatList called for user: " + currentUserId + ", showLoading: " + showLoading);
+        }
         if (showLoading) {
             showProgressDialog("Loading messages...");
         }
@@ -1104,12 +1150,7 @@ public class Messages extends AppCompatActivity {
         }
     }
     
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Hide progress dialog when activity is paused
-        hideProgressDialog();
-    }
+
     
     private void updateProfileEmptyState() {
         Log.d("Messages", "updateProfileEmptyState called. Profile list size: " + profileList.size());

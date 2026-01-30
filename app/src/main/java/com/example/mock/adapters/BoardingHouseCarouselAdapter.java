@@ -78,6 +78,17 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
             holder.imgBoardingHouse.setImageResource(R.drawable.sample_listing);
         }
         
+        // Set Rating
+        if (holder.ratingContainer != null && holder.tvRating != null) {
+            double rating = boardingHouse.getAverageRating();
+            if (rating > 0) {
+                holder.ratingContainer.setVisibility(View.VISIBLE);
+                holder.tvRating.setText(String.format("%.1f", rating));
+            } else {
+                holder.ratingContainer.setVisibility(View.GONE);
+            }
+        }
+        
         // Set click listener for the entire card - use "bh_id" key to match BoardingHouseDetailsActivity
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, BoardingHouseDetailsActivity.class);
@@ -139,8 +150,9 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
     
     public static class CarouselViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
-        TextView tvBoardingHouseName, tvLocation, tvPrice;
+        TextView tvBoardingHouseName, tvLocation, tvPrice, tvRating;
         ImageButton btnFavorite;
+        View ratingContainer;
         
         public CarouselViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -149,6 +161,10 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
             tvLocation = itemView.findViewById(R.id.tvLocation);
             tvPrice = itemView.findViewById(R.id.tvPrice);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
+            tvRating = itemView.findViewById(R.id.tvRating);
+            if (tvRating != null) {
+                ratingContainer = (View) tvRating.getParent();
+            }
         }
     }
 }

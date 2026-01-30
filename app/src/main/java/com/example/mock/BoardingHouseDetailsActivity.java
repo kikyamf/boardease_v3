@@ -107,7 +107,23 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private void getIntentData() {
         Intent intent = getIntent();
-        boardingHouseId = intent.getIntExtra("bh_id", 0);
+        
+        // Handle Deep Link
+        if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+            Uri data = intent.getData();
+            String idParam = data.getQueryParameter("id");
+            if (idParam != null) {
+                try {
+                    boardingHouseId = Integer.parseInt(idParam);
+                    Log.d(TAG, "Opened via deep link with ID: " + boardingHouseId);
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Invalid ID in deep link: " + idParam);
+                }
+            }
+        } else {
+            // Handle normal intent
+            boardingHouseId = intent.getIntExtra("bh_id", 0);
+        }
         
         if (boardingHouseId == 0) {
             Toast.makeText(this, "Invalid boarding house ID", Toast.LENGTH_SHORT).show();
@@ -1050,11 +1066,18 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     }
     
     private void shareBoardingHouse() {
+        if (boardingHouseDetails == null) return;
+        
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
+        
+        String shareLink = "https://boardease.calapebohol.com/share_bh.php?bh_id=" + boardingHouseDetails.getBhId();
+        
         String shareText = "Check out this boarding house: " + boardingHouseDetails.getBhName() + 
                           "\nLocation: " + boardingHouseDetails.getBhAddress() + 
-                          "\nPrice: " + boardingHouseDetails.getFormattedPriceRange();
+                          "\nPrice: " + boardingHouseDetails.getFormattedPriceRange() +
+                          "\n\nView details: \n" + shareLink;
+                          
         shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
         startActivity(Intent.createChooser(shareIntent, "Share Boarding House"));
     }

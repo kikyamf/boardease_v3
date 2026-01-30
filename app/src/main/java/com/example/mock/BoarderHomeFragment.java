@@ -3,6 +3,8 @@ package com.example.mock;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
+import android.content.Context;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +24,9 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,6 +34,15 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
 
 import com.example.mock.adapters.BoardingHouseAdapter;
 import com.example.mock.adapters.BoardingHouseCarouselAdapter;
@@ -40,6 +55,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,6 +76,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private static final String BASE_URL = "https://boardease.calapebohol.com/";
     private static final String BOARDER_INFO_API = BASE_URL + "get_boarder_info.php";
     private static final String BOARDING_HOUSES_API = BASE_URL + "get_boarding_houses1.php";
+    
+    // Mapbox Configuration - Sync with Guest section for compatibility
+    private static final String MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibmFtem1hcDA0IiwiYSI6ImNtanhubnN3MzJncTMzZHFzNHc4azB2MWUifQ.84NPjWYDgq3i20GLhbFTtg"; 
+    private static final String MAPBOX_GEOCODING_URL = "https://api.mapbox.com/geocoding/v5/mapbox.places/";
 
     // Views
     private EditText etSearch;
@@ -66,12 +88,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private RecyclerView rvNearbyBH;
     private ProgressBar progressBarRecommended;
     private ProgressBar progressBarNearby;
-    private TextView tvRecommendedEmpty;
-    private TextView tvNearbyEmpty;
+    private TextView tvRecommendedEmpty, tvNearbyEmpty;
     private MaterialButton btnSeeAll;
     private ImageView ivNotification;
     private ImageView ivMessage;
-    private TextView tvBoarderName;
     private View badgeMsg;
     private TextView badgeCount;
     private View badgeNotif;
@@ -106,6 +126,15 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     // Distance threshold in kilometers
     private static final double NEARBY_RADIUS_KM = 5.0;
     
+    // Dynamic Search Center (User chosen location)
+    private Double searchCenterLat;
+    private Double searchCenterLon;
+    private String currentSearchLocationName;
+    
+    // UI for dynamic location
+    private LinearLayout layoutLocation;
+    private TextView tvCurrentSearchLocation;
+    
     // Flags to track filtering completion
     private boolean recommendedFiltered = false;
     private boolean nearbyFiltered = false;
@@ -115,11 +144,27 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     
     // Flag to track if we should refresh data (set when activity pauses while fragment is visible)
     private boolean shouldRefreshOnResume = false;
+    
+    // Real-time Location
+    private FusedLocationProviderClient fusedLocationClient;
+    private boolean isRealTimeLocationEnabled = false;
+    private boolean isNewLogin = false;
+    
+    private androidx.activity.result.ActivityResultLauncher<String> requestNotificationPermissionLauncher;
 
     public BoarderHomeFragment() {
         // Required empty public constructor
     }
 
+    public static BoarderHomeFragment newInstance(boolean isNewLogin) {
+        BoarderHomeFragment fragment = new BoarderHomeFragment();
+        Bundle args = new Bundle();
+        args.putBoolean("IS_NEW_LOGIN", isNewLogin);
+        fragment.setArguments(args);
+        return fragment;
+    }
+    
+    // Maintain default constructor for system recreation
     public static BoarderHomeFragment newInstance() {
         return new BoarderHomeFragment();
     }
@@ -127,10 +172,24 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        
         // Restore dataLoaded flag if fragment was recreated
         if (savedInstanceState != null) {
             dataLoaded = savedInstanceState.getBoolean("dataLoaded", false);
+            isNewLogin = savedInstanceState.getBoolean("isNewLogin", false);
+        } else if (getArguments() != null) {
+            isNewLogin = getArguments().getBoolean("IS_NEW_LOGIN", false);
         }
+        
+        // Initialize Notification Permission Launcher
+        requestNotificationPermissionLauncher = registerForActivityResult(
+            new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                // After notification permission decision (allow or deny), proceed to Location Permission
+                checkLocationPermission();
+            }
+        );
     }
     
     @Override
@@ -138,6 +197,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         super.onSaveInstanceState(outState);
         // Save dataLoaded flag to prevent reloading after recreation
         outState.putBoolean("dataLoaded", dataLoaded);
+        outState.putBoolean("isNewLogin", isNewLogin);
     }
 
     @Override
@@ -154,7 +214,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         android.util.Log.d("BoarderHomeFragment", "=== dataLoaded: " + dataLoaded + " ===");
         
         // Check if views are already initialized (fragment was hidden/shown, not recreated)
-        if (tvBoarderName == null) {
+        if (layoutLocation == null) {
             // Views not initialized yet, initialize them
         initializeViews(view);
         setupRecyclerViews();
@@ -179,11 +239,266 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         }
         
         // Always refresh badge counts when fragment becomes visible
-        android.util.Log.d("BoarderHomeFragment", "=== About to call loadUnreadCount ===");
         loadUnreadCount();
-        android.util.Log.d("BoarderHomeFragment", "=== loadUnreadCount called ===");
         loadNotificationCount();
-        android.util.Log.d("BoarderHomeFragment", "=== loadNotificationCount called ===");
+        
+        // Start real-time location tracking if possible
+        checkLocationPermissionAndStartTracking();
+    }
+    
+    private void checkLocationPermissionAndStartTracking() {
+        // Step 1: Request Notification Permission (Android 13+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                return; // Wait for callback
+            }
+        }
+        
+        // Step 2: If notification not needed or already granted, proceed to Location
+        checkLocationPermission();
+    }
+    
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            getCurrentLocation();
+        } else {
+            // Request permission
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1001);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            getCurrentLocation();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1002) { // GPS Enable Request
+            if (resultCode == android.app.Activity.RESULT_OK) {
+                // User agreed to make required location settings changes
+                Toast.makeText(getContext(), "GPS enabled", Toast.LENGTH_SHORT).show();
+                getCurrentLocation();
+            } else {
+                Toast.makeText(getContext(), "GPS required for location features", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void getCurrentLocation() {
+        if (!isAdded() || getContext() == null) return;
+        
+        if (androidx.core.app.ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        // Check if location services are enabled
+        LocationManager lm = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
+        boolean gpsEnabled = false;
+        boolean networkEnabled = false;
+
+        try {
+            gpsEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {
+            Log.e(TAG, "Error checking GPS status", ex);
+        }
+
+        try {
+            networkEnabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {
+            Log.e(TAG, "Error checking Network status", ex);
+        }
+
+        if (!gpsEnabled && !networkEnabled) {
+            Log.w(TAG, "Location services are disabled, prompting user to enable them");
+            turnOnGPS();
+            return;
+        }
+
+        Toast.makeText(getContext(), "Syncing location...", Toast.LENGTH_SHORT).show();
+
+        // Try getting a fresh location first
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                .addOnSuccessListener(location -> {
+                    if (location != null && isAdded()) {
+                        Log.d(TAG, "Fresh GPS location acquired: " + location.getLatitude() + ", " + location.getLongitude());
+                        onLocationReceived(location);
+                    } else {
+                        Log.w(TAG, "Fresh location is null, trying last known location fallback");
+                        tryLastKnownLocation();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to get fresh location: " + e.getMessage());
+                    tryLastKnownLocation();
+                });
+    }
+
+    private void turnOnGPS() {
+        com.google.android.gms.location.LocationRequest locationRequest = new com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+                .setWaitForAccurateLocation(false)
+                .setMinUpdateIntervalMillis(500)
+                .setMaxUpdateDelayMillis(1000)
+                .build();
+
+        com.google.android.gms.location.LocationSettingsRequest.Builder builder = new com.google.android.gms.location.LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+        
+        builder.setAlwaysShow(true);
+
+        com.google.android.gms.tasks.Task<com.google.android.gms.location.LocationSettingsResponse> result =
+                LocationServices.getSettingsClient(requireContext()).checkLocationSettings(builder.build());
+
+        result.addOnCompleteListener(new com.google.android.gms.tasks.OnCompleteListener<com.google.android.gms.location.LocationSettingsResponse>() {
+            @Override
+            public void onComplete(@NonNull com.google.android.gms.tasks.Task<com.google.android.gms.location.LocationSettingsResponse> task) {
+                try {
+                    com.google.android.gms.location.LocationSettingsResponse response = task.getResult(com.google.android.gms.common.api.ApiException.class);
+                    // All location settings are satisfied. The client can initialize location requests here.
+                    Toast.makeText(getContext(), "GPS is already enabled", Toast.LENGTH_SHORT).show();
+                    getCurrentLocation();
+                } catch (com.google.android.gms.common.api.ApiException exception) {
+                    switch (exception.getStatusCode()) {
+                        case com.google.android.gms.common.api.CommonStatusCodes.RESOLUTION_REQUIRED:
+                            // Location settings are not satisfied. But could be fixed by showing the user a dialog.
+                            try {
+                                // Cast to a resolvable exception.
+                                com.google.android.gms.common.api.ResolvableApiException resolvable = (com.google.android.gms.common.api.ResolvableApiException) exception;
+                                // Show the dialog by calling startResolutionForResult(),
+                                // and check the result in onActivityResult().
+                                startIntentSenderForResult(resolvable.getResolution().getIntentSender(), 1002, null, 0, 0, 0, null);
+                            } catch (android.content.IntentSender.SendIntentException e) {
+                                // Ignore the error.
+                            } catch (Exception e) {
+                                // Ignore
+                            }
+                            break;
+                        case com.google.android.gms.location.LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                            // Location settings are not satisfied. However, we have no way to fix the
+                            // settings so we won't show the dialog.
+                            Toast.makeText(getContext(), "Please enable GPS in settings", Toast.LENGTH_LONG).show();
+                            break;
+                    }
+                }
+            }
+        });
+    }
+
+    private void tryLastKnownLocation() {
+        if (!isAdded() || getContext() == null) return;
+        
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null && isAdded()) {
+                        Log.d(TAG, "Using last known location as fallback: " + location.getLatitude() + ", " + location.getLongitude());
+                        Toast.makeText(getContext(), "Using last known location", Toast.LENGTH_SHORT).show();
+                        onLocationReceived(location);
+                    } else {
+                        Log.w(TAG, "Last known location is also null");
+                        Toast.makeText(getContext(), "Unable to get location. Please move to a clearer spot or check GPS settings.", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Last location fetch failed: " + e.getMessage());
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Location error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void onLocationReceived(Location location) {
+        if (!isAdded()) return;
+        
+        searchCenterLat = location.getLatitude();
+        searchCenterLon = location.getLongitude();
+        isRealTimeLocationEnabled = true;
+        
+        if (getContext() != null) {
+            Toast.makeText(getContext(), "Location updated!", Toast.LENGTH_SHORT).show();
+        }
+        
+        // Reverse geocode to get the address name
+        reverseGeocode(searchCenterLat, searchCenterLon);
+        
+        // Refresh listings based on real location
+        if (allBoardingHouses != null) {
+            filterNearbyBoardingHousesAsync();
+        }
+        
+        // Show location selection dialog ONLY if this is a fresh login (and only once)
+        if (isNewLogin) {
+            showLocationSelectionDialog();
+            isNewLogin = false; // Disable for future updates
+        }
+    }
+
+    private void reverseGeocode(double lat, double lon) {
+        // Specifically ask for neighborhood (Barangay), address, and locality to get more detail
+        String url = MAPBOX_GEOCODING_URL + lon + "," + lat + ".json?access_token=" + MAPBOX_ACCESS_TOKEN + 
+                     "&types=neighborhood,address,locality,place&limit=1";
+        
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        JSONArray features = jsonResponse.getJSONArray("features");
+                        if (features.length() > 0) {
+                            String address = features.getJSONObject(0).getString("place_name");
+                            
+                            // Clean up address: remove country and zip code more robustly
+                            if (address.contains(",")) {
+                                String[] parts = address.split(",");
+                                if (parts.length > 1) {
+                                    StringBuilder sb = new StringBuilder();
+                                    
+                                    // Normally the last part is the country
+                                    int lastIndexToInclude = parts.length - 1;
+                                    
+                                    // If last part is a country or country-like, exclude it
+                                    String lastPart = parts[parts.length - 1].trim();
+                                    if (lastPart.equalsIgnoreCase("Philippines") || lastPart.length() > 15) {
+                                        lastIndexToInclude--;
+                                    }
+                                    
+                                    // If the new last part is a zip code, exclude it too
+                                    if (lastIndexToInclude > 0) {
+                                        String maybeZip = parts[lastIndexToInclude].trim();
+                                        if (maybeZip.matches("\\d{4}")) {
+                                            lastIndexToInclude--;
+                                        }
+                                    }
+                                    
+                                    for (int i = 0; i <= lastIndexToInclude; i++) {
+                                        sb.append(parts[i].trim());
+                                        if (i < lastIndexToInclude) sb.append(", ");
+                                    }
+                                    address = sb.toString();
+                                }
+                            }
+                            
+                            currentSearchLocationName = address;
+                            if (tvCurrentSearchLocation != null) {
+                                tvCurrentSearchLocation.setText(address);
+                            }
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing reverse geocode response", e);
+                    }
+                },
+                error -> Log.e(TAG, "Reverse geocoding failed", error));
+        
+        Volley.newRequestQueue(requireContext()).add(request);
     }
     
     @Override
@@ -268,10 +583,33 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 tvNearbyEmpty.setVisibility(View.GONE);
             }
             
+            
             btnSeeAll = view.findViewById(R.id.btnSeeAll);
+            MaterialButton btnViewMap = view.findViewById(R.id.btnViewMap);
+            
+            if (btnViewMap != null) {
+                btnViewMap.setOnClickListener(v -> {
+                    // Open full screen map with ALL boarding houses, but focus on NEARBY ones
+                    if (allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
+                        // If nearby list is empty (e.g. no results nearby), focus on all instead
+                        List<Listing> focusList = (nearbyBoardingHouses != null && !nearbyBoardingHouses.isEmpty()) 
+                                                  ? nearbyBoardingHouses : allBoardingHouses;
+                        openFullScreenMap(allBoardingHouses, focusList);
+                    } else {
+                        Toast.makeText(getContext(), "No boarding houses to show", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
             ivNotification = view.findViewById(R.id.ivNotification);
             ivMessage = view.findViewById(R.id.ivMessage);
-            tvBoarderName = view.findViewById(R.id.tvBoarderName);
+            
+            // Dynamic Location Views
+            layoutLocation = view.findViewById(R.id.layoutLocation);
+            tvCurrentSearchLocation = view.findViewById(R.id.tvCurrentSearchLocation);
+            
+            if (layoutLocation != null) {
+                layoutLocation.setOnClickListener(v -> showLocationSelectionDialog());
+            }
             badgeMsg = view.findViewById(R.id.badgeMsg);
             badgeNotif = view.findViewById(R.id.badgeNotif);
             
@@ -629,11 +967,19 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                                 // Parse address to extract province and municipality
                                 parseBoarderAddress(boarderAddress);
                                 
-                                // Update boarder name in UI
-                                updateBoarderName();
                                 
                                 // Geocode boarder address to get coordinates for distance calculation
                                 geocodeBoarderAddress(boarderAddress);
+                                
+                                // AUTO-PROMPT: If we don't have a specific location name yet, prompt user
+                                // This happens after boarder info is loaded
+                                if (currentSearchLocationName == null || currentSearchLocationName.isEmpty()) {
+                                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                        if (isAdded() && getContext() != null) {
+                                            showLocationSelectionDialog();
+                                        }
+                                    }, 2000); // Wait 2s for UI to settle
+                                }
                                 
                                 Log.d(TAG, "Boarder loaded: " + boarderFirstName + " " + boarderLastName + 
                                           (boarderSuffix.isEmpty() ? "" : ", " + boarderSuffix));
@@ -701,41 +1047,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         Log.d(TAG, "Parsed address - Province: " + boarderProvince + ", Municipality: " + boarderMunicipality);
     }
 
-    private void updateBoarderName() {
-        if (tvBoarderName != null) {
-            StringBuilder displayName = new StringBuilder();
-            
-            // Add first name
-            if (boarderFirstName != null && !boarderFirstName.isEmpty()) {
-                displayName.append(boarderFirstName);
-            }
-            
-            // Add last name
-            if (boarderLastName != null && !boarderLastName.isEmpty()) {
-                if (displayName.length() > 0) {
-                    displayName.append(" ");
-                }
-                displayName.append(boarderLastName);
-            }
-            
-            // Add suffix if available and not "none"
-            if (boarderSuffix != null && !boarderSuffix.isEmpty() && 
-                !boarderSuffix.equalsIgnoreCase("none") && 
-                !boarderSuffix.equalsIgnoreCase("null")) {
-                if (displayName.length() > 0) {
-                    displayName.append(", ");
-                }
-                displayName.append(boarderSuffix);
-            }
-            
-            // Set the display name, or default to "Boarder" if empty
-            if (displayName.length() > 0) {
-                tvBoarderName.setText(displayName.toString());
-            } else {
-                tvBoarderName.setText("Boarder");
-            }
-        }
-    }
 
     private void loadBoardingHouses() {
         // Check if fragment is attached and context is available
@@ -861,6 +1172,24 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 maxPrice = boardingHouseJson.optInt("max_price");
             }
             
+            // Parse average rating (check both keys)
+            double averageRating = boardingHouseJson.optDouble("average_rating", 0.0);
+            if (averageRating == 0.0) {
+                averageRating = boardingHouseJson.optDouble("avg_rating", 0.0);
+            }
+            if (averageRating == 0.0) {
+               // Try string parsing if optDouble failed
+               String ratingStr = boardingHouseJson.optString("average_rating");
+               if (ratingStr.isEmpty()) ratingStr = boardingHouseJson.optString("avg_rating");
+               if (!ratingStr.isEmpty()) {
+                   try {
+                       averageRating = Double.parseDouble(ratingStr);
+                   } catch (NumberFormatException e) {
+                       averageRating = 0.0;
+                   }
+               }
+            }
+            
             // Create image paths list
             ArrayList<String> imagePaths = new ArrayList<>();
             if (imagePath != null && !imagePath.isEmpty()) {
@@ -870,7 +1199,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             // Create Listing object with full details
             Listing boardingHouse = new Listing(
                 bhId, bhName, bhAddress, bhDescription, bhRules,
-                bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice
+                bhBathrooms, area, buildYear, imagePath, imagePaths, minPrice, maxPrice, averageRating
             );
             
             allBoardingHouses.add(boardingHouse);
@@ -885,71 +1214,19 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         
         if (allBoardingHouses == null || allBoardingHouses.isEmpty()) {
             Log.d(TAG, "No boarding houses to filter");
-            // Mark both as filtered and update (show empty state)
             recommendedFiltered = true;
             nearbyFiltered = true;
             updateBothSections();
             return;
         }
         
-        // If no boarder address info, show all boarding houses in both sections
-        if (boarderProvince == null || boarderProvince.isEmpty()) {
-            Log.d(TAG, "No boarder address info, showing all boarding houses");
-            recommendedBoardingHouses.addAll(allBoardingHouses);
-            nearbyBoardingHouses.addAll(allBoardingHouses);
-            Log.d(TAG, "Showing all - Recommended: " + recommendedBoardingHouses.size() + 
-                       ", Nearby: " + nearbyBoardingHouses.size());
-            
-            // Mark both as filtered and update together
-            recommendedFiltered = true;
-            nearbyFiltered = true;
-            updateBothSections();
-            return;
-        }
-        
-        // Filter recommended: same province as boarder (fast - no geocoding needed)
-        for (Listing bh : allBoardingHouses) {
-            String bhAddress = bh.getBhAddress();
-            if (bhAddress == null || bhAddress.trim().isEmpty()) {
-                continue;
-            }
-            
-            // Parse boarding house address
-            String[] bhParts = bhAddress.split(",");
-            for (int i = 0; i < bhParts.length; i++) {
-                bhParts[i] = bhParts[i].trim();
-            }
-            
-            String bhProvince = "";
-            
-            if (bhParts.length > 0) {
-                bhProvince = bhParts[bhParts.length - 1];
-            }
-            
-            // Check if province matches (case-insensitive)
-            boolean provinceMatch = boarderProvince != null && 
-                                   !boarderProvince.isEmpty() && 
-                                   bhProvince.equalsIgnoreCase(boarderProvince);
-            
-            // Recommended: same province as boarder
-            if (provinceMatch) {
-                recommendedBoardingHouses.add(bh);
-            }
-        }
-        
-        // If no recommended matches found, show all boarding houses
-        if (recommendedBoardingHouses.isEmpty()) {
-            recommendedBoardingHouses.addAll(allBoardingHouses);
-            Log.d(TAG, "No recommended matches, showing all");
-        }
-        
-        Log.d(TAG, "Filtered - Recommended: " + recommendedBoardingHouses.size());
-        
-        // Mark recommended as filtered, but don't update UI yet
-        recommendedFiltered = true;
-        
-        // Filter nearby: within 5km radius (async geocoding)
-        // Both sections will update together when nearby filtering completes
+        // Mark as starting filtering
+        recommendedFiltered = false;
+        nearbyFiltered = false;
+        showProgressBars();
+
+        // Both Recommended and Nearby will now be handled inside filterNearbyBoardingHousesAsync
+        // which uses the more accurate Mapbox-based proximity filtering
         filterNearbyBoardingHousesAsync();
     }
     
@@ -1106,46 +1383,174 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                                    etSearch.getText().toString().trim() : "";
                 boolean hasActiveSearch = !searchQuery.isEmpty();
                 
-                // Update recommended empty state - only show when search is active and no results
+                // Update recommended empty state
                 if (tvRecommendedEmpty != null && rvRecommendedBH != null) {
-                    if (hasActiveSearch && recommendedBoardingHouses != null && recommendedBoardingHouses.isEmpty()) {
-                        // Search is active and no results, show empty message
+                    if (recommendedBoardingHouses != null && recommendedBoardingHouses.isEmpty()) {
+                        // Empty - show message
                         tvRecommendedEmpty.setVisibility(View.VISIBLE);
+                        tvRecommendedEmpty.setText("No recommended boarding houses found in this area.");
                         rvRecommendedBH.setVisibility(View.GONE);
                     } else {
-                        // Either no search or there are results, hide empty message and show RecyclerView if there's data
+                        // Not empty - show RecyclerView
                         tvRecommendedEmpty.setVisibility(View.GONE);
-                        if (recommendedBoardingHouses != null && !recommendedBoardingHouses.isEmpty()) {
-                            rvRecommendedBH.setVisibility(View.VISIBLE);
-                        } else if (!hasActiveSearch) {
-                            // No search active and no data - keep RecyclerView hidden (normal state)
-                            rvRecommendedBH.setVisibility(View.GONE);
-                        }
+                        rvRecommendedBH.setVisibility(View.VISIBLE);
                     }
                 }
                 
-                // Update nearby empty state - only show when search is active and no results
+                // Update nearby empty state
                 if (tvNearbyEmpty != null && rvNearbyBH != null) {
-                    if (hasActiveSearch && nearbyBoardingHouses != null && nearbyBoardingHouses.isEmpty()) {
-                        // Search is active and no results, show empty message
+                    if (nearbyBoardingHouses != null && nearbyBoardingHouses.isEmpty()) {
+                        // Empty - show message
                         tvNearbyEmpty.setVisibility(View.VISIBLE);
+                        tvNearbyEmpty.setText("No boarding houses found nearby.");
                         rvNearbyBH.setVisibility(View.GONE);
                     } else {
-                        // Either no search or there are results, hide empty message and show RecyclerView if there's data
+                        // Not empty - show RecyclerView
                         tvNearbyEmpty.setVisibility(View.GONE);
-                        if (nearbyBoardingHouses != null && !nearbyBoardingHouses.isEmpty()) {
-                            rvNearbyBH.setVisibility(View.VISIBLE);
-                        } else if (!hasActiveSearch) {
-                            // No search active and no data - keep RecyclerView hidden (normal state)
-                            rvNearbyBH.setVisibility(View.GONE);
-                        }
+                        rvNearbyBH.setVisibility(View.VISIBLE);
                     }
                 }
+                
+                // Adjust alignment for single-item results
+                adjustRecommendedRecyclerViewLayout();
             });
         }
     }
     
+    /**
+     * Dynamically adjusts the Recommended RecyclerView layout parameters.
+     * If there is only one item, it centers it. If there are more, it uses standard carousel layout.
+     */
+    private void adjustRecommendedRecyclerViewLayout() {
+        if (rvRecommendedBH == null || recommendedBoardingHouses == null || !isAdded()) {
+            return;
+        }
+
+        ViewGroup.LayoutParams layoutParams = rvRecommendedBH.getLayoutParams();
+        if (layoutParams instanceof LinearLayout.LayoutParams) {
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) layoutParams;
+            float scale = getResources().getDisplayMetrics().density;
+            if (recommendedBoardingHouses.size() == 1) {
+                // Center the single card
+                params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                params.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+                
+                // Add 12dp start padding to balance the 12dp marginEnd in the item layout
+                int compensationPadding = (int) (12 * scale + 0.5f);
+                rvRecommendedBH.setPadding(compensationPadding, 0, 0, 0);
+            } else {
+                // Standard carousel behavior (sticks to left, scrolls right)
+                params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                params.gravity = android.view.Gravity.START;
+                
+                // Restore standard padding (16dp paddingEnd from XML, 0 start)
+                int paddingEnd = (int) (16 * scale + 0.5f);
+                rvRecommendedBH.setPadding(0, 0, paddingEnd, 0);
+            }
+            rvRecommendedBH.setLayoutParams(params);
+        }
+    }
+    
     private void filterNearbyBoardingHousesAsync() {
+        // Clear original lists to ensure they are re-captured for the new location
+        originalRecommendedBoardingHouses = null;
+        originalNearbyBoardingHouses = null;
+
+        // ALWAYS use searchCenter coordinates if available, otherwise fallback to permanent address
+        Double targetLat = (searchCenterLat != null) ? searchCenterLat : boarderLatitude;
+        Double targetLon = (searchCenterLon != null) ? searchCenterLon : boarderLongitude;
+
+        if (targetLat == null || targetLon == null) {
+            Log.d(TAG, "No coordinates for nearby filtering (targetLat/Lon is null)");
+            // Fallback: use same province AND municipality if geocoding not available
+            filterNearbyByMunicipality();
+            nearbyFiltered = true;
+            updateBothSections();
+            return;
+        }
+        
+        // Final coordinates to use for calculations
+        final double lat = targetLat;
+        final double lon = targetLon;
+        
+        Log.d(TAG, "Filtering nearby BHs near: [" + lat + ", " + lon + "]");
+
+        // Create a snapshot of the list to avoid ConcurrentModificationException
+        List<Listing> boardingHousesSnapshot;
+        synchronized (allBoardingHouses) {
+            boardingHousesSnapshot = new ArrayList<>(allBoardingHouses);
+        }
+        
+        if (boardingHousesSnapshot.isEmpty()) {
+            Log.d(TAG, "No boarding houses to filter for nearby");
+            nearbyFiltered = true;
+            updateBothSections();
+            return;
+        }
+        
+        // Filter nearby boarding houses using Mapbox (sequential async)
+        new Handler(Looper.getMainLooper()).post(() -> {
+            processNextNearbyBH(new ArrayList<>(boardingHousesSnapshot), 0, new ArrayList<>(), lat, lon);
+        });
+    }
+
+
+    private void processNextNearbyBH(List<Listing> list, int index, List<Listing> nearbyList, double targetLat, double targetLon) {
+        if (!isAdded() || getContext() == null || index >= list.size()) {
+            // Done processing all items
+            Log.d(TAG, "Finished nearby filtering. Found in range: " + nearbyList.size());
+            
+            nearbyBoardingHouses.clear();
+            nearbyBoardingHouses.addAll(nearbyList);
+            
+            // RECOMMENDED logic: same items as nearby but must have a rating > 0
+            recommendedBoardingHouses.clear();
+            for (Listing bh : nearbyList) {
+                if (bh.getAverageRating() > 0) {
+                    recommendedBoardingHouses.add(bh);
+                }
+            }
+            
+            // Sort recommended by rating
+            if (!recommendedBoardingHouses.isEmpty()) {
+                java.util.Collections.sort(recommendedBoardingHouses, (o1, o2) -> 
+                    Double.compare(o2.getAverageRating(), o1.getAverageRating()));
+            }
+            
+            nearbyFiltered = true;
+            recommendedFiltered = true;
+            updateBothSections();
+            return;
+        }
+
+        Listing bh = list.get(index);
+        String bhAddress = bh.getBhAddress();
+
+        if (bhAddress == null || bhAddress.isEmpty()) {
+            processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+            return;
+        }
+
+        geocodeWithMapbox(bhAddress, new GeocodeCallback() {
+            @Override
+            public void onSuccess(double lat, double lon) {
+                double distance = calculateDistanceInKm(targetLat, targetLon, lat, lon);
+                if (distance <= NEARBY_RADIUS_KM) {
+                    nearbyList.add(bh);
+                    Log.d(TAG, "BH " + bh.getBhName() + " is within " + String.format("%.2f", distance) + " km");
+                }
+                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Log.w(TAG, "Geocoding failed for " + bh.getBhName() + ": " + errorMessage);
+                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+            }
+        });
+    }
+
+    private void filterNearbyBoardingHousesAsyncOld() {
         if (boarderLatitude == null || boarderLongitude == null) {
             // Fallback: use same province AND municipality if geocoding not available
             filterNearbyByMunicipality();
@@ -1176,7 +1581,8 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                     continue;
                 }
                 
-                double distance = calculateDistance(bhAddress);
+                // double distance = calculateDistance(bhAddress);
+                double distance = 100.0; // Placeholder for legacy code
                 if (distance <= NEARBY_RADIUS_KM) {
                     nearbyList.add(bh);
                     Log.d(TAG, "BH " + bh.getBhName() + " is within " + String.format("%.2f", distance) + " km");
@@ -1195,11 +1601,11 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 if (!nearbyList.isEmpty()) {
                     nearbyBoardingHouses.addAll(nearbyList);
                 } else {
-                    // If no matches found, show all boarding houses from snapshot
-                    synchronized (allBoardingHouses) {
-                        nearbyBoardingHouses.addAll(new ArrayList<>(allBoardingHouses));
-                    }
-                    Log.d(TAG, "No nearby matches within 5km, showing all");
+                    // If no matches found, keep empty
+                    // synchronized (allBoardingHouses) {
+                    //    nearbyBoardingHouses.addAll(new ArrayList<>(allBoardingHouses));
+                    // }
+                    Log.d(TAG, "No nearby matches within 5km");
                 }
                 
                 Log.d(TAG, "Nearby filtered: " + nearbyBoardingHouses.size());
@@ -1215,6 +1621,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private void filterNearbyByMunicipality() {
         // Fallback: if geocoding failed, use same province AND municipality
         nearbyBoardingHouses.clear();
+        recommendedBoardingHouses.clear();
         
         for (Listing bh : allBoardingHouses) {
             String bhAddress = bh.getBhAddress();
@@ -1240,25 +1647,30 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             
             boolean provinceMatch = boarderProvince != null && 
                                    !boarderProvince.isEmpty() && 
-                                   bhProvince.equalsIgnoreCase(boarderProvince);
+                                   bhProvince.toLowerCase().contains(boarderProvince.toLowerCase());
             
             boolean municipalityMatch = boarderMunicipality != null && 
                                        !boarderMunicipality.isEmpty() && 
-                                       bhMunicipality.equalsIgnoreCase(boarderMunicipality);
+                                       bhMunicipality.toLowerCase().contains(boarderMunicipality.toLowerCase());
             
             if (provinceMatch && municipalityMatch) {
                 nearbyBoardingHouses.add(bh);
+                // Recommended must have rating
+                if (bh.getAverageRating() > 0) {
+                    recommendedBoardingHouses.add(bh);
+                }
             }
         }
         
-        if (nearbyBoardingHouses.isEmpty()) {
-            nearbyBoardingHouses.addAll(allBoardingHouses);
-            Log.d(TAG, "No nearby matches, showing all");
+        // Sort recommended
+        if (!recommendedBoardingHouses.isEmpty()) {
+            java.util.Collections.sort(recommendedBoardingHouses, (o1, o2) -> 
+                Double.compare(o2.getAverageRating(), o1.getAverageRating()));
         }
         
         Log.d(TAG, "Nearby filtered (by municipality): " + nearbyBoardingHouses.size());
-        
-        // Save original lists will be called in updateBothSections()
+        nearbyFiltered = true;
+        recommendedFiltered = true;
     }
     
     private void updateBothSections() {
@@ -1275,6 +1687,12 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             // Save original lists once after both sections are fully filtered (for search functionality)
             if (originalRecommendedBoardingHouses == null || originalRecommendedBoardingHouses.isEmpty()) {
                 saveOriginalLists();
+            }
+            
+            // Re-apply search filter if there is active search text
+            if (etSearch != null && etSearch.getText().length() > 0) {
+                 Log.d(TAG, "Re-applying search filter after location update");
+                 filterBoardingHousesBySearch(etSearch.getText().toString());
             }
             
             // Update adapters
@@ -1309,80 +1727,59 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             
             // Update empty states in case there's an active search
             updateEmptyStates();
+            
+            // Adjust alignment for single-item results
+            adjustRecommendedRecyclerViewLayout();
         } else {
             Log.d(TAG, "Waiting for both sections - Recommended: " + recommendedFiltered + 
                        ", Nearby: " + nearbyFiltered);
         }
     }
     
+
     private void geocodeBoarderAddress(String address) {
         if (address == null || address.trim().isEmpty()) {
             Log.e(TAG, "Cannot geocode empty address");
             return;
         }
         
-        // Use background thread for geocoding
-        new Thread(() -> {
-            try {
-                // Check if fragment is still attached before geocoding
-                if (getContext() == null || !isAdded()) {
-                    Log.d(TAG, "Cannot geocode - fragment not attached or context is null");
-                    return;
-                }
+        // Use Mapbox for boarder address geocoding
+        geocodeWithMapbox(address, new GeocodeCallback() {
+            @Override
+            public void onSuccess(double latitude, double longitude) {
+                boarderLatitude = latitude;
+                boarderLongitude = longitude;
+                Log.d(TAG, "Boarder Mapbox coordinates updated: " + boarderLatitude + ", " + boarderLongitude);
                 
-                Geocoder geocoder = new Geocoder(getContext(), Locale.getDefault());
-                List<Address> addresses = geocoder.getFromLocationName(address, 1);
-                
-                if (addresses != null && !addresses.isEmpty()) {
-                    Address addressObj = addresses.get(0);
-                    boarderLatitude = addressObj.getLatitude();
-                    boarderLongitude = addressObj.getLongitude();
+                // If search center hasn't been set by user yet, use boarder address as initial center
+                if (searchCenterLat == null || searchCenterLon == null) {
+                    searchCenterLat = boarderLatitude;
+                    searchCenterLon = boarderLongitude;
                     
-                    // Update UI on main thread
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        // Check if fragment is still attached before updating UI
-                        if (!isAdded() || getContext() == null) {
-                            Log.d(TAG, "Fragment not attached, skipping coordinate update");
-                            return;
-                        }
-                        
-                        Log.d(TAG, "Boarder coordinates: " + boarderLatitude + ", " + boarderLongitude);
-                        // Re-filter only nearby boarding houses with coordinates (recommended already filtered)
-                        if (allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
-                            // Reset nearby flag since we're re-filtering
-                            nearbyFiltered = false;
-                            filterNearbyBoardingHousesAsync();
-                        } else if (recommendedFiltered) {
-                            // If no boarding houses but recommended is already filtered, mark nearby as done too
-                            nearbyFiltered = true;
-                            updateBothSections();
-                        }
-                    });
-                } else {
-                    Log.e(TAG, "No coordinates found for boarder address: " + address);
-                    // If geocoding fails, use fallback municipality-based filtering
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (isAdded() && getContext() != null && 
-                            allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
-                            nearbyFiltered = false;
-                            filterNearbyBoardingHousesAsync();
-                        }
-                    });
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "Geocoding error for boarder address: " + e.getMessage());
-                // If geocoding fails, use fallback municipality-based filtering
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    if (isAdded() && getContext() != null && 
-                        allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
-                        nearbyFiltered = false;
-                        filterNearbyBoardingHousesAsync();
+                    if (tvCurrentSearchLocation != null) {
+                        tvCurrentSearchLocation.setText(address);
                     }
-                });
-        } catch (Exception e) {
-                Log.e(TAG, "Unexpected error geocoding boarder address: " + e.getMessage());
-                // If geocoding fails, use fallback municipality-based filtering
+                    currentSearchLocationName = address;
+                }
+                
+                // Update UI on main thread
                 new Handler(Looper.getMainLooper()).post(() -> {
+                     // Re-filter only nearby boarding houses with coordinates
+                     if (allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
+                         nearbyFiltered = false;
+                         filterNearbyBoardingHousesAsync();
+                     } else if (recommendedFiltered) {
+                         nearbyFiltered = true;
+                         updateBothSections();
+                     }
+                });
+            }
+            
+            @Override
+            public void onFailure(String errorMessage) {
+                Log.e(TAG, "Mapbox geocoding error for boarder: " + errorMessage);
+                // Fallback to municipality filtering
+                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (isAdded() && getContext() != null && 
                         allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
                         nearbyFiltered = false;
@@ -1390,38 +1787,72 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                     }
                 });
             }
-        }).start();
+        });
     }
     
-    private double calculateDistance(String destinationAddress) {
-        if (destinationAddress == null || destinationAddress.trim().isEmpty()) {
-            return Double.MAX_VALUE;
+
+    
+    private void geocodeWithMapbox(String address, final GeocodeCallback callback) {
+        if (address == null || address.trim().isEmpty()) {
+            callback.onFailure("Empty address");
+            return;
         }
         
+        // Encode address for URL
+        String encodedAddress = "";
         try {
-            // Check if fragment is still attached before geocoding
-            if (getContext() == null || !isAdded()) {
-                Log.d(TAG, "Cannot calculate distance - fragment not attached or context is null");
-                return Double.MAX_VALUE;
-            }
-            
-            Geocoder geocoder = new Geocoder(getContext(), Locale.getDefault());
-            List<Address> addresses = geocoder.getFromLocationName(destinationAddress, 1);
-            
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                double destLatitude = address.getLatitude();
-                double destLongitude = address.getLongitude();
-                
-                return calculateDistanceInKm(boarderLatitude, boarderLongitude, destLatitude, destLongitude);
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Geocoding error for destination: " + destinationAddress + " - " + e.getMessage());
-        } catch (Exception e) {
-            Log.e(TAG, "Error calculating distance: " + e.getMessage());
+            encodedAddress = java.net.URLEncoder.encode(address, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            callback.onFailure("Encoding error: " + e.getMessage());
+            return;
         }
         
-        return Double.MAX_VALUE;
+        String url = MAPBOX_GEOCODING_URL + encodedAddress + ".json?access_token=" + MAPBOX_ACCESS_TOKEN + "&limit=1";
+        Log.d(TAG, "Mapbox URL: " + url);
+        
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        JSONArray features = jsonResponse.getJSONArray("features");
+                        
+                        if (features.length() > 0) {
+                            JSONObject feature = features.getJSONObject(0);
+                            JSONArray center = feature.getJSONArray("center");
+                            
+                            // Mapbox returns [longitude, latitude]
+                            double longitude = center.getDouble(0);
+                            double latitude = center.getDouble(1);
+                            
+                            callback.onSuccess(latitude, longitude);
+                        } else {
+                            callback.onFailure("No results found");
+                        }
+                    } catch (JSONException e) {
+                        callback.onFailure("JSON parsing error: " + e.getMessage());
+                    }
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    callback.onFailure("Network error: " + error.getMessage());
+                }
+            }
+        );
+        
+        if (getContext() != null) {
+            Volley.newRequestQueue(getContext()).add(request);
+        } else {
+            callback.onFailure("Context is null");
+        }
+    }
+    
+    private interface GeocodeCallback {
+        void onSuccess(double latitude, double longitude);
+        void onFailure(String errorMessage);
     }
     
     /**
@@ -1815,5 +2246,390 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         }
         
         return "notif_" + title.hashCode() + "_" + message.hashCode() + timestampKey;
+    }
+    // Recursive function to process BHs one by one for Geocoding using Mapbox
+    private void processNextNearbyBH(final List<Listing> bhList, final int index, final List<Listing> nearbyList) {
+        if (!isAdded() || getContext() == null) {
+            return;
+        }
+        
+        if (index >= bhList.size()) {
+            // All done. Safely update list and UI.
+            nearbyBoardingHouses.clear();
+            
+            if (nearbyList != null && !nearbyList.isEmpty()) {
+                nearbyBoardingHouses.addAll(nearbyList);
+            } else {
+                Log.d(TAG, "No nearby matches within " + NEARBY_RADIUS_KM + "km (Mapbox)");
+            }
+            
+            Log.d(TAG, "Nearby filtered (Mapbox): " + nearbyBoardingHouses.size());
+            nearbyFiltered = true;
+            updateBothSections();
+            return;
+        }
+
+        
+        Listing bh = bhList.get(index);
+        String bhAddress = bh.getBhAddress();
+        
+        if (bhAddress == null || bhAddress.trim().isEmpty()) {
+            processNextNearbyBH(bhList, index + 1, nearbyList);
+            return;
+        }
+        
+        geocodeWithMapbox(bhAddress, new GeocodeCallback() {
+            @Override
+            public void onSuccess(double latitude, double longitude) {
+                double distance = calculateDistanceInKm(boarderLatitude, boarderLongitude, latitude, longitude);
+                if (distance <= NEARBY_RADIUS_KM) {
+                    nearbyList.add(bh);
+                }
+                processNextNearbyBH(bhList, index + 1, nearbyList);
+            }
+            
+            @Override
+            public void onFailure(String errorMessage) {
+                // Failed to geocode, skip
+                processNextNearbyBH(bhList, index + 1, nearbyList);
+            }
+        });
+
+    }
+
+    private void openFullScreenMap(List<Listing> allListings, List<Listing> focusListings) {
+        if (getContext() == null || allListings == null || allListings.isEmpty()) {
+            Toast.makeText(getContext(), "No listings to show on map", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        try {
+            Log.d(TAG, "Opening full screen map with " + allListings.size() + " listings");
+            
+            // Create a full-screen dialog with explicit immersive theme
+            // Create a full-screen dialog with explicit immersive theme
+            android.app.Dialog fullScreenDialog = new android.app.Dialog(getContext(), android.R.style.Theme_Light_NoTitleBar_Fullscreen);
+            fullScreenDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+            
+            android.view.Window window = fullScreenDialog.getWindow();
+            if (window != null) {
+                // Ensure the window covers the entire screen but has transparent background for modal effect
+                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+                window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+                window.setDimAmount(0.6f); // Dim the background
+                window.setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN, android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            }
+            
+            // Create WebView for full screen map
+            WebView fullScreenWebView = new WebView(getContext());
+            
+            // Configure WebView with robust settings
+            android.webkit.WebSettings settings = fullScreenWebView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(true);
+            settings.setDatabaseEnabled(true);
+            settings.setBuiltInZoomControls(true);
+            settings.setDisplayZoomControls(false);
+            settings.setUseWideViewPort(true);
+            settings.setLoadWithOverviewMode(true);
+            settings.setCacheMode(android.webkit.WebSettings.LOAD_DEFAULT);
+            
+            // Enable mixed content to allow Mapbox resources
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                settings.setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            }
+            
+            // Set WebChromeClient for console logging (helpful for debugging)
+            fullScreenWebView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                @Override
+                public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                    Log.d("MapWebViewConsole", consoleMessage.message() + " -- From line " + 
+                         consoleMessage.lineNumber() + " of " + consoleMessage.sourceId());
+                    return true;
+                }
+            });
+            
+            // Set WebViewClient to handle loading
+            fullScreenWebView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    Log.d(TAG, "Map WebView finished loading");
+                }
+            });
+            
+            // Load Mapbox map HTML
+            String htmlContent = generateMapboxMapHtml(allListings, focusListings);
+            fullScreenWebView.loadDataWithBaseURL("https://www.mapbox.com", htmlContent, "text/html", "UTF-8", null);
+            
+            // Root Container (Transparent with Padding for Margins)
+            android.widget.FrameLayout rootContainer = new android.widget.FrameLayout(getContext());
+            int margin = (int)(getResources().getDisplayMetrics().density * 20); // 20dp margin on all sides
+            rootContainer.setPadding(margin, margin, margin, margin);
+            rootContainer.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            
+            // Card Container (Holds the WebView with Rounded Corners)
+            MaterialCardView cardContainer = new MaterialCardView(getContext());
+            cardContainer.setRadius(getResources().getDisplayMetrics().density * 16); // 16dp rounded corners
+            cardContainer.setCardElevation(getResources().getDisplayMetrics().density * 8);
+            cardContainer.setStrokeWidth(0);
+            // Ensure clipping works for rounded corners
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                cardContainer.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+                cardContainer.setClipToOutline(true);
+            }
+            
+            android.widget.FrameLayout.LayoutParams cardParams = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            );
+            
+            // Add WebView to Card
+            cardContainer.addView(fullScreenWebView, new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            
+            // Add Close Button (Inside Card, Top Right)
+            ImageView closeButton = new ImageView(getContext());
+            closeButton.setImageResource(R.drawable.ic_close);
+            closeButton.setColorFilter(android.graphics.Color.WHITE);
+            
+            // Create background circle for button
+            android.graphics.drawable.GradientDrawable closeBg = new android.graphics.drawable.GradientDrawable();
+            closeBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            closeBg.setColor(android.graphics.Color.parseColor("#80000000")); // Semi-transparent black
+            closeButton.setBackground(closeBg);
+            
+            int btnSize = (int)(getResources().getDisplayMetrics().density * 44);
+            int btnMargin = (int)(getResources().getDisplayMetrics().density * 16);
+            
+            android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(btnSize, btnSize);
+            closeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            closeParams.setMargins(0, btnMargin, btnMargin, 0); // Margin relative to card edges
+            
+            closeButton.setPadding(20, 20, 20, 20);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                closeButton.setElevation(15f);
+            }
+            closeButton.setOnClickListener(v -> fullScreenDialog.dismiss());
+            
+            // Add Close Button to Card (Overlaying WebView)
+            cardContainer.addView(closeButton, closeParams);
+            
+            // Add Card to Root
+            rootContainer.addView(cardContainer, cardParams);
+            
+            fullScreenDialog.setContentView(rootContainer);
+            fullScreenDialog.setCancelable(true);
+            fullScreenDialog.show();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening full screen map: " + e.getMessage(), e);
+            Toast.makeText(getContext(), "Error opening map: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private String generateMapboxMapHtml(List<Listing> allListings, List<Listing> focusListings) {
+        try {
+            // Build JS array of markers
+            StringBuilder markersJs = new StringBuilder();
+            markersJs.append("var bounds = new mapboxgl.LngLatBounds();\n");
+            
+            // Helper set to check for focus items quickly
+            Set<String> focusIds = new HashSet<>();
+            if (focusListings != null) {
+                for (Listing l : focusListings) {
+                    focusIds.add(String.valueOf(l.getBhId()));
+                }
+            }
+            
+            for (Listing listing : allListings) {
+                String name = listing.getBhName().replace("'", "\\'").replace("\n", " ");
+                String address = listing.getBhAddress().replace("'", "\\'").replace("\n", " ");
+                String id = String.valueOf(listing.getBhId());
+                boolean shouldExtendBounds = focusIds.contains(id);
+
+                markersJs.append(String.format(
+                    "console.log('Geocoding listing%s: %s');\n" +
+                    "fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent('%s') + '.json?access_token=' + mapboxgl.accessToken + '&limit=1')\n" +
+                    "  .then(response => response.json())\n" +
+                    "  .then(data => {\n" +
+                    "    if (data && data.features && data.features.length > 0) {\n" +
+                    "      var coords = data.features[0].center;\n" +
+                    "      console.log('Found coords for %s:', coords);\n" +
+                    "      var el = document.createElement('div');\n" +
+                    "      el.className = 'marker';\n" +
+                    "      el.innerHTML = '🏠';\n" + 
+                    "      new mapboxgl.Marker(el)\n" +
+                    "        .setLngLat(coords)\n" +
+                    "        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<b>%s</b><br>%s'))\n" +
+                    "        .addTo(map);\n" +
+                    // Only extend bounds if this listing is in the focus list (nearby)
+                    (shouldExtendBounds ? "      bounds.extend(coords);\n" : "") +
+                    (shouldExtendBounds ? "      map.fitBounds(bounds, { padding: 50, maxZoom: 15 });\n" : "") +
+                    "    } else {\n" +
+                    "      console.warn('No geocoding results for address: %s');\n" +
+                    "    }\n" +
+                    "  }).catch(err => console.error('Geocoding error for %s:', err));\n",
+                    (shouldExtendBounds ? " (FOCUS)" : ""), name, address, name, name, address, address, name
+                ));
+            }
+            
+            // Include boarder location marker if available
+            Double targetLat = (searchCenterLat != null) ? searchCenterLat : boarderLatitude;
+            Double targetLon = (searchCenterLon != null) ? searchCenterLon : boarderLongitude;
+
+            if (targetLat != null && targetLon != null) {
+                 markersJs.append(String.format(Locale.US,
+                    "console.log('Adding user marker (person) at: [%f, %f]');\n" +
+                    "var userEl = document.createElement('div');\n" +
+                    "userEl.className = 'user-marker';\n" +
+                    "userEl.innerHTML = '<div class=\"pulse\"></div><div class=\"user-icon\">🚶‍♂️</div>';\n" +
+                    
+                    "new mapboxgl.Marker(userEl)\n" +
+                    "  .setLngLat([%f, %f])\n" +
+                    "  .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('Your Location'))\n" +
+                    "  .addTo(map);\n" +
+                    "bounds.extend([%f, %f]);\n",
+                    targetLon, targetLat, targetLon, targetLat, targetLon, targetLat
+                ));
+            }
+
+            return "<!DOCTYPE html>" +
+                   "<html>" +
+                   "<head>" +
+                   "<meta charset=\"utf-8\">" +
+                   "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
+                   "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
+                   "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
+                   "<style>" +
+                   "body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; }" +
+                   "#map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }" +
+                   
+                   /* Person Marker Style */
+                   ".user-marker { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; z-index: 100!important; }" +
+                   ".user-icon { background-color: #4285F4; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; box-shadow: 0 0 15px rgba(66,133,244,0.8); position: relative; z-index: 2; }" +
+                   ".pulse { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(66,133,244,0.5); animation: pulse 2s infinite ease-out; z-index: 1; }" +
+                   "@keyframes pulse { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }" +
+                   
+                   /* House Marker Style */
+                   ".marker { width: 36px; height: 36px; background-color: #795548; border-radius: 50%; border: 2px solid white; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; }" +
+                   ".marker:hover { transform: scale(1.1); z-index: 20; }" +
+                   
+                   ".mapboxgl-popup { z-index: 1000; }" +
+                   "</style>" +
+                   "</head>" +
+                   "<body>" +
+                   "<div id=\"map\"></div>" +
+                   "<script>" +
+                   "mapboxgl.accessToken = '" + MAPBOX_ACCESS_TOKEN + "';" +
+                   "var map = new mapboxgl.Map({ container: 'map', style: 'mapbox://styles/mapbox/streets-v12', " +
+                   String.format(Locale.US, "center: [%f, %f], zoom: 12 });", targetLon, targetLat) +
+                   "var bounds = new mapboxgl.LngLatBounds();" +
+                   
+                   "map.on('load', function() {" +
+                   markersJs.toString() +
+                   "map.fitBounds(bounds, { padding: 50, maxZoom: 15 });" +
+                   "});" +
+                   
+                   "function addBHMarker(lng, lat, title) {" +
+                   "  var el = document.createElement('div');" +
+                   "  el.className = 'marker';" +
+                   "  el.innerHTML = '🏠';" + // House Emoji
+                   "  new mapboxgl.Marker(el)" +
+                   "    .setLngLat([lng, lat])" +
+                   "    .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(title))" +
+                   "    .addTo(map);" +
+                   "  bounds.extend([lng, lat]);" +
+                   "}" +
+                   "</script>" +
+                   "</body>" +
+                   "</html>";
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating map HTML", e);
+            return "<html><body><h3 style='padding:20px'>Error loading map data. Please check your connection.</h3></body></html>";
+        }
+    }
+
+    private void showLocationSelectionDialog() {
+        if (getContext() == null) return;
+        
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_select_location, null);
+        builder.setView(dialogView);
+        
+        EditText etLocationInput = dialogView.findViewById(R.id.etLocationInput);
+        MaterialButton btnConfirm = dialogView.findViewById(R.id.btnConfirmLocation);
+        MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelLocation);
+        MaterialButton btnUseCurrent = dialogView.findViewById(R.id.btnUseCurrentLocation);
+        
+        android.app.AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+        
+        if (currentSearchLocationName != null && !currentSearchLocationName.isEmpty()) {
+            etLocationInput.setText(currentSearchLocationName);
+        }
+        
+        if (btnUseCurrent != null) {
+            btnUseCurrent.setOnClickListener(v -> {
+                getCurrentLocation();
+                dialog.dismiss();
+            });
+        }
+
+        btnConfirm.setOnClickListener(v -> {
+            String input = etLocationInput.getText().toString().trim();
+            if (!input.isEmpty()) {
+                updateSearchLocation(input);
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Please enter a location", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    private void updateSearchLocation(String locationString) {
+        if (locationString == null || locationString.isEmpty()) return;
+        
+        Log.d(TAG, "Updating search location to: " + locationString);
+        Toast.makeText(getContext(), "Updating location...", Toast.LENGTH_SHORT).show();
+        
+        geocodeWithMapbox(locationString, new GeocodeCallback() {
+            @Override
+            public void onSuccess(double latitude, double longitude) {
+                if (!isAdded()) return;
+                
+                searchCenterLat = latitude;
+                searchCenterLon = longitude;
+                currentSearchLocationName = locationString;
+                
+                if (tvCurrentSearchLocation != null) {
+                    tvCurrentSearchLocation.setText(locationString);
+                }
+                
+                Log.d(TAG, "Search center updated: [" + searchCenterLat + ", " + searchCenterLon + "]");
+                
+                // Re-filter boarding houses with new coordinates
+                nearbyFiltered = false;
+                showProgressBars();
+                filterNearbyBoardingHousesAsync();
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                if (!isAdded()) return;
+                Log.e(TAG, "Failed to geocode new location: " + errorMessage);
+                Toast.makeText(getContext(), "Could not find that location. Please be more specific.", Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

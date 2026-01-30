@@ -97,6 +97,20 @@ public class BoarderBookingFragment extends Fragment {
     // Request tag for maintenance submission (to cancel if needed)
     private static final String TAG_MAINTENANCE_SUBMIT = "maintenance_submit";
 
+    // Polling for realtime updates
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private static final long POLLING_INTERVAL = 3000; // 3 seconds
+    private boolean isFirstLoad = true; // Flag to track first load
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Load data silently
+            loadBookingData();
+            // Schedule next run
+            pollingHandler.postDelayed(this, POLLING_INTERVAL);
+        }
+    };
+
     // API
     private static final String TAG = "BoarderBookingFragment";
     // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.6/boardease_v3/"
@@ -195,7 +209,30 @@ public class BoarderBookingFragment extends Fragment {
         
         initializeViews(view);
         setupRecyclerViews();
-        loadBookingData();
+        // loadBookingData(); // Removed manual call here, will be called by polling in onResume
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Start polling when fragment is visible
+        startPolling();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Stop polling when fragment is not visible to save battery/data
+        stopPolling();
+    }
+
+    private void startPolling() {
+        // Run immediately first time
+        pollingHandler.post(pollingRunnable);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
     }
 
     private void initializeViews(View view) {
@@ -263,8 +300,9 @@ public class BoarderBookingFragment extends Fragment {
             }
 
             // Show loading indicator only if not refreshing (to avoid double indicators)
+            // AND only on first load to avoid flickering during polling
             boolean isRefreshing = swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing();
-            if (!isRefreshing && progressBar != null) {
+            if (!isRefreshing && progressBar != null && isFirstLoad) {
                 progressBar.setVisibility(View.VISIBLE);
             }
 
@@ -279,7 +317,10 @@ public class BoarderBookingFragment extends Fragment {
             if (swipeRefreshLayout != null) {
                 swipeRefreshLayout.setRefreshing(false);
             }
-            Toast.makeText(getContext(), "Error loading bookings", Toast.LENGTH_SHORT).show();
+            // Only show toast on manual refresh or first load, not polling
+            if (isFirstLoad) {
+                Toast.makeText(getContext(), "Error loading bookings", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -339,6 +380,7 @@ public class BoarderBookingFragment extends Fragment {
                                     swipeRefreshLayout.setRefreshing(false);
                                 }
                                 updateUI();
+                                isFirstLoad = false; // Disable loading indicator for subsequent polls
                             }
                         }
                     },

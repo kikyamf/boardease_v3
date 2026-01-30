@@ -15,6 +15,7 @@ public class Listing {
     private ArrayList<String> imagePaths;
     private Integer minPrice;
     private Integer maxPrice;
+    private double averageRating;
     // Owner contact information
     private String ownerName;
     private String ownerPhone;
@@ -45,6 +46,13 @@ public class Listing {
     public Listing(int bhId, String bhName, String bhAddress, String bhDescription, 
                    String bhRules, String bhBathrooms, String bhArea, String bhBuildYear, 
                    String imagePath, ArrayList<String> imagePaths, Integer minPrice, Integer maxPrice) {
+        this(bhId, bhName, bhAddress, bhDescription, bhRules, bhBathrooms, bhArea, bhBuildYear, 
+             imagePath, imagePaths, minPrice, maxPrice, 0.0);
+    }
+
+    public Listing(int bhId, String bhName, String bhAddress, String bhDescription, 
+                   String bhRules, String bhBathrooms, String bhArea, String bhBuildYear, 
+                   String imagePath, ArrayList<String> imagePaths, Integer minPrice, Integer maxPrice, double averageRating) {
         this.bhId = bhId;
         this.bhName = bhName;
         this.bhAddress = bhAddress;
@@ -57,6 +65,7 @@ public class Listing {
         this.imagePaths = imagePaths != null ? imagePaths : new ArrayList<>();
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
+        this.averageRating = averageRating;
     }
 
     public int getBhId() {
@@ -105,6 +114,14 @@ public class Listing {
 
     public Integer getMaxPrice() {
         return maxPrice;
+    }
+
+    public double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(double averageRating) {
+        this.averageRating = averageRating;
     }
 
     public String getOwnerName() {

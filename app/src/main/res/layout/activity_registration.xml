@@ -731,7 +731,7 @@
                             android:layout_height="wrap_content"
                             android:text="• At least 8 characters"
                             android:textSize="12sp"
-                            android:textColor="#666666" />
+                            android:textColor="@android:color/holo_red_dark" />
 
                         <TextView
                             android:id="@+id/tvCriteriaUpper"
@@ -739,7 +739,7 @@
                             android:layout_height="wrap_content"
                             android:text="• Uppercase Letters (A-Z) at least one"
                             android:textSize="12sp"
-                            android:textColor="#666666" />
+                            android:textColor="@android:color/holo_red_dark" />
 
                         <TextView
                             android:id="@+id/tvCriteriaLower"
@@ -747,7 +747,7 @@
                             android:layout_height="wrap_content"
                             android:text="• Lowercase Letters (a-z) at least one"
                             android:textSize="12sp"
-                            android:textColor="#666666" />
+                            android:textColor="@android:color/holo_red_dark" />
 
                         <TextView
                             android:id="@+id/tvCriteriaDigit"
@@ -755,7 +755,7 @@
                             android:layout_height="wrap_content"
                             android:text="• Digits (0-9) at least one"
                             android:textSize="12sp"
-                            android:textColor="#666666" />
+                            android:textColor="@android:color/holo_red_dark" />
 
                         <TextView
                             android:id="@+id/tvCriteriaSpecial"
@@ -763,7 +763,7 @@
                             android:layout_height="wrap_content"
                             android:text="• Special characters (!,@,#, etc.) at least one"
                             android:textSize="12sp"
-                            android:textColor="#666666" />
+                            android:textColor="@android:color/holo_red_dark" />
                     </LinearLayout>
 
                     </LinearLayout>

@@ -59,6 +59,20 @@ public class Conversation extends AppCompatActivity {
     private long lastMarkAsReadTime = 0; // Track when messages were last marked as read
     private static final long MARK_AS_READ_DELAY = 2000; // 2 seconds delay between mark as read calls
     private ProgressDialog progressDialog; // Progress dialog for loading messages
+    private String currentUserType; // Store user role
+    
+    // Polling for realtime updates
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private static final long POLLING_INTERVAL = 2000; // 2 seconds (faster for conversation)
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Load messages silently
+            loadMessages(false);
+            // Schedule next run
+            pollingHandler.postDelayed(this, POLLING_INTERVAL);
+        }
+    };
     
     // Broadcast receiver for real-time message updates
     private final android.content.BroadcastReceiver messageUpdateReceiver = new android.content.BroadcastReceiver() {
@@ -95,6 +109,10 @@ public class Conversation extends AppCompatActivity {
         } catch (NumberFormatException e) {
             currentUserId = 1; // Default fallback
         }
+        
+        // Get user type from session
+        currentUserType = sharedPreferences.getString("user_role", "Boarder");
+        android.util.Log.d("Conversation", "Current user type: " + currentUserType);
 
         // Bind views
         btnBack = findViewById(R.id.btnBack);
@@ -161,6 +179,13 @@ public class Conversation extends AppCompatActivity {
         // Members button
         btnMembers.setOnClickListener(v -> showGroupMembers());
 
+        // Rename Group functionality (Click on profile image)
+        if (chatType != null && chatType.equals("group") && ("BH Owner".equals(currentUserType) || "Owner".equals(currentUserType))) {
+            chatProfileImage.setOnClickListener(v -> showRenameDialog());
+            // Optional: Provide visual feedback that it's clickable (e.g., toast or tooltip)
+            // For now, just making it functional as requested.
+        }
+
         // Setup RecyclerView
         messageList = new ArrayList<>();
         messageAdapter = new MessageAdapter(this, messageList, chatType);
@@ -190,10 +215,6 @@ public class Conversation extends AppCompatActivity {
                 }
             }
         });
-
-        // Load real messages from database
-        showProgressDialog("Loading conversation...");
-        loadMessages();
 
         // Send button
         btnSend.setOnClickListener(v -> {
@@ -272,7 +293,40 @@ public class Conversation extends AppCompatActivity {
         // Register broadcast receiver for real-time message updates
         android.content.IntentFilter filter = new android.content.IntentFilter("com.example.mock.NEW_MESSAGE_RECEIVED");
         registerReceiver(messageUpdateReceiver, filter);
+
+        // Load real messages from database
+        showProgressDialog("Loading conversation...");
+        loadMessages(true);
     }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Start polling
+        startPolling();
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop polling
+        stopPolling();
+    }
+
+    private void startPolling() {
+        // Run immediately
+        pollingHandler.post(pollingRunnable);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    private void loadMessages() {
+        loadMessages(true);
+    }
+
+
     
     @Override
     protected void onDestroy() {
@@ -287,12 +341,7 @@ public class Conversation extends AppCompatActivity {
         }
     }
     
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Don't mark messages as read automatically - let user view them first
-        // markMessagesAsRead();
-    }
+
     
     private void markMessagesAsRead() {
         android.util.Log.d("Conversation", "markMessagesAsRead called for user: " + currentUserId);
@@ -355,7 +404,12 @@ public class Conversation extends AppCompatActivity {
         requestQueue.add(request);
     }
 
-    private void loadMessages() {
+    private void loadMessages(boolean showLoading) {
+        if (showLoading) {
+             // Only show logs if loading explicitly
+             android.util.Log.d("LoadMessages", "loadMessages called for chat: " + chatId + ", showLoading: " + showLoading);
+        }
+        
         String url = "";
         
         if (chatType.equals("individual")) {
@@ -461,7 +515,9 @@ public class Conversation extends AppCompatActivity {
                         Toast.makeText(this, "Error parsing messages data", Toast.LENGTH_SHORT).show();
                     } finally {
                         // Hide progress dialog
-                        hideProgressDialog();
+                        if (showLoading) {
+                            hideProgressDialog();
+                        }
                     }
                 },
                 error -> {
@@ -473,7 +529,9 @@ public class Conversation extends AppCompatActivity {
                     }
                     Toast.makeText(this, "Error loading messages: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     // Hide progress dialog
-                    hideProgressDialog();
+                    if (showLoading) {
+                        hideProgressDialog();
+                    }
                 });
 
         requestQueue.add(request);
@@ -812,6 +870,13 @@ public class Conversation extends AppCompatActivity {
                                 Toast.makeText(this, "Selected: " + memberNames[which], Toast.LENGTH_SHORT).show();
                             });
                             
+                            // Check if current user is owner, if so, add "Add Member" button
+                            if ("BH Owner".equals(currentUserType) || "Owner".equals(currentUserType)) {
+                                builder.setNeutralButton("Add Member", (dialog, which) -> {
+                                    showAddMemberDialog();
+                                });
+                            }
+                            
                             builder.setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
                             
                             AlertDialog dialog = builder.create();
@@ -1088,10 +1153,212 @@ public class Conversation extends AppCompatActivity {
         return colors[index];
     }
     
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Hide progress dialog when activity is paused
-        hideProgressDialog();
+    private void showAddMemberDialog() {
+        String url = "https://boardease.calapebohol.com/get_non_group_members.php?group_id=" + groupId + "&current_user_id=" + currentUserId;
+        
+        showProgressDialog("Loading potential members...");
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    hideProgressDialog();
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            JSONArray usersArray = data.getJSONArray("users");
+                            
+                            if (usersArray.length() == 0) {
+                                Toast.makeText(this, "No valid boarders found to add.", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            
+                            String[] userNames = new String[usersArray.length()];
+                            int[] userIds = new int[usersArray.length()];
+                            boolean[] checkedItems = new boolean[usersArray.length()];
+                            
+                            for (int i = 0; i < usersArray.length(); i++) {
+                                JSONObject userObj = usersArray.getJSONObject(i);
+                                String fullName = userObj.getString("full_name");
+                                String bhName = "";
+                                if (userObj.has("boarding_house_name") && !userObj.isNull("boarding_house_name")) {
+                                    bhName = " (" + userObj.getString("boarding_house_name") + ")";
+                                }
+                                userNames[i] = fullName + bhName;
+                                userIds[i] = userObj.getInt("user_id");
+                                checkedItems[i] = false; // Default unchecked
+                            }
+                            
+                            // Create multi-select dialog
+                            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                            builder.setTitle("Add Users to Group");
+                            
+                            List<Integer> selectedUserIds = new ArrayList<>();
+                            
+                            builder.setMultiChoiceItems(userNames, checkedItems, (dialog, which, isChecked) -> {
+                                if (isChecked) {
+                                    selectedUserIds.add(userIds[which]);
+                                } else {
+                                    selectedUserIds.remove(Integer.valueOf(userIds[which]));
+                                }
+                            });
+                            
+                            builder.setPositiveButton("Add", (dialog, which) -> {
+                                if (!selectedUserIds.isEmpty()) {
+                                    addMembersToGroup(selectedUserIds);
+                                } else {
+                                    Toast.makeText(this, "No users selected", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            
+                            builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+                            
+                            builder.create().show();
+                            
+                        } else {
+                            Toast.makeText(this, "Error: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing users data", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    hideProgressDialog();
+                    Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+        
+        requestQueue.add(request);
     }
+    
+    private void addMembersToGroup(List<Integer> selectedUserIds) {
+        String url = "https://boardease.calapebohol.com/add_group_members.php";
+        
+        showProgressDialog("Adding members...");
+        
+        try {
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("group_id", groupId);
+            jsonBody.put("added_by", currentUserId);
+            
+            JSONArray idsArray = new JSONArray();
+            for (int id : selectedUserIds) {
+                idsArray.put(id);
+            }
+            jsonBody.put("member_ids", idsArray);
+            
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
+                    response -> {
+                        hideProgressDialog();
+                        try {
+                            if (response.getBoolean("success")) {
+                                Toast.makeText(this, response.getString("message"), Toast.LENGTH_SHORT).show();
+                                // Refresh member list by showing it again? Or just stay on chat
+                                // Maybe add a system message?
+                                // For now, simple success toast.
+                            } else {
+                                Toast.makeText(this, "Failed: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                        }
+                    },
+                    error -> {
+                        hideProgressDialog();
+                        Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+            
+            requestQueue.add(request);
+            
+        } catch (JSONException e) {
+            hideProgressDialog();
+            e.printStackTrace();
+        }
+    }
+
+    private void showRenameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Rename Group");
+        // builder.setMessage("Enter the new name for this group chat:");
+        
+        // Input field
+        final EditText input = new EditText(this);
+        input.setText(chatUserName.getText()); // Pre-fill with current name
+        input.setSingleLine(true);
+        input.setPadding(40, 20, 40, 20); // Add padding for better look
+        
+        // Add layout params to give margins around edit text
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(40, 20, 40, 20); // Left, Top, Right, Bottom margins
+        input.setLayoutParams(params);
+        container.addView(input);
+        
+        builder.setView(container);
+        
+        // Buttons
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String newName = input.getText().toString().trim();
+            if (!newName.isEmpty() && !newName.equals(chatUserName.getText().toString())) {
+                renameGroup(newName);
+            } else if (newName.isEmpty()) {
+                Toast.makeText(this, "Group name cannot be empty", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+        
+        builder.create().show();
+    }
+    
+    private void renameGroup(String newName) {
+        String url = "https://boardease.calapebohol.com/update_group_name.php";
+        
+        showProgressDialog("Updating group name...");
+        
+        try {
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("group_id", groupId);
+            jsonBody.put("new_name", newName);
+            jsonBody.put("user_id", currentUserId);
+            
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
+                    response -> {
+                        hideProgressDialog();
+                        try {
+                            if (response.getBoolean("success")) {
+                                // Update UI
+                                chatUserName.setText(newName);
+                                Toast.makeText(this, "Group name updated successfully", Toast.LENGTH_SHORT).show();
+                                
+                                // Send broadcast to update other screens if needed
+                                Intent intent = new Intent("com.example.mock.GROUP_RENAMED");
+                                intent.putExtra("group_id", groupId);
+                                intent.putExtra("new_name", newName);
+                                sendBroadcast(intent);
+                                
+                            } else {
+                                Toast.makeText(this, "Failed: " + response.getString("message"), Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                        }
+                    },
+                    error -> {
+                        hideProgressDialog();
+                        Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+            
+            requestQueue.add(request);
+            
+        } catch (JSONException e) {
+            hideProgressDialog();
+            e.printStackTrace();
+        }
+    }
+
 }

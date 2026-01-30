@@ -133,6 +133,37 @@ public class PendingMaintenanceFragment extends Fragment {
         recyclerView.setAdapter(adapter);
     }
 
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadMaintenanceRequests(false);
+            pollingHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+    
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+    
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPolling();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+        hideProgressDialog();
+    }
+
     private void loadMaintenanceRequests() {
         loadMaintenanceRequests(false);
     }
@@ -144,14 +175,17 @@ public class PendingMaintenanceFragment extends Fragment {
                 swipeRefreshLayout.setRefreshing(true);
             }
         } else {
-            // Only show progress dialog if NOT refreshing
-            showProgressDialog("Loading pending maintenance requests...");
+             // Polling update - silent
+             // We only show progress dialog on very first load if needed, but here we assume it's either refresh or poll
+             // If we wanted to track initial load we could add a flag like in other fragments
         }
 
         MaintenanceApiService apiService = new MaintenanceApiService(getContext());
         apiService.getMaintenanceRequests(userId, "owner", "pending", "all", "all", new MaintenanceApiService.MaintenanceApiCallback() {
             @Override
             public void onSuccess(List<MaintenanceRequest> requests) {
+                if (getContext() == null) return;
+                
                 // Only hide progress dialog if it was shown (not during refresh)
                 if (!isRefresh) {
                     hideProgressDialog();
@@ -169,6 +203,8 @@ public class PendingMaintenanceFragment extends Fragment {
 
             @Override
             public void onError(String error) {
+                if (getContext() == null) return;
+                
                 // Only hide progress dialog if it was shown (not during refresh)
                 if (!isRefresh) {
                     hideProgressDialog();
@@ -177,8 +213,12 @@ public class PendingMaintenanceFragment extends Fragment {
                 if (swipeRefreshLayout != null) {
                     swipeRefreshLayout.setRefreshing(false);
                 }
-                Log.e(TAG, "Error loading pending maintenance requests: " + error);
-                Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                
+                // Only show toast on manual refresh to avoid spam
+                if (isRefresh) {
+                     Log.e(TAG, "Error loading pending maintenance requests: " + error);
+                     Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                }
                 updateEmptyState();
             }
         });

@@ -58,7 +58,7 @@ public class BoarderDashboard extends AppCompatActivity {
         setupNotificationPermissionLauncher();
         
         // Request notification permission if needed (Android 13+)
-        requestNotificationPermissionIfNeeded();
+        // requestNotificationPermissionIfNeeded(); // Moved to BoarderHomeFragment for sequential flow
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -86,7 +86,8 @@ public class BoarderDashboard extends AppCompatActivity {
         
         // Create new fragment instances only if they don't exist
         if (homeFragment == null) {
-            homeFragment = BoarderHomeFragment.newInstance();
+            boolean isNewLogin = getIntent().getBooleanExtra("IS_NEW_LOGIN", false);
+            homeFragment = BoarderHomeFragment.newInstance(isNewLogin);
         }
         if (exploreFragment == null) {
             exploreFragment = ExploreFragment.newInstance(userId);

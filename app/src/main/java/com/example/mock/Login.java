@@ -385,6 +385,7 @@ public class Login extends AppCompatActivity {
         if ("Boarder".equals(userRole)) {
             // Navigate to BoarderDashboard
             intent = new Intent(Login.this, BoarderDashboard.class);
+            intent.putExtra("IS_NEW_LOGIN", true);
         } else if ("BH Owner".equals(userRole)) {
             // Navigate to MainActivity (Owner Dashboard)
             intent = new Intent(Login.this, MainActivity.class);

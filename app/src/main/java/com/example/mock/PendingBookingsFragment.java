@@ -96,17 +96,41 @@ public class PendingBookingsFragment extends Fragment {
         return view;
     }
     
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadPendingBookings(false);
+            pollingHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPolling();
+    }
+
     @Override
     public void onPause() {
         super.onPause();
+        stopPolling();
         hideProgressDialog();
     }
-    
+
+
     public void loadIfNeeded() {
-        // Public method to trigger load from parent activity
-        // Called when tab is clicked/selected for the first time
-        if (isInitialLoad) {
-            loadPendingBookings(false);
+        if (userId > 0) {
+             loadPendingBookings(false);
         }
     }
 
@@ -119,8 +143,7 @@ public class PendingBookingsFragment extends Fragment {
             showProgressDialog("Loading pending bookings...");
             isInitialLoad = false;
         } else {
-            // Not initial load and not refresh - should not happen, but just in case
-            // Don't show any loading indicator
+            // Polling update - silent
         }
         
         String url = "https://boardease.calapebohol.com/get_pending_bookings.php?user_id=" + userId + "&user_type=owner";
@@ -128,11 +151,17 @@ public class PendingBookingsFragment extends Fragment {
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     try {
+                        if (getContext() == null) return;
+                        
                         if (response.getBoolean("success")) {
                             JSONObject data = response.getJSONObject("data");
                             JSONArray bookingsArray = data.getJSONArray("pending_bookings");
                             
-                            pendingBookings.clear();
+                            // Only update if data changed or first load, but for simplicity in polling we just update
+                            // Use a new list to avoid clearing the old one immediately if we want to diff, 
+                            // but standard replacement is fine here.
+                            
+                            List<BookingData> newBookings = new ArrayList<>();
                             
                             for (int i = 0; i < bookingsArray.length(); i++) {
                                 JSONObject bookingObj = bookingsArray.getJSONObject(i);
@@ -172,81 +201,81 @@ public class PendingBookingsFragment extends Fragment {
                                 String totalAmountForBooking = bookingObj.optString("total_amount_for_booking", null);
                                 if (totalAmountForBooking != null && !totalAmountForBooking.isEmpty() && !totalAmountForBooking.equals("null")) {
                                     booking.setTotalAmountForBooking(totalAmountForBooking);
-                                    android.util.Log.d("PendingBookingsFragment", "Booking " + booking.getBookingId() + 
-                                                      " - Total Amount For Booking: " + totalAmountForBooking);
                                 } else {
                                     booking.setTotalAmountForBooking(null);
-                                    android.util.Log.d("PendingBookingsFragment", "Booking " + booking.getBookingId() + 
-                                                      " - No total amount for booking (null or empty)");
                                 }
                                 booking.setPaidAmountForBooking(bookingObj.optString("paid_amount_for_booking", "0.00"));
                                 booking.setRemainingAmountToPay(bookingObj.optString("remaining_amount_to_pay", "0.00"));
                                 booking.setFullyPaid(bookingObj.optBoolean("is_fully_paid", false));
                                 booking.setPaymentProgressPercent(bookingObj.optDouble("payment_progress_percent", 0.0));
                                 
-                                pendingBookings.add(booking);
+                                newBookings.add(booking);
                             }
                             
-                            adapter = new PendingBookingsAdapter(pendingBookings, new PendingBookingsAdapter.OnBookingActionListener() {
-                                @Override
-                                public void onApprove(BookingData booking) {
-                                    // Handle approve booking
-                                    approveBooking(booking);
-                                }
-
-                                @Override
-                                public void onDecline(BookingData booking) {
-                                    // Handle decline booking
-                                    declineBooking(booking);
-                                }
-
-                                @Override
-                                public void onViewDetails(BookingData booking) {
-                                    // Navigate to booking details
-                                    Intent intent = new Intent(getContext(), BookingDetailsActivity.class);
-                                    // Pass booking data through intent
-                                    intent.putExtra("booking_id", booking.getBookingId());
-                                    intent.putExtra("boarder_name", booking.getBoarderName());
-                                    intent.putExtra("boarder_email", booking.getEmail());
-                                    intent.putExtra("boarder_phone", booking.getPhoneNumber());
-                                    intent.putExtra("room_name", booking.getRoomName());
-                                    intent.putExtra("start_date", booking.getStartDate());
-                                    intent.putExtra("end_date", booking.getEndDate());
-                                    intent.putExtra("amount", booking.getAmount());
-                                    intent.putExtra("rent_type", booking.getRentType());
-                                    intent.putExtra("status", booking.getStatus());
-                                    intent.putExtra("boarding_house_name", booking.getBoardingHouseName());
-                                    intent.putExtra("boarding_house_address", booking.getBoardingHouseAddress());
-                                    intent.putExtra("booking_date", booking.getBookingDate());
-                                    intent.putExtra("payment_status", booking.getPaymentStatus());
-                                    intent.putExtra("notes", booking.getNotes());
-                                    intent.putExtra("profile_image", booking.getProfileImage());
-                                    intent.putExtra("boarder_id", booking.getBoarderId());
-                                    intent.putExtra("room_id", booking.getRoomId());
-                                    intent.putExtra("boarding_house_id", booking.getBoardingHouseId());
-                                    intent.putExtra("owner_id", userId);
-                                    // Pass payment progress data
-                                    intent.putExtra("total_periods", booking.getTotalPeriods());
-                                    intent.putExtra("paid_periods", booking.getPaidPeriods());
-                                    intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
-                                    intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
-                                    intent.putExtra("is_fully_paid", booking.isFullyPaid());
-                                    // Use startActivityForResult so parent activity can receive result and navigate to pending tab
-                                    if (getActivity() != null) {
-                                        getActivity().startActivityForResult(intent, 1001);
-                                    } else {
-                                        startActivity(intent);
-                                    }
-                                }
-                            });
+                            pendingBookings.clear();
+                            pendingBookings.addAll(newBookings);
                             
-                            recyclerView.setAdapter(adapter);
+                            if (adapter == null) {
+                                adapter = new PendingBookingsAdapter(pendingBookings, new PendingBookingsAdapter.OnBookingActionListener() {
+                                    @Override
+                                    public void onApprove(BookingData booking) {
+                                        approveBooking(booking);
+                                    }
+
+                                    @Override
+                                    public void onDecline(BookingData booking) {
+                                        declineBooking(booking);
+                                    }
+
+                                    @Override
+                                    public void onViewDetails(BookingData booking) {
+                                        Intent intent = new Intent(getContext(), BookingDetailsActivity.class);
+                                        intent.putExtra("booking_id", booking.getBookingId());
+                                        intent.putExtra("boarder_name", booking.getBoarderName());
+                                        intent.putExtra("boarder_email", booking.getEmail());
+                                        intent.putExtra("boarder_phone", booking.getPhoneNumber());
+                                        intent.putExtra("room_name", booking.getRoomName());
+                                        intent.putExtra("start_date", booking.getStartDate());
+                                        intent.putExtra("end_date", booking.getEndDate());
+                                        intent.putExtra("amount", booking.getAmount());
+                                        intent.putExtra("rent_type", booking.getRentType());
+                                        intent.putExtra("status", booking.getStatus());
+                                        intent.putExtra("boarding_house_name", booking.getBoardingHouseName());
+                                        intent.putExtra("boarding_house_address", booking.getBoardingHouseAddress());
+                                        intent.putExtra("booking_date", booking.getBookingDate());
+                                        intent.putExtra("payment_status", booking.getPaymentStatus());
+                                        intent.putExtra("notes", booking.getNotes());
+                                        intent.putExtra("profile_image", booking.getProfileImage());
+                                        intent.putExtra("boarder_id", booking.getBoarderId());
+                                        intent.putExtra("room_id", booking.getRoomId());
+                                        intent.putExtra("boarding_house_id", booking.getBoardingHouseId());
+                                        intent.putExtra("owner_id", userId);
+                                        intent.putExtra("total_periods", booking.getTotalPeriods());
+                                        intent.putExtra("paid_periods", booking.getPaidPeriods());
+                                        intent.putExtra("total_amount_for_booking", booking.getTotalAmountForBooking());
+                                        intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
+                                        intent.putExtra("is_fully_paid", booking.isFullyPaid());
+                                        
+                                        if (getActivity() != null) {
+                                            getActivity().startActivityForResult(intent, 1001);
+                                        } else {
+                                            startActivity(intent);
+                                        }
+                                    }
+                                });
+                                recyclerView.setAdapter(adapter);
+                            } else {
+                                adapter.notifyDataSetChanged();
+                            }
                             
                             // Update count and UI
                             updateCount(pendingBookings.size());
                             updateUI();
                         } else {
-                            Toast.makeText(getContext(), "Error loading bookings: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                            // Only show toast if manual refresh or initial load, to avoid spamming toast
+                            if (isRefresh || isInitialLoad) {
+                                Toast.makeText(getContext(), "Error loading bookings: " + response.getString("error"), Toast.LENGTH_SHORT).show();
+                            }
                             updateCount(0);
                             updateUI();
                         }
@@ -254,7 +283,9 @@ public class PendingBookingsFragment extends Fragment {
                         hideLoadingIndicator();
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "Error parsing booking data", Toast.LENGTH_SHORT).show();
+                        if (isRefresh || isInitialLoad) {
+                            Toast.makeText(getContext(), "Error parsing booking data", Toast.LENGTH_SHORT).show();
+                        }
                         updateCount(0);
                         updateUI();
                         hideProgressDialog();
@@ -262,7 +293,9 @@ public class PendingBookingsFragment extends Fragment {
                     }
                 },
                 error -> {
-                    Toast.makeText(getContext(), "Error loading bookings: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (isRefresh || isInitialLoad) {
+                        Toast.makeText(getContext(), "Error loading bookings: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     updateCount(0);
                     updateUI();
                     hideProgressDialog();

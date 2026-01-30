@@ -92,6 +92,11 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
         // Set price using real data from database
         holder.tvPrice.setText(boardingHouse.getFormattedPrice());
         
+        // Hide Rating for Nearby section as per user request
+        if (holder.ratingContainer != null) {
+            holder.ratingContainer.setVisibility(View.GONE);
+        }
+        
         // Load image with Glide
         if (boardingHouse.getImagePath() != null && !boardingHouse.getImagePath().isEmpty()) {
             Glide.with(context)
@@ -165,8 +170,9 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
     
     public static class BoardingHouseViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
-        TextView tvBoardingHouseName, tvLocation, tvDescription, tvAccommodationTypes, tvPrice;
+        TextView tvBoardingHouseName, tvLocation, tvDescription, tvAccommodationTypes, tvPrice, tvRating;
         ImageButton btnFavorite, btnDelete;
+        View ratingContainer;
         
         public BoardingHouseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -178,6 +184,11 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
             tvPrice = itemView.findViewById(R.id.tvPrice);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
             btnDelete = itemView.findViewById(R.id.btnDelete);
+            tvRating = itemView.findViewById(R.id.tvRating);
+            // The rating container is the LinearLayout parent of tvRating
+            if (tvRating != null) {
+                ratingContainer = (View) tvRating.getParent();
+            }
         }
     }
 }

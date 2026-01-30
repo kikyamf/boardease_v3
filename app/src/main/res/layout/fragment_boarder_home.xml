@@ -14,39 +14,75 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingHorizontal="24dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="24dp">
 
-        <!-- Header Section: Welcome + Icons -->
+        <!-- Header Section: Location + Icons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="top">
 
-            <!-- Welcome Message -->
+            <!-- Location Header (Replaces Welcome/Name as per design) -->
             <LinearLayout
+                android:id="@+id/layoutLocation"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true">
 
-                <TextView
-                    android:id="@+id/tvWelcome"
+                <!-- Line 1: Location Label + Chevron -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome back,"
-                    android:textSize="20sp"
-                    android:textColor="#000000"
-                    android:fontFamily="@font/poppins_regular" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/tvBoarderName"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location"
+                        android:textSize="14sp"
+                        android:textColor="#999999"
+                        android:fontFamily="@font/poppins_regular" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_arrow_down"
+                        app:tint="#999999" />
+                </LinearLayout>
+
+                <!-- Line 2: Pin Icon + Current Address -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Boarder"
-                    android:textSize="26sp"
-                    android:textColor="#000000"
-                    android:fontFamily="@font/poppins_bold" />
+                    android:orientation="horizontal"
+                    android:gravity="top"
+                    android:layout_marginTop="2dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginTop="2dp"
+                        android:src="@drawable/ic_location"
+                        app:tint="@color/brown" />
+
+                    <TextView
+                        android:id="@+id/tvCurrentSearchLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Set your location..."
+                        android:textSize="18sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Notification & Message Icons -->
@@ -55,7 +91,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginEnd="16dp">
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="0dp">
 
                 <!-- Notification with badge -->
                 <FrameLayout
@@ -181,7 +218,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Recommended Boarding Houses"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 android:textColor="#333333"
                 android:fontFamily="@font/poppins_medium" />
 
@@ -237,32 +274,62 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:paddingEnd="4dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Nearby Boarding Houses"
-                    android:textSize="18sp"
+                    android:textSize="17sp"
                     android:textColor="#333333"
-                    android:fontFamily="@font/poppins_medium" />
+                    android:fontFamily="@font/poppins_medium"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnViewMap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Map"
+                    android:textSize="12sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/poppins_medium"
+                    android:backgroundTint="@color/brown"
+                    app:cornerRadius="18dp"
+                    app:icon="@drawable/ic_map"
+                    app:iconTint="#FFFFFF"
+                    app:iconSize="16dp"
+                    app:iconPadding="4dp"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="0dp"
+                    android:layout_marginStart="4dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSeeAll"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="36dp"
                     android:text="See All"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textColor="@color/brown"
                     android:fontFamily="@font/poppins_medium"
                     android:backgroundTint="@android:color/transparent"
-                    app:cornerRadius="20dp"
+                    app:cornerRadius="18dp"
                     app:strokeColor="@color/brown"
                     app:strokeWidth="1dp"
                     android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
-                    android:layout_marginStart="8dp" />
+                    android:paddingVertical="0dp"
+                    android:layout_marginStart="8dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp" />
 
             </LinearLayout>
 

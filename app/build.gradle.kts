@@ -62,4 +62,7 @@ dependencies {
     
     // MPAndroidChart for revenue analytics charts
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // Location services for real-time tracking
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }

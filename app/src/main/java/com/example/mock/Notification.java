@@ -95,56 +95,81 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
         recyclerNotifications.setAdapter(notificationsAdapter);
     }
 
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Check if activity is still valid
+            if (isFinishing() || isDestroyed()) return;
+            
+            // Background load - don't show progress but update list
+            loadNotificationsInternal(false);
+            
+            pollingHandler.postDelayed(this, 3000); // Poll every 3 seconds
+        }
+    };
+    
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 3000);
+    }
+    
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
     private void loadNotifications() {
-        // Only show progress dialog if not refreshing
-        if (!swipeRefreshLayout.isRefreshing()) {
+        // Public method called by refresh or initial load
+        boolean isRefreshing = swipeRefreshLayout.isRefreshing();
+        
+        // Only show progress dialog if not refreshing and not polling
+        if (!isRefreshing) {
             showProgressDialog("Loading notifications...");
         }
         
+        loadNotificationsInternal(true);
+    }
+
+    private void loadNotificationsInternal(boolean showLoading) {
+        // Internal method for both poling and manual load
         String url = "https://boardease.calapebohol.com/get_notifications.php?user_id=" + currentUserId;
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        hideProgressDialog();
-                        swipeRefreshLayout.setRefreshing(false);
+                        if (isFinishing() || isDestroyed()) return;
+                        
+                        if (showLoading) {
+                            hideProgressDialog();
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                         
                         try {
                             if (response.getBoolean("success")) {
                                 JSONObject data = response.getJSONObject("data");
                                 JSONArray notifications = data.getJSONArray("notifications");
                                 
-                                android.util.Log.d("Notification", "Received " + notifications.length() + " notifications from server");
-                                
+                                // Process notifications
                                 notifList.clear();
-                                
-                                // Add notifications with date headers (filters duplicates)
                                 int uniqueUnreadCount = addNotificationsWithHeaders(notifications);
                                 
-                                android.util.Log.d("Notification", "After processing, notifList size: " + notifList.size());
-                                android.util.Log.d("Notification", "Unique unread count: " + uniqueUnreadCount);
-                                
-                                // Broadcast the unique unread count to update badges
+                                // Broadcast updates
                                 Intent badgeUpdateIntent = new Intent("com.example.mock.UPDATE_NOTIFICATION_BADGE");
                                 badgeUpdateIntent.putExtra("unread_count", uniqueUnreadCount);
                                 sendBroadcast(badgeUpdateIntent);
                                 
-                                // Update UI
                                 updateUI();
-                                
                             } else {
-                                String errorMsg = response.getString("message");
-                                showToast("Failed to load notifications: " + errorMsg);
-                                
-                                // Show debug info if available
-                                if (response.has("debug_info")) {
-                                    JSONObject debugInfo = response.getJSONObject("debug_info");
-                                    showToast("Debug: User ID = " + debugInfo.getString("received_user_id"));
+                                if (showLoading) {
+                                    String errorMsg = response.getString("message");
+                                    showToast("Failed to load notifications: " + errorMsg);
                                 }
                             }
                         } catch (JSONException e) {
-                            showToast("Error parsing notifications: " + e.getMessage());
+                            if (showLoading) {
+                                showToast("Error parsing notifications: " + e.getMessage());
+                            }
                             e.printStackTrace();
                         }
                     }
@@ -152,9 +177,13 @@ public class Notification extends AppCompatActivity implements NotificationsAdap
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        hideProgressDialog();
-                        swipeRefreshLayout.setRefreshing(false);
-                        showToast("Network error: " + error.getMessage());
+                        if (isFinishing() || isDestroyed()) return;
+                        
+                        if (showLoading) {
+                            hideProgressDialog();
+                            swipeRefreshLayout.setRefreshing(false);
+                            showToast("Network error: " + error.getMessage());
+                        }
                         error.printStackTrace();
                     }
                 });

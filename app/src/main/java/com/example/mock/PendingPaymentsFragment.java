@@ -91,9 +91,34 @@ public class PendingPaymentsFragment extends Fragment {
         return view;
     }
     
+    private android.os.Handler pollingHandler = new android.os.Handler();
+    private Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadPendingPayments(false);
+            pollingHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPolling();
+    }
+
     @Override
     public void onPause() {
         super.onPause();
+        stopPolling();
         hideProgressDialog();
     }
     
@@ -113,11 +138,14 @@ public class PendingPaymentsFragment extends Fragment {
             // Show ProgressDialog on initial load
             showProgressDialog("Loading pending payments...");
             isInitialLoad = false;
+        } else {
+             // Polling update - silent
         }
         
         paymentApiService.getPendingPayments(ownerId, new PaymentApiService.PaymentListCallback() {
             @Override
             public void onSuccess(List<PaymentData> payments) {
+                if (getContext() == null) return;
                 hideProgressDialog();
                 swipeRefreshLayout.setRefreshing(false);
                 pendingPayments.clear();
@@ -127,9 +155,13 @@ public class PendingPaymentsFragment extends Fragment {
 
             @Override
             public void onError(String error) {
+                if (getContext() == null) return;
                 hideProgressDialog();
                 swipeRefreshLayout.setRefreshing(false);
-                Toast.makeText(getContext(), "Error loading pending payments: " + error, Toast.LENGTH_SHORT).show();
+                // Only show toast on manual refresh or initial load
+                if (isRefresh || isInitialLoad) {
+                    Toast.makeText(getContext(), "Error loading pending payments: " + error, Toast.LENGTH_SHORT).show();
+                }
                 updateUI();
             }
         });
