@@ -63,6 +63,10 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
             holder.profileImage.setImageResource(profile.getImageResId());
         }
         
+        // Handle online status indicator
+        boolean isOnline = profile.isOnline();
+        holder.onlineStatus.setVisibility(isOnline ? View.VISIBLE : View.GONE);
+        
         // Set click listener
         holder.itemView.setOnClickListener(v -> {
             if (onItemClickListener != null) {
@@ -79,11 +83,13 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
     public static class SearchResultViewHolder extends RecyclerView.ViewHolder {
         ImageView profileImage;
         TextView profileName;
+        View onlineStatus;
 
         public SearchResultViewHolder(@NonNull View itemView) {
             super(itemView);
             profileImage = itemView.findViewById(R.id.profileImage);
             profileName = itemView.findViewById(R.id.profileName);
+            onlineStatus = itemView.findViewById(R.id.onlineStatus);
         }
     }
 }

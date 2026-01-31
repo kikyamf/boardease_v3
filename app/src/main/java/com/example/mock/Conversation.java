@@ -69,6 +69,8 @@ public class Conversation extends AppCompatActivity {
         public void run() {
             // Load messages silently
             loadMessages(false);
+            // Check user online status
+            checkUserStatus();
             // Schedule next run
             pollingHandler.postDelayed(this, POLLING_INTERVAL);
         }
@@ -171,6 +173,16 @@ public class Conversation extends AppCompatActivity {
             btnMembers.setVisibility(View.VISIBLE);
         } else {
             btnMembers.setVisibility(View.GONE);
+        }
+
+        // Online status indicator
+        View onlineStatus = findViewById(R.id.onlineStatus);
+        boolean isOnline = getIntent().getBooleanExtra("isOnline", false);
+        
+        if (chatType != null && chatType.equals("individual")) {
+            onlineStatus.setVisibility(isOnline ? View.VISIBLE : View.GONE);
+        } else {
+            onlineStatus.setVisibility(View.GONE);
         }
 
         // Back button
@@ -752,6 +764,55 @@ public class Conversation extends AppCompatActivity {
         queue.add(request);
     }
 
+
+    private void checkUserStatus() {
+        if (chatType != null && chatType.equals("individual") && otherUserId != -1) {
+            // Reuse get_chat_list to find the specific user's status since it contains is_online
+            String url = "https://boardease.calapebohol.com/get_chat_list.php?user_id=" + currentUserId;
+            
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONObject data = response.getJSONObject("data");
+                            JSONArray chatsArray = data.getJSONArray("chats");
+                            
+                            for (int i = 0; i < chatsArray.length(); i++) {
+                                JSONObject chatObj = chatsArray.getJSONObject(i);
+                                if (chatObj.getString("chat_type").equals("individual")) {
+                                    int id = chatObj.getInt("other_user_id");
+                                    if (id == otherUserId) {
+                                        boolean isOnline = false;
+                                        if (chatObj.has("is_online") && !chatObj.isNull("is_online")) {
+                                            isOnline = chatObj.getBoolean("is_online");
+                                        } else if (chatObj.has("online_status") && !chatObj.isNull("online_status")) {
+                                            String status = chatObj.getString("online_status");
+                                            isOnline = "Active".equalsIgnoreCase(status) || "Online".equalsIgnoreCase(status);
+                                        }
+                                        updateOnlineStatus(isOnline);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    // Ignore errors for polling
+                });
+                
+            requestQueue.add(request);
+        }
+    }
+
+    private void updateOnlineStatus(boolean isOnline) {
+        View onlineStatus = findViewById(R.id.onlineStatus);
+        if (onlineStatus != null) {
+            onlineStatus.setVisibility(isOnline ? View.VISIBLE : View.GONE);
+        }
+    }
 
     private void sendGroupMessageWithNotification(String messageText, MessageModel messageModel) {
         String url = "https://boardease.calapebohol.com/send_group_message.php";

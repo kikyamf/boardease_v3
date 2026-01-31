@@ -152,6 +152,11 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     
     private androidx.activity.result.ActivityResultLauncher<String> requestNotificationPermissionLauncher;
 
+    // Polling specifics
+    private android.os.Handler refreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable refreshRunnable;
+    private static final long REFRESH_INTERVAL = 2000; // 2 seconds (faster updates)
+
     public BoarderHomeFragment() {
         // Required empty public constructor
     }
@@ -501,66 +506,240 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         Volley.newRequestQueue(requireContext()).add(request);
     }
     
+
+
     @Override
     public void onResume() {
         super.onResume();
         android.util.Log.d("BoarderHomeFragment", "=== onResume called ===");
-        android.util.Log.d("BoarderHomeFragment", "=== shouldRefreshOnResume: " + shouldRefreshOnResume + ", isVisible: " + isVisible() + " ===");
         
-        // If we should refresh (activity was paused while fragment was visible) AND fragment is now visible
-        // AND data was already loaded, refresh the data to show any changes
-        if (shouldRefreshOnResume && isVisible() && dataLoaded && getActivity() != null && getActivity().hasWindowFocus()) {
-            android.util.Log.d("BoarderHomeFragment", "=== Activity was resumed, fragment visible, refreshing data ===");
-            // Reset flags to trigger reload
-            dataLoaded = false;
-            recommendedFiltered = false;
-            nearbyFiltered = false;
-            // Clear existing data
-            if (allBoardingHouses != null) {
-                allBoardingHouses.clear();
+        // Force update UI adapters to reflect favorite changes immediately (from Details screen returns)
+        // This is necessary because the DATA list might not have changed, but local favorites state has
+        if (dataLoaded) {
+            if (nearbyAdapter != null) nearbyAdapter.notifyDataSetChanged();
+            if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
+        }
+
+        // Always refresh and start polling when visible
+        if (isVisible()) {
+            if (dataLoaded) {
+                refreshDataSilently();
+            } else {
+                refreshData();
             }
-            if (recommendedBoardingHouses != null) {
-                recommendedBoardingHouses.clear();
-            }
-            if (nearbyBoardingHouses != null) {
-                nearbyBoardingHouses.clear();
-            }
-            // Reload data to reflect any changes (bookings, favorites, new listings, etc.)
-            loadBoarderInfo();
+            startPolling();
         }
         
         // Always refresh badge counts when fragment becomes visible
-        android.util.Log.d("BoarderHomeFragment", "=== About to call loadUnreadCount from onResume ===");
         loadUnreadCount();
-        android.util.Log.d("BoarderHomeFragment", "=== loadUnreadCount called from onResume ===");
         loadNotificationCount();
-        android.util.Log.d("BoarderHomeFragment", "=== loadNotificationCount called from onResume ===");
-        
-        // Reset flag after checking
-        shouldRefreshOnResume = false;
     }
     
     @Override
     public void onPause() {
         super.onPause();
-        android.util.Log.d("BoarderHomeFragment", "=== onPause called, isVisible: " + isVisible() + " ===");
-        // If fragment is visible when activity pauses, mark that we should refresh on resume
-        // This means user navigated to another activity (not just fragment navigation)
-        if (isVisible()) {
-            android.util.Log.d("BoarderHomeFragment", "=== Fragment is visible on pause, will refresh on resume ===");
-            shouldRefreshOnResume = true;
-        }
+        stopPolling();
     }
     
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        android.util.Log.d("BoarderHomeFragment", "=== onHiddenChanged called, hidden: " + hidden + " ===");
-        // When fragment is hidden/shown (navigation between fragments), clear refresh flag
-        // This is just fragment navigation, not activity pause, so don't refresh
-        if (hidden) {
-            shouldRefreshOnResume = false;
+        if (!hidden) {
+            // Fragment became visible (e.g. tab switch)
+            // Force update UI for favorites
+            if (dataLoaded) {
+                if (nearbyAdapter != null) nearbyAdapter.notifyDataSetChanged();
+                if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
+                refreshDataSilently();
+            } else {
+                refreshData();
+            }
+            startPolling();
+        } else {
+            // Fragment hidden
+            stopPolling();
         }
+    }
+    
+    private void startPolling() {
+        if (refreshRunnable == null) {
+            refreshRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (isVisible()) {
+                        Log.d(TAG, "Polling: Refreshing home data...");
+                        refreshDataSilently();
+                        refreshHandler.postDelayed(this, REFRESH_INTERVAL);
+                    }
+                }
+            };
+        }
+        refreshHandler.removeCallbacks(refreshRunnable);
+        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL);
+    }
+    
+    private void stopPolling() {
+        if (refreshRunnable != null) {
+            refreshHandler.removeCallbacks(refreshRunnable);
+        }
+    }
+    
+    private void refreshData() {
+        // Reset flags and reload
+        dataLoaded = false;
+        recommendedFiltered = false;
+        nearbyFiltered = false;
+        
+        // We don't clear lists immediately to avoid blinking, we'll clear them when new data arrives if needed
+        // or just let the adapter update handle it
+        
+        loadBoarderInfo();
+        loadUnreadCount();
+        loadNotificationCount();
+    }
+    
+    private void refreshDataSilently() {
+        // Background fetch without indicators
+        loadBoarderInfoSilently();
+        
+        // Also update counts (these are small/fast enough to just run)
+        loadUnreadCount();
+        loadNotificationCount();
+    }
+    
+    private void loadBoarderInfoSilently() {
+         String userId = Login.getCurrentUserId(getContext());
+        if (userId == null || userId.isEmpty()) {
+            loadBoardingHousesSilently();
+            return;
+        }
+
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        String url = BOARDER_INFO_API + "?user_id=" + userId;
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Just parse basics roughly or skip straight to boarding houses
+                        // We primarily care about boarding houses lists updating
+                        if (isAdded() && getContext() != null) {
+                            loadBoardingHousesSilently();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        if (isAdded() && getContext() != null) {
+                            loadBoardingHousesSilently();
+                        }
+                    }
+                });
+        requestQueue.add(stringRequest);
+    }
+    
+    private void loadBoardingHousesSilently() {
+        if (getContext() == null || !isAdded()) return;
+        
+        // NO progress bars
+        
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, BOARDING_HOUSES_API,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            if (response == null || response.trim().isEmpty()) return;
+                            
+                            JSONArray dataArray = null;
+                             try {
+                                JSONObject jsonResponse = new JSONObject(response);
+                                if (jsonResponse.getBoolean("success")) {
+                                    dataArray = jsonResponse.getJSONArray("data");
+                                }
+                            } catch (JSONException e) {
+                                dataArray = new JSONArray(response);
+                            }
+                            
+                            if (dataArray == null) return;
+                            
+                            // Parse into NEW list
+                            List<Listing> newAllBoardingHouses = new ArrayList<>();
+                            
+                           for (int i = 0; i < dataArray.length(); i++) {
+                                JSONObject obj = dataArray.getJSONObject(i);
+                                // Inline parsing or reuse (reusing is harder without refactor, inline for safety)
+                                int bhId = obj.getInt("bh_id");
+                                String bhName = obj.getString("bh_name");
+                                String imagePath = obj.optString("image_path", "");
+                                String address = obj.optString("bh_address", "");
+                                String desc = obj.optString("bh_description", "");
+                                String rules = obj.optString("bh_rules", "");
+                                String baths = obj.optString("number_of_bathroom", "");
+                                String area = obj.optString("area", "");
+                                String year = obj.optString("build_year", "");
+                                
+                                Integer minP = null;
+                                if (!obj.isNull("min_price")) minP = obj.optInt("min_price");
+                                Integer maxP = null;
+                                if (!obj.isNull("max_price")) maxP = obj.optInt("max_price");
+                                
+                                double rating = obj.optDouble("average_rating", 0.0);
+                                if (rating == 0.0) rating = obj.optDouble("avg_rating", 0.0);
+                                
+                                ArrayList<String> paths = new ArrayList<>();
+                                if (!imagePath.isEmpty()) paths.add(imagePath);
+                                
+                                Listing l = new Listing(bhId, bhName, address, desc, rules, baths, area, year, imagePath, paths, minP, maxP, rating);
+                                newAllBoardingHouses.add(l);
+                            }
+                           
+                           // DIFFING
+                           boolean different = false;
+                           if (allBoardingHouses == null || allBoardingHouses.size() != newAllBoardingHouses.size()) {
+                               different = true;
+                           } else {
+                               for (int i = 0; i < allBoardingHouses.size(); i++) {
+                                   if (!allBoardingHouses.get(i).equals(newAllBoardingHouses.get(i))) {
+                                       different = true;
+                                       break;
+                                   }
+                               }
+                           }
+                           
+                           if (different) {
+                               Log.d(TAG, "Silent Refresh: Home data changed, updating...");
+                               allBoardingHouses.clear();
+                               allBoardingHouses.addAll(newAllBoardingHouses);
+                               
+                               // Re-filter to update UI
+                               // Use the existing filter logic which updates adapters, now elegantly SILENT
+                               filterBoardingHouses(true); 
+                               // Note: filterBoardingHouses() shows progress bars currently.
+                               // We might want to make a 'silent' version of that too, but filtering is usually fast local op.
+                               // The progress bar flicker from filterBoardingHouses might be okay or we can modify it.
+                               // Ideally, we pass a flag to filterBoardingHouses(boolean silent).
+                               // For now, let's just let it run. If it flickers, we fix that next.
+                               // Actually, let's just create a quick silent filter call that just updates adapters directly
+                               updateAdaptersSilently(); 
+                           } else {
+                               Log.d(TAG, "Silent Refresh: Home data same.");
+                           }
+
+                        } catch (Exception e) {
+                            Log.e(TAG, "Silent refresh error: " + e.getMessage());
+                        }
+                    }
+                },
+                error -> {} // Ignore errors
+        );
+        requestQueue.add(stringRequest);
+    }
+    
+    private void updateAdaptersSilently() {
+        if (recommendedAdapter != null) recommendedAdapter.notifyDataSetChanged();
+        if (nearbyAdapter != null) nearbyAdapter.notifyDataSetChanged();
     }
 
     private void initializeViews(View view) {
@@ -1209,6 +1388,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     }
 
     private void filterBoardingHouses() {
+        filterBoardingHouses(false);
+    }
+
+    private void filterBoardingHouses(boolean silent) {
         recommendedBoardingHouses.clear();
         nearbyBoardingHouses.clear();
         
@@ -1216,18 +1399,21 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             Log.d(TAG, "No boarding houses to filter");
             recommendedFiltered = true;
             nearbyFiltered = true;
-            updateBothSections();
+            updateBothSections(silent);
             return;
         }
         
         // Mark as starting filtering
         recommendedFiltered = false;
         nearbyFiltered = false;
-        showProgressBars();
+        
+        if (!silent) {
+            showProgressBars();
+        }
 
         // Both Recommended and Nearby will now be handled inside filterNearbyBoardingHousesAsync
         // which uses the more accurate Mapbox-based proximity filtering
-        filterNearbyBoardingHousesAsync();
+        filterNearbyBoardingHousesAsync(silent);
     }
     
     private void saveOriginalLists() {
@@ -1452,6 +1638,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     }
     
     private void filterNearbyBoardingHousesAsync() {
+        filterNearbyBoardingHousesAsync(false);
+    }
+
+    private void filterNearbyBoardingHousesAsync(boolean silent) {
         // Clear original lists to ensure they are re-captured for the new location
         originalRecommendedBoardingHouses = null;
         originalNearbyBoardingHouses = null;
@@ -1463,9 +1653,9 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         if (targetLat == null || targetLon == null) {
             Log.d(TAG, "No coordinates for nearby filtering (targetLat/Lon is null)");
             // Fallback: use same province AND municipality if geocoding not available
-            filterNearbyByMunicipality();
+            filterNearbyByMunicipality(silent);
             nearbyFiltered = true;
-            updateBothSections();
+            updateBothSections(silent);
             return;
         }
         
@@ -1484,18 +1674,18 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         if (boardingHousesSnapshot.isEmpty()) {
             Log.d(TAG, "No boarding houses to filter for nearby");
             nearbyFiltered = true;
-            updateBothSections();
+            updateBothSections(silent);
             return;
         }
         
         // Filter nearby boarding houses using Mapbox (sequential async)
         new Handler(Looper.getMainLooper()).post(() -> {
-            processNextNearbyBH(new ArrayList<>(boardingHousesSnapshot), 0, new ArrayList<>(), lat, lon);
+            processNextNearbyBH(new ArrayList<>(boardingHousesSnapshot), 0, new ArrayList<>(), lat, lon, silent);
         });
     }
 
 
-    private void processNextNearbyBH(List<Listing> list, int index, List<Listing> nearbyList, double targetLat, double targetLon) {
+    private void processNextNearbyBH(List<Listing> list, int index, List<Listing> nearbyList, double targetLat, double targetLon, boolean silent) {
         if (!isAdded() || getContext() == null || index >= list.size()) {
             // Done processing all items
             Log.d(TAG, "Finished nearby filtering. Found in range: " + nearbyList.size());
@@ -1519,7 +1709,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             
             nearbyFiltered = true;
             recommendedFiltered = true;
-            updateBothSections();
+            updateBothSections(silent);
             return;
         }
 
@@ -1527,7 +1717,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         String bhAddress = bh.getBhAddress();
 
         if (bhAddress == null || bhAddress.isEmpty()) {
-            processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+            processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon, silent);
             return;
         }
 
@@ -1537,15 +1727,15 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 double distance = calculateDistanceInKm(targetLat, targetLon, lat, lon);
                 if (distance <= NEARBY_RADIUS_KM) {
                     nearbyList.add(bh);
-                    Log.d(TAG, "BH " + bh.getBhName() + " is within " + String.format("%.2f", distance) + " km");
+                    // Log.d(TAG, "BH " + bh.getBhName() + " is within " + String.format("%.2f", distance) + " km");
                 }
-                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon, silent);
             }
 
             @Override
             public void onFailure(String errorMessage) {
-                Log.w(TAG, "Geocoding failed for " + bh.getBhName() + ": " + errorMessage);
-                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon);
+                // Log.w(TAG, "Geocoding failed for " + bh.getBhName() + ": " + errorMessage);
+                processNextNearbyBH(list, index + 1, nearbyList, targetLat, targetLon, silent);
             }
         });
     }
@@ -1619,6 +1809,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     }
     
     private void filterNearbyByMunicipality() {
+        filterNearbyByMunicipality(false);
+    }
+    
+    private void filterNearbyByMunicipality(boolean silent) {
         // Fallback: if geocoding failed, use same province AND municipality
         nearbyBoardingHouses.clear();
         recommendedBoardingHouses.clear();
@@ -1674,6 +1868,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     }
     
     private void updateBothSections() {
+        updateBothSections(false);
+    }
+
+    private void updateBothSections(boolean silent) {
         // Check if fragment is still attached before updating UI
         if (!isAdded() || getContext() == null) {
             Log.d(TAG, "Fragment not attached, skipping section update");
@@ -1699,7 +1897,8 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             if (recommendedAdapter != null) {
                 recommendedAdapter.notifyDataSetChanged();
                 // Ensure RecyclerView scrolls to start (left side) after data update
-                if (rvRecommendedBH != null) {
+                // SKIP scrolling if silent (background update) -> preserve user scroll position
+                if (!silent && rvRecommendedBH != null) {
                     rvRecommendedBH.post(() -> rvRecommendedBH.scrollToPosition(0));
                 }
             }
@@ -1715,11 +1914,14 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             if (rvRecommendedBH != null && recommendedBoardingHouses != null && !recommendedBoardingHouses.isEmpty()) {
                 rvRecommendedBH.setVisibility(View.VISIBLE);
                 // Ensure RecyclerView scrolls to start (left side) when shown - this makes first item stick to left
-                rvRecommendedBH.post(() -> {
-                    if (rvRecommendedBH != null) {
-                        rvRecommendedBH.scrollToPosition(0);
-                    }
-                });
+                // SKIP scrolling if silent
+                if (!silent) {
+                    rvRecommendedBH.post(() -> {
+                        if (rvRecommendedBH != null) {
+                            rvRecommendedBH.scrollToPosition(0);
+                        }
+                    });
+                }
             }
             if (rvNearbyBH != null && nearbyBoardingHouses != null && !nearbyBoardingHouses.isEmpty()) {
                 rvNearbyBH.setVisibility(View.VISIBLE);
@@ -1913,16 +2115,25 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     public void onFavoriteClick(Listing boardingHouse, boolean isFavorite) {
         try {
             if (isFavorite) {
-                // Add to favorites
+                // Add to favorites (Updates DB and Local Prefs)
                 BoarderFavoriteFragment.addToFavorites(getContext(), boardingHouse);
                 String message = "Added to favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
             } else {
-                // Remove from favorites
+                // Remove from favorites (Updates DB and Local Prefs)
+                BoarderFavoriteFragment.removeFromFavorites(getContext(), boardingHouse);
                 String message = "Removed from favorites: " + boardingHouse.getBhName();
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                // TODO: Implement remove from favorites functionality
             }
+            
+            // Sync both adapters immediately so the "Heart" icon updates in both lists (Nearby & Recommended)
+            if (nearbyAdapter != null) {
+                nearbyAdapter.notifyDataSetChanged();
+            }
+            if (recommendedAdapter != null) {
+                recommendedAdapter.notifyDataSetChanged();
+            }
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

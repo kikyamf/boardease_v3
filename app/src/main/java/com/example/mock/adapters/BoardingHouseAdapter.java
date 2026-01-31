@@ -119,6 +119,9 @@ public class BoardingHouseAdapter extends RecyclerView.Adapter<BoardingHouseAdap
                 intent.putExtra("bh_id", boardingHouse.getBhId());
                 intent.putExtra("boarding_house_name", boardingHouse.getBhName());
                 intent.putExtra("boarding_house_image", boardingHouse.getImagePath());
+                // Pass current favorite status to details
+                boolean currentFavorite = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
+                intent.putExtra("is_favorite", currentFavorite);
                 context.startActivity(intent);
             }
         });

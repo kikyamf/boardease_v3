@@ -87,6 +87,11 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     
     // Request queue
     private RequestQueue requestQueue;
+    
+    // Polling specifics
+    private android.os.Handler refreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable refreshRunnable;
+    private static final long REFRESH_INTERVAL = 5000; // 5 seconds
 
     public BoarderFavoriteFragment() {
         // Required empty public constructor
@@ -1087,33 +1092,190 @@ public class BoarderFavoriteFragment extends Fragment implements BoardingHouseAd
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        // Check if favorites have changed when fragment becomes visible
-        if (dataLoaded && isVisible()) {
-            checkAndRefreshIfNeeded();
-        }
-    }
-    
-    @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
-        // When fragment becomes visible, check if favorites changed
-        if (!hidden && dataLoaded) {
+        if (!hidden) {
+            // Fragment became visible (e.g. tab switch)
             checkAndRefreshIfNeeded();
+            startPolling();
+        } else {
+            // Fragment hidden
+            stopPolling();
         }
     }
     
     private void checkAndRefreshIfNeeded() {
+        // Force refresh regardless of dataLoaded status
+        // This ensures real-time updates when switching tabs or returning to app
+        if (dataLoaded) {
+             loadFavoritesSilently();
+        } else {
+             loadFavorites();
+        }
+    }
+    
+    private void startPolling() {
+        if (refreshRunnable == null) {
+            refreshRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (isVisible()) {
+                        Log.d(TAG, "Polling: Refreshing favorites...");
+                        // Use a "silent" refresh if possible, or just standard load
+                        // For now using standard load but we might want to suppress the progress bar if it's annoying
+                        loadFavoritesSilently();
+                        refreshHandler.postDelayed(this, REFRESH_INTERVAL);
+                    }
+                }
+            };
+        }
+        // Stop any existing callbacks to avoid duplicates
+        refreshHandler.removeCallbacks(refreshRunnable);
+        // Start immediately
+        refreshHandler.post(refreshRunnable);
+    }
+    
+    private void stopPolling() {
+        if (refreshRunnable != null) {
+            refreshHandler.removeCallbacks(refreshRunnable);
+        }
+    }
+    
+    private void loadFavoritesSilently() {
         try {
-            // Always reload from database when fragment becomes visible to ensure we have latest data
-            if (!dataLoaded || allFavorites == null || allFavorites.isEmpty()) {
-                Log.d(TAG, "Refreshing favorites from database...");
-                loadFavorites();
+            if (userId == 0) {
+                // For local only, we can just load and compare logic if needed, but for now just load?
+                // Actually local is fast enough and doesn't flicker much usually, 
+                // but let's just stick to the main database flow for consistency.
+                // Or better:
+                loadFavoritesFromSharedPreferences();
+                return;
             }
+            
+            // Background fetch from database WITHOUT clearing list or showing progress
+            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            String BASE_URL = "https://boardease.calapebohol.com/";
+            String GET_FAVORITES_URL = BASE_URL + "get_favorites_v2.php?user_id=" + userId;
+            
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, GET_FAVORITES_URL,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            try {
+                                if (response != null && !response.trim().isEmpty() && !response.trim().startsWith("<")) {
+                                    JSONObject jsonResponse = new JSONObject(response);
+                                    boolean success = jsonResponse.getBoolean("success");
+                                    if (success) {
+                                        JSONArray dataArray = jsonResponse.getJSONArray("data");
+                                        
+                                        // Parse into a TEMP list
+                                        List<Listing> newFavorites = new ArrayList<>();
+                                        for (int i = 0; i < dataArray.length(); i++) {
+                                            JSONObject obj = dataArray.getJSONObject(i);
+                                            // Duplicate logic from parseBoardingHousesData equivalent
+                                            // Ideally extract parsing logic to helper, but for now inline for safety
+                                            int bhId = obj.getInt("bh_id");
+                                            String bhName = obj.getString("bh_name");
+                                            String imagePath = obj.optString("image_path", "");
+                                            
+                                            // Create minimal listing object sufficient for favorites list
+                                            Listing listing = new Listing(bhId, bhName, imagePath);
+                                            // Add extra fields if available in favorites API to match equals()
+                                            // Assuming favorites API returns limited data, but let's try to populate what we can
+                                            listing.setOwnerName(obj.optString("owner_name", ""));
+                                            listing.setOwnerPhone(obj.optString("owner_phone", ""));
+                                            
+                                            newFavorites.add(listing);
+                                        }
+                                        
+                                        // DIFFING LOGIC
+                                        // Check if different from allFavorites
+                                        boolean isDifferent = false;
+                                        if (allFavorites == null || allFavorites.size() != newFavorites.size()) {
+                                            isDifferent = true;
+                                        } else {
+                                            // Same size, check contents
+                                            // Since order might matter or not, let's assume order matches from API
+                                            // If API order changes, it's a difference anyway
+                                            for (int i = 0; i < allFavorites.size(); i++) {
+                                                // Listing.equals() should handle ID and basic content comparison
+                                                // Note: logic in Listing.equals checks many fields. If favorites API returns fewer fields,
+                                                // we might have issues. However, if 'allFavorites' was also populated by this same API, it matches.
+                                                // But if 'allFavorites' has detailed info from DetailsActivity, it might differ.
+                                                // To be safe for Favorites (which usually just shows name/image), just check ID
+                                                if (allFavorites.get(i).getBhId() != newFavorites.get(i).getBhId()) {
+                                                    isDifferent = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        if (isDifferent) {
+                                            Log.d(TAG, "Silent Refresh: Changes detected! Updating UI.");
+                                            allFavorites.clear();
+                                            allFavorites.addAll(newFavorites);
+                                            
+                                            // Update filtered list based on current filter state
+                                            // For now we just reset filtered to all
+                                            filteredFavorites.clear();
+                                            filteredFavorites.addAll(allFavorites);
+                                            
+                                            // Also update cache silently
+                                            addToFavoritesLocalBatch(getContext(), allFavorites);
+                                            
+                                            updateUI();
+                                        } else {
+                                            Log.d(TAG, "Silent Refresh: No changes detected.");
+                                        }
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Silent refresh parse error: " + e.getMessage());
+                            }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // Ignore errors in silent mode
+                        }
+                    });
+            
+            requestQueue.add(stringRequest);
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error checking favorites: " + e.getMessage());
+            Log.e(TAG, "Error in silent refresh: " + e.getMessage());
+        }
+    }
+    
+    // Helper to update cache in batch
+    private static void addToFavoritesLocalBatch(android.content.Context context, List<Listing> listings) {
+         try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
+            Set<String> favoriteIds = new HashSet<>();
+            for (Listing l : listings) {
+                favoriteIds.add(String.valueOf(l.getBhId()));
+            }
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putStringSet(KEY_FAVORITES, favoriteIds);
+            editor.apply();
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isVisible()) {
+            checkAndRefreshIfNeeded(); // Immediate refresh
+            startPolling(); // Start the loop
+        }
+    }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling(); // Stop loop to save battery
     }
 }

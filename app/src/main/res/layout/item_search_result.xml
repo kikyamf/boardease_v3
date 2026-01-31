@@ -7,14 +7,30 @@
     android:padding="12dp"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Profile Picture -->
-    <ImageView
-        android:id="@+id/profileImage"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:scaleType="centerCrop"
-        android:background="@drawable/circle_bg"
-        android:contentDescription="Profile Image" />
+    <!-- Profile Picture with Online Status -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/profileImage"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/circle_bg"
+            android:contentDescription="Profile Image" />
+
+        <!-- Online Status Indicator -->
+        <View
+            android:id="@+id/onlineStatus"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/online_status_indicator"
+            android:visibility="gone"/>
+    </FrameLayout>
 
     <!-- Profile Name -->
     <TextView

@@ -161,4 +161,24 @@ public class Listing {
             return "₱" + String.format("%,d", minPrice) + " - ₱" + String.format("%,d", maxPrice) + "/month";
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Listing listing = (Listing) o;
+        return bhId == listing.bhId &&
+                Double.compare(listing.averageRating, averageRating) == 0 &&
+                java.util.Objects.equals(bhName, listing.bhName) &&
+                java.util.Objects.equals(bhAddress, listing.bhAddress) &&
+                java.util.Objects.equals(bhDescription, listing.bhDescription) &&
+                java.util.Objects.equals(imagePath, listing.imagePath) &&
+                java.util.Objects.equals(minPrice, listing.minPrice) &&
+                java.util.Objects.equals(maxPrice, listing.maxPrice);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(bhId, bhName, bhAddress, bhDescription, imagePath, minPrice, maxPrice, averageRating);
+    }
 }

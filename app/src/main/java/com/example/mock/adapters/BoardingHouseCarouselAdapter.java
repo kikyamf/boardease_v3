@@ -98,12 +98,24 @@ public class BoardingHouseCarouselAdapter extends RecyclerView.Adapter<BoardingH
             context.startActivity(intent);
         });
         
+        // Check if this boarding house is in favorites
+        boolean isFavorite = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
+        
+        // Set favorite button icon based on favorite state
+        if (isFavorite) {
+            holder.btnFavorite.setImageResource(R.drawable.favorite);
+            holder.btnFavorite.setColorFilter(context.getResources().getColor(android.R.color.holo_red_dark, null));
+        } else {
+            holder.btnFavorite.setImageResource(R.drawable.favorite);
+            holder.btnFavorite.setColorFilter(null);
+        }
+
         // Set favorite button click listener
         holder.btnFavorite.setOnClickListener(v -> {
             if (favoriteClickListener != null) {
-                // Check if already in favorites
-                boolean isCurrentlyFavorite = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
-                favoriteClickListener.onFavoriteClick(boardingHouse, !isCurrentlyFavorite);
+                // Check if already in favorites (state might have changed)
+                boolean currentFav = BoarderFavoriteFragment.isFavorite(context, boardingHouse.getBhId());
+                favoriteClickListener.onFavoriteClick(boardingHouse, !currentFav);
             }
         });
     }

@@ -86,6 +86,7 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
     
     private int boardingHouseId;
     private BoardingHouseDetails boardingHouseDetails;
+    private boolean isFavorite = false;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +101,9 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         // Setup click listeners
         setupClickListeners();
+
+        // Check favorite status (prioritize intent, then verify with shared prefs)
+        checkFavoriteStatus();
         
         // Load boarding house details
         loadBoardingHouseDetails();
@@ -123,6 +127,8 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         } else {
             // Handle normal intent
             boardingHouseId = intent.getIntExtra("bh_id", 0);
+            // Optimistically get favorite status passed from list
+            isFavorite = intent.getBooleanExtra("is_favorite", false);
         }
         
         if (boardingHouseId == 0) {
@@ -1082,9 +1088,61 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(shareIntent, "Share Boarding House"));
     }
     
+    private void checkFavoriteStatus() {
+        // Double check with the single source of truth
+        boolean storedFavorite = BoarderFavoriteFragment.isFavorite(this, boardingHouseId);
+        
+        // If our intent extra differs from storage, trust storage (or keep optimistic if storage is unsure, but storage is usually reliable here)
+        // For now, let's just use the storage check as it's the "real" state
+        isFavorite = storedFavorite;
+        
+        updateFavoriteUI();
+    }
+    
+    private void updateFavoriteUI() {
+        if (isFavorite) {
+            btnFavorite.setImageResource(R.drawable.favorite); // Ensure this drawable exists and is the "filled" or generic one we tint
+            btnFavorite.setColorFilter(getResources().getColor(android.R.color.holo_red_dark));
+        } else {
+            btnFavorite.setImageResource(R.drawable.favorite);
+            btnFavorite.setColorFilter(null); // Reset to default (usually black/gray)
+        }
+    }
+
     private void toggleFavorite() {
-            // TODO: Implement favorite functionality
-        Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
+        if (boardingHouseDetails == null) {
+            Toast.makeText(this, "Wait for details to load...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Toggle local state
+        isFavorite = !isFavorite;
+        updateFavoriteUI();
+        
+        // Create Listing object for the helper method
+        Listing listing = new Listing(
+            boardingHouseDetails.getBhId(), 
+            boardingHouseDetails.getBhName(), 
+            boardingHouseDetails.getBhAddress(), 
+            boardingHouseDetails.getBhDescription(), 
+            boardingHouseDetails.getBhRules(), 
+            String.valueOf(boardingHouseDetails.getNumberOfBathroom()), 
+            String.valueOf(boardingHouseDetails.getArea()), 
+            String.valueOf(boardingHouseDetails.getBuildYear()), 
+            (boardingHouseDetails.getImages() != null && !boardingHouseDetails.getImages().isEmpty()) ? boardingHouseDetails.getImages().get(0) : "", 
+            new java.util.ArrayList<>(boardingHouseDetails.getImages()), 
+            boardingHouseDetails.getMinPrice(), 
+            boardingHouseDetails.getMaxPrice()
+        );
+        
+        // Use the centralized logic in BoarderFavoriteFragment
+        if (isFavorite) {
+            BoarderFavoriteFragment.addToFavorites(this, listing);
+            Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show();
+        } else {
+            BoarderFavoriteFragment.removeFromFavorites(this, listing);
+            Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void contactOwner() {

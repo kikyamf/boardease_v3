@@ -62,10 +62,11 @@ public class Messages extends AppCompatActivity {
     private android.os.Handler pollingHandler = new android.os.Handler();
     private static final long POLLING_INTERVAL = 3000; // 3 seconds
     private Runnable pollingRunnable = new Runnable() {
-        @Override
         public void run() {
             // Load data silently (false = no loading dialog, true = isRefresh)
             loadChatList(false, true);
+            // Also refresh active users list silently
+            loadUsersForMessaging(true);
             // Schedule next run
             pollingHandler.postDelayed(this, POLLING_INTERVAL);
         }
@@ -280,6 +281,7 @@ public class Messages extends AppCompatActivity {
             intent.putExtra("chatType", "individual");
             intent.putExtra("otherUserId", profile.getUserId());
             intent.putExtra("otherUserName", profile.getName());
+            intent.putExtra("isOnline", profile.isOnline());
             startActivity(intent);
         });
 
@@ -303,6 +305,7 @@ public class Messages extends AppCompatActivity {
                 intent.putExtra("otherUserId", chat.getOtherUserId());
                 intent.putExtra("otherUserName", chat.getOtherUserName());
                 intent.putExtra("groupId", chat.getGroupId());
+                intent.putExtra("isOnline", chat.isOnline());
                 startActivity(intent);
             }
             
@@ -470,10 +473,13 @@ public class Messages extends AppCompatActivity {
                                         profilePictureUrl = chatObj.getString("other_user_profile_picture");
                                     }
                                     
-                                    // Get online status if available
+                                    // Get online status - check for is_online field first, then online_status string
                                     boolean isOnline = false;
                                     if (chatObj.has("is_online") && !chatObj.isNull("is_online")) {
                                         isOnline = chatObj.getBoolean("is_online");
+                                    } else if (chatObj.has("online_status") && !chatObj.isNull("online_status")) {
+                                        String status = chatObj.getString("online_status");
+                                        isOnline = "Active".equalsIgnoreCase(status) || "Online".equalsIgnoreCase(status);
                                     }
                                     
                                     chat = new ChatModel(
@@ -671,6 +677,7 @@ public class Messages extends AppCompatActivity {
             intent.putExtra("chatType", "individual");
             intent.putExtra("otherUserId", profile.getUserId());
             intent.putExtra("otherUserName", profile.getName());
+            intent.putExtra("isOnline", profile.isOnline());
             startActivity(intent);
         });
 

@@ -403,6 +403,19 @@ public class Login extends AppCompatActivity {
 
     // Method to logout (can be called from other activities)
     public static void logout(android.content.Context context) {
+        // Get user ID before clearing preferences
+        String userId = getCurrentUserId(context);
+        
+        if (userId != null) {
+            // Call server to mark user as offline (fire and forget)
+            String logoutUrl = "https://boardease.calapebohol.com/logout.php?user_id=" + userId;
+            StringRequest request = new StringRequest(Request.Method.GET, logoutUrl,
+                response -> Log.d("Logout", "Logged out from server: " + response),
+                error -> Log.e("Logout", "Error logging out from server", error)
+            );
+            Volley.newRequestQueue(context).add(request);
+        }
+
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         
