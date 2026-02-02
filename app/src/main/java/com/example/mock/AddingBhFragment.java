@@ -35,6 +35,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.Calendar;
+import android.util.Log;
+import com.android.volley.toolbox.StringRequest;
+import android.graphics.Color;
 
 public class AddingBhFragment extends Fragment {
 
@@ -170,12 +176,22 @@ public class AddingBhFragment extends Fragment {
     
     private void populateFieldsWithSavedData() {
         if (etBhName != null) etBhName.setText(savedBhName);
-        if (etBhAddress != null) etBhAddress.setText(savedBhAddress);
+        
+        // Populate Address components
+        if (!savedProvince.isEmpty()) {
+            // Spinners need to be set after items are loaded. 
+            // The loading methods (loadProvinces, etc.) already have logic to set selection if savedX matches.
+            // So we don't need to do it here for spinners, but we do for detailed address.
+        }
+        if (etDetailedAddress != null) etDetailedAddress.setText(savedDetailedAddress);
+        
         if (etBhDescription != null) etBhDescription.setText(savedBhDescription);
         if (etBhRules != null) etBhRules.setText(savedBhRules);
         if (etBathrooms != null) etBathrooms.setText(savedBhBathrooms);
         if (etArea != null) etArea.setText(savedBhArea);
         if (etBuildYear != null) etBuildYear.setText(savedBhBuildYear);
+        
+        //Address confirmation status logic restoration already in onCreateView
         
         // Update image adapter if there are saved images
         if (!imageUris.isEmpty() && imageAdapter != null) {
@@ -269,7 +285,15 @@ public class AddingBhFragment extends Fragment {
 
         // Get validated data
         String name = etBhName.getText().toString().trim();
-        String address = etBhAddress.getText().toString().trim();
+        
+        // Construct full address
+        String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
+        String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
+        String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
+        String detailed = etDetailedAddress.getText().toString().trim();
+        
+        String fullAddress = detailed + ", " + barangay + ", " + municipality + ", " + province;
+        
         String bathrooms = etBathrooms.getText().toString().trim();
 
         // Save current data to static variables for persistence
@@ -279,7 +303,7 @@ public class AddingBhFragment extends Fragment {
         Bundle bundle = new Bundle();
         bundle.putInt("user_id", userId);
         bundle.putString("bh_name", name);
-        bundle.putString("bh_address", address);
+        bundle.putString("bh_address", fullAddress);
         bundle.putString("bh_description", etBhDescription.getText().toString().trim());
         bundle.putString("bh_rules", etBhRules.getText().toString().trim());
         bundle.putString("bh_bathrooms", bathrooms);
