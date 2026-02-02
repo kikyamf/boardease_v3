@@ -236,6 +236,7 @@
                         android:id="@+id/spinnerProvince"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:spinnerMode="dropdown"
                         android:padding="8dp"/>
                 </LinearLayout>
 
@@ -260,6 +261,7 @@
                         android:id="@+id/spinnerMunicipality"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                         android:spinnerMode="dropdown"
                         android:padding="8dp"/>
                 </LinearLayout>
 
@@ -278,37 +280,15 @@
                     android:layout_height="56dp"
                     android:background="@drawable/modern_edittext_focused"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="16dp">
                     
                     <Spinner
                         android:id="@+id/spinnerBarangay"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                         android:spinnerMode="dropdown"
                         android:padding="8dp"/>
                 </LinearLayout>
-
-                <!-- Detailed Address -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Detailed Address (Street, House No., etc.)"
-                    android:textSize="12sp"
-                    android:textColor="#6C757D"
-                    android:fontFamily="@font/poppins_regular"
-                    android:layout_marginBottom="4dp" />
-
-                <EditText
-                    android:id="@+id/etDetailedAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:hint="Enter street, block, lot, etc."
-                    android:textColor="#212529"
-                    android:textColorHint="#6C757D"
-                    android:padding="16dp"
-                    android:background="@drawable/modern_edittext_focused"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="16dp"/>
 
                 <!-- Map View Section -->
                 <TextView

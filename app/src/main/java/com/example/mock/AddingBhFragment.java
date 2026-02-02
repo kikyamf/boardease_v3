@@ -62,7 +62,6 @@ public class AddingBhFragment extends Fragment {
     private static String savedProvince = "";
     private static String savedMunicipality = "";
     private static String savedBarangay = "";
-    private static String savedDetailedAddress = "";
     private static boolean savedAddressConfirmed = false;
     
     private static ArrayList<Uri> savedImageUris = new ArrayList<>();
@@ -72,7 +71,6 @@ public class AddingBhFragment extends Fragment {
     private EditText etBhName, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
     // New Address Fields
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
-    private EditText etDetailedAddress;
     private WebView webViewMap;
     private Button btnConfirmAddress;
     private TextView tvAddressStatus;
@@ -124,7 +122,6 @@ public class AddingBhFragment extends Fragment {
         spinnerProvince = view.findViewById(R.id.spinnerProvince);
         spinnerMunicipality = view.findViewById(R.id.spinnerMunicipality);
         spinnerBarangay = view.findViewById(R.id.spinnerBarangay);
-        etDetailedAddress = view.findViewById(R.id.etDetailedAddress);
         webViewMap = view.findViewById(R.id.webViewMap);
         btnConfirmAddress = view.findViewById(R.id.btnConfirmAddress);
         tvAddressStatus = view.findViewById(R.id.tvAddressStatus);
@@ -181,9 +178,7 @@ public class AddingBhFragment extends Fragment {
         if (!savedProvince.isEmpty()) {
             // Spinners need to be set after items are loaded. 
             // The loading methods (loadProvinces, etc.) already have logic to set selection if savedX matches.
-            // So we don't need to do it here for spinners, but we do for detailed address.
         }
-        if (etDetailedAddress != null) etDetailedAddress.setText(savedDetailedAddress);
         
         if (etBhDescription != null) etBhDescription.setText(savedBhDescription);
         if (etBhRules != null) etBhRules.setText(savedBhRules);
@@ -286,13 +281,13 @@ public class AddingBhFragment extends Fragment {
         // Get validated data
         String name = etBhName.getText().toString().trim();
         
+
         // Construct full address
         String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
         String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
         String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
-        String detailed = etDetailedAddress.getText().toString().trim();
         
-        String fullAddress = detailed + ", " + barangay + ", " + municipality + ", " + province;
+        String fullAddress = barangay + ", " + municipality + ", " + province;
         
         String bathrooms = etBathrooms.getText().toString().trim();
 
@@ -332,7 +327,6 @@ public class AddingBhFragment extends Fragment {
         String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
         String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
         String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
-        String detailed = etDetailedAddress.getText().toString().trim();
 
         // Check required fields
         if (TextUtils.isEmpty(name)) {
@@ -347,9 +341,6 @@ public class AddingBhFragment extends Fragment {
         }
         if (barangay.equals("Select Barangay") || barangay.isEmpty()) {
             return "Please select a Barangay";
-        }
-        if (TextUtils.isEmpty(detailed)) {
-            return "Detailed Address is required";
         }
         
         if (!isAddressConfirmed) {
@@ -446,8 +437,9 @@ public class AddingBhFragment extends Fragment {
         } else if (errorMessage.contains("Select") || errorMessage.contains("Province") || errorMessage.contains("Municipality") || errorMessage.contains("Barangay")) {
             // Can't really focus spinner, maybe scroll to top
             spinnerProvince.requestFocus();
-        } else if (errorMessage.contains("Detailed Address")) {
-            etDetailedAddress.requestFocus();
+        } else if (errorMessage.contains("Select") || errorMessage.contains("Province") || errorMessage.contains("Municipality") || errorMessage.contains("Barangay")) {
+            // Can't really focus spinner, maybe scroll to top
+            spinnerProvince.requestFocus();
         } else if (errorMessage.contains("Confirm Address")) {
             btnConfirmAddress.requestFocus();
         } else if (errorMessage.contains("Bathrooms")) {
@@ -474,7 +466,6 @@ public class AddingBhFragment extends Fragment {
         savedProvince = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
         savedMunicipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
         savedBarangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
-        savedDetailedAddress = etDetailedAddress.getText().toString().trim();
         savedAddressConfirmed = isAddressConfirmed;
         
         savedBhDescription = etBhDescription.getText().toString().trim();
@@ -495,7 +486,6 @@ public class AddingBhFragment extends Fragment {
         savedProvince = "";
         savedMunicipality = "";
         savedBarangay = "";
-        savedDetailedAddress = "";
         savedAddressConfirmed = false;
         
         savedBhDescription = "";
@@ -596,20 +586,6 @@ public class AddingBhFragment extends Fragment {
             
             @Override
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
-        });
-        
-        // Detailed Address Text Watcher
-        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                invalidateAddressConfirmation();
-            }
-            
-            @Override
-            public void afterTextChanged(android.text.Editable s) {}
         });
     }
     
@@ -808,7 +784,7 @@ public class AddingBhFragment extends Fragment {
         String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
         String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
         String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
-        String detailed = etDetailedAddress.getText().toString().trim();
+
         
         if (province.equals("Select Province") || province.isEmpty()) {
             showValidationDialog("Please select a Province");
@@ -822,12 +798,8 @@ public class AddingBhFragment extends Fragment {
             showValidationDialog("Please select a Barangay");
             return;
         }
-        if (detailed.isEmpty()) {
-            showValidationDialog("Please enter detailed address");
-            return;
-        }
         
-        String fullAddress = detailed + ", " + barangay + ", " + municipality + ", " + province;
+        String fullAddress = barangay + ", " + municipality + ", " + province;
         loadMap(fullAddress);
     }
     
