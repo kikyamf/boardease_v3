@@ -16,31 +16,64 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
-
-import java.util.Calendar;
-import java.util.regex.Pattern;
-
-import java.util.ArrayList;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.net.URLEncoder;
 
 public class AddingBhFragment extends Fragment {
 
     private static final String ARG_USER_ID = "user_id";
     private static final String KEY_SAVED_IMAGES = "saved_bh_images"; // NEW
     
+    // Mapbox Access Token
+    private static final String MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibmFtem1hcDA0IiwiYSI6ImNtanhubnN3MzJncTMzZHFzNHc4azB2MWUifQ.84NPjWYDgq3i20GLhbFTtg";
+
     // Static variables to preserve data when navigating back
     private static String savedBhName = "";
-    private static String savedBhAddress = "";
     private static String savedBhDescription = "";
     private static String savedBhRules = "";
     private static String savedBhBathrooms = "";
     private static String savedBhArea = "";
     private static String savedBhBuildYear = "";
+    
+    // Address static variables
+    private static String savedProvince = "";
+    private static String savedMunicipality = "";
+    private static String savedBarangay = "";
+    private static String savedDetailedAddress = "";
+    private static boolean savedAddressConfirmed = false;
+    
     private static ArrayList<Uri> savedImageUris = new ArrayList<>();
 
     private int userId = -1;
 
-    private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    private EditText etBhName, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    // New Address Fields
+    private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
+    private EditText etDetailedAddress;
+    private WebView webViewMap;
+    private Button btnConfirmAddress;
+    private TextView tvAddressStatus;
+    
+    // Address State
+    private String selectedProvince = "";
+    private String selectedMunicipality = "";
+    private String selectedBarangay = "";
+    private boolean isAddressConfirmed = false;
+    
     private ViewPager2 viewPagerImages;
     private ImageView ivPlaceholder;
 
@@ -78,7 +111,15 @@ public class AddingBhFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_adding_bh, container, false);
 
         etBhName = view.findViewById(R.id.etTitle);
-        etBhAddress = view.findViewById(R.id.etAddress);
+        // Address Fields
+        spinnerProvince = view.findViewById(R.id.spinnerProvince);
+        spinnerMunicipality = view.findViewById(R.id.spinnerMunicipality);
+        spinnerBarangay = view.findViewById(R.id.spinnerBarangay);
+        etDetailedAddress = view.findViewById(R.id.etDetailedAddress);
+        webViewMap = view.findViewById(R.id.webViewMap);
+        btnConfirmAddress = view.findViewById(R.id.btnConfirmAddress);
+        tvAddressStatus = view.findViewById(R.id.tvAddressStatus);
+        
         etBhDescription = view.findViewById(R.id.etDescription);
         etBhRules = view.findViewById(R.id.etRules);
         etBathrooms = view.findViewById(R.id.etBathrooms);
@@ -254,20 +295,40 @@ public class AddingBhFragment extends Fragment {
     private String validateAllFields() {
         // Validate required fields
         String name = etBhName.getText().toString().trim();
-        String address = etBhAddress.getText().toString().trim();
         String bathrooms = etBathrooms.getText().toString().trim();
         String area = etArea.getText().toString().trim();
         String buildYear = etBuildYear.getText().toString().trim();
         String description = etBhDescription.getText().toString().trim();
         String rules = etBhRules.getText().toString().trim();
+        
+        // Address validation
+        String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
+        String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
+        String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
+        String detailed = etDetailedAddress.getText().toString().trim();
 
         // Check required fields
         if (TextUtils.isEmpty(name)) {
             return "Boarding House Name is required";
         }
-        if (TextUtils.isEmpty(address)) {
-            return "Address is required";
+        
+        if (province.equals("Select Province") || province.isEmpty()) {
+            return "Please select a Province";
         }
+        if (municipality.equals("Select Municipality") || municipality.isEmpty()) {
+            return "Please select a Municipality";
+        }
+        if (barangay.equals("Select Barangay") || barangay.isEmpty()) {
+            return "Please select a Barangay";
+        }
+        if (TextUtils.isEmpty(detailed)) {
+            return "Detailed Address is required";
+        }
+        
+        if (!isAddressConfirmed) {
+            return "Please confirm the address by clicking the Confirm Address button";
+        }
+
         if (TextUtils.isEmpty(bathrooms)) {
             return "Number of Bathrooms is required";
         }
@@ -278,11 +339,6 @@ public class AddingBhFragment extends Fragment {
         }
         if (!Pattern.matches("^[a-zA-Z0-9\\s\\-']+$", name)) {
             return "Boarding House Name can only contain letters, numbers, spaces, hyphens, and apostrophes";
-        }
-
-        // Validate address (minimum 10 characters)
-        if (address.length() < 10) {
-            return "Address must be at least 10 characters";
         }
 
         // Validate bathrooms (must be a positive number 1-10)
@@ -360,8 +416,13 @@ public class AddingBhFragment extends Fragment {
         // Focus on the field that has the error
         if (errorMessage.contains("Boarding House Name")) {
             etBhName.requestFocus();
-        } else if (errorMessage.contains("Address")) {
-            etBhAddress.requestFocus();
+        } else if (errorMessage.contains("Select") || errorMessage.contains("Province") || errorMessage.contains("Municipality") || errorMessage.contains("Barangay")) {
+            // Can't really focus spinner, maybe scroll to top
+            spinnerProvince.requestFocus();
+        } else if (errorMessage.contains("Detailed Address")) {
+            etDetailedAddress.requestFocus();
+        } else if (errorMessage.contains("Confirm Address")) {
+            btnConfirmAddress.requestFocus();
         } else if (errorMessage.contains("Bathrooms")) {
             etBathrooms.requestFocus();
         } else if (errorMessage.contains("Area")) {
@@ -381,7 +442,14 @@ public class AddingBhFragment extends Fragment {
     private void saveCurrentData() {
         // Save current form data to static variables
         savedBhName = etBhName.getText().toString().trim();
-        savedBhAddress = etBhAddress.getText().toString().trim();
+        // savedBhAddress removed
+        
+        savedProvince = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
+        savedMunicipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
+        savedBarangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
+        savedDetailedAddress = etDetailedAddress.getText().toString().trim();
+        savedAddressConfirmed = isAddressConfirmed;
+        
         savedBhDescription = etBhDescription.getText().toString().trim();
         savedBhRules = etBhRules.getText().toString().trim();
         savedBhBathrooms = etBathrooms.getText().toString().trim();
@@ -396,7 +464,13 @@ public class AddingBhFragment extends Fragment {
     // Method to clear saved data (call this after successful save)
     public static void clearSavedData() {
         savedBhName = "";
-        savedBhAddress = "";
+        // savedBhAddress removed
+        savedProvince = "";
+        savedMunicipality = "";
+        savedBarangay = "";
+        savedDetailedAddress = "";
+        savedAddressConfirmed = false;
+        
         savedBhDescription = "";
         savedBhRules = "";
         savedBhBathrooms = "";
@@ -410,5 +484,381 @@ public class AddingBhFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_SAVED_IMAGES, imageUris);
+    }
+    
+    // ==========================================
+    // Address Picker Logic
+    // ==========================================
+    
+    private void initializeAddressPicker() {
+        // Initialize spinners with default items
+        List<String> defaultProvince = new ArrayList<>();
+        defaultProvince.add("Select Province");
+        ArrayAdapter<String> provinceAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, defaultProvince);
+        provinceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerProvince.setAdapter(provinceAdapter);
+
+        List<String> defaultMunicipality = new ArrayList<>();
+        defaultMunicipality.add("Select Municipality");
+        ArrayAdapter<String> municipalityAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, defaultMunicipality);
+        municipalityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMunicipality.setAdapter(municipalityAdapter);
+
+        List<String> defaultBarangay = new ArrayList<>();
+        defaultBarangay.add("Select Barangay");
+        ArrayAdapter<String> barangayAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, defaultBarangay);
+        barangayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBarangay.setAdapter(barangayAdapter);
+
+        // Load Provinces
+        loadProvinces();
+
+        // Province Selection Listener
+        spinnerProvince.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selected = parent.getItemAtPosition(position).toString();
+                if (!selected.equals("Select Province") && !selected.equals(selectedProvince)) {
+                    selectedProvince = selected;
+                    loadMunicipalities(selected);
+                    // Reset lower levels
+                    spinnerMunicipality.setSelection(0);
+                    spinnerBarangay.setSelection(0);
+                    selectedMunicipality = "";
+                    selectedBarangay = "";
+                    invalidateAddressConfirmation();
+                } else if (savedProvince != null && !savedProvince.isEmpty() && selected.equals("Select Province")) {
+                   // Initial load with saved state
+                   // We don't trigger reload here, we wait for province list to populate and set selection
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+
+        // Municipality Selection Listener
+        spinnerMunicipality.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selected = parent.getItemAtPosition(position).toString();
+                if (!selected.equals("Select Municipality") && !selected.equals(selectedMunicipality)) {
+                    selectedMunicipality = selected;
+                    loadBarangays(selected);
+                    // Reset lower levels
+                    spinnerBarangay.setSelection(0);
+                    selectedBarangay = "";
+                    invalidateAddressConfirmation();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Barangay Selection Listener
+        spinnerBarangay.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selected = parent.getItemAtPosition(position).toString();
+                if (!selected.equals("Select Barangay")) {
+                    selectedBarangay = selected;
+                    invalidateAddressConfirmation();
+                }
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Detailed Address Text Watcher
+        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                invalidateAddressConfirmation();
+            }
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+    }
+    
+    private void invalidateAddressConfirmation() {
+        if (isAddressConfirmed) {
+            isAddressConfirmed = false;
+            tvAddressStatus.setText("* Address changed. Please confirm again.");
+            tvAddressStatus.setTextColor(Color.parseColor("#DC3545")); // Red
+            btnConfirmAddress.setText("Confirm Address on Map");
+            btnConfirmAddress.setEnabled(true);
+        }
+    }
+    
+    private void loadProvinces() {
+        String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=provinces";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            // Check if response is valid JSON array or object wrapping array
+                            // The API usually returns [ "Province A", "Province B" ]
+                            
+                            // Handle HTML error response
+                            if (response.trim().startsWith("<!DOCTYPE html>")) {
+                                Log.e("API_ERROR", "Received HTML response instead of JSON");
+                                return;
+                            }
+                            
+                            JSONArray jsonArray = new JSONArray(response);
+                            List<String> provinces = new ArrayList<>();
+                            provinces.add("Select Province");
+                            
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                provinces.add(jsonArray.getString(i));
+                            }
+                            
+                            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, provinces);
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                            spinnerProvince.setAdapter(adapter);
+                            
+                            // Restore saved province if checking
+                            if (!savedProvince.isEmpty()) {
+                                int position = adapter.getPosition(savedProvince);
+                                if (position >= 0) {
+                                    spinnerProvince.setSelection(position);
+                                }
+                            }
+                            
+                        } catch (JSONException e) {
+                            Log.e("API_ERROR", "JSON Parse error: " + e.getMessage());
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("API_ERROR", "Volley error: " + error.getMessage());
+                        Toast.makeText(getContext(), "Failed to load provinces", Toast.LENGTH_SHORT).show();
+                    }
+                });
+        
+        Volley.newRequestQueue(requireContext()).add(stringRequest);
+    }
+    
+    private void loadMunicipalities(String province) {
+        if (province.isEmpty() || province.equals("Select Province")) return;
+        
+        String url = "";
+        try {
+            url = "https://boardease.calapebohol.com/philippine_address_api.php?action=municipalities&province_name=" + URLEncoder.encode(province, "UTF-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                             if (response.trim().startsWith("<!DOCTYPE html>")) {
+                                return;
+                            }
+                            JSONArray jsonArray = new JSONArray(response);
+                            List<String> municipalities = new ArrayList<>();
+                            municipalities.add("Select Municipality");
+                            
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                municipalities.add(jsonArray.getString(i));
+                            }
+                            
+                            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, municipalities);
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                            spinnerMunicipality.setAdapter(adapter);
+                            
+                            // Restore saved municipality
+                            if (!savedMunicipality.isEmpty() && province.equals(savedProvince)) {
+                                int position = adapter.getPosition(savedMunicipality);
+                                if (position >= 0) {
+                                    spinnerMunicipality.setSelection(position);
+                                }
+                            }
+                            
+                        } catch (JSONException e) {
+                            Log.e("API_ERROR", "JSON Parse error: " + e.getMessage());
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("API_ERROR", "Error loading municipalities");
+            }
+        });
+        
+        Volley.newRequestQueue(requireContext()).add(stringRequest);
+    }
+    
+    private void loadBarangays(String municipality) {
+        if (municipality.isEmpty() || municipality.equals("Select Municipality")) return;
+        
+        String url = "";
+        try {
+            url = "https://boardease.calapebohol.com/philippine_address_api.php?action=barangays&municipality_name=" + URLEncoder.encode(municipality, "UTF-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                             if (response.trim().startsWith("<!DOCTYPE html>")) {
+                                return;
+                            }
+                            JSONArray jsonArray = new JSONArray(response);
+                            List<String> barangays = new ArrayList<>();
+                            barangays.add("Select Barangay");
+                            
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                barangays.add(jsonArray.getString(i));
+                            }
+                            
+                            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, barangays);
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                            spinnerBarangay.setAdapter(adapter);
+                            
+                            // Restore saved barangay
+                            if (!savedBarangay.isEmpty() && municipality.equals(savedMunicipality)) {
+                                int position = adapter.getPosition(savedBarangay);
+                                if (position >= 0) {
+                                    spinnerBarangay.setSelection(position);
+                                }
+                            }
+                            
+                        } catch (JSONException e) {
+                            Log.e("API_ERROR", "JSON Parse error: " + e.getMessage());
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("API_ERROR", "Error loading barangays");
+            }
+        });
+        
+        Volley.newRequestQueue(requireContext()).add(stringRequest);
+    }
+    
+    // ==========================================
+    // Mapbox Logic
+    // ==========================================
+    
+    private void setupMapWebView() {
+         webViewMap.getSettings().setJavaScriptEnabled(true);
+         webViewMap.getSettings().setBuiltInZoomControls(false);
+         webViewMap.getSettings().setDomStorageEnabled(true);
+         
+         // Set WebViewClient
+         webViewMap.setWebViewClient(new WebViewClient() {
+             @Override
+             public void onPageFinished(WebView view, String url) {
+                 super.onPageFinished(view, url);
+             }
+         });
+         
+         // Initial Empty Map or Instructions
+         String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after confirming address.</body></html>";
+         webViewMap.loadData(html, "text/html", "UTF-8");
+    }
+    
+    private void confirmAddress() {
+        String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
+        String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
+        String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
+        String detailed = etDetailedAddress.getText().toString().trim();
+        
+        if (province.equals("Select Province") || province.isEmpty()) {
+            showValidationDialog("Please select a Province");
+            return;
+        }
+        if (municipality.equals("Select Municipality") || municipality.isEmpty()) {
+            showValidationDialog("Please select a Municipality");
+            return;
+        }
+        if (barangay.equals("Select Barangay") || barangay.isEmpty()) {
+            showValidationDialog("Please select a Barangay");
+            return;
+        }
+        if (detailed.isEmpty()) {
+            showValidationDialog("Please enter detailed address");
+            return;
+        }
+        
+        String fullAddress = detailed + ", " + barangay + ", " + municipality + ", " + province;
+        loadMap(fullAddress);
+    }
+    
+    private void loadMap(String address) {
+        tvAddressStatus.setText("Loading map...");
+        tvAddressStatus.setTextColor(Color.GRAY);
+        btnConfirmAddress.setEnabled(false);
+        
+        String htmlContent = generateMapboxMapHtml(address);
+        webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+        
+        isAddressConfirmed = true;
+        tvAddressStatus.setText("Address Confirmed ✓");
+        tvAddressStatus.setTextColor(Color.parseColor("#198754")); // Green
+        btnConfirmAddress.setText("Address Confirmed");
+    }
+    
+    private String generateMapboxMapHtml(String address) {
+        String escapedAddress = address.replace("'", "\\'").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
+        
+        return "<!DOCTYPE html>" +
+               "<html>" +
+               "<head>" +
+               "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">" +
+                   "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
+                   "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
+               "<style>" +
+               "body { margin: 0; padding: 0; }" +
+               "#map { position: absolute; top: 0; bottom: 0; width: 100%; }" +
+               "</style>" +
+               "</head>" +
+               "<body>" +
+                   "<div id=\"map\"></div>" +
+                   "<script>" +
+                   "mapboxgl.accessToken = '" + MAPBOX_ACCESS_TOKEN + "'; " +
+                   "var map = new mapboxgl.Map({ " +
+                   "  container: 'map', " +
+                   "  style: 'mapbox://styles/mapbox/streets-v12', " +
+                   "  center: [120.9842, 14.5995], " + // Default
+                   "  zoom: 13 " +
+                   "}); " +
+                   "var address = '" + escapedAddress + "'; " +
+                   "map.on('load', function() { " +
+                   "  fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=' + mapboxgl.accessToken + '&limit=1') " +
+                   "    .then(response => response.json()) " +
+                   "    .then(data => { " +
+                   "      if (data && data.features && data.features.length > 0) { " +
+                   "        var coordinates = data.features[0].center; " +
+                   "        map.flyTo({ center: coordinates, zoom: 15 }); " +
+                   "        new mapboxgl.Marker({ color: '#FF6B6B' }) " +
+                   "          .setLngLat(coordinates) " +
+                   "          .addTo(map); " +
+                   "      } " +
+                   "    }) " +
+                   "    .catch(error => console.error(error)); " +
+                   "}); " +
+                   "</script>" +
+               "</body>" +
+               "</html>";
     }
 }

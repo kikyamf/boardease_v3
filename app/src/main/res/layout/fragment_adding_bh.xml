@@ -204,7 +204,7 @@
                     android:textSize="16sp"
                     android:layout_marginBottom="16dp" />
 
-                <!-- Address -->
+                <!-- Address Section with Spinners -->
                 <TextView
                     android:id="@+id/tvAddress"
                     android:layout_width="wrap_content"
@@ -215,17 +215,149 @@
                     android:fontFamily="@font/poppins_medium"
                     android:layout_marginBottom="8dp" />
 
-                <EditText
-                    android:id="@+id/etAddress"
+                <!-- Province Spinner -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Province"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+                
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:hint="Enter complete address"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    
+                    <Spinner
+                        android:id="@+id/spinnerProvince"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="8dp"/>
+                </LinearLayout>
+
+                <!-- Municipality Spinner -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Municipality / City"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+                    
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    
+                    <Spinner
+                        android:id="@+id/spinnerMunicipality"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="8dp"/>
+                </LinearLayout>
+
+                <!-- Barangay Spinner -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Barangay"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+                    
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    
+                    <Spinner
+                        android:id="@+id/spinnerBarangay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="8dp"/>
+                </LinearLayout>
+
+                <!-- Detailed Address -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Detailed Address (Street, House No., etc.)"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+
+                <EditText
+                    android:id="@+id/etDetailedAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Enter street, block, lot, etc."
                     android:textColor="#212529"
                     android:textColorHint="#6C757D"
                     android:padding="16dp"
                     android:background="@drawable/modern_edittext_focused"
                     android:fontFamily="@font/poppins_regular"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Map View Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location Map"
+                    android:textSize="14sp"
+                    android:textColor="#495057"
+                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#E0E0E0">
+                    
+                    <WebView
+                        android:id="@+id/webViewMap"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                        
+                </androidx.cardview.widget.CardView>
+
+                <!-- Confirm Address Button -->
+                <Button
+                    android:id="@+id/btnConfirmAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:text="Confirm Address on Map"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/poppins_medium"
+                    app:backgroundTint="#6C757D"
+                    app:cornerRadius="8dp" />
+                
+                <TextView
+                    android:id="@+id/tvAddressStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="* Please click Confirm Address before continuing"
+                    android:textSize="12sp"
+                    android:textColor="#DC3545"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="8dp" />
 
             </LinearLayout>
 
