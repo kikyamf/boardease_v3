@@ -16,6 +16,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.viewpager2.widget.ViewPager2;
+
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
@@ -32,6 +34,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 public class AddingBhFragment extends Fragment {
 
