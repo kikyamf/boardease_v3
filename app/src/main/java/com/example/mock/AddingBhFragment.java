@@ -127,11 +127,9 @@ public class AddingBhFragment extends Fragment {
         spinnerBarangay = view.findViewById(R.id.spinnerBarangay);
         webViewMap = view.findViewById(R.id.webViewMap);
         llMapLoading = view.findViewById(R.id.llMapLoading);
-        webViewMap = view.findViewById(R.id.webViewMap);
-        llMapLoading = view.findViewById(R.id.llMapLoading);
-        Button btnConfirmAddress = view.findViewById(R.id.btnConfirmAddress);
-        btnConfirmAddress.setOnClickListener(v -> checkAndTriggerMapUpdate());
-        // tvAddressStatus removed from logic (or optional if still in XML for other errors)
+        
+        // Port premium WebView setup from Details Activity
+        setupMapWebView();
         
         etBhDescription = view.findViewById(R.id.etDescription);
         etBhRules = view.findViewById(R.id.etRules);
@@ -641,8 +639,8 @@ public class AddingBhFragment extends Fragment {
                 String selected = parent.getItemAtPosition(position).toString();
                 if (!selected.equals("Select Barangay")) {
                     selectedBarangay = selected;
-                    // Auto-update removed, wait for button click
-                    // checkAndTriggerMapUpdate();
+                    // Automatic consolidated trigger
+                    checkAndTriggerMapUpdate();
                 } else {
                      selectedBarangay = "";
                      isAddressConfirmed = false;
@@ -978,49 +976,160 @@ public class AddingBhFragment extends Fragment {
     // ==========================================
     
     private void setupMapWebView() {
-         webViewMap.getSettings().setJavaScriptEnabled(true);
-         webViewMap.getSettings().setBuiltInZoomControls(false);
-         webViewMap.getSettings().setDomStorageEnabled(true);
-         
-         // Listen for console messages from JS
-         webViewMap.setWebChromeClient(new android.webkit.WebChromeClient() {
-             @Override
-             public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
-                 Log.d("MapJS", consoleMessage.message());
-                 if (consoleMessage.message().contains("MAP_LOADED")) {
-                     getActivity().runOnUiThread(() -> {
-                         Log.d("MapDebug", "JS signal received: MAP_LOADED");
-                         hideMapLoader();
-                     });
-                 }
-                 return true;
-             }
-         });
-         
-         // Set WebViewClient
-         webViewMap.setWebViewClient(new WebViewClient() {
-             @Override
-             public void onPageFinished(WebView view, String url) {
-                 super.onPageFinished(view, url);
-                 Log.d("MapDebug", "onPageFinished called for: " + url);
-                 // We DON'T hide loader here anymore, we wait for JS signal or timeout
-                 // But we can ensure WebView is visible (loader covers it)
-                 if (webViewMap.getVisibility() != View.VISIBLE) {
-                      webViewMap.setVisibility(View.VISIBLE);
-                 }
-             }
-             
-             @Override
-             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                 Log.e("MapDebug", "WebView Error: " + description);
-                 // If error, force hide loader so user sees something (maybe empty map or error)
-                 hideMapLoader(); 
-             }
-         });
-         
-         // Initial Empty Map or Instructions
-         String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after selecting address.</body></html>";
-         webViewMap.loadData(html, "text/html", "UTF-8");
+        webViewMap.getSettings().setJavaScriptEnabled(true);
+        webViewMap.getSettings().setBuiltInZoomControls(false);
+        webViewMap.getSettings().setDisplayZoomControls(false);
+        webViewMap.getSettings().setSupportZoom(false);
+        webViewMap.getSettings().setUseWideViewPort(true);
+        webViewMap.getSettings().setLoadWithOverviewMode(true);
+        webViewMap.getSettings().setDomStorageEnabled(true);
+        webViewMap.setBackgroundColor(0xFFF5F5F5);
+
+        // Ensure WebView fits exactly in its container
+        webViewMap.setPadding(0, 0, 0, 0);
+        webViewMap.setClipToOutline(true);
+
+        // Set outline for rounded corners to match CardView
+        float cornerRadius = getResources().getDisplayMetrics().density * 12; // 12dp radius
+        webViewMap.post(() -> {
+            webViewMap.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadius);
+                }
+            });
+            webViewMap.setClipToOutline(true);
+        });
+
+        webViewMap.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                Log.d("MapDebug", "Map page finished loading");
+                hideMapLoader();
+            }
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e("MapDebug", "Error loading map: " + description);
+                hideMapLoader();
+            }
+        });
+
+        // Long-press or double-tap detection to open full-screen map
+        webViewMap.setOnTouchListener(new View.OnTouchListener() {
+            private long lastTapTime = 0;
+            private static final long DOUBLE_TAP_DELAY = 300;
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastTapTime < DOUBLE_TAP_DELAY) {
+                        openFullScreenMap();
+                        lastTapTime = 0;
+                        return true;
+                    }
+                    lastTapTime = currentTime;
+                }
+                return false;
+            }
+        });
+        
+        // Wrap WebView in FrameLayout and add full-screen button (programmatic overlay)
+        webViewMap.post(() -> {
+            android.view.ViewParent parent = webViewMap.getParent();
+            if (parent instanceof android.view.ViewGroup) {
+                android.view.ViewGroup parentGroup = (android.view.ViewGroup) parent;
+                int index = parentGroup.indexOfChild(webViewMap);
+                
+                android.widget.FrameLayout mapContainer = new android.widget.FrameLayout(requireContext());
+                android.view.ViewGroup.LayoutParams originalParams = webViewMap.getLayoutParams();
+                mapContainer.setLayoutParams(originalParams);
+                
+                parentGroup.removeView(webViewMap);
+                android.widget.FrameLayout.LayoutParams webViewParams = new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                );
+                webViewMap.setLayoutParams(webViewParams);
+                mapContainer.addView(webViewMap);
+                
+                // Full Screen Button
+                android.widget.ImageButton fullScreenIconButton = new android.widget.ImageButton(requireContext());
+                fullScreenIconButton.setImageResource(R.drawable.fullscreen);
+                int buttonSize = (int)(getResources().getDisplayMetrics().density * 30);
+                android.widget.FrameLayout.LayoutParams fullScreenButtonParams = new android.widget.FrameLayout.LayoutParams(buttonSize, buttonSize);
+                fullScreenButtonParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+                fullScreenButtonParams.setMargins(8, 8, 8, 8);
+                fullScreenIconButton.setLayoutParams(fullScreenButtonParams);
+                
+                android.graphics.drawable.GradientDrawable roundedBackground = new android.graphics.drawable.GradientDrawable();
+                roundedBackground.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                roundedBackground.setCornerRadius(getResources().getDisplayMetrics().density * 8);
+                roundedBackground.setColor(0xCC000000);
+                fullScreenIconButton.setBackground(roundedBackground);
+                fullScreenIconButton.setColorFilter(0xFFFFFFFF);
+                fullScreenIconButton.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                fullScreenIconButton.setOnClickListener(v -> openFullScreenMap());
+                
+                mapContainer.addView(fullScreenIconButton);
+                parentGroup.addView(mapContainer, index);
+            }
+        });
+
+        String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after selecting address.</body></html>";
+        webViewMap.loadData(html, "text/html", "UTF-8");
+    }
+
+    private void openFullScreenMap() {
+        if (selectedBarangay.isEmpty()) return;
+        
+        String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
+        String bhName = etBhName.getText().toString().trim();
+        if (bhName.isEmpty()) bhName = "Boarding House";
+        
+        try {
+            android.app.Dialog fullScreenDialog = new android.app.Dialog(requireContext());
+            fullScreenDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+            
+            android.view.Window window = fullScreenDialog.getWindow();
+            if (window != null) {
+                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+                window.setBackgroundDrawableResource(android.R.color.black);
+            }
+            
+            WebView fullScreenWebView = new WebView(requireContext());
+            fullScreenWebView.getSettings().setJavaScriptEnabled(true);
+            fullScreenWebView.getSettings().setBuiltInZoomControls(true);
+            fullScreenWebView.getSettings().setDisplayZoomControls(true);
+            fullScreenWebView.setWebViewClient(new WebViewClient());
+            
+            String htmlContent = generateMapboxMapHtml(fullAddress, bhName);
+            fullScreenWebView.loadDataWithBaseURL("https://boardease.calapebohol.com", htmlContent, "text/html", "UTF-8", null);
+            
+            android.widget.FrameLayout container = new android.widget.FrameLayout(requireContext());
+            container.addView(fullScreenWebView);
+            
+            ImageView closeButton = new ImageView(requireContext());
+            closeButton.setImageResource(R.drawable.ic_close);
+            closeButton.setColorFilter(0xFFFFFFFF);
+            android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+            bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            bg.setColor(0xCC000000);
+            closeButton.setBackground(bg);
+            
+            int btnSize = (int)(getResources().getDisplayMetrics().density * 40);
+            android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(btnSize, btnSize);
+            closeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            closeParams.setMargins(16, 16, 16, 16);
+            closeButton.setLayoutParams(closeParams);
+            closeButton.setPadding(10, 10, 10, 10);
+            closeButton.setOnClickListener(v -> fullScreenDialog.dismiss());
+            
+            container.addView(closeButton);
+            fullScreenDialog.setContentView(container);
+            fullScreenDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void hideMapLoader() {
@@ -1035,26 +1144,18 @@ public class AddingBhFragment extends Fragment {
     // confirmAddress removed
     
     private void loadMap(String address) {
-        Log.d("MapDebug", "Loading map for address: " + address);
-        if (tvAddressStatus != null) {
-            tvAddressStatus.setText("Map loaded.");
-            tvAddressStatus.setTextColor(Color.parseColor("#198754"));
-        }
+        String bhName = etBhName.getText().toString().trim();
+        if (bhName.isEmpty()) bhName = "Boarding House";
         
-        String htmlContent = generateMapboxMapHtml(address);
+        String htmlContent = generateMapboxMapHtml(address, bhName);
         webViewMap.loadDataWithBaseURL("https://boardease.calapebohol.com", htmlContent, "text/html", "UTF-8", null);
-        
-        // Safety timeout: failing to load shouldn't block the UI forever
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            Log.d("MapDebug", "Safety timeout reached, force hiding loader");
-            hideMapLoader();
-        }, 5000); // 5s timeout
         
         isAddressConfirmed = true;
     }
     
-    private String generateMapboxMapHtml(String address) {
+    private String generateMapboxMapHtml(String address, String locationName) {
         String escapedAddress = address.replace("'", "\\'").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
+        String escapedName = locationName.replace("'", "\\'").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
         
         return "<!DOCTYPE html>" +
                "<html>" +
@@ -1063,8 +1164,12 @@ public class AddingBhFragment extends Fragment {
                    "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
                    "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
                "<style>" +
-               "body { margin: 0; padding: 0; font-family: sans-serif; }" +
+               "* { margin: 0; padding: 0; box-sizing: border-box; } " +
+               "body { margin: 0; padding: 0; font-family: sans-serif; width: 100%; height: 100%; overflow: hidden; }" +
                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }" +
+               ".mapboxgl-popup-content { padding: 12px; font-family: Arial, sans-serif; } " +
+               ".mapboxgl-popup-content b { font-size: 14px; color: #333; } " +
+               ".mapboxgl-popup-content p { margin: 4px 0 0 0; font-size: 12px; color: #666; } " +
                ".mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { display: none !important; } " +
                "</style>" +
                "</head>" +
@@ -1075,21 +1180,26 @@ public class AddingBhFragment extends Fragment {
                    "var map = new mapboxgl.Map({ " +
                    "  container: 'map', " +
                    "  style: 'mapbox://styles/mapbox/streets-v12', " +
-                   "  center: [120.9842, 14.5995], " + // Default
+                   "  center: [120.9842, 14.5995], " + 
                    "  zoom: 13, " +
                    "  attributionControl: false " +
                    "}); " +
                    "var address = '" + escapedAddress + "'; " +
+                   "var locationName = '" + escapedName + "'; " +
                    "map.on('load', function() { " +
                    "  fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=' + mapboxgl.accessToken + '&limit=1') " +
                    "    .then(response => response.json()) " +
                    "    .then(data => { " +
                    "      if (data && data.features && data.features.length > 0) { " +
                    "        var coordinates = data.features[0].center; " +
-                   "        map.flyTo({ center: coordinates, zoom: 15 }); " +
-                   "        new mapboxgl.Marker({ color: '#FF6B6B' }) " +
+                   "        map.flyTo({ center: coordinates, zoom: 15, duration: 1000 }); " +
+                   "        var marker = new mapboxgl.Marker({ color: '#FF6B6B' }) " +
                    "          .setLngLat(coordinates) " +
                    "          .addTo(map); " +
+                   "        var popup = new mapboxgl.Popup({ offset: 25 }) " +
+                   "          .setHTML('<b>' + locationName + '</b><p>' + address + '</p>'); " +
+                   "        marker.setPopup(popup); " +
+                   "        popup.addTo(map); " +
                    "        console.log('MAP_LOADED');" + 
                    "      } " +
                    "    }) " +

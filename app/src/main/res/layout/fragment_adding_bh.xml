@@ -290,18 +290,7 @@
                         android:padding="8dp"/>
                 </LinearLayout>
 
-                <!-- Confirm Address Button -->
-                <Button
-                    android:id="@+id/btnConfirmAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:text="Confirm Address in Map"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:fontFamily="@font/poppins_medium"
-                    app:backgroundTint="#6C757D"
-                    app:cornerRadius="8dp"
-                    android:layout_marginBottom="16dp"/>
+                </LinearLayout>
 
                 <!-- Map View Section -->
                 <TextView
