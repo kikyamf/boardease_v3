@@ -1023,6 +1023,7 @@ public class AddingBhFragment extends Fragment {
                 if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastTapTime < DOUBLE_TAP_DELAY) {
+                        Log.d("MapDebug", "Double-tap detected on map");
                         openFullScreenMap();
                         lastTapTime = 0;
                         return true;
@@ -1053,12 +1054,15 @@ public class AddingBhFragment extends Fragment {
                 mapContainer.addView(webViewMap);
                 
                 // Full Screen Button
-                android.widget.ImageButton fullScreenIconButton = new android.widget.ImageButton(requireContext());
+                android.app.Activity activity = getActivity();
+                if (activity == null) return;
+                
+                android.widget.ImageButton fullScreenIconButton = new android.widget.ImageButton(activity);
                 fullScreenIconButton.setImageResource(R.drawable.fullscreen);
-                int buttonSize = (int)(getResources().getDisplayMetrics().density * 30);
+                int buttonSize = (int)(getResources().getDisplayMetrics().density * 34); // Slightly larger
                 android.widget.FrameLayout.LayoutParams fullScreenButtonParams = new android.widget.FrameLayout.LayoutParams(buttonSize, buttonSize);
                 fullScreenButtonParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
-                fullScreenButtonParams.setMargins(8, 8, 8, 8);
+                fullScreenButtonParams.setMargins(12, 12, 12, 12); // Safer margins
                 fullScreenIconButton.setLayoutParams(fullScreenButtonParams);
                 
                 android.graphics.drawable.GradientDrawable roundedBackground = new android.graphics.drawable.GradientDrawable();
@@ -1068,7 +1072,13 @@ public class AddingBhFragment extends Fragment {
                 fullScreenIconButton.setBackground(roundedBackground);
                 fullScreenIconButton.setColorFilter(0xFFFFFFFF);
                 fullScreenIconButton.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-                fullScreenIconButton.setOnClickListener(v -> openFullScreenMap());
+                fullScreenIconButton.setPadding(8, 8, 8, 8);
+                fullScreenIconButton.setElevation(15.0f); // Ensure it's on top and clickable
+                
+                fullScreenIconButton.setOnClickListener(v -> {
+                    Log.d("MapDebug", "Full screen button clicked programmatically");
+                    openFullScreenMap();
+                });
                 
                 mapContainer.addView(fullScreenIconButton);
                 parentGroup.addView(mapContainer, index);
@@ -1080,35 +1090,80 @@ public class AddingBhFragment extends Fragment {
     }
 
     private void openFullScreenMap() {
-        if (selectedBarangay.isEmpty()) return;
+        if (selectedBarangay == null || selectedBarangay.isEmpty()) return;
         
         String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
-        String bhName = etBhName.getText().toString().trim();
-        if (bhName.isEmpty()) bhName = "Boarding House";
+        String bhName = "Boarding House";
+        if (etBhName != null && etBhName.getText() != null) {
+            String inputName = etBhName.getText().toString().trim();
+            if (!inputName.isEmpty()) bhName = inputName;
+        }
         
         try {
-            android.app.Dialog fullScreenDialog = new android.app.Dialog(requireContext());
+            Log.d("MapDebug", "Opening robust full screen map for: " + fullAddress);
+            
+            // Use Activity context for dialog to ensure window attributes work correctly
+            android.app.Activity activity = getActivity();
+            if (activity == null) return;
+            
+            android.app.Dialog fullScreenDialog = new android.app.Dialog(activity);
             fullScreenDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
             
             android.view.Window window = fullScreenDialog.getWindow();
             if (window != null) {
-                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
-                window.setBackgroundDrawableResource(android.R.color.black);
+                // Ported from Details Activity: robust full screen setup
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                window.setFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR,
+                    android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                );
+                
+                // Set immersive fullscreen mode
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+                    window.getDecorView().setSystemUiVisibility(flags);
+                }
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.setStatusBarColor(0xFF000000);
+                    window.setNavigationBarColor(0xFF000000);
+                }
             }
             
-            WebView fullScreenWebView = new WebView(requireContext());
+            // Full Screen WebView
+            WebView fullScreenWebView = new WebView(activity);
             fullScreenWebView.getSettings().setJavaScriptEnabled(true);
             fullScreenWebView.getSettings().setBuiltInZoomControls(true);
             fullScreenWebView.getSettings().setDisplayZoomControls(true);
+            fullScreenWebView.getSettings().setDomStorageEnabled(true);
             fullScreenWebView.setWebViewClient(new WebViewClient());
             
             String htmlContent = generateMapboxMapHtml(fullAddress, bhName);
             fullScreenWebView.loadDataWithBaseURL("https://boardease.calapebohol.com", htmlContent, "text/html", "UTF-8", null);
             
-            android.widget.FrameLayout container = new android.widget.FrameLayout(requireContext());
+            android.widget.FrameLayout container = new android.widget.FrameLayout(activity);
+            android.view.ViewGroup.LayoutParams containerParams = new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+            container.setLayoutParams(containerParams);
+            container.setBackgroundColor(0xFF000000);
+            
+            fullScreenWebView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT, android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
             container.addView(fullScreenWebView);
             
-            ImageView closeButton = new ImageView(requireContext());
+            // Close Button
+            ImageView closeButton = new ImageView(activity);
             closeButton.setImageResource(R.drawable.ic_close);
             closeButton.setColorFilter(0xFFFFFFFF);
             android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
@@ -1126,9 +1181,17 @@ public class AddingBhFragment extends Fragment {
             
             container.addView(closeButton);
             fullScreenDialog.setContentView(container);
+            fullScreenDialog.setCancelable(true);
             fullScreenDialog.show();
+            
+            // Re-apply layout after show to ensure full coverage
+            if (window != null) {
+                android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                window.setLayout(metrics.widthPixels, metrics.heightPixels);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("MapDebug", "Error opening full screen map: " + e.getMessage(), e);
         }
     }
 
