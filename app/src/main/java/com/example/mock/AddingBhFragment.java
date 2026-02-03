@@ -982,19 +982,39 @@ public class AddingBhFragment extends Fragment {
          webViewMap.getSettings().setBuiltInZoomControls(false);
          webViewMap.getSettings().setDomStorageEnabled(true);
          
+         // Listen for console messages from JS
+         webViewMap.setWebChromeClient(new android.webkit.WebChromeClient() {
+             @Override
+             public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                 Log.d("MapJS", consoleMessage.message());
+                 if (consoleMessage.message().contains("MAP_LOADED")) {
+                     getActivity().runOnUiThread(() -> {
+                         Log.d("MapDebug", "JS signal received: MAP_LOADED");
+                         hideMapLoader();
+                     });
+                 }
+                 return true;
+             }
+         });
+         
          // Set WebViewClient
          webViewMap.setWebViewClient(new WebViewClient() {
              @Override
              public void onPageFinished(WebView view, String url) {
                  super.onPageFinished(view, url);
                  Log.d("MapDebug", "onPageFinished called for: " + url);
-                 hideMapLoader();
+                 // We DON'T hide loader here anymore, we wait for JS signal or timeout
+                 // But we can ensure WebView is visible (loader covers it)
+                 if (webViewMap.getVisibility() != View.VISIBLE) {
+                      webViewMap.setVisibility(View.VISIBLE);
+                 }
              }
              
              @Override
              public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                  Log.e("MapDebug", "WebView Error: " + description);
-                 hideMapLoader(); // Force hide on error
+                 // If error, force hide loader so user sees something (maybe empty map or error)
+                 hideMapLoader(); 
              }
          });
          
@@ -1046,13 +1066,17 @@ public class AddingBhFragment extends Fragment {
                    "<script src=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js\"></script>" +
                    "<link href=\"https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css\" rel=\"stylesheet\" />" +
                "<style>" +
-               "body { margin: 0; padding: 0; }" +
+               "body { margin: 0; padding: 0; font-family: sans-serif; }" +
                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }" +
+               "#loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f0f0f0; display: flex; justify-content: center; align-items: center; z-index: 9999; }" +
+               ".loader-text { color: #666; font-size: 14px; }" +
                "</style>" +
                "</head>" +
                "<body>" +
+                   "<div id=\"loading-overlay\"><span class=\"loader-text\">Rendering Map...</span></div>" +
                    "<div id=\"map\"></div>" +
                    "<script>" +
+                   "console.log('JS: Script started');" +
                    "mapboxgl.accessToken = '" + MAPBOX_ACCESS_TOKEN + "'; " +
                    "var map = new mapboxgl.Map({ " +
                    "  container: 'map', " +
@@ -1062,6 +1086,7 @@ public class AddingBhFragment extends Fragment {
                    "}); " +
                    "var address = '" + escapedAddress + "'; " +
                    "map.on('load', function() { " +
+                   "  console.log('JS: Map load event fired');" +
                    "  fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=' + mapboxgl.accessToken + '&limit=1') " +
                    "    .then(response => response.json()) " +
                    "    .then(data => { " +
@@ -1071,10 +1096,15 @@ public class AddingBhFragment extends Fragment {
                    "        new mapboxgl.Marker({ color: '#FF6B6B' }) " +
                    "          .setLngLat(coordinates) " +
                    "          .addTo(map); " +
-                   "      } " +
+                   "        console.log('MAP_LOADED');" + // Signal success
+                   "        document.getElementById('loading-overlay').style.display = 'none';" + // Hide internal loader
+                   "      } else {" +
+                   "        console.log('JS: No results found');" +
+                   "      }" +
                    "    }) " +
-                   "    .catch(error => console.error(error)); " +
+                   "    .catch(error => console.error('JS Error:', error)); " +
                    "}); " +
+                   "map.on('error', function(e) { console.error('JS Map Error:', e); });" +
                    "</script>" +
                "</body>" +
                "</html>";
