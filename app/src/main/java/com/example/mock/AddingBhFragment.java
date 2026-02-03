@@ -451,11 +451,6 @@ public class AddingBhFragment extends Fragment {
         } else if (errorMessage.contains("Select") || errorMessage.contains("Province") || errorMessage.contains("Municipality") || errorMessage.contains("Barangay")) {
             // Can't really focus spinner, maybe scroll to top
             spinnerProvince.requestFocus();
-        } else if (errorMessage.contains("Select") || errorMessage.contains("Province") || errorMessage.contains("Municipality") || errorMessage.contains("Barangay")) {
-            // Can't really focus spinner, maybe scroll to top
-            spinnerProvince.requestFocus();
-        } else if (errorMessage.contains("Confirm Address")) {
-            btnConfirmAddress.requestFocus();
         } else if (errorMessage.contains("Bathrooms")) {
             etBathrooms.requestFocus();
         } else if (errorMessage.contains("Area")) {
