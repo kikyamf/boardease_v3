@@ -665,22 +665,18 @@ public class AddingBhFragment extends Fragment {
     }
     
     private void startMapLoadingAnimation() {
-        // Show loader, hide map
-        if (llMapLoading != null) llMapLoading.setVisibility(View.VISIBLE);
-        if (webViewMap != null) webViewMap.setVisibility(View.INVISIBLE);
+        // Show map immediately, no artificial delay
+        if (llMapLoading != null) llMapLoading.setVisibility(View.GONE);
+        if (webViewMap != null) webViewMap.setVisibility(View.VISIBLE);
         
-        // 2 second delay
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            // Construct address
-            String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
-            
-            // Load map
-            loadMap(fullAddress);
-            
-            // Update status
-            isAddressConfirmed = true;
-            
-        }, 2000); // 2000ms delay
+        // Construct address
+        String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
+        
+        // Load map
+        loadMap(fullAddress);
+        
+        // Update status
+        isAddressConfirmed = true;
     }
 
     private void invalidateAddressConfirmation() {
@@ -1028,14 +1024,11 @@ public class AddingBhFragment extends Fragment {
     }
 
     private void hideMapLoader() {
-        if (llMapLoading != null && llMapLoading.getVisibility() == View.VISIBLE) {
-             Log.d("MapDebug", "Hiding map loader");
+        if (llMapLoading != null) {
              llMapLoading.setVisibility(View.GONE);
-             webViewMap.setAlpha(0f);
-             webViewMap.setVisibility(View.VISIBLE);
-             webViewMap.animate().alpha(1f).setDuration(1200).start();
-        } else {
-             webViewMap.setVisibility(View.VISIBLE);
+        }
+        if (webViewMap != null) {
+            webViewMap.setVisibility(View.VISIBLE);
         }
     }
     
@@ -1072,25 +1065,22 @@ public class AddingBhFragment extends Fragment {
                "<style>" +
                "body { margin: 0; padding: 0; font-family: sans-serif; }" +
                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }" +
-               "#loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #f0f0f0; display: flex; justify-content: center; align-items: center; z-index: 9999; }" +
-               ".loader-text { color: #666; font-size: 14px; }" +
+               ".mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { display: none !important; } " +
                "</style>" +
                "</head>" +
                "<body>" +
-                   "<div id=\"loading-overlay\"><span class=\"loader-text\">Rendering Map...</span></div>" +
                    "<div id=\"map\"></div>" +
                    "<script>" +
-                   "console.log('JS: Script started');" +
                    "mapboxgl.accessToken = '" + MAPBOX_ACCESS_TOKEN + "'; " +
                    "var map = new mapboxgl.Map({ " +
                    "  container: 'map', " +
                    "  style: 'mapbox://styles/mapbox/streets-v12', " +
                    "  center: [120.9842, 14.5995], " + // Default
-                   "  zoom: 13 " +
+                   "  zoom: 13, " +
+                   "  attributionControl: false " +
                    "}); " +
                    "var address = '" + escapedAddress + "'; " +
                    "map.on('load', function() { " +
-                   "  console.log('JS: Map load event fired');" +
                    "  fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(address) + '.json?access_token=' + mapboxgl.accessToken + '&limit=1') " +
                    "    .then(response => response.json()) " +
                    "    .then(data => { " +
@@ -1100,15 +1090,11 @@ public class AddingBhFragment extends Fragment {
                    "        new mapboxgl.Marker({ color: '#FF6B6B' }) " +
                    "          .setLngLat(coordinates) " +
                    "          .addTo(map); " +
-                   "        console.log('MAP_LOADED');" + // Signal success
-                   "        document.getElementById('loading-overlay').style.display = 'none';" + // Hide internal loader
-                   "      } else {" +
-                   "        console.log('JS: No results found');" +
-                   "      }" +
+                   "        console.log('MAP_LOADED');" + 
+                   "      } " +
                    "    }) " +
                    "    .catch(error => console.error('JS Error:', error)); " +
                    "}); " +
-                   "map.on('error', function(e) { console.error('JS Map Error:', e); });" +
                    "</script>" +
                "</body>" +
                "</html>";
