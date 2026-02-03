@@ -117,6 +117,9 @@ public class AddingBhFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_adding_bh, container, false);
 
+        Log.d("AddBhDebug", "onCreateView called");
+        
+        // Initialize UI components
         etBhName = view.findViewById(R.id.etTitle);
         // Address Fields
         spinnerProvince = view.findViewById(R.id.spinnerProvince);
@@ -133,6 +136,9 @@ public class AddingBhFragment extends Fragment {
         etBuildYear = view.findViewById(R.id.etBuildYear);
         viewPagerImages = view.findViewById(R.id.viewPagerImages);
         ivPlaceholder = view.findViewById(R.id.ivPlaceholder);
+
+        // Initialize Address Picker
+        initializeAddressPicker();
 
         // Setup adapter
         imageAdapter = new ImageAdapter(getActivity(), imageUris, position -> {
