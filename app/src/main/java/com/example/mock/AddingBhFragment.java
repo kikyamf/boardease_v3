@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.view.MotionEvent;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -586,6 +587,27 @@ public class AddingBhFragment extends Fragment {
         };
         barangayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerBarangay.setAdapter(barangayAdapter);
+
+        // Validation: Prompt for Property Name when spinners are clicked if name is empty
+        View.OnTouchListener propertyNameValidator = (v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (etBhName != null) {
+                    String name = etBhName.getText().toString().trim();
+                    if (name.isEmpty()) {
+                        etBhName.setError("Please input the property name first");
+                        etBhName.requestFocus();
+                        // Optional: Show a toast for better visibility
+                        Toast.makeText(requireContext(), "Input property name first", Toast.LENGTH_SHORT).show();
+                        return true; // Consume click
+                    }
+                }
+            }
+            return false;
+        };
+
+        spinnerProvince.setOnTouchListener(propertyNameValidator);
+        spinnerMunicipality.setOnTouchListener(propertyNameValidator);
+        spinnerBarangay.setOnTouchListener(propertyNameValidator);
 
         // Load Provinces
         loadProvinces();
