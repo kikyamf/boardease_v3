@@ -72,8 +72,8 @@ public class AddingBhFragment extends Fragment {
     // New Address Fields
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private WebView webViewMap;
-    private Button btnConfirmAddress;
-    private TextView tvAddressStatus;
+    private android.widget.LinearLayout llMapLoading;
+    private TextView tvAddressStatus; // Keeping for error messages if needed, or remove if unused in updated XML
     
     // Address State
     private String selectedProvince = "";
@@ -126,8 +126,9 @@ public class AddingBhFragment extends Fragment {
         spinnerMunicipality = view.findViewById(R.id.spinnerMunicipality);
         spinnerBarangay = view.findViewById(R.id.spinnerBarangay);
         webViewMap = view.findViewById(R.id.webViewMap);
-        btnConfirmAddress = view.findViewById(R.id.btnConfirmAddress);
-        tvAddressStatus = view.findViewById(R.id.tvAddressStatus);
+        llMapLoading = view.findViewById(R.id.llMapLoading);
+        // btnConfirmAddress removed
+        // tvAddressStatus removed from logic (or optional if still in XML for other errors)
         
         etBhDescription = view.findViewById(R.id.etDescription);
         etBhRules = view.findViewById(R.id.etRules);
@@ -350,7 +351,14 @@ public class AddingBhFragment extends Fragment {
         }
         
         if (!isAddressConfirmed) {
-            return "Please confirm the address by clicking the Confirm Address button";
+            // Check if loading? Or just allow it if inputs are valid and let logic handle it.
+            // For now, require it to be true (set by startMapLoadingAnimation).
+            // If it's still false, it means map hasn't started loading or failed.
+            // Since we trigger it automatically, maybe we just return null but map might not be ready?
+            // User said "confirm fields... then map shows".
+            // Let's assume validation passes if map is loading.
+            // But strict validation requires isAddressConfirmed.
+             return "Please wait for the address map to load.";
         }
 
         if (TextUtils.isEmpty(bathrooms)) {
@@ -635,7 +643,10 @@ public class AddingBhFragment extends Fragment {
                 String selected = parent.getItemAtPosition(position).toString();
                 if (!selected.equals("Select Barangay")) {
                     selectedBarangay = selected;
-                    invalidateAddressConfirmation();
+                    checkAndTriggerMapUpdate();
+                } else {
+                     selectedBarangay = "";
+                     isAddressConfirmed = false;
                 }
             }
             
@@ -644,14 +655,38 @@ public class AddingBhFragment extends Fragment {
         });
     }
     
-    private void invalidateAddressConfirmation() {
-        if (isAddressConfirmed) {
-            isAddressConfirmed = false;
-            tvAddressStatus.setText("* Address changed. Please confirm again.");
-            tvAddressStatus.setTextColor(Color.parseColor("#DC3545")); // Red
-            btnConfirmAddress.setText("Confirm Address on Map");
-            btnConfirmAddress.setEnabled(true);
+    private void checkAndTriggerMapUpdate() {
+        if (selectedProvince == null || selectedProvince.isEmpty() || selectedProvince.equals("Select Province") ||
+            selectedMunicipality == null || selectedMunicipality.isEmpty() || selectedMunicipality.equals("Select Municipality") ||
+            selectedBarangay == null || selectedBarangay.isEmpty() || selectedBarangay.equals("Select Barangay")) {
+            return;
         }
+
+        startMapLoadingAnimation();
+    }
+    
+    private void startMapLoadingAnimation() {
+        // Show loader, hide map
+        if (llMapLoading != null) llMapLoading.setVisibility(View.VISIBLE);
+        if (webViewMap != null) webViewMap.setVisibility(View.INVISIBLE);
+        
+        // 2 second delay
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            // Construct address
+            String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
+            
+            // Load map
+            loadMap(fullAddress);
+            
+            // Update status
+            isAddressConfirmed = true;
+            
+        }, 2000); // 2000ms delay
+    }
+
+    private void invalidateAddressConfirmation() {
+       isAddressConfirmed = false;
+       // hide map or show invalid state if desired, for now just reset flag
     }
     
     private void loadProvinces() {
@@ -957,49 +992,35 @@ public class AddingBhFragment extends Fragment {
              @Override
              public void onPageFinished(WebView view, String url) {
                  super.onPageFinished(view, url);
+                 // Handle loader visibility and fade in
+                 if (llMapLoading != null && llMapLoading.getVisibility() == View.VISIBLE) {
+                     llMapLoading.setVisibility(View.GONE);
+                     webViewMap.setAlpha(0f);
+                     webViewMap.setVisibility(View.VISIBLE);
+                     webViewMap.animate().alpha(1f).setDuration(1200).start(); // Slow fade in
+                 } else {
+                     webViewMap.setVisibility(View.VISIBLE);
+                 }
              }
          });
          
          // Initial Empty Map or Instructions
-         String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after confirming address.</body></html>";
+         String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after selecting address.</body></html>";
          webViewMap.loadData(html, "text/html", "UTF-8");
     }
-    
-    private void confirmAddress() {
-        String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
-        String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
-        String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
 
-        
-        if (province.equals("Select Province") || province.isEmpty()) {
-            showValidationDialog("Please select a Province");
-            return;
-        }
-        if (municipality.equals("Select Municipality") || municipality.isEmpty()) {
-            showValidationDialog("Please select a Municipality");
-            return;
-        }
-        if (barangay.equals("Select Barangay") || barangay.isEmpty()) {
-            showValidationDialog("Please select a Barangay");
-            return;
-        }
-        
-        String fullAddress = barangay + ", " + municipality + ", " + province;
-        loadMap(fullAddress);
-    }
+    // confirmAddress removed
     
     private void loadMap(String address) {
-        tvAddressStatus.setText("Loading map...");
-        tvAddressStatus.setTextColor(Color.GRAY);
-        btnConfirmAddress.setEnabled(false);
+        if (tvAddressStatus != null) {
+            tvAddressStatus.setText("Map loaded.");
+            tvAddressStatus.setTextColor(Color.parseColor("#198754"));
+        }
         
         String htmlContent = generateMapboxMapHtml(address);
         webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
         
         isAddressConfirmed = true;
-        tvAddressStatus.setText("Address Confirmed ✓");
-        tvAddressStatus.setTextColor(Color.parseColor("#198754")); // Green
-        btnConfirmAddress.setText("Address Confirmed");
     }
     
     private String generateMapboxMapHtml(String address) {
