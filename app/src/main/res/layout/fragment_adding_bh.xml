@@ -290,8 +290,6 @@
                         android:padding="8dp"/>
                 </LinearLayout>
 
-                </LinearLayout>
-
                 <!-- Map View Section -->
                 <TextView
                     android:layout_width="wrap_content"
