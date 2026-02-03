@@ -987,15 +987,14 @@ public class AddingBhFragment extends Fragment {
              @Override
              public void onPageFinished(WebView view, String url) {
                  super.onPageFinished(view, url);
-                 // Handle loader visibility and fade in
-                 if (llMapLoading != null && llMapLoading.getVisibility() == View.VISIBLE) {
-                     llMapLoading.setVisibility(View.GONE);
-                     webViewMap.setAlpha(0f);
-                     webViewMap.setVisibility(View.VISIBLE);
-                     webViewMap.animate().alpha(1f).setDuration(1200).start(); // Slow fade in
-                 } else {
-                     webViewMap.setVisibility(View.VISIBLE);
-                 }
+                 Log.d("MapDebug", "onPageFinished called for: " + url);
+                 hideMapLoader();
+             }
+             
+             @Override
+             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                 Log.e("MapDebug", "WebView Error: " + description);
+                 hideMapLoader(); // Force hide on error
              }
          });
          
@@ -1004,16 +1003,35 @@ public class AddingBhFragment extends Fragment {
          webViewMap.loadData(html, "text/html", "UTF-8");
     }
 
+    private void hideMapLoader() {
+        if (llMapLoading != null && llMapLoading.getVisibility() == View.VISIBLE) {
+             Log.d("MapDebug", "Hiding map loader");
+             llMapLoading.setVisibility(View.GONE);
+             webViewMap.setAlpha(0f);
+             webViewMap.setVisibility(View.VISIBLE);
+             webViewMap.animate().alpha(1f).setDuration(1200).start();
+        } else {
+             webViewMap.setVisibility(View.VISIBLE);
+        }
+    }
+    
     // confirmAddress removed
     
     private void loadMap(String address) {
+        Log.d("MapDebug", "Loading map for address: " + address);
         if (tvAddressStatus != null) {
             tvAddressStatus.setText("Map loaded.");
             tvAddressStatus.setTextColor(Color.parseColor("#198754"));
         }
         
         String htmlContent = generateMapboxMapHtml(address);
-        webViewMap.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+        webViewMap.loadDataWithBaseURL("https://boardease.calapebohol.com", htmlContent, "text/html", "UTF-8", null);
+        
+        // Safety timeout: failing to load shouldn't block the UI forever
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            Log.d("MapDebug", "Safety timeout reached, force hiding loader");
+            hideMapLoader();
+        }, 5000); // 5s timeout
         
         isAddressConfirmed = true;
     }
