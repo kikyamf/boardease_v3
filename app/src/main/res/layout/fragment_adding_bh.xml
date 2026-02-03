@@ -290,6 +290,36 @@
                         android:padding="8dp"/>
                 </LinearLayout>
 
+                <!-- Additional Address / Landmark -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Additional Detailed Address/Landmark"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="4dp" />
+                    
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/modern_edittext_focused"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+                    
+                    <EditText
+                        android:id="@+id/etLandmark"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"
+                        android:hint="e.g. Near Market, Street Name"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:textColor="#212529"
+                        android:fontFamily="@font/poppins_regular"
+                        android:inputType="textPostalAddress" />
+                </LinearLayout>
+
                 <!-- Map View Section -->
                 <TextView
                     android:layout_width="wrap_content"

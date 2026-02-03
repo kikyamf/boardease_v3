@@ -59,6 +59,7 @@ public class AddingBhFragment extends Fragment {
     private static String savedBhBathrooms = "";
     private static String savedBhArea = "";
     private static String savedBhBuildYear = "";
+    private static String savedLandmark = "";
     
     // Address static variables
     private static String savedProvince = "";
@@ -70,7 +71,7 @@ public class AddingBhFragment extends Fragment {
 
     private int userId = -1;
 
-    private EditText etBhName, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    private EditText etBhName, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear, etLandmark;
     // New Address Fields
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private WebView webViewMap;
@@ -138,11 +139,23 @@ public class AddingBhFragment extends Fragment {
         etBathrooms = view.findViewById(R.id.etBathrooms);
         etArea = view.findViewById(R.id.etArea);
         etBuildYear = view.findViewById(R.id.etBuildYear);
+        etLandmark = view.findViewById(R.id.etLandmark);
         viewPagerImages = view.findViewById(R.id.viewPagerImages);
         ivPlaceholder = view.findViewById(R.id.ivPlaceholder);
 
         // Initialize Address Picker
         initializeAddressPicker();
+
+        // Reactive map update when landmark is typed
+        if (etLandmark != null) {
+            etLandmark.addTextChangedListener(new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override public void afterTextChanged(android.text.Editable s) {
+                    checkAndTriggerMapUpdate();
+                }
+            });
+        }
 
         // Setup adapter
         imageAdapter = new ImageAdapter(getActivity(), imageUris, position -> {
@@ -195,6 +208,7 @@ public class AddingBhFragment extends Fragment {
         if (etBathrooms != null) etBathrooms.setText(savedBhBathrooms);
         if (etArea != null) etArea.setText(savedBhArea);
         if (etBuildYear != null) etBuildYear.setText(savedBhBuildYear);
+        if (etLandmark != null) etLandmark.setText(savedLandmark);
         
         //Address confirmation status logic restoration already in onCreateView
         
@@ -292,12 +306,13 @@ public class AddingBhFragment extends Fragment {
         String name = etBhName.getText().toString().trim();
         
 
-        // Construct full address
+        // Construct full address: Landmark, Barangay, Municipality, Province
+        String landmark = etLandmark != null ? etLandmark.getText().toString().trim() : "";
         String province = spinnerProvince.getSelectedItem() != null ? spinnerProvince.getSelectedItem().toString() : "";
         String municipality = spinnerMunicipality.getSelectedItem() != null ? spinnerMunicipality.getSelectedItem().toString() : "";
         String barangay = spinnerBarangay.getSelectedItem() != null ? spinnerBarangay.getSelectedItem().toString() : "";
         
-        String fullAddress = barangay + ", " + municipality + ", " + province;
+        String fullAddress = (landmark.isEmpty() ? "" : landmark + ", ") + barangay + ", " + municipality + ", " + province;
         
         String bathrooms = etBathrooms.getText().toString().trim();
 
@@ -464,6 +479,8 @@ public class AddingBhFragment extends Fragment {
             etBhDescription.requestFocus();
         } else if (errorMessage.contains("Rules")) {
             etBhRules.requestFocus();
+        } else if (errorMessage.contains("Landmark")) {
+            etLandmark.requestFocus();
         } else if (errorMessage.contains("image")) {
             // Focus on image placeholder
             ivPlaceholder.requestFocus();
@@ -485,6 +502,7 @@ public class AddingBhFragment extends Fragment {
         savedBhBathrooms = etBathrooms.getText().toString().trim();
         savedBhArea = etArea.getText().toString().trim();
         savedBhBuildYear = etBuildYear.getText().toString().trim();
+        savedLandmark = etLandmark.getText().toString().trim();
         
         // Save images
         savedImageUris.clear();
@@ -505,6 +523,7 @@ public class AddingBhFragment extends Fragment {
         savedBhBathrooms = "";
         savedBhArea = "";
         savedBhBuildYear = "";
+        savedLandmark = "";
         savedImageUris.clear();
     }
 
@@ -596,8 +615,6 @@ public class AddingBhFragment extends Fragment {
                     if (name.isEmpty()) {
                         etBhName.setError("Please input the property name first");
                         etBhName.requestFocus();
-                        // Optional: Show a toast for better visibility
-                        Toast.makeText(requireContext(), "Input property name first", Toast.LENGTH_SHORT).show();
                         return true; // Consume click
                     }
                 }
@@ -690,8 +707,13 @@ public class AddingBhFragment extends Fragment {
         if (llMapLoading != null) llMapLoading.setVisibility(View.GONE);
         if (webViewMap != null) webViewMap.setVisibility(View.VISIBLE);
         
-        // Construct address
-        String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
+        // Construct address: Landmark, Barangay, Municipality, Province
+        String landmark = "";
+        if (etLandmark != null && etLandmark.getText() != null) {
+            landmark = etLandmark.getText().toString().trim();
+        }
+        
+        String fullAddress = (landmark.isEmpty() ? "" : landmark + ", ") + selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
         
         // Load map
         loadMap(fullAddress);
@@ -1115,7 +1137,12 @@ public class AddingBhFragment extends Fragment {
     private void openFullScreenMap() {
         if (selectedBarangay == null || selectedBarangay.isEmpty()) return;
         
-        String fullAddress = selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
+        String landmark = "";
+        if (etLandmark != null && etLandmark.getText() != null) {
+            landmark = etLandmark.getText().toString().trim();
+        }
+        
+        String fullAddress = (landmark.isEmpty() ? "" : landmark + ", ") + selectedBarangay + ", " + selectedMunicipality + ", " + selectedProvince;
         String bhName = "Boarding House";
         if (etBhName != null && etBhName.getText() != null) {
             String inputName = etBhName.getText().toString().trim();
