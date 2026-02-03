@@ -127,7 +127,10 @@ public class AddingBhFragment extends Fragment {
         spinnerBarangay = view.findViewById(R.id.spinnerBarangay);
         webViewMap = view.findViewById(R.id.webViewMap);
         llMapLoading = view.findViewById(R.id.llMapLoading);
-        // btnConfirmAddress removed
+        webViewMap = view.findViewById(R.id.webViewMap);
+        llMapLoading = view.findViewById(R.id.llMapLoading);
+        Button btnConfirmAddress = view.findViewById(R.id.btnConfirmAddress);
+        btnConfirmAddress.setOnClickListener(v -> checkAndTriggerMapUpdate());
         // tvAddressStatus removed from logic (or optional if still in XML for other errors)
         
         etBhDescription = view.findViewById(R.id.etDescription);
@@ -638,7 +641,8 @@ public class AddingBhFragment extends Fragment {
                 String selected = parent.getItemAtPosition(position).toString();
                 if (!selected.equals("Select Barangay")) {
                     selectedBarangay = selected;
-                    checkAndTriggerMapUpdate();
+                    // Auto-update removed, wait for button click
+                    // checkAndTriggerMapUpdate();
                 } else {
                      selectedBarangay = "";
                      isAddressConfirmed = false;
