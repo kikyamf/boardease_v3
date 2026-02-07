@@ -48,6 +48,14 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     private boolean hasActiveBooking = false;
     private String currentBookingStatus = ""; // Store booking status (Pending or Confirmed)
     
+    // Active booking details
+    private String activeBhName = "";
+    private String activeStartDateLabel = "";
+    private String activeEndDateLabel = "";
+    private String activeEndDateRaw = "";
+    private String forcedStartDate = "";
+    private boolean isForcedBookingMode = false;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -485,8 +493,8 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         boolean shouldDisable = false;
         String disableReason = "";
         
-        // Disable if boarder has active booking
-        if (hasActiveBooking) {
+        // Disable if boarder has active booking (unless in forced booking mode)
+        if (hasActiveBooking && !isForcedBookingMode) {
             shouldDisable = true;
             disableReason = "You already have an active booking";
         }
@@ -551,6 +559,11 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                     intent.putExtra("bhr_id", bhrId);
                     intent.putExtra("room_data", roomData.toString());
                     intent.putExtra("bh_id", boardingHouseId); // Also pass as separate extra for safety
+                    
+                    if (isForcedBookingMode && !forcedStartDate.isEmpty()) {
+                        intent.putExtra("forced_start_date", forcedStartDate);
+                    }
+                    
                     Log.d(TAG, "Starting BookingActivity with bh_id: " + boardingHouseId + ", bhr_id: " + bhrId);
                     startActivity(intent);
                 } catch (JSONException e) {
@@ -744,6 +757,29 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                 Log.d(TAG, "Active booking check: " + hasActiveBooking + ", status: " + currentBookingStatus);
                                 
                                 if (hasActiveBooking) {
+                                    // Parse active booking details if available
+                                    JSONObject bookingDetails = jsonResponse.optJSONObject("active_booking_details");
+                                    if (bookingDetails != null) {
+                                        activeBhName = bookingDetails.optString("bh_name", "--");
+                                        activeStartDateLabel = bookingDetails.optString("start_date_label", "--");
+                                        activeEndDateLabel = bookingDetails.optString("end_date_label", "--");
+                                        activeEndDateRaw = bookingDetails.optString("end_date", "");
+                                        
+                                        // Calculate forced start date (day after end date)
+                                        if (!activeEndDateRaw.isEmpty()) {
+                                            try {
+                                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                                                java.util.Date endDate = sdf.parse(activeEndDateRaw);
+                                                java.util.Calendar cal = java.util.Calendar.getInstance();
+                                                cal.setTime(endDate);
+                                                cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+                                                forcedStartDate = sdf.format(cal.getTime());
+                                            } catch (Exception e) {
+                                                Log.e(TAG, "Error calculating forced start date: " + e.getMessage());
+                                            }
+                                        }
+                                    }
+
                                     // Show different modal based on booking status
                                     if ("Pending".equals(currentBookingStatus)) {
                                         // Booking is pending approval - show pending booking modal
@@ -818,11 +854,17 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Message
         TextView messageView = new TextView(this);
-        messageView.setText("You already have an active booking. Please complete your current stay before booking another room.\n\nYou can view your current booking in the Bookings section.");
-        messageView.setTextSize(16);
+        messageView.setText("You are an active Boarder.\n\n" +
+                "BH Name: " + activeBhName + "\n" +
+                "Start Date: " + activeStartDateLabel + "\n" +
+                "End Date: " + activeEndDateLabel + "\n\n" +
+                "Note: You can have another booking but by default, the start date will be set to " + 
+                (forcedStartDate.isEmpty() ? "the day after your end date" : formatDateForDisplay(forcedStartDate)) + 
+                ", unless you choose to terminate your current stay.");
+        messageView.setTextSize(14);
         messageView.setTextColor(getResources().getColor(android.R.color.white));
         messageView.setLineSpacing(8, 1.2f);
-        messageView.setGravity(android.view.Gravity.CENTER);
+        messageView.setGravity(android.view.Gravity.START);
         
         android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -833,16 +875,115 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         layout.addView(titleView);
         layout.addView(messageView);
+
+        // Buttons Layout
+        android.widget.LinearLayout buttonsLayout = new android.widget.LinearLayout(this);
+        buttonsLayout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        buttonsLayout.setGravity(android.view.Gravity.CENTER);
+
+        // TERMINATE Button
+        MaterialButton btnTerminate = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnTerminate.setText("TERMINATE");
+        btnTerminate.setBackgroundColor(getResources().getColor(R.color.red));
+        btnTerminate.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams terminateParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        terminateParams.setMargins(0, 0, 8, 0);
+        btnTerminate.setLayoutParams(terminateParams);
+
+        // BOOK Button
+        MaterialButton btnBook = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnBook.setText("BOOK");
+        btnBook.setBackgroundColor(getResources().getColor(R.color.green));
+        btnBook.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams bookParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        bookParams.setMargins(8, 0, 0, 0);
+        btnBook.setLayoutParams(bookParams);
+
+        buttonsLayout.addView(btnTerminate);
+        buttonsLayout.addView(btnBook);
+        layout.addView(buttonsLayout);
         
         builder.setView(layout);
-        builder.setPositiveButton("OK", (dialog, which) -> {
-            dialog.dismiss();
-        });
-        
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
+
+        btnTerminate.setOnClickListener(v -> {
+            dialog.dismiss();
+            showTerminationReasonModal();
+        });
+
+        btnBook.setOnClickListener(v -> {
+            dialog.dismiss();
+            isForcedBookingMode = true;
+            loadAccommodations(); // Reload to enable buttons
+        });
+    }
+
+    private String formatDateForDisplay(String dateStr) {
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateStr);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            return dateStr;
+        }
+    }
+
+    private void showTerminationReasonModal() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
         
-        // Button uses default color (no custom styling)
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.white));
+
+        TextView titleView = new TextView(this);
+        titleView.setText("Reason for Termination");
+        titleView.setTextSize(18);
+        titleView.setTypeface(null, Typeface.BOLD);
+        titleView.setTextColor(getResources().getColor(android.R.color.black));
+        titleView.setPadding(0, 0, 0, 24);
+        layout.addView(titleView);
+
+        android.widget.RadioGroup radioGroup = new android.widget.RadioGroup(this);
+        String[] reasons = {"Change Room", "Utility Issues", "Personal Reason", "Prefer not to say"};
+        for (String reason : reasons) {
+            android.widget.RadioButton rb = new android.widget.RadioButton(this);
+            rb.setText(reason);
+            rb.setTextSize(16);
+            radioGroup.addView(rb);
+        }
+        layout.addView(radioGroup);
+
+        MaterialButton btnSubmit = new MaterialButton(this);
+        btnSubmit.setText("Submit");
+        btnSubmit.setBackgroundColor(getResources().getColor(R.color.brown));
+        android.widget.LinearLayout.LayoutParams submitParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        submitParams.setMargins(0, 24, 0, 0);
+        btnSubmit.setLayoutParams(submitParams);
+        layout.addView(btnSubmit);
+
+        builder.setView(layout);
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+
+        btnSubmit.setOnClickListener(v -> {
+            int selectedId = radioGroup.getCheckedRadioButtonId();
+            if (selectedId == -1) {
+                Toast.makeText(this, "Please select a reason", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            android.widget.RadioButton selectedRb = dialog.findViewById(selectedId);
+            String reason = selectedRb.getText().toString();
+            // Here you would typically call an API to submit termination
+            Toast.makeText(this, "Termination request submitted: " + reason, Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+            finish(); // Go back after termination
+        });
     }
     
     /**
