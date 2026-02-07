@@ -9,18 +9,19 @@
     app:cardBackgroundColor="@color/white">
 
     <LinearLayout
+        android:id="@+id/llContentContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="12dp"
         android:gravity="center_vertical">
 
         <!-- Room Number -->
         <TextView
             android:id="@+id/tvRoomNumber"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginBottom="4dp"
             android:text="Room 101"
             android:textSize="16sp"
             android:textStyle="bold"

@@ -62,11 +62,15 @@ public class FinalBookingActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private ImageView ivBhImage, ivCashProof, ivGcashProof, ivOwnerQrCode;
     private TextView tvBhName, tvRoomType, tvDuration, tvPrice, tvGcashNumber, tvTotalPayment, tvPaymentBreakdown;
+    private TextView tvCheckInDate, tvCheckOutDate, tvRoomNumberUnit;
+    private TextView tvBoarderName, tvBoarderPhone, tvBoarderEmail;
     private RadioGroup rgPaymentMethod;
     private RadioButton rbCash, rbGcash;
     private LinearLayout layoutCashPayment, layoutGcashPayment, layoutPaymentSelection, layoutPaymentCheckboxes;
     private MaterialButton btnUploadCash, btnUploadGcash, btnRemoveCash, btnRemoveGcash, btnBook;
     private ProgressBar progressBar;
+    private TextView tvTitle;
+    private com.google.android.material.card.MaterialCardView cardPaymentMethod;
     
     // Data
     private int roomId;
@@ -219,6 +223,29 @@ public class FinalBookingActivity extends AppCompatActivity {
         layoutPaymentSelection = findViewById(R.id.layoutPaymentSelection);
         layoutPaymentCheckboxes = findViewById(R.id.layoutPaymentCheckboxes);
         
+        // Stay info views
+        tvCheckInDate = findViewById(R.id.tvCheckInDate);
+        tvCheckOutDate = findViewById(R.id.tvCheckOutDate);
+        tvRoomNumberUnit = findViewById(R.id.tvRoomNumberUnit);
+        
+        // Boarder info views
+        tvBoarderName = findViewById(R.id.tvBoarderName);
+        tvBoarderPhone = findViewById(R.id.tvBoarderPhone);
+        tvBoarderEmail = findViewById(R.id.tvBoarderEmail);
+        
+        // New views
+        tvTitle = findViewById(R.id.tvTitle);
+        cardPaymentMethod = findViewById(R.id.cardPaymentMethod);
+        
+        // Hide payment UI for Stage 1 (Initial Application)
+        if (cardPaymentMethod != null) cardPaymentMethod.setVisibility(View.GONE);
+        if (layoutPaymentSelection != null) layoutPaymentSelection.setVisibility(View.GONE);
+        if (tvTitle != null) tvTitle.setText("Booking Application Summary");
+        if (btnBook != null) {
+            btnBook.setText("Submit Application");
+            btnBook.setIcon(null);
+        }
+        
         // Initialize lists
         paymentPeriods = new ArrayList<>();
         paymentCheckboxes = new ArrayList<>();
@@ -275,6 +302,37 @@ public class FinalBookingActivity extends AppCompatActivity {
         });
     }
     
+    private void loadBoarderDetails() {
+        if (userId == 0) return;
+        
+        String url = BASE_URL + "get_user_details.php?user_id=" + userId;
+        Log.d(TAG, "Loading boarder details from: " + url);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            JSONObject user = jsonResponse.getJSONObject("data").getJSONObject("user");
+                            
+                            String firstName = user.optString("first_name", "");
+                            String middleName = user.optString("middle_name", "");
+                            String lastName = user.optString("last_name", "");
+                            String fullName = firstName + (middleName.isEmpty() ? "" : " " + middleName) + " " + lastName;
+                            
+                            tvBoarderName.setText(fullName.trim());
+                            tvBoarderPhone.setText(user.optString("phone", "-"));
+                            tvBoarderEmail.setText(user.optString("email", "-"));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing boarder details: " + e.getMessage());
+                    }
+                },
+                error -> Log.e(TAG, "Error fetching boarder details: " + error.getMessage()));
+        
+        requestQueue.add(stringRequest);
+    }
+    
     private void loadBookingSummary() {
         try {
             // Display room type
@@ -298,6 +356,29 @@ public class FinalBookingActivity extends AppCompatActivity {
             
             // Load boarding house details
             loadBoardingHouseDetails();
+            
+            // Load boarder details
+            loadBoarderDetails();
+            
+            // Display stay and room info
+            tvCheckInDate.setText(startDate);
+            tvCheckOutDate.setText(endDate);
+            
+            // Prioritize passed room_number
+            String roomNumber = roomData.optString("room_number", "");
+            if (roomNumber.isEmpty()) {
+                roomNumber = roomData.optString("unit_number", "");
+            }
+            if (roomNumber.isEmpty()) {
+                roomNumber = roomData.optString("room_name", "");
+            }
+            if (roomNumber.isEmpty()) {
+                roomNumber = roomData.optString("room_category", "");
+            }
+            if (roomNumber.isEmpty()) {
+                roomNumber = String.valueOf(roomId);
+            }
+            tvRoomNumberUnit.setText(roomNumber);
         } catch (Exception e) {
             Log.e(TAG, "Error loading booking summary: " + e.getMessage());
             e.printStackTrace();
@@ -401,33 +482,34 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void displayPaymentUI() {
-        // Clear existing checkboxes
+        // Clear existing views
         layoutPaymentCheckboxes.removeAllViews();
         paymentCheckboxes.clear();
         
-        // Show checkboxes only if more than 1 month
-        if (paymentPeriods.size() > 1) {
-            layoutPaymentSelection.setVisibility(View.VISIBLE);
+        // Hide selection count for Stage 1
+        if (tvPaymentBreakdown != null) {
+            tvPaymentBreakdown.setVisibility(View.GONE);
+        }
+        
+        // Show the breakdown layout
+        layoutPaymentSelection.setVisibility(View.VISIBLE);
+        
+        // Create views for each period
+        for (int i = 0; i < paymentPeriods.size(); i++) {
+            PaymentPeriod period = paymentPeriods.get(i);
             
-            // Create checkboxes for each period
-            for (int i = 0; i < paymentPeriods.size(); i++) {
-                PaymentPeriod period = paymentPeriods.get(i);
-                CheckBox checkBox = createPaymentCheckbox(period, i);
-                layoutPaymentCheckboxes.addView(checkBox);
-                paymentCheckboxes.add(checkBox);
-                
-                // Set first checkbox as checked by default
-                if (i == 0) {
-                    checkBox.setChecked(true);
-                    period.isSelected = true;
-                }
-            }
-        } else {
-            layoutPaymentSelection.setVisibility(View.GONE);
-            // For single period, select it by default
-            if (!paymentPeriods.isEmpty()) {
-                paymentPeriods.get(0).isSelected = true;
-            }
+            // In Stage 1, show as TextView only (no checkbox)
+            TextView tvPeriod = new TextView(this);
+            tvPeriod.setText(String.format(Locale.getDefault(), "%s - ₱%,.2f", period.label, period.amount));
+            tvPeriod.setTextSize(14);
+            tvPeriod.setTypeface(getResources().getFont(R.font.poppins_medium));
+            tvPeriod.setTextColor(getResources().getColor(R.color.dark_gray));
+            tvPeriod.setPadding(0, 8, 0, 8);
+            
+            layoutPaymentCheckboxes.addView(tvPeriod);
+            
+            // Still select it so total is calculated
+            period.isSelected = true;
         }
         
         // Update total payment display
@@ -765,17 +847,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private boolean validateForm() {
-        if (paymentMethod.equals("Cash")) {
-            if (cashProofUri == null) {
-                Toast.makeText(this, "Please upload cash transaction photo", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        } else if (paymentMethod.equals("GCash")) {
-            if (gcashProofUri == null) {
-                Toast.makeText(this, "Please upload GCash payment screenshot", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        }
+        // No payment proof validation for Stage 1 (Initial Application)
         return true;
     }
     
@@ -1038,11 +1110,9 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void showSuccessDialog() {
-        // Inflate custom layout
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_booking_success, null);
-        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setView(dialogView);
+        builder.setTitle("Application Submitted");
+        builder.setMessage("Your booking application has been submitted successfully. Please wait for the owner's approval.");
         builder.setPositiveButton("OK", (dialog, which) -> {
             dialog.dismiss();
             navigateToBoardingHouseDetails();
@@ -1052,7 +1122,6 @@ public class FinalBookingActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
         
-        // Style the button
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.brown));
     }
     

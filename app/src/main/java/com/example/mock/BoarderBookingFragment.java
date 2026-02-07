@@ -663,23 +663,127 @@ public class BoarderBookingFragment extends Fragment {
     private void showPendingBookingDialog(Booking booking) {
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            // Use different layout or modify existing one if it's Approved
             View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_pending_booking_approval, null);
             builder.setView(dialogView);
 
             // Initialize dialog views
+            TextView tvTitle = dialogView.findViewById(R.id.tvTitlePending);
+            TextView tvMessage = dialogView.findViewById(R.id.tvMessagePending);
+            TextView tvPaymentWarnings = dialogView.findViewById(R.id.tvPaymentWarnings);
+            com.google.android.material.button.MaterialButton btnCancelApplication = dialogView.findViewById(R.id.btnCancelApplication);
             com.google.android.material.button.MaterialButton btnOk = dialogView.findViewById(R.id.btnOkPending);
 
             AlertDialog dialog = builder.create();
+            
+            if ("Approved".equals(booking.getStatus())) {
+                if (tvTitle != null) tvTitle.setText("Application Approved!");
+                if (tvMessage != null) tvMessage.setText("Your application for " + booking.getBoardingHouseName() + " has been approved by the owner. Please proceed with the advance payment to confirm your booking.");
+                
+                // Show warnings and cancel button for Approved status
+                if (tvPaymentWarnings != null) tvPaymentWarnings.setVisibility(View.VISIBLE);
+                
+                if (btnCancelApplication != null) {
+                    btnCancelApplication.setVisibility(View.VISIBLE);
+                    btnCancelApplication.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        showCancelConfirmationDialog(booking);
+                    });
+                }
+
+                btnOk.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    fetchUnpaidPaymentBreakdowns(booking.getBookingId());
+                });
+                btnOk.setText("Pay Now");
+            } else {
+                if (tvTitle != null) tvTitle.setText("Application Pending");
+                if (tvMessage != null) tvMessage.setText("Your application for " + booking.getBoardingHouseName() + " is currently pending approval from the owner. You will be notified once it is approved.");
+                
+                // Hide warnings and cancel button for Pending status
+                if (tvPaymentWarnings != null) tvPaymentWarnings.setVisibility(View.GONE);
+                if (btnCancelApplication != null) btnCancelApplication.setVisibility(View.GONE);
+                
+                btnOk.setText("OK");
+                btnOk.setOnClickListener(v -> dialog.dismiss());
+            }
+
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.show();
 
-            // OK button click listener
-            btnOk.setOnClickListener(v -> dialog.dismiss());
         } catch (Exception e) {
             Log.e(TAG, "Error showing pending booking dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing dialog", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // Helper methods for cancellation
+    private void showCancelConfirmationDialog(Booking booking) {
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+            .setTitle("Cancel Application")
+            .setMessage("Are you sure you want to cancel your application? This action cannot be undone.")
+            .setPositiveButton("Yes, Cancel", (dialog, which) -> {
+                cancelBooking(booking);
+            })
+            .setNegativeButton("No", null)
+            .show();
+    }
+
+    private void cancelBooking(Booking booking) {
+        String url = BASE_URL + "cancel_booking.php";
+        
+        JSONObject requestBody = new JSONObject();
+        try {
+            requestBody.put("booking_id", booking.getBookingId());
+            requestBody.put("user_id", userId);
+            requestBody.put("reason", "Cancelled by boarder via app");
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error creating request", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        com.android.volley.toolbox.JsonObjectRequest jsonRequest = new com.android.volley.toolbox.JsonObjectRequest(
+            Request.Method.POST,
+            url,
+            requestBody,
+            response -> {
+                try {
+                    if (response.getBoolean("success")) {
+                        Toast.makeText(getContext(), "Application cancelled successfully", Toast.LENGTH_SHORT).show();
+                        // Refresh bookings using the correct local method
+                        loadBookingData();
+                    } else {
+                        String error = response.optString("error", "Unknown error");
+                        Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                }
+            },
+            error -> {
+                error.printStackTrace();
+                String message = error.getMessage();
+                if (message == null) message = "Network Error";
+                Toast.makeText(getContext(), "Network Error: " + message, Toast.LENGTH_SHORT).show();
+            }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                headers.put("Accept", "application/json");
+                return headers;
+            }
+        };
+        
+        // Use local requestQueue
+        if (requestQueue == null) {
+            requestQueue = Volley.newRequestQueue(getContext());
+        }
+        requestQueue.add(jsonRequest);
     }
 
     // Booking data class
@@ -1015,13 +1119,9 @@ public class BoarderBookingFragment extends Fragment {
                         // First checkbox is always enabled (if not "For Approval")
                         checkboxPeriod.setEnabled(true);
                         checkboxPeriod.setAlpha(1.0f);
-                        // Check first period if it's current/overdue
-                        if (isCurrentOrOverdue) {
-                            checkboxPeriod.setChecked(true);
-                            selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
-                        } else {
-                            checkboxPeriod.setChecked(false);
-                        }
+                        // Always check the first unpaid period by default (it's the next one due)
+                        checkboxPeriod.setChecked(true);
+                        selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
                     } else {
                         // Check if previous period allows this one to be enabled
                         // Look backwards to find the previous non-"For Approval" period
@@ -1077,10 +1177,9 @@ public class BoarderBookingFragment extends Fragment {
                     // Keep default color for future periods
                 }
                 
-                // Set checkbox listener with chronological validation
+                // Set checkbox listener with simple sequential logic
                 // Skip listener for "For Approval" status (payment already submitted)
                 if (!"For Approval".equals(breakdown.getPaymentStatus())) {
-                    int periodIndex = i; // Capture index for lambda
                     checkboxPeriod.setOnCheckedChangeListener((buttonView, isChecked) -> {
                         // Double-check: prevent interaction if status is "For Approval"
                         if ("For Approval".equals(breakdown.getPaymentStatus())) {
@@ -1091,16 +1190,13 @@ public class BoarderBookingFragment extends Fragment {
                         
                         if (isChecked) {
                             selectedBreakdowns.put(breakdown.getBreakdownId(), breakdown);
-                            // Enable the next period if this one is checked
-                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
                         } else {
                             selectedBreakdowns.remove(breakdown.getBreakdownId());
-                            // Disable and uncheck all later periods if this one is unchecked
-                            updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
-                                                breakdownItemViews, tvTotalAmount, btnProceedToPayment);
                         }
-                        updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
+
+                        // Run sequential validation on ALL checkboxes
+                        updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
+                                            breakdownItemViews, tvTotalAmount, btnProceedToPayment);
                     });
                 } else {
                     // No listener for "For Approval" - payment already submitted
@@ -1123,48 +1219,22 @@ public class BoarderBookingFragment extends Fragment {
                 breakdownItem.setLayoutParams(layoutParams);
                 
                 layoutBreakdowns.addView(breakdownItem);
-                
-                // Initially show only the first period (soonest due date)
-                // Hide all other periods
-                if (i > 0) {
-                    breakdownItem.setVisibility(View.GONE);
+            }
+            
+            btnToggleAllPayments.setVisibility(View.GONE);
+            
+            // Initial Setup: Check the first item by default if it's not "For Approval"
+            if (!checkboxes.isEmpty()) {
+                android.widget.CheckBox firstCb = checkboxes.get(0);
+                PaymentBreakdown firstBd = filteredBreakdowns.get(0);
+                if (!"For Approval".equals(firstBd.getPaymentStatus())) {
+                     firstCb.setChecked(true);
                 }
             }
-            
-            // Update toggle button text and visibility
-            if (filteredBreakdowns.size() > 1) {
-                btnToggleAllPayments.setVisibility(View.VISIBLE);
-                btnToggleAllPayments.setText("Show All Pending Payments (" + (filteredBreakdowns.size() - 1) + " more)");
-            } else {
-                btnToggleAllPayments.setVisibility(View.GONE);
-            }
-            
-            // Initialize checkbox states after all checkboxes are created
-            // This ensures the second checkbox is enabled if the first one is checked by default
+
+            // Initialize validation logic immediately
             updateCheckboxStates(checkboxes, selectedBreakdowns, filteredBreakdowns, 
                                 breakdownItemViews, tvTotalAmount, btnProceedToPayment);
-            
-            // Toggle button click listener
-            btnToggleAllPayments.setOnClickListener(v -> {
-                showAllPayments[0] = !showAllPayments[0];
-                
-                if (showAllPayments[0]) {
-                    // Show all payments
-                    for (int i = 1; i < breakdownItemViews.size(); i++) {
-                        breakdownItemViews.get(i).setVisibility(View.VISIBLE);
-                    }
-                    btnToggleAllPayments.setText("Hide All Pending Payments");
-                } else {
-                    // Hide all except the first one
-                    for (int i = 1; i < breakdownItemViews.size(); i++) {
-                        breakdownItemViews.get(i).setVisibility(View.GONE);
-                    }
-                    btnToggleAllPayments.setText("Show All Pending Payments (" + (filteredBreakdowns.size() - 1) + " more)");
-                }
-            });
-            
-            // Update total for initially selected items
-            updateSelectedTotal(selectedBreakdowns, tvTotalAmount, btnProceedToPayment);
             
             // Show the dialog (already created and stored above)
             dialog.show();
@@ -1227,8 +1297,9 @@ public class BoarderBookingFragment extends Fragment {
     }
     
     /**
-     * Updates checkbox states based on chronological validation.
-     * Enables/disables checkboxes and unchecks later periods if earlier ones are unchecked.
+     * Updates checkbox states based on strict chronological validation.
+     * Item I is enabled ONLY if Item I-1 is checked.
+     * If Item I is unchecked, Item I+1 becomes disabled and unchecked.
      */
     private void updateCheckboxStates(List<android.widget.CheckBox> checkboxes,
                                       Map<Integer, PaymentBreakdown> selectedBreakdowns,
@@ -1236,67 +1307,55 @@ public class BoarderBookingFragment extends Fragment {
                                       List<View> breakdownItemViews,
                                       TextView tvTotalAmount,
                                       com.google.android.material.button.MaterialButton btnProceedToPayment) {
-        // Enable/disable checkboxes based on sequential logic
-        // "For Approval" items are treated as already "selected" for chronological validation
+        
+        // Iterate through checkboxes to enforce sequential logic
         for (int i = 0; i < checkboxes.size(); i++) {
-            android.widget.CheckBox checkBox = checkboxes.get(i);
-            PaymentBreakdown breakdown = filteredBreakdowns.get(i);
+            android.widget.CheckBox currentCb = checkboxes.get(i);
+            PaymentBreakdown currentBd = filteredBreakdowns.get(i);
             
-            // Skip "For Approval" items - they don't have checkboxes (hidden)
-            if ("For Approval".equals(breakdown.getPaymentStatus())) {
-                continue; // Skip this item, it's treated as "selected" for next period validation
+            // Skip "For Approval" items logic, they are static
+            if ("For Approval".equals(currentBd.getPaymentStatus())) {
+                continue; 
             }
-            
+
             if (i == 0) {
-                // First checkbox is always enabled (if not "For Approval")
-                checkBox.setEnabled(true);
-                checkBox.setAlpha(1.0f);
+                // First checkbox is ALWAYS enabled
+                currentCb.setEnabled(true);
+                currentCb.setAlpha(1.0f);
             } else {
-                // Check if previous period allows this one to be enabled
-                // Look backwards to find the previous non-"For Approval" period
-                boolean canEnable = false;
-                for (int j = i - 1; j >= 0; j--) {
-                    PaymentBreakdown prevBreakdown = filteredBreakdowns.get(j);
-                    
-                    // If previous is "For Approval", treat it as "selected" and continue
-                    if ("For Approval".equals(prevBreakdown.getPaymentStatus())) {
-                        canEnable = true; // "For Approval" counts as selected
-                        break;
-                    }
-                    
-                    // Check if previous checkbox is checked
-                    android.widget.CheckBox prevCheckBox = checkboxes.get(j);
-                    if (prevCheckBox.getVisibility() == View.VISIBLE) {
-                        canEnable = prevCheckBox.isChecked();
-                        break;
-                    }
+                // Check status of PREVIOUS checkbox (or "For Approval" status)
+                // Use a helper logic to find if "previous requirement" is met
+                boolean previousIsMet = false;
+                
+                // Look at immediate predecessor (i-1)
+                // If i-1 is "For Approval", it counts as "Checked/Paid" for logic purposes -> allows next
+                // If i-1 is actionable (checkbox), it MUST be checked
+                
+                // Actually, due to the filtered list logic in creating 'checkboxes', indices match 1:1 with filteredBreakdowns
+                PaymentBreakdown prevBd = filteredBreakdowns.get(i - 1);
+                
+                if ("For Approval".equals(prevBd.getPaymentStatus())) {
+                    previousIsMet = true; // Implicitly "checked"
+                } else {
+                    // Previous is a checkbox item
+                    android.widget.CheckBox prevCb = checkboxes.get(i - 1); // This must correspond to prevBd
+                    previousIsMet = prevCb.isChecked();
                 }
-                
-                checkBox.setEnabled(canEnable);
-                
-                // Update alpha based on enabled state
-                checkBox.setAlpha(canEnable ? 1.0f : 0.5f);
-                
-                // If previous is unchecked, uncheck this one too and remove from selected
-                if (!canEnable && checkBox.isChecked()) {
-                    checkBox.setChecked(false);
-                    selectedBreakdowns.remove(breakdown.getBreakdownId());
-                    // Recursively uncheck all subsequent periods
-                    for (int j = i + 1; j < checkboxes.size(); j++) {
-                        PaymentBreakdown laterBreakdown = filteredBreakdowns.get(j);
-                        // Skip "For Approval" items
-                        if ("For Approval".equals(laterBreakdown.getPaymentStatus())) {
-                            continue;
-                        }
-                        android.widget.CheckBox laterCheckBox = checkboxes.get(j);
-                        if (laterCheckBox.getVisibility() == View.VISIBLE) {
-                            if (laterCheckBox.isChecked()) {
-                                laterCheckBox.setChecked(false);
-                                selectedBreakdowns.remove(laterBreakdown.getBreakdownId());
-                            }
-                            laterCheckBox.setEnabled(false);
-                            laterCheckBox.setAlpha(0.5f);
-                        }
+
+                if (previousIsMet) {
+                    currentCb.setEnabled(true);
+                    currentCb.setAlpha(1.0f);
+                } else {
+                    currentCb.setEnabled(false);
+                    currentCb.setAlpha(0.5f);
+                    // Force uncheck if it was checked (ripple effect will happen on next update or implicitly here)
+                    if (currentCb.isChecked()) {
+                         // Uncheck without triggering listener loop excessively? 
+                         // With simple logic, unchecking creates a new event.
+                         // To avoid infinite loops or complexity, we just uncheck. 
+                         // The Listener calls this function again, which is fine, it will stabilize.
+                         currentCb.setChecked(false);
+                         selectedBreakdowns.remove(currentBd.getBreakdownId());
                     }
                 }
             }

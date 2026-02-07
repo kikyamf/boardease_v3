@@ -300,7 +300,14 @@ public class BookingDetailsActivity extends AppCompatActivity {
                     } else {
                         paymentStatus = dbPaymentStatus;
                     }
-                    Log.d("BookingDetails", "Status used as-is (capitalized): " + paymentStatus);
+
+                    // Special case: If status is Pending/Unpaid and nothing is paid, show "Awaiting Payment"
+                    if ((paymentStatus.equalsIgnoreCase("Pending") || paymentStatus.equalsIgnoreCase("Unpaid")) && (paidPeriods == 0 || bookingData.isFullyPaid() == false)) {
+                         paymentStatus = "Awaiting Payment";
+                         Log.d("BookingDetails", "Status 'Pending/Unpaid' with no/partial payment -> normalized to: Awaiting Payment");
+                    }
+
+                    Log.d("BookingDetails", "Status used after processing: " + paymentStatus);
                 }
             } else {
                 // Database status is missing - this should not happen, but calculate as fallback
@@ -324,13 +331,13 @@ public class BookingDetailsActivity extends AppCompatActivity {
                         Log.d("BookingDetails", "Calculated status: Partially Paid (paidPeriods > 0 && < totalPeriods: " + paidPeriods + " < " + totalPeriods + ")");
                     } else {
                         // No periods paid
-                paymentStatus = "Pending";
-                        Log.d("BookingDetails", "Calculated status: Pending (paidPeriods = 0)");
+                        paymentStatus = "Awaiting Payment";
+                        Log.d("BookingDetails", "Calculated status: Awaiting Payment (paidPeriods = 0)");
                     }
                 } else {
-                    // No breakdown data - default to pending
-                    paymentStatus = "Pending";
-                    Log.d("BookingDetails", "Calculated status: Pending (no breakdown data, totalPeriods = 0)");
+                    // No breakdown data - default to Awaiting Payment
+                    paymentStatus = "Awaiting Payment";
+                    Log.d("BookingDetails", "Calculated status: Awaiting Payment (no breakdown data, totalPeriods = 0)");
                 }
             }
             
@@ -487,6 +494,8 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 backgroundRes = R.drawable.bg_rounded_red;
                 break;
             case "pending":
+            case "awaiting payment":
+            case "unpaid":
             default:
                 textColor = getResources().getColor(android.R.color.white);
                 backgroundRes = R.drawable.bg_status_pending;
@@ -558,7 +567,13 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 btnApprove.setText("Approve Booking");
                 btnDecline.setText("Decline Booking");
                 break;
-                case "Confirmed":
+            case "Approved":
+                btnApprove.setVisibility(View.VISIBLE);
+                btnDecline.setVisibility(View.VISIBLE);
+                btnApprove.setText("Confirm Payment");
+                btnDecline.setText("Decline Booking");
+                break;
+            case "Confirmed":
                 btnApprove.setVisibility(View.GONE);
                 btnDecline.setVisibility(View.GONE);
                 break;
@@ -632,28 +647,53 @@ public class BookingDetailsActivity extends AppCompatActivity {
             paymentStatusText = "Fully Paid";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_approved;
-            tvWarning.setVisibility(View.GONE);
+            tvWarning.setVisibility(View.VISIBLE);
+            if ("Approved".equals(bookingData.getStatus())) {
+                tvWarning.setText("Payment is fully paid. Confirming will officially enroll the boarder and mark the room as occupied.");
+                tvWarning.setBackgroundResource(R.drawable.bg_status_approved);
+            } else {
+                tvWarning.setVisibility(View.GONE);
+            }
         } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
             paymentStatusText = "Partially Paid";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_completed;
             tvWarning.setVisibility(View.VISIBLE);
-            tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot and check your GCash account before approving.");
-            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
-            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            if ("Approved".equals(bookingData.getStatus())) {
+                tvWarning.setText("⚠ Partial payment received. Please verify screenshot before confirming.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_status_completed);
+            } else {
+                tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            }
         } else {
-            paymentStatusText = "Pending - For Confirmation";
+            // This is likely Stage 2 (Initial Approval)
+            paymentStatusText = "No Payment Yet";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_pending;
             tvWarning.setVisibility(View.VISIBLE);
-            tvWarning.setText("⚠ Payment may have been made but not yet confirmed. Please check payment screenshot above and verify in your GCash account. After approval, payment will be automatically marked as paid.");
-            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
-            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            if ("Approved".equals(bookingData.getStatus())) {
+                tvWarning.setText("Boarder has not submitted payment proof yet. Only confirm if you've received payment through other means.");
+                tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            } else {
+                tvWarning.setText("This is an initial application. Approving will reserve the room for the boarder. Payment will be required after your approval.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_status_completed); // Use blue/green instead of red warning
+            }
         }
         
         tvPaymentStatus.setText(paymentStatusText);
         tvPaymentStatus.setTextColor(statusColor);
         tvPaymentStatus.setBackgroundResource(statusBg);
+        
+        // Update confirm button text
+        if ("Approved".equals(bookingData.getStatus())) {
+            btnConfirm.setText("Confirm Payment");
+        } else {
+            btnConfirm.setText("Approve Application");
+        }
         
         // Set amounts
         if (paidAmount != null && !paidAmount.isEmpty()) {
@@ -868,11 +908,11 @@ public class BookingDetailsActivity extends AppCompatActivity {
     }
     
     private void approveBooking() {
-        showProgressDialog("Approving booking...");
+        showProgressDialog("Processing...");
         
         int bookingId = bookingData.getBookingId();
         
-        Log.d("BookingDetails", "Approve booking - ownerId: " + ownerId + ", bookingId: " + bookingId);
+        Log.d("BookingDetails", "Approve/Confirm booking - ownerId: " + ownerId + ", bookingId: " + bookingId);
         
         if (ownerId == 0) {
             hideProgressDialog();
@@ -909,19 +949,21 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-            hideProgressDialog();
+                        hideProgressDialog();
                         Log.d("BookingDetails", "Approve response: " + response.toString());
                         try {
-                            if (response.getBoolean("success")) {
-                                bookingData.setStatus("Confirmed");
+                            if (response.optBoolean("success", false)) {
+                                String newStatus = response.optString("status", "Approved");
+                                String message = response.optString("message", "Booking updated successfully!");
+                                bookingData.setStatus(newStatus);
                                 loadBookingData(); // Reload to update status display
                                 updateActionButtons(); // Update buttons after status change
-                                Toast.makeText(BookingDetailsActivity.this, "Booking approved successfully!", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(BookingDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
                                 
                                 // Set result and finish to navigate back to pending tab
                                 Intent resultIntent = new Intent();
                                 resultIntent.putExtra("booking_updated", true);
-                                resultIntent.putExtra("booking_id", bookingId);
+                                resultIntent.putExtra("booking_id", (int)bookingData.getBookingId());
                                 resultIntent.putExtra("should_navigate_to_pending", true);
                                 setResult(RESULT_OK, resultIntent);
                                 finish(); // Navigate back to bookings activity
@@ -930,10 +972,10 @@ public class BookingDetailsActivity extends AppCompatActivity {
                                 Log.e("BookingDetails", "Approve error from server: " + errorMsg);
                                 Toast.makeText(BookingDetailsActivity.this, "Error: " + errorMsg, Toast.LENGTH_SHORT).show();
                             }
-                        } catch (JSONException e) {
+                        } catch (Exception e) {
                             Log.e("BookingDetails", "Error parsing response", e);
                             hideProgressDialog();
-                            Toast.makeText(BookingDetailsActivity.this, "Error parsing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(BookingDetailsActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 },

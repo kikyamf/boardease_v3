@@ -353,28 +353,53 @@ public class PendingBookingsFragment extends Fragment {
             paymentStatusText = "Fully Paid";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_approved;
-            tvWarning.setVisibility(View.GONE);
-           } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
-               paymentStatusText = "Partially Paid";
+            tvWarning.setVisibility(View.VISIBLE);
+            if ("Approved".equals(booking.getStatus())) {
+                tvWarning.setText("Payment is fully paid. Confirming will officially enroll the boarder and mark the room as occupied.");
+                tvWarning.setBackgroundResource(R.drawable.bg_status_approved);
+            } else {
+                tvWarning.setVisibility(View.GONE);
+            }
+        } else if (paidPeriods > 0 && paidPeriods < totalPeriods) {
+            paymentStatusText = "Partially Paid";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_completed;
             tvWarning.setVisibility(View.VISIBLE);
-            tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot and check your GCash account before approving.");
-            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
-            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            if ("Approved".equals(booking.getStatus())) {
+                tvWarning.setText("⚠ Partial payment received. Please verify screenshot before confirming.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_status_completed);
+            } else {
+                tvWarning.setText("⚠ Some periods are paid but not all. Please verify payment screenshot.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            }
         } else {
-            paymentStatusText = "Pending - For Confirmation";
+            // This is likely Stage 2 (Initial Approval)
+            paymentStatusText = "No Payment Yet";
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_pending;
             tvWarning.setVisibility(View.VISIBLE);
-            tvWarning.setText("⚠ Payment may have been made but not yet confirmed. Please check payment screenshot above and verify in your GCash account. After approval, payment will be automatically marked as paid.");
-            tvWarning.setTextColor(getResources().getColor(android.R.color.white));
-            tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            if ("Approved".equals(booking.getStatus())) {
+                tvWarning.setText("Boarder has not submitted payment proof yet. Only confirm if you've received payment through other means.");
+                tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+            } else {
+                tvWarning.setText("This is an initial application. Approving will reserve the room for the boarder. Payment will be required after your approval.");
+                tvWarning.setTextColor(getResources().getColor(android.R.color.white));
+                tvWarning.setBackgroundResource(R.drawable.bg_status_completed); // Use blue/green instead of red warning
+            }
         }
         
         tvPaymentStatus.setText(paymentStatusText);
         tvPaymentStatus.setTextColor(statusColor);
         tvPaymentStatus.setBackgroundResource(statusBg);
+        
+        // Update confirm button text
+        if ("Approved".equals(booking.getStatus())) {
+            btnConfirm.setText("Confirm Payment");
+        } else {
+            btnConfirm.setText("Approve Application");
+        }
         
         // Set amounts
         if (paidAmount != null && !paidAmount.isEmpty()) {
@@ -587,7 +612,8 @@ public class PendingBookingsFragment extends Fragment {
                     try {
                         if (response.getBoolean("success")) {
                             hideProgressDialog();
-                            Toast.makeText(getContext(), "Booking approved successfully!", Toast.LENGTH_SHORT).show();
+                            String message = response.optString("message", "Booking updated successfully!");
+                            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                             // Reload the list to reflect changes (this will update UI including empty state)
                             loadPendingBookings(false);
                         } else {

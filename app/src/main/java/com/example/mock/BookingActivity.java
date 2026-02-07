@@ -62,6 +62,7 @@ public class BookingActivity extends AppCompatActivity {
     private int selectedRoomUnitId; // This is room_units.room_id
     private int userId;
     private JSONObject roomData;
+    private String selectedRoomNumber;
     private List<RoomUnitData> roomUnitsList;
     private String roomCategory; // "Private Room" or "Bed Spacer"
     private int roomCapacity; // Total capacity for Bed Spacer rooms
@@ -78,6 +79,8 @@ public class BookingActivity extends AppCompatActivity {
         int confirmedCapacity; // Confirmed bookings for Bed Spacer
         boolean isReserved; // True if room is reserved (status = 'Partially Occupied')
         boolean isFull; // True if room is full (not selectable) - for Bed Spacer
+        boolean hasPendingApplication; // True if THIS user has a pending/approved application for this room
+        String userApplicationStatus; // "Pending" or "Approved"
     }
     private Calendar startDateCalendar;
     private Calendar endDateCalendar;
@@ -285,6 +288,8 @@ public class BookingActivity extends AppCompatActivity {
                                     unit.roomNumber = unitObj.getString("room_number");
                                     unit.status = unitObj.getString("status");
                                     unit.isReserved = unitObj.optBoolean("is_reserved", false);
+                                    unit.hasPendingApplication = unitObj.optBoolean("has_pending_application", false);
+                                    unit.userApplicationStatus = unitObj.optString("user_application_status", null);
                                     
                                     // Parse capacity information for Bed Spacer rooms
                                     if ("Bed Spacer".equals(roomCategory)) {
@@ -342,6 +347,7 @@ public class BookingActivity extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("bhr_id", String.valueOf(roomId));
+                params.put("user_id", String.valueOf(userId));
                 return params;
             }
             
@@ -385,80 +391,125 @@ public class BookingActivity extends AppCompatActivity {
             // For Private Room: disable if reserved
             final boolean isFull = unit.isFull;
             
-            if (isFull || (isReserved && !"Bed Spacer".equals(roomCategory))) {
-                radioButton.setEnabled(false);
-                radioButton.setAlpha(0.5f); // Make it look disabled
-                radioButton.setButtonTintList(getResources().getColorStateList(R.color.dark_gray));
-                radioButton.setTextColor(getResources().getColor(R.color.dark_gray));
-            } else {
-                // Bed Spacer rooms are selectable if not full (even if reserved/Partially Occupied)
-                radioButton.setButtonTintList(getResources().getColorStateList(R.color.brown));
-                radioButton.setTextColor(getResources().getColor(R.color.black));
-            }
+                if (unit.hasPendingApplication) {
+                    // Disable selection for duplicate application
+                    radioButton.setEnabled(false);
+                    radioButton.setAlpha(0.6f);
+                    radioButton.setButtonTintList(getResources().getColorStateList(R.color.dark_gray));
+                    radioButton.setTextColor(getResources().getColor(R.color.orange));
+                } else if ("Occupied".equals(unit.status) && !"Bed Spacer".equals(roomCategory)) {
+                    // Private Room Occupied
+                    radioButton.setEnabled(false);
+                    radioButton.setAlpha(0.6f);
+                    radioButton.setButtonTintList(getResources().getColorStateList(R.color.dark_gray));
+                    radioButton.setTextColor(getResources().getColor(R.color.dark_gray));
+                } else if (isFull || (isReserved && !"Bed Spacer".equals(roomCategory))) {
+                    // Full or Reserved
+                    radioButton.setEnabled(false);
+                    radioButton.setAlpha(0.6f); // Make it look disabled
+                    radioButton.setButtonTintList(getResources().getColorStateList(R.color.dark_gray));
+                    radioButton.setTextColor(getResources().getColor(R.color.dark_gray));
+                } else {
+                    // Available
+                    radioButton.setButtonTintList(getResources().getColorStateList(R.color.brown));
+                    radioButton.setTextColor(getResources().getColor(R.color.black));
+                }
             
             radioButton.setTag(unit.roomId); // Store room_id in tag
             
             // Create TextView for status/capacity information
             TextView tvStatus = null;
             
-            if ("Bed Spacer".equals(roomCategory)) {
+            if (unit.hasPendingApplication) {
+                // Explicit warning for pending application
+                tvStatus = new TextView(this);
+                // Customize message based on status (Pending vs Approved)
+                String statusMsg = "Pending";
+                if (unit.userApplicationStatus != null && !unit.userApplicationStatus.isEmpty()) {
+                    statusMsg = unit.userApplicationStatus;
+                }
+                
+                tvStatus.setText("⚠️ You have a " + statusMsg + " application for this room");
+                tvStatus.setTextSize(12);
+                tvStatus.setTextColor(getResources().getColor(R.color.orange));
+                tvStatus.setPadding(40, 0, 16, 8); 
+                tvStatus.setVisibility(View.VISIBLE);
+            } else if ("Bed Spacer".equals(roomCategory)) {
                 // Show capacity ratio for Bed Spacer with breakdown
                 // Format: "3/4 person(s) (1 reserved, 2 confirmed)" or "1/2 person(s) (1 confirmed)"
                 tvStatus = new TextView(this);
-                String capacityText;
-                if (unit.totalCapacity > 0) {
-                    // Show format: "X/Y person(s)" where X is total occupied (pending + confirmed)
-                    capacityText = String.format(Locale.getDefault(), "%d/%d person(s)", 
-                        unit.occupiedCapacity, unit.totalCapacity);
-                    
-                    // Add breakdown: show reserved (Pending) and confirmed counts
-                    if (unit.pendingCapacity > 0 && unit.confirmedCapacity > 0) {
-                        // Both reserved and confirmed
-                        capacityText += String.format(Locale.getDefault(), " (%d reserved, %d confirmed)", 
-                            unit.pendingCapacity, unit.confirmedCapacity);
-                    } else if (unit.pendingCapacity > 0) {
-                        // Only reserved
-                        capacityText += String.format(Locale.getDefault(), " (%d reserved)", 
-                            unit.pendingCapacity);
-                    } else if (unit.confirmedCapacity > 0) {
-                        // Only confirmed
-                        capacityText += String.format(Locale.getDefault(), " (%d confirmed)", 
-                            unit.confirmedCapacity);
-                    }
+                
+                if (isFull) {
+                     // Explicitly say Full
+                     String fullText = "⚠️ Fully Occupied (" + unit.occupiedCapacity + "/" + unit.totalCapacity + ")";
+                     tvStatus.setText(fullText);
+                     tvStatus.setTextColor(getResources().getColor(R.color.red));
                 } else {
-                    // Fallback if capacity not available
-                    capacityText = String.format(Locale.getDefault(), "%d person(s)", 
-                        unit.occupiedCapacity);
+                    String capacityText;
+                    if (unit.totalCapacity > 0) {
+                        // Show format: "X/Y person(s)" where X is total occupied (pending + confirmed)
+                        capacityText = String.format(Locale.getDefault(), "%d/%d person(s)", 
+                            unit.occupiedCapacity, unit.totalCapacity);
+                        
+                        // Add breakdown: show reserved (Pending) and confirmed counts
+                        if (unit.pendingCapacity > 0 && unit.confirmedCapacity > 0) {
+                            // Both reserved and confirmed
+                            capacityText += String.format(Locale.getDefault(), " (%d reserved, %d confirmed)", 
+                                unit.pendingCapacity, unit.confirmedCapacity);
+                        } else if (unit.pendingCapacity > 0) {
+                            // Only reserved
+                            capacityText += String.format(Locale.getDefault(), " (%d reserved)", 
+                                unit.pendingCapacity);
+                        } else if (unit.confirmedCapacity > 0) {
+                            // Only confirmed
+                            capacityText += String.format(Locale.getDefault(), " (%d confirmed)", 
+                                unit.confirmedCapacity);
+                        }
+                    } else {
+                        // Fallback if capacity not available
+                        capacityText = String.format(Locale.getDefault(), "%d person(s)", 
+                            unit.occupiedCapacity);
+                    }
+                    tvStatus.setText(capacityText);
+                    tvStatus.setTextColor(getResources().getColor(R.color.dark_gray));
                 }
-                tvStatus.setText(capacityText);
                 tvStatus.setTextSize(12);
-                tvStatus.setTextColor(getResources().getColor(R.color.dark_gray));
                 tvStatus.setPadding(40, 0, 16, 8); // Indent to align with radio button text
                 tvStatus.setVisibility(View.VISIBLE);
             } else if (isReserved) {
                 // For Private Room, show reserved status
                 tvStatus = new TextView(this);
-                tvStatus.setText("⚠️ Reserved - This room is currently reserved by another booking");
+                tvStatus.setText("⚠️ Reserved - This room is currently reserved");
                 tvStatus.setTextSize(12);
-                tvStatus.setTextColor(getResources().getColor(R.color.orange));
+                tvStatus.setTextColor(getResources().getColor(R.color.red));
                 tvStatus.setPadding(40, 0, 16, 8); // Indent to align with radio button text
+                tvStatus.setVisibility(View.VISIBLE);
+            } else if ("Occupied".equals(unit.status) && !"Bed Spacer".equals(roomCategory)) {
+                // For Private Room, show occupied status
+                tvStatus = new TextView(this);
+                tvStatus.setText("⚠️ Occupied - This room is currently occupied");
+                tvStatus.setTextSize(12);
+                tvStatus.setTextColor(getResources().getColor(R.color.red));
+                tvStatus.setPadding(40, 0, 16, 8);
                 tvStatus.setVisibility(View.VISIBLE);
             }
             
             // Select first unit by default (for Bed Spacer, can select even if reserved, but not if full)
             // For Private Room, only select if not reserved
+            // AND ensure it doesn't have a pending application
             if (!hasSelectedNonReserved) {
                 if ("Bed Spacer".equals(roomCategory)) {
-                    // Bed Spacer: can select even if reserved, but not if full
-                    if (!isFull && unit.availableCapacity > 0) {
+                    // Bed Spacer: can select even if reserved, but not if full, and not if pending
+                    if (!isFull && unit.availableCapacity > 0 && !unit.hasPendingApplication) {
                         radioButton.setChecked(true);
                         selectedRoomUnitId = unit.roomId;
                         hasSelectedNonReserved = true;
                     }
-                } else if (!isReserved) {
-                    // Private Room: only select if not reserved
+                } else if (!isReserved && !"Occupied".equals(unit.status) && !unit.hasPendingApplication) {
+                    // Private Room: only select if not reserved, not occupied, and not pending
                     radioButton.setChecked(true);
                     selectedRoomUnitId = unit.roomId;
+                    selectedRoomNumber = unit.roomNumber;
                     hasSelectedNonReserved = true;
                 }
             }
@@ -467,10 +518,21 @@ public class BookingActivity extends AppCompatActivity {
                 radioButton.setTag(unit.roomId);
             
             radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                // For Private Room, prevent selection of reserved rooms
-                // For Bed Spacer, prevent selection if full (even if status is "Partially Occupied")
-                if (isReserved && !"Bed Spacer".equals(roomCategory)) {
+                // Prevent selection if user has pending application
+                if ((isReserved && !"Bed Spacer".equals(roomCategory))) {
                     buttonView.setChecked(false);
+                    return;
+                }
+                
+                if (unit.hasPendingApplication) {
+                    buttonView.setChecked(false);
+                    // Show friendly modal
+                    String statusMsg = (unit.userApplicationStatus != null) ? unit.userApplicationStatus : "pending";
+                    new androidx.appcompat.app.AlertDialog.Builder(BookingActivity.this)
+                        .setTitle("Application Exists")
+                        .setMessage("You already have a " + statusMsg + " application for this room. Please wait for approval or proceed with payment.")
+                        .setPositiveButton("OK", null)
+                        .show();
                     return;
                 }
                 
@@ -485,7 +547,12 @@ public class BookingActivity extends AppCompatActivity {
                 
                 if (isChecked) {
                     selectedRoomUnitId = roomIdValue;
-                    Log.d(TAG, "Selected room unit ID: " + selectedRoomUnitId);
+                    selectedRoomNumber = buttonView.getText().toString();
+                    // Remove "(Reserved)" if present
+                    if (selectedRoomNumber.contains(" (Reserved)")) {
+                        selectedRoomNumber = selectedRoomNumber.replace(" (Reserved)", "");
+                    }
+                    Log.d(TAG, "Selected room unit ID: " + selectedRoomUnitId + ", Room Number: " + selectedRoomNumber);
                 }
             });
             
@@ -671,6 +738,12 @@ public class BookingActivity extends AppCompatActivity {
             intent.putExtra("user_id", userId);
             intent.putExtra("start_date", etStartDate.getText().toString());
             intent.putExtra("end_date", etEndDate.getText().toString());
+            
+            // Add selected room number to roomData JSON
+            if (selectedRoomNumber != null) {
+                roomData.put("room_number", selectedRoomNumber);
+            }
+            
             intent.putExtra("room_data", roomData.toString());
             startActivity(intent);
         } catch (Exception e) {

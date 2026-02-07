@@ -55,9 +55,9 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
         
         // Update status color based on status
         // Pending - orange, Confirmed - blue, Completed - green
-        if ("Confirmed".equals(status)) {
+        if ("Confirmed".equals(status) || "Approved".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed/Approved
         } else if ("Cancelled".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
             holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_red);

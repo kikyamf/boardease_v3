@@ -43,6 +43,13 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set boarding house name
         holder.tvBoardingHouseName.setText(booking.getBoardingHouseName());
         
+        // Set room details
+        String roomDetails = booking.getRoomCategory();
+        if (booking.getRoomNumber() != null && !booking.getRoomNumber().isEmpty()) {
+            roomDetails += " | " + booking.getRoomNumber();
+        }
+        holder.tvRoomDetails.setText(roomDetails);
+        
         // Set location
         holder.tvLocation.setText(booking.getLocation());
         
@@ -67,15 +74,19 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set status background based on status (use original status, not display status)
         // Pending - orange, Confirmed - blue, Completed - green
         if ("Confirmed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Confirmed
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Active
         } else if ("Completed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Completed
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Completed/History
         } else if ("Pending".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
+        } else if ("Approved".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Approved (Action Required)
         } else if ("Cancelled".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red background for cancelled bookings
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Cancelled
+        } else if ("Declined".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Declined
         } else {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending (default)
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Default
         }
         
         // Load image with Glide
@@ -136,12 +147,13 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
     
     public static class BookingViewHolder extends RecyclerView.ViewHolder {
         ImageView imgBoardingHouse;
-        TextView tvBoardingHouseName, tvLocation, tvBookingDates, tvMonthlyDue, tvStatus;
+        TextView tvBoardingHouseName, tvRoomDetails, tvLocation, tvBookingDates, tvMonthlyDue, tvStatus;
         
         public BookingViewHolder(@NonNull View itemView) {
             super(itemView);
             imgBoardingHouse = itemView.findViewById(R.id.imgBoardingHouse);
             tvBoardingHouseName = itemView.findViewById(R.id.tvBoardingHouseName);
+            tvRoomDetails = itemView.findViewById(R.id.tvRoomDetails);
             tvLocation = itemView.findViewById(R.id.tvLocation);
             tvBookingDates = itemView.findViewById(R.id.tvBookingDates);
             tvMonthlyDue = itemView.findViewById(R.id.tvMonthlyDue);

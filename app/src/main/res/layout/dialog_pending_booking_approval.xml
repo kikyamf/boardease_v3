@@ -30,6 +30,7 @@
 
     <!-- Title -->
     <TextView
+        android:id="@+id/tvTitlePending"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Pending Approval"
@@ -71,6 +72,7 @@
                     android:contentDescription="Pending" />
 
                 <TextView
+                    android:id="@+id/tvMessagePending"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -112,17 +114,56 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- OK Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOkPending"
+    <!-- Warning Texts (Visible only when Approved) -->
+    <TextView
+        android:id="@+id/tvPaymentWarnings"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="OK"
-        android:textSize="16sp"
-        android:textColor="#FFFFFF"
+        android:text="Note: Payment is Non-refundable. Payment must be made within 24 hours or the booking will be automatically declined."
+        android:textSize="12sp"
+        android:textColor="#D32F2F"
         android:fontFamily="@font/poppins_medium"
-        android:backgroundTint="#FF9800"
-        app:cornerRadius="25dp"
-        android:paddingVertical="14dp" />
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <!-- Buttons Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelApplication"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#D32F2F"
+            app:cornerRadius="25dp"
+            android:paddingVertical="14dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOkPending"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="OK"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="@font/poppins_medium"
+            android:backgroundTint="#FF9800"
+            app:cornerRadius="25dp"
+            android:paddingVertical="14dp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
 

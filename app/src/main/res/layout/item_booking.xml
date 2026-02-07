@@ -48,6 +48,19 @@
                 android:maxLines="1"
                 android:ellipsize="end" />
 
+            <!-- Room Details -->
+            <TextView
+                android:id="@+id/tvRoomDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Private Room | Room 101"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
             <!-- Location -->
             <LinearLayout
                 android:layout_width="wrap_content"
