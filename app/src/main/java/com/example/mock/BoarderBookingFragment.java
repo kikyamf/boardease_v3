@@ -595,6 +595,8 @@ public class BoarderBookingFragment extends Fragment {
             TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
             com.google.android.material.button.MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
             com.google.android.material.button.MaterialButton btnReportMaintenance = dialogView.findViewById(R.id.btnReportMaintenance);
+            com.google.android.material.button.MaterialButton btnTerminate = dialogView.findViewById(R.id.btnTerminate);
+            com.google.android.material.button.MaterialButton btnChangeRoom = dialogView.findViewById(R.id.btnChangeRoom);
 
             // Set booking data
             if (booking.getImagePath() != null && !booking.getImagePath().isEmpty()) {
@@ -653,11 +655,81 @@ public class BoarderBookingFragment extends Fragment {
                 showMaintenanceReportDialog(booking);
             });
 
+            // Terminate button click listener
+            btnTerminate.setOnClickListener(v -> {
+                dialog.dismiss();
+                showTerminationReasonModal(booking);
+            });
+
+            // Change Room button click listener
+            btnChangeRoom.setOnClickListener(v -> {
+                dialog.dismiss();
+                showTerminationReasonModal(booking);
+            });
+
         } catch (Exception e) {
             Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showTerminationReasonModal(Booking booking) {
+        if (getContext() == null) return;
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(getContext());
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(48, 32, 48, 32);
+        layout.setBackgroundColor(getResources().getColor(android.R.color.white));
+
+        TextView titleView = new TextView(getContext());
+        titleView.setText("Reason for Termination");
+        titleView.setTextSize(18);
+        titleView.setTypeface(null, android.graphics.Typeface.BOLD);
+        titleView.setTextColor(getResources().getColor(android.R.color.black));
+        titleView.setPadding(0, 0, 0, 24);
+        layout.addView(titleView);
+
+        android.widget.RadioGroup radioGroup = new android.widget.RadioGroup(getContext());
+        String[] reasons = {"Change Room", "Utility Issues", "Personal Reason", "Prefer not to say"};
+        for (String reason : reasons) {
+            android.widget.RadioButton rb = new android.widget.RadioButton(getContext());
+            rb.setText(reason);
+            rb.setTextSize(16);
+            radioGroup.addView(rb);
+        }
+        layout.addView(radioGroup);
+
+        com.google.android.material.button.MaterialButton btnSubmit = new com.google.android.material.button.MaterialButton(getContext());
+        btnSubmit.setText("Submit");
+        btnSubmit.setBackgroundColor(getResources().getColor(R.color.brown));
+        android.widget.LinearLayout.LayoutParams submitParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        submitParams.setMargins(0, 24, 0, 0);
+        btnSubmit.setLayoutParams(submitParams);
+        layout.addView(btnSubmit);
+
+        builder.setView(layout);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        btnSubmit.setOnClickListener(v -> {
+            int selectedId = radioGroup.getCheckedRadioButtonId();
+            if (selectedId == -1) {
+                Toast.makeText(getContext(), "Please select a reason", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            android.widget.RadioButton selectedRb = dialog.findViewById(selectedId);
+            String reason = selectedRb.getText().toString();
+            // Here you would typically call an API to submit termination
+            Toast.makeText(getContext(), "Termination request submitted for " + booking.getBoardingHouseName() + ": " + reason, Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+            loadBookingData(); // Refresh data
+        });
     }
 
     private void showPendingBookingDialog(Booking booking) {

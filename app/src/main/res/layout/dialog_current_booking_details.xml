@@ -266,6 +266,43 @@
             android:drawableStart="@drawable/ic_payment"
             android:drawablePadding="8dp" />
 
+        <!-- Terminate and Change Room Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTerminate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Terminate"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="#D32F2F"
+                app:cornerRadius="20dp"
+                android:paddingVertical="12dp"
+                android:layout_marginEnd="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeRoom"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Change Room"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="#FBC02D"
+                app:cornerRadius="20dp"
+                android:paddingVertical="12dp"
+                android:layout_marginStart="6dp" />
+
+        </LinearLayout>
+
         <!-- Report for Maintenance Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnReportMaintenance"
