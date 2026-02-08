@@ -2584,6 +2584,8 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error submitting review", Toast.LENGTH_SHORT).show();
         }
+    }
+
     private void submitTerminationRequest(Booking booking, String reason, String details, AlertDialog dialog) {
         if (getContext() == null) return;
 
