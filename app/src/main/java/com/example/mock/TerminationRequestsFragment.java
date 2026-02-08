@@ -29,6 +29,7 @@ import java.util.Map;
 
 public class TerminationRequestsFragment extends Fragment {
 
+    private static final String TAG = "TerminationRequests";
     private static final String ARG_USER_ID = "user_id";
     private RecyclerView recyclerView;
     private TerminationRequestsAdapter adapter;
@@ -123,7 +124,20 @@ public class TerminationRequestsFragment extends Fragment {
                 },
                 error -> {
                     swipeRefreshLayout.setRefreshing(false);
-                    Toast.makeText(getContext(), "Error loading requests", Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Error loading requests";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            android.util.Log.e(TAG, "Load Requests Error Data: " + responseBody);
+                        } catch (Exception e) {
+                            android.util.Log.e(TAG, "Error parsing error data", e);
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    android.util.Log.e(TAG, errorMessage, error);
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                 });
 
         requestQueue.add(request);
@@ -172,7 +186,20 @@ public class TerminationRequestsFragment extends Fragment {
                 },
                 error -> {
                     hideProgressDialog();
-                    Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Error approving termination";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            android.util.Log.e(TAG, "Approve Termination Error Data: " + responseBody);
+                        } catch (Exception e) {
+                            android.util.Log.e(TAG, "Error parsing error data", e);
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    android.util.Log.e(TAG, errorMessage, error);
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                 }) {
             @Override
             protected Map<String, String> getParams() {
@@ -207,7 +234,20 @@ public class TerminationRequestsFragment extends Fragment {
                 },
                 error -> {
                     hideProgressDialog();
-                    Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Error declining termination";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            android.util.Log.e(TAG, "Decline Termination Error Data: " + responseBody);
+                        } catch (Exception e) {
+                            android.util.Log.e(TAG, "Error parsing error data", e);
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    android.util.Log.e(TAG, errorMessage, error);
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                 }) {
             @Override
             protected Map<String, String> getParams() {
