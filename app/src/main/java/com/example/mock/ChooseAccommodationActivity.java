@@ -1166,8 +1166,8 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
-        
-        // Button uses default color (no custom styling)
+    }
+
     private void submitTerminationRequest(String reason, String details, androidx.appcompat.app.AlertDialog dialog) {
         String url = "https://boardease.calapebohol.com/BoardEase2/terminate_booking.php";
 
