@@ -931,59 +931,62 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     }
 
     private void showTerminationReasonModal() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-        
-        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
-        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
-        layout.setPadding(48, 32, 48, 32);
-        layout.setBackgroundColor(getResources().getColor(android.R.color.white));
+        if (isFinishing()) return;
 
-        TextView titleView = new TextView(this);
-        titleView.setText("Reason for Termination");
-        titleView.setTextSize(18);
-        titleView.setTypeface(null, Typeface.BOLD);
-        titleView.setTextColor(getResources().getColor(android.R.color.black));
-        titleView.setPadding(0, 0, 0, 24);
-        layout.addView(titleView);
+        try {
+            androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_termination_reason, null);
+            builder.setView(dialogView);
 
-        android.widget.RadioGroup radioGroup = new android.widget.RadioGroup(this);
-        String[] reasons = {"Change Room", "Utility Issues", "Personal Reason", "Prefer not to say"};
-        for (String reason : reasons) {
-            android.widget.RadioButton rb = new android.widget.RadioButton(this);
-            rb.setText(reason);
-            rb.setTextSize(16);
-            radioGroup.addView(rb);
-        }
-        layout.addView(radioGroup);
+            // Initialize views from the layout
+            android.widget.ImageButton btnClose = dialogView.findViewById(R.id.btnCloseTermination);
+            android.widget.RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupTerminationReason);
+            com.google.android.material.textfield.TextInputEditText etDetails = dialogView.findViewById(R.id.etTerminationDetails);
+            com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelTermination);
+            com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitTermination);
 
-        MaterialButton btnSubmit = new MaterialButton(this);
-        btnSubmit.setText("Submit");
-        btnSubmit.setBackgroundColor(getResources().getColor(R.color.brown));
-        android.widget.LinearLayout.LayoutParams submitParams = new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        submitParams.setMargins(0, 24, 0, 0);
-        btnSubmit.setLayoutParams(submitParams);
-        layout.addView(btnSubmit);
-
-        builder.setView(layout);
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        dialog.show();
-
-        btnSubmit.setOnClickListener(v -> {
-            int selectedId = radioGroup.getCheckedRadioButtonId();
-            if (selectedId == -1) {
-                Toast.makeText(this, "Please select a reason", Toast.LENGTH_SHORT).show();
-                return;
+            androidx.appcompat.app.AlertDialog dialog = builder.create();
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             }
-            android.widget.RadioButton selectedRb = dialog.findViewById(selectedId);
-            String reason = selectedRb.getText().toString();
-            // Here you would typically call an API to submit termination
-            Toast.makeText(this, "Termination request submitted: " + reason, Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
-            finish(); // Go back after termination
-        });
+            dialog.show();
+
+            // Close button listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Cancel button listener
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+            // Submit button listener
+            btnSubmit.setOnClickListener(v -> {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                if (selectedId == -1) {
+                    Toast.makeText(this, "Please select a reason", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                android.widget.RadioButton selectedRb = dialogView.findViewById(selectedId);
+                String reason = selectedRb.getText().toString();
+                String details = etDetails.getText() != null ? etDetails.getText().toString() : "";
+                
+                String fullReason = reason;
+                if (!details.isEmpty()) {
+                    fullReason += ": " + details;
+                }
+
+                // In a real app, you would call an API here
+                Log.d(TAG, "Termination submitted. Reason: " + fullReason);
+                
+                Toast.makeText(this, "Termination request submitted", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                finish(); // Go back after termination
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing termination dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error showing termination dialog", Toast.LENGTH_SHORT).show();
+        }
     }
     
     /**

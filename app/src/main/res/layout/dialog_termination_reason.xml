@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="600dp"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/dialog_background">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_logout"
+                android:tint="#D32F2F"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Reason for Termination"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <ImageButton
+                android:id="@+id/btnCloseTermination"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Info Text -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Please provide the reason for your stay termination. This helps us improve our service."
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginBottom="20dp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- Termination Reason Options Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#F9FAFB"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Section Title -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_info"
+                        android:tint="#D32F2F"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select Reason"
+                        android:textSize="14sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+                <!-- Radio Group -->
+                <RadioGroup
+                    android:id="@+id/radioGroupTerminationReason"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radioChangeRoom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Change Room"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="@color/radio_button_red" />
+
+                    <RadioButton
+                        android:id="@+id/radioUtilityIssues"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Utility Issues"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="@color/radio_button_red" />
+
+                    <RadioButton
+                        android:id="@+id/radioPersonalReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Personal Reason"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="@color/radio_button_red" />
+
+                    <RadioButton
+                        android:id="@+id/radioPreferNotToSay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Prefer not to say"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="@color/radio_button_red" />
+
+                    <RadioButton
+                        android:id="@+id/radioOthersTermination"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Others"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="@color/radio_button_red" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Additional Details Field (Shown only if Others is selected or always for context) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilOtherReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tell us more (Optional)"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="@color/textinput_stroke_red"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#D32F2F"
+            android:layout_marginBottom="20dp"
+            android:visibility="visible">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etTerminationDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:maxLines="5"
+                android:gravity="top"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="textMultiLine|textCapSentences" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelTermination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="20dp"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:layout_marginEnd="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmitTermination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Submit Termination"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="#D32F2F"
+                app:cornerRadius="20dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                app:icon="@drawable/ic_logout"
+                app:iconGravity="start"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
