@@ -1188,7 +1188,20 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                     }
                 },
                 error -> {
-                    Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Network error";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            Log.e(TAG, "Termination Error Data: " + responseBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error parsing error data", e);
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    Log.e(TAG, "Termination Request failed: " + errorMessage, error);
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
                 }) {
             @Override
             protected Map<String, String> getParams() {
