@@ -716,12 +716,8 @@ public class BoarderBookingFragment extends Fragment {
                     fullReason += ": " + details;
                 }
 
-                // In a real app, you would call an API here
-                Log.d(TAG, "Termination submitted for booking " + booking.getBookingId() + ". Reason: " + fullReason);
-                
-                Toast.makeText(getContext(), "Termination request submitted for " + booking.getBoardingHouseName(), Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-                loadBookingData(); // Refresh data
+                // Call the API to submit termination
+                submitTerminationRequest(booking, reason, details, dialog);
             });
 
         } catch (Exception e) {
@@ -2588,5 +2584,41 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error submitting review", Toast.LENGTH_SHORT).show();
         }
+    private void submitTerminationRequest(Booking booking, String reason, String details, AlertDialog dialog) {
+        if (getContext() == null) return;
+
+        String url = "https://boardease.calapebohol.com/BoardEase2/terminate_booking.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            Toast.makeText(getContext(), "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            loadBookingData(); // Refresh data
+                        } else {
+                            Toast.makeText(getContext(), "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(booking.getBookingId()));
+                params.put("user_id", String.valueOf(userId));
+                params.put("reason", reason);
+                params.put("details", details);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(getContext()).add(stringRequest);
     }
 }

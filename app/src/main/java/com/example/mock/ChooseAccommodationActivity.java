@@ -55,6 +55,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     private String activeEndDateRaw = "";
     private String forcedStartDate = "";
     private boolean isForcedBookingMode = false;
+    private int activeBookingId = 0;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -760,6 +761,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                     // Parse active booking details if available
                                     JSONObject bookingDetails = jsonResponse.optJSONObject("active_booking_details");
                                     if (bookingDetails != null) {
+                                        activeBookingId = bookingDetails.optInt("booking_id", 0);
                                         activeBhName = bookingDetails.optString("bh_name", "--");
                                         activeStartDateLabel = bookingDetails.optString("start_date_label", "--");
                                         activeEndDateLabel = bookingDetails.optString("end_date_label", "--");
@@ -974,12 +976,8 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                     fullReason += ": " + details;
                 }
 
-                // In a real app, you would call an API here
-                Log.d(TAG, "Termination submitted. Reason: " + fullReason);
-                
-                Toast.makeText(this, "Termination request submitted", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-                finish(); // Go back after termination
+                // Call the API to submit termination
+                submitTerminationRequest(reason, details, dialog);
             });
 
         } catch (Exception e) {
@@ -1170,6 +1168,43 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         dialog.show();
         
         // Button uses default color (no custom styling)
+    private void submitTerminationRequest(String reason, String details, androidx.appcompat.app.AlertDialog dialog) {
+        String url = "https://boardease.calapebohol.com/BoardEase2/terminate_booking.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            Toast.makeText(this, "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            finish(); // Go back after termination
+                        } else {
+                            Toast.makeText(this, "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(activeBookingId));
+                params.put("user_id", String.valueOf(currentUserId));
+                params.put("reason", reason);
+                params.put("details", details);
+                return params;
+            }
+        };
+
+        if (requestQueue == null) {
+            requestQueue = Volley.newRequestQueue(this);
+        }
+        requestQueue.add(stringRequest);
     }
 }
 

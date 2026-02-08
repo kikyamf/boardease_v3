@@ -64,6 +64,7 @@ public class BookingsActivity extends AppCompatActivity {
             Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
             Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
             Fragment historyFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
+            Fragment terminationFragment = getSupportFragmentManager().findFragmentByTag("f" + 3);
             
             if (pendingFragment instanceof PendingBookingsFragment) {
                 ((PendingBookingsFragment) pendingFragment).refreshBookings();
@@ -73,6 +74,9 @@ public class BookingsActivity extends AppCompatActivity {
             }
             if (historyFragment instanceof BookingHistoryFragment) {
                 ((BookingHistoryFragment) historyFragment).refreshBookings();
+            }
+            if (terminationFragment instanceof TerminationRequestsFragment) {
+                ((TerminationRequestsFragment) terminationFragment).refreshBookings();
             }
         } catch (Exception e) {
             // If fragment tags don't work, fragments will refresh on their onResume
@@ -131,6 +135,9 @@ public class BookingsActivity extends AppCompatActivity {
                         } else if (position == 2 && fragment instanceof BookingHistoryFragment) {
                             // History tab
                             ((BookingHistoryFragment) fragment).loadIfNeeded();
+                        } else if (position == 3 && fragment instanceof TerminationRequestsFragment) {
+                            // Termination tab
+                            ((TerminationRequestsFragment) fragment).loadIfNeeded();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -156,6 +163,9 @@ public class BookingsActivity extends AppCompatActivity {
                 case 2:
                     tab.setText("History");
                     break;
+                case 3:
+                    tab.setText("Termination Request");
+                    break;
             }
         }).attach();
     }
@@ -176,6 +186,8 @@ public class BookingsActivity extends AppCompatActivity {
                     return ApprovedBookingsFragment.newInstance(userId);
                 case 2:
                     return BookingHistoryFragment.newInstance(userId);
+                case 3:
+                    return TerminationRequestsFragment.newInstance(userId);
                 default:
                     return PendingBookingsFragment.newInstance(userId);
             }
@@ -183,7 +195,7 @@ public class BookingsActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 3;
+            return 4;
         }
     }
 }
