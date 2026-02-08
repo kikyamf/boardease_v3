@@ -2589,7 +2589,7 @@ public class BoarderBookingFragment extends Fragment {
     private void submitTerminationRequest(Booking booking, String reason, String details, AlertDialog dialog) {
         if (getContext() == null) return;
 
-        String url = "https://boardease.calapebohol.com/BoardEase2/terminate_booking.php";
+        String url = "https://boardease.calapebohol.com/terminate_booking.php";
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 response -> {

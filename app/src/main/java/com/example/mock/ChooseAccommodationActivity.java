@@ -1169,7 +1169,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     }
 
     private void submitTerminationRequest(String reason, String details, androidx.appcompat.app.AlertDialog dialog) {
-        String url = "https://boardease.calapebohol.com/BoardEase2/terminate_booking.php";
+        String url = "https://boardease.calapebohol.com/terminate_booking.php";
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 response -> {
