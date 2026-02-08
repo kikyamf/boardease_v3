@@ -26,6 +26,7 @@ public class BookingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_bookings);
 
         // Get userId from intent
+        //
         userId = getIntent().getIntExtra("user_id", 0);
 
         setupViews();
