@@ -1,36 +1,71 @@
 <?php
-// Handle preflight OPTIONS request for CORS
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning, User-Agent, Accept');
-    header('Access-Control-Max-Age: 86400');
-    http_response_code(200);
-    exit();
-}
+// Enable error reporting and logging for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php_errors.log');
+
+// Log start of execution
+error_log("=== TERMINATE_BOOKING.PHP START ===");
+error_log("Request Time: " . date('Y-m-d H:i:s'));
+
+// Start output buffering
+ob_start();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    ob_clean();
+    http_response_code(200);
+    exit;
+}
 
 // Database configuration
-$host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+define('DB_HOST', '');
+define('DB_USER', 'u223444398_userboardease');
+define('DB_PASS', '!Boardease2026');
+define('DB_NAME', 'u223444398_boardease');
+
+$host = DB_HOST;
+$dbname = DB_NAME;
+$username = DB_USER;
+$password = DB_PASS;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    // Connect to database
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Get parameters
-    $booking_id = isset($_POST['booking_id']) ? intval($_POST['booking_id']) : 0;
-    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-    $reason = isset($_POST['reason']) ? $_POST['reason'] : '';
-    $details = isset($_POST['details']) ? $_POST['details'] : '';
+    // Get input (handling both JSON and conventional POST for robustness)
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+    
+    if ($data === null) {
+        $data = $_POST;
+    }
+
+    if (function_exists('error_log')) {
+        error_log("Received Data: " . print_r($data, true));
+    }
+
+    $booking_id = isset($data['booking_id']) ? intval($data['booking_id']) : 0;
+    $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+    $reason = isset($data['reason']) ? trim($data['reason']) : '';
+    $details = isset($data['details']) ? trim($data['details']) : '';
 
     if ($booking_id === 0 || $user_id === 0 || empty($reason)) {
-        echo json_encode(['success' => false, 'error' => 'Missing required fields.']);
-        exit();
+        ob_clean();
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Missing required fields: booking_id, user_id, and reason are required'
+        ]);
+        ob_end_flush();
+        exit;
     }
 
     // Check if booking exists and belongs to the user
@@ -39,8 +74,14 @@ try {
     $checkStmt->execute([$booking_id, $user_id]);
     
     if (!$checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'error' => 'Booking not found or access denied.']);
-        exit();
+        ob_clean();
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Booking not found or access denied.'
+        ]);
+        ob_end_flush();
+        exit;
     }
 
     // Insert termination request
@@ -48,9 +89,26 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$booking_id, $user_id, $reason, $details]);
 
-    echo json_encode(['success' => true, 'message' => 'Termination request submitted successfully.']);
+    $response = [
+        'success' => true,
+        'message' => 'Termination request submitted successfully.'
+    ];
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
 
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    if (function_exists('error_log')) {
+        error_log("Error in terminate_booking.php: " . $e->getMessage());
+    }
+    
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Database error: ' . $e->getMessage()
+    ]);
+    ob_end_flush();
 }
 ?>

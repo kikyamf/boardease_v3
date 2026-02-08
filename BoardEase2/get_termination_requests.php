@@ -1,33 +1,68 @@
 <?php
-// Handle preflight OPTIONS request for CORS
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning, User-Agent, Accept');
-    header('Access-Control-Max-Age: 86400');
-    http_response_code(200);
-    exit();
-}
+// Enable error reporting and logging for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php_errors.log');
+
+// Log start of execution
+error_log("=== GET_TERMINATION_REQUESTS.PHP START ===");
+error_log("Request Time: " . date('Y-m-d H:i:s'));
+
+// Start output buffering
+ob_start();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, ngrok-skip-browser-warning');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    ob_clean();
+    http_response_code(200);
+    exit;
+}
 
 // Database configuration
-$host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+define('DB_HOST', '');
+define('DB_USER', 'u223444398_userboardease');
+define('DB_PASS', '!Boardease2026');
+define('DB_NAME', 'u223444398_boardease');
+
+$host = DB_HOST;
+$dbname = DB_NAME;
+$username = DB_USER;
+$password = DB_PASS;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    // Connect to database
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Get parameters
-    $owner_id = isset($_GET['owner_id']) ? intval($_GET['owner_id']) : 0;
+    // Get input (handling JSON, POST, and GET)
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+    
+    if ($data === null) {
+        $data = array_merge($_GET, $_POST);
+    }
+
+    if (function_exists('error_log')) {
+        error_log("Received Data: " . print_r($data, true));
+    }
+
+    $owner_id = isset($data['owner_id']) ? intval($data['owner_id']) : 0;
 
     if ($owner_id === 0) {
-        echo json_encode(['success' => false, 'error' => 'Owner ID is required.']);
-        exit();
+        ob_clean();
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Missing required field: owner_id is required'
+        ]);
+        ob_end_flush();
+        exit;
     }
 
     // Get termination requests for bookings belonging to the owner's boarding houses
@@ -58,14 +93,28 @@ try {
     $stmt->execute([$owner_id]);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode([
+    $response = [
         'success' => true,
         'data' => [
             'termination_requests' => $results
         ]
-    ]);
+    ];
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
 
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    if (function_exists('error_log')) {
+        error_log("Error in get_termination_requests.php: " . $e->getMessage());
+    }
+    
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Database error: ' . $e->getMessage()
+    ]);
+    ob_end_flush();
 }
 ?>
