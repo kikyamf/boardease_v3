@@ -40,6 +40,20 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // Ensure termination_requests table exists
+    $createTableSql = "CREATE TABLE IF NOT EXISTS termination_requests (
+        termination_id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_id INT NOT NULL,
+        user_id INT NOT NULL,
+        reason VARCHAR(255) NOT NULL,
+        details TEXT,
+        status ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    $pdo->exec($createTableSql);
+
     // Get input (handling JSON, POST, and GET)
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
@@ -74,8 +88,8 @@ try {
                 tr.details,
                 tr.status,
                 tr.created_at,
-                r.f_name,
-                r.l_name,
+                r.first_name as f_name,
+                r.last_name as l_name,
                 bh.bh_name,
                 ru.room_number,
                 bhr.room_name as room_type
@@ -85,7 +99,7 @@ try {
             JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
             JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
             JOIN users u ON tr.user_id = u.user_id
-            JOIN registration r ON u.reg_id = r.reg_id
+            JOIN registrations r ON u.reg_id = r.id
             WHERE bh.user_id = ? AND tr.status = 'Pending'
             ORDER BY tr.created_at DESC";
 

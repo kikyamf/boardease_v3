@@ -40,6 +40,20 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // Ensure termination_requests table exists
+    $createTableSql = "CREATE TABLE IF NOT EXISTS termination_requests (
+        termination_id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_id INT NOT NULL,
+        user_id INT NOT NULL,
+        reason VARCHAR(255) NOT NULL,
+        details TEXT,
+        status ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+    $pdo->exec($createTableSql);
+
     // Get input (handling both JSON and conventional POST)
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
