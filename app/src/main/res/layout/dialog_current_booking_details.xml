@@ -7,318 +7,332 @@
     android:padding="24dp"
     android:background="@drawable/dialog_background">
 
-    <!-- Header -->
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Booking Details"
-            android:textSize="20sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_bold" />
-
-        <ImageButton
-            android:id="@+id/btnClose"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_close"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Close" />
-
-    </LinearLayout>
-
-    <!-- Boarding House Image -->
-    <ImageView
-        android:id="@+id/imgBoardingHouse"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/sample_listing"
-        android:contentDescription="Boarding House Image"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Boarding House Name -->
-    <TextView
-        android:id="@+id/tvBoardingHouseName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Sunshine Boarding House"
-        android:textSize="18sp"
-        android:textColor="#000000"
-        android:fontFamily="@font/poppins_bold"
-        android:layout_marginBottom="8dp" />
-
-    <!-- Location -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@drawable/location"
-            android:contentDescription="Location"
-            android:tint="#666666" />
-
-        <TextView
-            android:id="@+id/tvLocation"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Quezon City, Metro Manila"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:fontFamily="@font/poppins_regular"
-            android:layout_marginStart="8dp" />
-
-    </LinearLayout>
-
-    <!-- Booking Information Card -->
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#F9FAFB"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="2dp"
-        android:layout_marginBottom="20dp">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <!-- Room Details -->
+            <!-- Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
+                android:layout_marginBottom="20dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Room"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvRoomDetails"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Private Room | Room 101"
-                    android:textSize="14sp"
+                    android:text="Booking Details"
+                    android:textSize="20sp"
                     android:textColor="#000000"
-                    android:fontFamily="@font/poppins_regular" />
-
-            </LinearLayout>
-
-            <!-- Start Date -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Start Date"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvStartDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="January 1, 2024"
-                    android:textSize="14sp"
-                    android:textColor="#000000"
-                    android:fontFamily="@font/poppins_regular" />
-
-            </LinearLayout>
-
-            <!-- End Date -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="End Date"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvEndDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="December 31, 2024"
-                    android:textSize="14sp"
-                    android:textColor="#000000"
-                    android:fontFamily="@font/poppins_regular" />
-
-            </LinearLayout>
-
-            <!-- Monthly Due -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Monthly Due"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvMonthlyDue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="₱3,500"
-                    android:textSize="14sp"
-                    android:textColor="#2E7D32"
                     android:fontFamily="@font/poppins_bold" />
 
+                <ImageButton
+                    android:id="@+id/btnClose"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_close"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close" />
+
             </LinearLayout>
 
-            <!-- Status -->
+            <!-- Boarding House Image -->
+            <ImageView
+                android:id="@+id/imgBoardingHouse"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/sample_listing"
+                android:contentDescription="Boarding House Image"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Boarding House Name -->
+            <TextView
+                android:id="@+id/tvBoardingHouseName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sunshine Boarding House"
+                android:textSize="18sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Location -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/location"
+                    android:contentDescription="Location"
+                    android:tint="#666666" />
 
                 <TextView
+                    android:id="@+id/tvLocation"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Status"
+                    android:text="Quezon City, Metro Manila"
                     android:textSize="14sp"
                     android:textColor="#666666"
-                    android:fontFamily="@font/poppins_medium" />
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginStart="8dp" />
 
-                <TextView
-                    android:id="@+id/tvStatus"
-                    android:layout_width="wrap_content"
+            </LinearLayout>
+
+            <!-- Booking Information Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#F9FAFB"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Active"
-                    android:textSize="12sp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Room Details -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Room"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvRoomDetails"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Private Room | Room 101"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:fontFamily="@font/poppins_regular" />
+
+                    </LinearLayout>
+
+                    <!-- Start Date -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Start Date"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvStartDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="January 1, 2024"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:fontFamily="@font/poppins_regular" />
+
+                    </LinearLayout>
+
+                    <!-- End Date -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="End Date"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvEndDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="December 31, 2024"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:fontFamily="@font/poppins_regular" />
+
+                    </LinearLayout>
+
+                    <!-- Monthly Due -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Monthly Due"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvMonthlyDue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="₱3,500"
+                            android:textSize="14sp"
+                            android:textColor="#2E7D32"
+                            android:fontFamily="@font/poppins_bold" />
+
+                    </LinearLayout>
+
+                    <!-- Status -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Status"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <TextView
+                            android:id="@+id/tvStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Active"
+                            android:textSize="12sp"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="@font/poppins_medium"
+                            android:background="@drawable/bg_status_approved"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <!-- Make Payment Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMakePayment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Make Payment"
+                    android:textSize="14sp"
                     android:textColor="#FFFFFF"
                     android:fontFamily="@font/poppins_medium"
-                    android:background="@drawable/bg_status_approved"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp" />
+                    android:backgroundTint="#2E7D32"
+                    app:cornerRadius="20dp"
+                    android:paddingVertical="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:drawableStart="@drawable/ic_payment"
+                    android:drawablePadding="8dp" />
+
+                <!-- Terminate and Change Room Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTerminate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Terminate"
+                        android:textSize="12sp"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="#D32F2F"
+                        app:cornerRadius="20dp"
+                        android:paddingVertical="12dp"
+                        android:layout_marginEnd="6dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeRoom"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Change Room"
+                        android:textSize="12sp"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/poppins_medium"
+                        android:backgroundTint="#FBC02D"
+                        app:cornerRadius="20dp"
+                        android:paddingVertical="12dp"
+                        android:layout_marginStart="6dp" />
+
+                </LinearLayout>
+
+                <!-- Report for Maintenance Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReportMaintenance"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Report for Maintenance"
+                    android:textSize="14sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/poppins_medium"
+                    android:backgroundTint="#FF6B35"
+                    app:cornerRadius="20dp"
+                    android:paddingVertical="14dp"
+                    android:drawableStart="@drawable/ic_maintenance"
+                    android:drawablePadding="8dp" />
 
             </LinearLayout>
 
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Action Buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center">
-
-        <!-- Make Payment Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMakePayment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Make Payment"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="@font/poppins_medium"
-            android:backgroundTint="#2E7D32"
-            app:cornerRadius="20dp"
-            android:paddingVertical="14dp"
-            android:layout_marginBottom="12dp"
-            android:drawableStart="@drawable/ic_payment"
-            android:drawablePadding="8dp" />
-
-        <!-- Terminate and Change Room Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnTerminate"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Terminate"
-                android:textSize="12sp"
-                android:textColor="#FFFFFF"
-                android:fontFamily="@font/poppins_medium"
-                android:backgroundTint="#D32F2F"
-                app:cornerRadius="20dp"
-                android:paddingVertical="12dp"
-                android:layout_marginEnd="6dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnChangeRoom"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Change Room"
-                android:textSize="12sp"
-                android:textColor="#FFFFFF"
-                android:fontFamily="@font/poppins_medium"
-                android:backgroundTint="#FBC02D"
-                app:cornerRadius="20dp"
-                android:paddingVertical="12dp"
-                android:layout_marginStart="6dp" />
-
-        </LinearLayout>
-
-        <!-- Report for Maintenance Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnReportMaintenance"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Report for Maintenance"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="@font/poppins_medium"
-            android:backgroundTint="#FF6B35"
-            app:cornerRadius="20dp"
-            android:paddingVertical="14dp"
-            android:drawableStart="@drawable/ic_maintenance"
-            android:drawablePadding="8dp" />
-
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>
 
