@@ -742,7 +742,6 @@ public class BoarderBookingFragment extends Fragment {
                 } catch (JSONException e) {
                     android.util.Log.e("ChangeRoom", "JSON Parsing Error: " + e.getMessage() + " | Response: " + response);
                     e.printStackTrace();
-                    //
                 }
             },
             error -> {
@@ -938,7 +937,7 @@ public class BoarderBookingFragment extends Fragment {
                         // All rooms must reflect the room unit part, even if empty
                         TextView tvEmpty = new TextView(holder.itemView.getContext());
                         tvEmpty.setText("No available units for this room type");
-                        tvEmpty.setTextSize(12sp);
+                        tvEmpty.setTextSize(12);
                         tvEmpty.setPadding(32, 8, 0, 8);
                         tvEmpty.setTextColor(0xFF888888);
                         holder.rgRoomUnits.addView(tvEmpty);
@@ -1107,7 +1106,7 @@ public class BoarderBookingFragment extends Fragment {
                             // Ensure all rooms show unit section even if empty
                             TextView tvEmpty = new TextView(c.itemView.getContext());
                             tvEmpty.setText("No available units for this room type");
-                            tvEmpty.setTextSize(12sp);
+                            tvEmpty.setTextSize(12);
                             tvEmpty.setPadding(32, 8, 0, 8);
                             tvEmpty.setTextColor(0xFF888888);
                             c.rgRoomUnits.addView(tvEmpty);
