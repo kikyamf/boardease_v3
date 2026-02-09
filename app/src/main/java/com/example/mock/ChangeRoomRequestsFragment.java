@@ -79,16 +79,22 @@ public class ChangeRoomRequestsFragment extends Fragment {
     private void loadRequests() {
         swipeRefreshLayout.setRefreshing(true);
         String url = "https://boardease.calapebohol.com/get_change_room_requests.php?owner_id=" + ownerId;
+        
+        android.util.Log.d(TAG, "Loading requests from URL: " + url);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     swipeRefreshLayout.setRefreshing(false);
+                    android.util.Log.d(TAG, "Response received: " + response.toString());
                     try {
                         if (response.getBoolean("success")) {
+                            android.util.Log.d(TAG, "Success = true");
                             JSONArray array = response.getJSONObject("data").getJSONArray("change_room_requests");
+                            android.util.Log.d(TAG, "Array length: " + array.length());
                             requests.clear();
                             for (int i = 0; i < array.length(); i++) {
                                 JSONObject obj = array.getJSONObject(i);
+                                android.util.Log.d(TAG, "Processing request " + i + ": " + obj.toString());
                                 requests.add(new ChangeRoomRequestData(
                                         obj.getInt("change_request_id"),
                                         obj.getInt("booking_id"),
@@ -105,11 +111,14 @@ public class ChangeRoomRequestsFragment extends Fragment {
                                         obj.getString("new_room_name")
                                 ));
                             }
+                            android.util.Log.d(TAG, "Total requests added: " + requests.size());
                             updateUI();
                         } else {
+                            android.util.Log.e(TAG, "Success = false, message: " + response.getString("message"));
                             Toast.makeText(getContext(), response.getString("message"), Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
+                        android.util.Log.e(TAG, "JSON parsing error: " + e.getMessage());
                         e.printStackTrace();
                     }
                 },

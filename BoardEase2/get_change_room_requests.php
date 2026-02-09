@@ -80,8 +80,12 @@ try {
         LEFT JOIN room_units ru ON crr.new_unit_id = ru.room_id
         WHERE bh_old.user_id = ? AND crr.status = 'Pending'
     ");
+    
+    error_log("Executing query with owner_id: " . $owner_id);
     $stmt->execute([$owner_id]);
     $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    error_log("Query returned " . count($requests) . " requests");
+    error_log("Requests data: " . print_r($requests, true));
 
     ob_clean();
     echo json_encode(['success' => true, 'data' => ['change_room_requests' => $requests]]);
