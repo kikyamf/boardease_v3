@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/dialog_background">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/tvTransferTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Available Rooms for Transfer"
+            android:textSize="20sp"
+            android:textColor="#000000"
+            android:fontFamily="@font/poppins_bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseTransfer"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Section 1: Current BH Available Rooms -->
+            <TextView
+                android:id="@+id/tvSection1Title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Available Rooms in Current BH"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCurrentBhRooms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginBottom="24dp" />
+
+            <TextView
+                android:id="@+id/tvSection1Empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No other rooms available in this BH."
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_regular"
+                android:visibility="gone"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Section 2: Other BHs for Transfer -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Available Boarding Houses for Transfer"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvOtherBhRooms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tvSection2Empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No other BHs found for this owner."
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_regular"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSubmitRequest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit Request"
+        android:textSize="16sp"
+        android:textColor="#000000"
+        android:fontFamily="@font/poppins_bold"
+        android:backgroundTint="#FBC02D"
+        app:cornerRadius="12dp"
+        android:paddingVertical="12dp"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

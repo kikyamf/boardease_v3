@@ -1,0 +1,224 @@
+package com.example.mock;
+
+import android.app.ProgressDialog;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ChangeRoomRequestsFragment extends Fragment {
+
+    private static final String TAG = "ChangeRoomRequests";
+    private static final String ARG_USER_ID = "user_id";
+    private RecyclerView recyclerView;
+    private ChangeRoomRequestsAdapter adapter;
+    private List<ChangeRoomRequestData> requests;
+    private RequestQueue requestQueue;
+    private int ownerId;
+    private TextView tvCount;
+    private TextView emptyState;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar progressBar;
+    private ProgressDialog progressDialog;
+
+    public static ChangeRoomRequestsFragment newInstance(int ownerId) {
+        ChangeRoomRequestsFragment fragment = new ChangeRoomRequestsFragment();
+        Bundle args = new Bundle();
+        args.putInt(ARG_USER_ID, ownerId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_change_room_requests, container, false);
+
+        if (getArguments() != null) {
+            ownerId = getArguments().getInt(ARG_USER_ID);
+        }
+
+        recyclerView = view.findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        tvCount = view.findViewById(R.id.tvCount);
+        emptyState = view.findViewById(R.id.emptyState);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        progressBar = view.findViewById(R.id.progressBar);
+
+        requestQueue = Volley.newRequestQueue(getContext());
+        requests = new ArrayList<>();
+
+        swipeRefreshLayout.setOnRefreshListener(this::loadRequests);
+
+        loadRequests();
+
+        return view;
+    }
+
+    private void loadRequests() {
+        swipeRefreshLayout.setRefreshing(true);
+        String url = "https://boardease.calapebohol.com/get_change_room_requests.php?owner_id=" + ownerId;
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    swipeRefreshLayout.setRefreshing(false);
+                    try {
+                        if (response.getBoolean("success")) {
+                            JSONArray array = response.getJSONObject("data").getJSONArray("change_room_requests");
+                            requests.clear();
+                            for (int i = 0; i < array.length(); i++) {
+                                JSONObject obj = array.getJSONObject(i);
+                                requests.add(new ChangeRoomRequestData(
+                                        obj.getInt("change_request_id"),
+                                        obj.getInt("booking_id"),
+                                        obj.getInt("user_id"),
+                                        obj.getInt("new_room_id"),
+                                        obj.getString("reason"),
+                                        obj.getString("details"),
+                                        obj.getString("status"),
+                                        obj.getString("created_at"),
+                                        obj.getString("f_name"),
+                                        obj.getString("l_name"),
+                                        obj.getString("bh_name"),
+                                        obj.getString("old_room_name"),
+                                        obj.getString("new_room_name")
+                                ));
+                            }
+                            updateUI();
+                        } else {
+                            Toast.makeText(getContext(), response.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    swipeRefreshLayout.setRefreshing(false);
+                    Toast.makeText(getContext(), "Error loading requests", Toast.LENGTH_SHORT).show();
+                });
+
+        requestQueue.add(request);
+    }
+
+    private void updateUI() {
+        if (adapter == null) {
+            adapter = new ChangeRoomRequestsAdapter(requests, new ChangeRoomRequestsAdapter.OnActionListener() {
+                @Override
+                public void onApprove(ChangeRoomRequestData request) {
+                    processRequest(request, "Approve");
+                }
+
+                @Override
+                public void onDecline(ChangeRoomRequestData request) {
+                    processRequest(request, "Decline");
+                }
+            });
+            recyclerView.setAdapter(adapter);
+        } else {
+            adapter.notifyDataSetChanged();
+        }
+
+        tvCount.setText(String.valueOf(requests.size()));
+        emptyState.setVisibility(requests.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    private void processRequest(ChangeRoomRequestData request, String action) {
+        showProgressDialog(action + "ing request...");
+        String url = "https://boardease.calapebohol.com/process_change_room_request.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    hideProgressDialog();
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            Toast.makeText(getContext(), "Request " + action.toLowerCase() + "d", Toast.LENGTH_SHORT).show();
+                            loadRequests();
+                        } else {
+                            Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    hideProgressDialog();
+                    Toast.makeText(getContext(), "Error processing request", Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("change_request_id", String.valueOf(request.getRequestId()));
+                params.put("action", action);
+                return params;
+            }
+        };
+
+        requestQueue.add(stringRequest);
+    }
+
+    private void showProgressDialog(String message) {
+        progressDialog = new ProgressDialog(getContext());
+        progressDialog.setMessage(message);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+    }
+
+    private void hideProgressDialog() {
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
+        }
+    }
+
+    // Data class
+    public static class ChangeRoomRequestData {
+        private int requestId, bookingId, userId, newRoomId;
+        private String reason, details, status, createdAt, fName, lName, bhName, oldRoomName, newRoomName;
+
+        public ChangeRoomRequestData(int requestId, int bookingId, int userId, int newRoomId, String reason, String details, String status, String createdAt, String fName, String lName, String bhName, String oldRoomName, String newRoomName) {
+            this.requestId = requestId;
+            this.bookingId = bookingId;
+            this.userId = userId;
+            this.newRoomId = newRoomId;
+            this.reason = reason;
+            this.details = details;
+            this.status = status;
+            this.createdAt = createdAt;
+            this.fName = fName;
+            this.lName = lName;
+            this.bhName = bhName;
+            this.oldRoomName = oldRoomName;
+            this.newRoomName = newRoomName;
+        }
+
+        public int getRequestId() { return requestId; }
+        public String getBoarderName() { return fName + " " + lName; }
+        public String getBhName() { return bhName; }
+        public String getOldRoomName() { return oldRoomName; }
+        public String getNewRoomName() { return newRoomName; }
+        public String getReason() { return reason; }
+        public String getDetails() { return details; }
+        public String getCreatedAt() { return createdAt; }
+    }
+}

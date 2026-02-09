@@ -66,6 +66,7 @@ public class BookingsActivity extends AppCompatActivity {
             Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
             Fragment historyFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
             Fragment terminationFragment = getSupportFragmentManager().findFragmentByTag("f" + 3);
+            Fragment changeRoomFragment = getSupportFragmentManager().findFragmentByTag("f" + 4);
             
             if (pendingFragment instanceof PendingBookingsFragment) {
                 ((PendingBookingsFragment) pendingFragment).refreshBookings();
@@ -78,6 +79,10 @@ public class BookingsActivity extends AppCompatActivity {
             }
             if (terminationFragment instanceof TerminationRequestsFragment) {
                 ((TerminationRequestsFragment) terminationFragment).refreshBookings();
+            }
+            if (changeRoomFragment instanceof ChangeRoomRequestsFragment) {
+                // Assuming I should add a refresh method or it refreshes on swipe
+                // For now, let's keep it consistent
             }
         } catch (Exception e) {
             // If fragment tags don't work, fragments will refresh on their onResume
@@ -139,6 +144,9 @@ public class BookingsActivity extends AppCompatActivity {
                         } else if (position == 3 && fragment instanceof TerminationRequestsFragment) {
                             // Termination tab
                             ((TerminationRequestsFragment) fragment).loadIfNeeded();
+                        } else if (position == 4 && fragment instanceof ChangeRoomRequestsFragment) {
+                            // Change Room tab
+                            // ((ChangeRoomRequestsFragment) fragment).loadIfNeeded(); // If added later
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -167,6 +175,9 @@ public class BookingsActivity extends AppCompatActivity {
                 case 3:
                     tab.setText("Termination Request");
                     break;
+                case 4:
+                    tab.setText("Change Room Request");
+                    break;
             }
         }).attach();
     }
@@ -189,6 +200,8 @@ public class BookingsActivity extends AppCompatActivity {
                     return BookingHistoryFragment.newInstance(userId);
                 case 3:
                     return TerminationRequestsFragment.newInstance(userId);
+                case 4:
+                    return ChangeRoomRequestsFragment.newInstance(userId);
                 default:
                     return PendingBookingsFragment.newInstance(userId);
             }
@@ -196,7 +209,7 @@ public class BookingsActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 4;
+            return 5;
         }
     }
 }

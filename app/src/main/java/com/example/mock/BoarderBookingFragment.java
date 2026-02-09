@@ -664,7 +664,7 @@ public class BoarderBookingFragment extends Fragment {
             // Change Room button click listener
             btnChangeRoom.setOnClickListener(v -> {
                 dialog.dismiss();
-                showTerminationReasonModal(booking);
+                showChangeRoomReasonModal(booking);
             });
 
         } catch (Exception e) {
@@ -672,6 +672,256 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showChangeRoomReasonModal(Booking booking) {
+        if (getContext() == null) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_room_reason, null);
+            builder.setView(dialogView);
+
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseChangeRoom);
+            RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupChangeRoomReason);
+            com.google.android.material.textfield.TextInputEditText etDetails = dialogView.findViewById(R.id.etChangeRoomDetails);
+            com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelChangeRoom);
+            com.google.android.material.button.MaterialButton btnProceed = dialogView.findViewById(R.id.btnProceedChangeRoom);
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+            btnProceed.setOnClickListener(v -> {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                if (selectedId == -1) {
+                    Toast.makeText(getContext(), "Please select a reason", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                RadioButton selectedRb = dialogView.findViewById(selectedId);
+                String reason = selectedRb.getText().toString();
+                String details = etDetails.getText() != null ? etDetails.getText().toString() : "";
+                
+                dialog.dismiss();
+                fetchAvailableRoomsForTransfer(booking, reason, details);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing change room reason dialog: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void fetchAvailableRoomsForTransfer(Booking booking, String reason, String details) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Loading available rooms...");
+        progressDialog.show();
+
+        String url = BASE_URL + "get_available_rooms_for_transfer.php?booking_id=" + booking.getBookingId() + "&bh_id=" + booking.getBhId();
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            response -> {
+                progressDialog.dismiss();
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        showRoomTransferSelectionModal(booking, reason, details, jsonResponse.getJSONObject("data"));
+                    } else {
+                        Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error fetching rooms", Toast.LENGTH_SHORT).show();
+            });
+
+        requestQueue.add(stringRequest);
+    }
+
+    private void showRoomTransferSelectionModal(Booking booking, String reason, String details, JSONObject data) {
+        if (getContext() == null) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_room_transfer_selection, null);
+            builder.setView(dialogView);
+
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseTransfer);
+            RecyclerView rvCurrentBahRooms = dialogView.findViewById(R.id.rvCurrentBhRooms);
+            RecyclerView rvOtherBhRooms = dialogView.findViewById(R.id.rvOtherBhRooms);
+            TextView tvSection1Empty = dialogView.findViewById(R.id.tvSection1Empty);
+            TextView tvSection2Empty = dialogView.findViewById(R.id.tvSection2Empty);
+            MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitRequest);
+
+            JSONArray currentRoomsArray = data.getJSONArray("current_bh_rooms");
+            JSONArray otherRoomsArray = data.getJSONArray("other_bh_rooms");
+
+            // Simple adapter for room selection (could be a separate class for better logic)
+            // For now, let's assume we have a simple selector
+            final int[] selectedRoomId = {0};
+
+            // Using RoomSelectionAdapter (conceptually, would need to create this or use a simple one)
+            // Let's implement a very basic one or use a RadioGroup if rooms are few, 
+            // but since we have two lists, RecyclerView is better.
+            
+            // For the sake of this implementation, I'll use a simple list handler
+            setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, id -> {
+                selectedRoomId[0] = id;
+                // Deselect from other rv if needed
+            }, tvSection1Empty);
+
+            setupRoomRecyclerView(rvOtherBhRooms, otherRoomsArray, id -> {
+                selectedRoomId[0] = id;
+                // Deselect from other rv if needed
+            }, tvSection2Empty);
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            btnSubmit.setOnClickListener(v -> {
+                if (selectedRoomId[0] == 0) {
+                    Toast.makeText(getContext(), "Please select a room", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                dialog.dismiss();
+                submitChangeRoomRequest(booking, selectedRoomId[0], reason, details);
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupRoomRecyclerView(RecyclerView rv, JSONArray rooms, OnRoomSelectedListener listener, TextView emptyView) throws JSONException {
+        if (rooms.length() == 0) {
+            emptyView.setVisibility(View.VISIBLE);
+            rv.setVisibility(View.GONE);
+            return;
+        }
+        emptyView.setVisibility(View.GONE);
+        rv.setVisibility(View.VISIBLE);
+        rv.setLayoutManager(new LinearLayoutManager(getContext()));
+        rv.setAdapter(new RoomTransferAdapter(rooms, listener));
+    }
+
+    private interface OnRoomSelectedListener {
+        void onRoomSelected(int roomId);
+    }
+
+    private class RoomTransferAdapter extends RecyclerView.Adapter<RoomTransferAdapter.ViewHolder> {
+        private JSONArray rooms;
+        private OnRoomSelectedListener listener;
+        private int selectedPos = -1;
+
+        public RoomTransferAdapter(JSONArray rooms, OnRoomSelectedListener listener) {
+            this.rooms = rooms;
+            this.listener = listener;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            try {
+                JSONObject room = rooms.getJSONObject(position);
+                String name = room.getString("room_name");
+                String category = room.getString("room_category");
+                double price = room.getDouble("price");
+                
+                holder.text1.setText(name + " (" + category + ")");
+                holder.text2.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
+                
+                holder.itemView.setBackgroundColor(selectedPos == position ? 0x22FBC02D : 0x00000000);
+                
+                holder.itemView.setOnClickListener(v -> {
+                    int oldPos = selectedPos;
+                    selectedPos = holder.getAdapterPosition();
+                    notifyItemChanged(oldPos);
+                    notifyItemChanged(selectedPos);
+                    listener.onRoomSelected(room.optInt("bhr_id", room.optInt("bhr_id")));
+                });
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return rooms.length();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView text1, text2;
+            ViewHolder(View v) {
+                super(v);
+                text1 = v.findViewById(android.R.id.text1);
+                text2 = v.findViewById(android.R.id.text2);
+            }
+        }
+    }
+
+    private void submitChangeRoomRequest(Booking booking, int newRoomId, String reason, String details) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Submitting request...");
+        progressDialog.show();
+
+        String url = BASE_URL + "submit_change_room_request.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            response -> {
+                progressDialog.dismiss();
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        new AlertDialog.Builder(getContext())
+                            .setTitle("Success")
+                            .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
+                            .setPositiveButton("OK", null)
+                            .show();
+                        loadBookingData();
+                    } else {
+                        Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error submitting request", Toast.LENGTH_SHORT).show();
+            }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(booking.getBookingId()));
+                params.put("user_id", String.valueOf(userId));
+                params.put("new_room_id", String.valueOf(newRoomId));
+                params.put("reason", reason);
+                params.put("details", details);
+                return params;
+            }
+        };
+
+        requestQueue.add(stringRequest);
     }
 
     private void showTerminationReasonModal(Booking booking) {
