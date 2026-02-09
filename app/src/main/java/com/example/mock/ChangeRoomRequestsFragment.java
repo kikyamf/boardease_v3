@@ -191,6 +191,17 @@ public class ChangeRoomRequestsFragment extends Fragment {
         }
     }
 
+    // Public methods for consistency with other booking fragments
+    public void loadIfNeeded() {
+        // Called when tab is selected - delegate to loadRequests
+        loadRequests();
+    }
+
+    public void refreshBookings() {
+        // Called when returning from detail views - delegate to loadRequests
+        loadRequests();
+    }
+
     // Data class
     public static class ChangeRoomRequestData {
         private int requestId, bookingId, userId, newRoomId;

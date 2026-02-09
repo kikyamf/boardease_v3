@@ -81,8 +81,7 @@ public class BookingsActivity extends AppCompatActivity {
                 ((TerminationRequestsFragment) terminationFragment).refreshBookings();
             }
             if (changeRoomFragment instanceof ChangeRoomRequestsFragment) {
-                // Assuming I should add a refresh method or it refreshes on swipe
-                // For now, let's keep it consistent
+                ((ChangeRoomRequestsFragment) changeRoomFragment).refreshBookings();
             }
         } catch (Exception e) {
             // If fragment tags don't work, fragments will refresh on their onResume
@@ -146,7 +145,7 @@ public class BookingsActivity extends AppCompatActivity {
                             ((TerminationRequestsFragment) fragment).loadIfNeeded();
                         } else if (position == 4 && fragment instanceof ChangeRoomRequestsFragment) {
                             // Change Room tab
-                            // ((ChangeRoomRequestsFragment) fragment).loadIfNeeded(); // If added later
+                            ((ChangeRoomRequestsFragment) fragment).loadIfNeeded();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
