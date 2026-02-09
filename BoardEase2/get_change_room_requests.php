@@ -62,24 +62,35 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare("
-        SELECT crr.*, 
-               r.first_name as f_name, 
-               r.last_name as l_name, 
-               bhr_old.room_name as old_room_name, 
-               bhr_new.room_name as new_room_name,
-               bh_old.bh_name as bh_name,
-               ru.room_number as new_room_number
-        FROM change_room_requests crr
-        JOIN users u ON crr.user_id = u.user_id
-        JOIN registrations r ON u.reg_id = r.id
-        JOIN bookings b ON crr.booking_id = b.booking_id
-        JOIN boarding_house_rooms bhr_old ON b.room_id = bhr_old.bhr_id
-        JOIN boarding_house_rooms bhr_new ON crr.new_room_id = bhr_new.bhr_id
-        JOIN boarding_houses bh_old ON bhr_old.bh_id = bh_old.bh_id
-        LEFT JOIN room_units ru ON crr.new_unit_id = ru.room_id
-        WHERE bh_old.user_id = ? AND crr.status = 'Pending'
-    ");
+    // Get change room requests for bookings belonging to the owner's boarding houses
+    $sql = "SELECT 
+                crr.change_request_id,
+                crr.booking_id,
+                crr.user_id,
+                crr.new_room_id,
+                crr.new_unit_id,
+                crr.reason,
+                crr.details,
+                crr.status,
+                crr.created_at,
+                r.first_name as f_name,
+                r.last_name as l_name,
+                bh.bh_name,
+                ru_old.room_number as old_room_number,
+                bhr_old.room_name as old_room_name,
+                bhr_new.room_name as new_room_name
+            FROM change_room_requests crr
+            JOIN bookings b ON crr.booking_id = b.booking_id
+            JOIN room_units ru_old ON b.room_id = ru_old.room_id
+            JOIN boarding_house_rooms bhr_old ON ru_old.bhr_id = bhr_old.bhr_id
+            JOIN boarding_houses bh ON bhr_old.bh_id = bh.bh_id
+            JOIN boarding_house_rooms bhr_new ON crr.new_room_id = bhr_new.bhr_id
+            JOIN users u ON crr.user_id = u.user_id
+            JOIN registrations r ON u.reg_id = r.id
+            WHERE bh.user_id = ? AND crr.status = 'Pending'
+            ORDER BY crr.created_at DESC";
+
+    $stmt = $pdo->prepare($sql);
     
     error_log("Executing query with owner_id: " . $owner_id);
     $stmt->execute([$owner_id]);
@@ -87,8 +98,15 @@ try {
     error_log("Query returned " . count($requests) . " requests");
     error_log("Requests data: " . print_r($requests, true));
 
+    $response = [
+        'success' => true,
+        'data' => [
+            'change_room_requests' => $requests
+        ]
+    ];
+    
     ob_clean();
-    echo json_encode(['success' => true, 'data' => ['change_room_requests' => $requests]]);
+    echo json_encode($response);
     ob_end_flush();
 
 } catch (Exception $e) {
