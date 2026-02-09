@@ -724,24 +724,36 @@ public class BoarderBookingFragment extends Fragment {
         progressDialog.show();
 
         String url = BASE_URL + "get_available_rooms_for_transfer.php?booking_id=" + booking.getBookingId() + "&bh_id=" + booking.getBhId();
+        android.util.Log.d("ChangeRoom", "Fetching rooms from URL: " + url);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
             response -> {
                 progressDialog.dismiss();
+                android.util.Log.d("ChangeRoom", "Response received: " + response);
                 try {
                     JSONObject jsonResponse = new JSONObject(response);
                     if (jsonResponse.getBoolean("success")) {
                         showRoomTransferSelectionModal(booking, reason, details, jsonResponse.getJSONObject("data"));
                     } else {
-                        Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                        String message = jsonResponse.optString("message", "Unknown error from server");
+                        android.util.Log.e("ChangeRoom", "Server returned success=false: " + message);
+                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                     }
                 } catch (JSONException e) {
+                    android.util.Log.e("ChangeRoom", "JSON parsing error: " + e.getMessage());
                     e.printStackTrace();
                 }
             },
             error -> {
                 progressDialog.dismiss();
-                Toast.makeText(getContext(), "Error fetching rooms", Toast.LENGTH_SHORT).show();
+                String errorMessage = "Unknown error";
+                if (error.networkResponse != null) {
+                    errorMessage = "Status Code: " + error.networkResponse.statusCode + " Data: " + new String(error.networkResponse.data);
+                } else if (error.getMessage() != null) {
+                    errorMessage = error.getMessage();
+                }
+                android.util.Log.e("ChangeRoom", "Volley Error fetching rooms: " + errorMessage);
+                Toast.makeText(getContext(), "Error fetching rooms: " + errorMessage, Toast.LENGTH_SHORT).show();
             });
 
         requestQueue.add(stringRequest);
@@ -885,10 +897,13 @@ public class BoarderBookingFragment extends Fragment {
         progressDialog.show();
 
         String url = BASE_URL + "submit_change_room_request.php";
+        android.util.Log.d("ChangeRoom", "Submitting request to URL: " + url);
+        android.util.Log.d("ChangeRoom", "Params: booking_id=" + booking.getBookingId() + ", user_id=" + userId + ", new_room_id=" + newRoomId + ", reason=" + reason);
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
             response -> {
                 progressDialog.dismiss();
+                android.util.Log.d("ChangeRoom", "Submit Response: " + response);
                 try {
                     JSONObject jsonResponse = new JSONObject(response);
                     if (jsonResponse.getBoolean("success")) {
@@ -899,15 +914,25 @@ public class BoarderBookingFragment extends Fragment {
                             .show();
                         loadBookingData();
                     } else {
-                        Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
+                        String message = jsonResponse.optString("message", "Unknown error from server");
+                        android.util.Log.e("ChangeRoom", "Submit failed: " + message);
+                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                     }
                 } catch (JSONException e) {
+                    android.util.Log.e("ChangeRoom", "Submit JSON error: " + e.getMessage());
                     e.printStackTrace();
                 }
             },
             error -> {
                 progressDialog.dismiss();
-                Toast.makeText(getContext(), "Error submitting request", Toast.LENGTH_SHORT).show();
+                String errorMessage = "Unknown error";
+                if (error.networkResponse != null) {
+                    errorMessage = "Status Code: " + error.networkResponse.statusCode + " Data: " + new String(error.networkResponse.data);
+                } else if (error.getMessage() != null) {
+                    errorMessage = error.getMessage();
+                }
+                android.util.Log.e("ChangeRoom", "Submit Volley Error: " + errorMessage);
+                Toast.makeText(getContext(), "Error submitting request: " + errorMessage, Toast.LENGTH_SHORT).show();
             }) {
             @Override
             protected Map<String, String> getParams() {
