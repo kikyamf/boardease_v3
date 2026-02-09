@@ -740,8 +740,9 @@ public class BoarderBookingFragment extends Fragment {
                         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                     }
                 } catch (JSONException e) {
-                    android.util.Log.e("ChangeRoom", "JSON parsing error: " + e.getMessage());
+                    android.util.Log.e("ChangeRoom", "JSON Parsing Error: " + e.getMessage() + " | Response: " + response);
                     e.printStackTrace();
+                    //
                 }
             },
             error -> {
@@ -911,28 +912,36 @@ public class BoarderBookingFragment extends Fragment {
                 holder.ivRoomExpandIndicator.setImageResource(isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
                 holder.rgRoomUnits.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
                 
-                if (isExpanded && units != null) {
+                if (isExpanded) {
                     holder.rgRoomUnits.removeAllViews();
-                    for (int i = 0; i < units.length(); i++) {
-                        JSONObject unit = units.getJSONObject(i);
-                        int unitId = unit.getInt("room_id");
-                        String roomNumber = unit.getString("room_number");
-                        
-                        RadioButton rb = (RadioButton) LayoutInflater.from(holder.itemView.getContext())
-                                .inflate(R.layout.item_room_unit_selection, holder.rgRoomUnits, false);
-                        rb.setText("Room " + roomNumber);
-                        rb.setId(unitId);
-                        rb.setChecked(selectedUnitId == unitId);
-                        
-                        rb.setOnClickListener(v -> {
-                            selectedUnitId = unitId;
-                            listener.onRoomSelected(room.optInt("bhr_id", 0), unitId);
-                            // We don't need to notifyDataSetChanged here if it's in the same RadioGroup
-                            // but usually it's better to ensure only one is selected overall.
-                            notifyDataSetChanged();
-                        });
-                        
-                        holder.rgRoomUnits.addView(rb);
+                    if (units != null && units.length() > 0) {
+                        for (int i = 0; i < units.length(); i++) {
+                            JSONObject unit = units.getJSONObject(i);
+                            int unitId = unit.getInt("room_id");
+                            String roomNumber = unit.getString("room_number");
+                            
+                            RadioButton rb = (RadioButton) LayoutInflater.from(holder.itemView.getContext())
+                                    .inflate(R.layout.item_room_unit_selection, holder.rgRoomUnits, false);
+                            rb.setText("Room " + roomNumber);
+                            rb.setId(unitId);
+                            rb.setChecked(selectedUnitId == unitId);
+                            
+                            rb.setOnClickListener(v -> {
+                                selectedUnitId = unitId;
+                                listener.onRoomSelected(room.optInt("bhr_id", 0), unitId);
+                                notifyDataSetChanged();
+                            });
+                            
+                            holder.rgRoomUnits.addView(rb);
+                        }
+                    } else {
+                        // All rooms must reflect the room unit part, even if empty
+                        TextView tvEmpty = new TextView(holder.itemView.getContext());
+                        tvEmpty.setText("No available units for this room type");
+                        tvEmpty.setTextSize(12sp);
+                        tvEmpty.setPadding(32, 8, 0, 8);
+                        tvEmpty.setTextColor(0xFF888888);
+                        holder.rgRoomUnits.addView(tvEmpty);
                     }
                 }
                 
@@ -1072,26 +1081,36 @@ public class BoarderBookingFragment extends Fragment {
                     c.ivRoomExpandIndicator.setImageResource(category.isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
                     c.rgRoomUnits.setVisibility(category.isExpanded ? View.VISIBLE : View.GONE);
                     
-                    if (category.isExpanded && units != null) {
+                    if (category.isExpanded) {
                         c.rgRoomUnits.removeAllViews();
-                        for (int i = 0; i < units.length(); i++) {
-                            JSONObject unit = units.getJSONObject(i);
-                            int uId = unit.getInt("room_id");
-                            String roomNumber = unit.getString("room_number");
-                            
-                            RadioButton rb = (RadioButton) LayoutInflater.from(c.itemView.getContext())
-                                    .inflate(R.layout.item_room_unit_selection, c.rgRoomUnits, false);
-                            rb.setText("Room " + roomNumber);
-                            rb.setId(uId);
-                            rb.setChecked(selectedUnitId == uId);
-                            
-                            rb.setOnClickListener(v -> {
-                                selectedUnitId = uId;
-                                listener.onRoomSelected(room.optInt("bhr_id", 0), uId);
-                                notifyDataSetChanged();
-                            });
-                            
-                            c.rgRoomUnits.addView(rb);
+                        if (units != null && units.length() > 0) {
+                            for (int i = 0; i < units.length(); i++) {
+                                JSONObject unit = units.getJSONObject(i);
+                                int uId = unit.getInt("room_id");
+                                String roomNumber = unit.getString("room_number");
+                                
+                                RadioButton rb = (RadioButton) LayoutInflater.from(c.itemView.getContext())
+                                        .inflate(R.layout.item_room_unit_selection, c.rgRoomUnits, false);
+                                rb.setText("Room " + roomNumber);
+                                rb.setId(uId);
+                                rb.setChecked(selectedUnitId == uId);
+                                
+                                rb.setOnClickListener(v -> {
+                                    selectedUnitId = uId;
+                                    listener.onRoomSelected(room.optInt("bhr_id", 0), uId);
+                                    notifyDataSetChanged();
+                                });
+                                
+                                c.rgRoomUnits.addView(rb);
+                            }
+                        } else {
+                            // Ensure all rooms show unit section even if empty
+                            TextView tvEmpty = new TextView(c.itemView.getContext());
+                            tvEmpty.setText("No available units for this room type");
+                            tvEmpty.setTextSize(12sp);
+                            tvEmpty.setPadding(32, 8, 0, 8);
+                            tvEmpty.setTextColor(0xFF888888);
+                            c.rgRoomUnits.addView(tvEmpty);
                         }
                     }
                     
