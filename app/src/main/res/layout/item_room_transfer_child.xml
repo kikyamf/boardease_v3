@@ -6,32 +6,57 @@
     android:background="?attr/selectableItemBackground">
 
     <LinearLayout
+        android:id="@+id/llRoomCategoryHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:paddingHorizontal="32dp"
-        android:paddingVertical="12dp">
+        android:paddingVertical="12dp"
+        android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/tvRoomName"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Room Name"
-            android:textSize="14sp"
-            android:textColor="#000000"
-            android:fontFamily="@font/poppins_bold" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvRoomPrice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="₱0.00 per month"
-            android:textSize="12sp"
-            android:textColor="#666666"
-            android:fontFamily="@font/poppins_regular"
-            android:layout_marginTop="2dp" />
+            <TextView
+                android:id="@+id/tvRoomName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Room Name"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <TextView
+                android:id="@+id/tvRoomPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="₱0.00 per month"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ivRoomExpandIndicator"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_arrow_down"
+            android:alpha="0.6" />
 
     </LinearLayout>
+
+    <RadioGroup
+        android:id="@+id/rgRoomUnits"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="48dp"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:visibility="gone" />
 
     <View
         android:layout_width="match_parent"

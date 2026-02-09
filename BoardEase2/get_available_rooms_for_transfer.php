@@ -87,6 +87,13 @@ try {
     $stmt1->execute([$bh_id, $booking_id]);
     $currentBhRooms = $stmt1->fetchAll(PDO::FETCH_ASSOC);
 
+    // Fetch units for current BH rooms
+    foreach ($currentBhRooms as &$room) {
+        $unitStmt = $pdo->prepare("SELECT room_id, room_number, status FROM room_units WHERE bhr_id = ? AND status = 'Available'");
+        $unitStmt->execute([$room['bhr_id']]);
+        $room['units'] = $unitStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // 2. Other BHs of the same owner and their available rooms
     $stmt2 = $pdo->prepare("
         SELECT bh.bh_id, bh.bh_name, bhr.bhr_id, bhr.room_name, bhr.room_category, bhr.price, bhr.capacity
@@ -96,6 +103,13 @@ try {
     ");
     $stmt2->execute([$owner_id, $bh_id]);
     $otherBhRooms = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+    // Fetch units for other BH rooms
+    foreach ($otherBhRooms as &$room) {
+        $unitStmt = $pdo->prepare("SELECT room_id, room_number, status FROM room_units WHERE bhr_id = ? AND status = 'Available'");
+        $unitStmt->execute([$room['bhr_id']]);
+        $room['units'] = $unitStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     ob_clean();
     echo json_encode([

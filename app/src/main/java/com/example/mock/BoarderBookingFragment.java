@@ -800,10 +800,16 @@ public class BoarderBookingFragment extends Fragment {
                 otherBhGroups.add(new RoomGroup(bhId, bhNames.get(bhId), groupedRooms.get(bhId)));
             }
             
+            // Coordination: share the selection state
+            RoomSelectionState selectionState = new RoomSelectionState();
+            
             // For the sake of this implementation, I'll use a simple list handler
             setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, id -> {
                 selectedRoomId[0] = id;
-                // Since this is a different RV, ensure we handle selection state across them if needed
+                selectionState.selectedUnitId = id;
+                if (rvOtherBhRooms.getAdapter() != null) {
+                    ((OtherBhRoomAdapter) rvOtherBhRooms.getAdapter()).setSelectedUnitId(id);
+                }
             }, tvSection1Empty);
 
             if (otherBhGroups.isEmpty()) {
@@ -813,9 +819,14 @@ public class BoarderBookingFragment extends Fragment {
                 tvSection2Empty.setVisibility(View.GONE);
                 rvOtherBhRooms.setVisibility(View.VISIBLE);
                 rvOtherBhRooms.setLayoutManager(new LinearLayoutManager(getContext()));
-                rvOtherBhRooms.setAdapter(new OtherBhRoomAdapter(otherBhGroups, id -> {
+                OtherBhRoomAdapter otherAdapter = new OtherBhRoomAdapter(otherBhGroups, id -> {
                     selectedRoomId[0] = id;
-                }));
+                    selectionState.selectedUnitId = id;
+                    if (rvCurrentBahRooms.getAdapter() != null) {
+                        ((RoomTransferAdapter) rvCurrentBahRooms.getAdapter()).setSelectedUnitId(id);
+                    }
+                });
+                rvOtherBhRooms.setAdapter(otherAdapter);
             }
 
             AlertDialog dialog = builder.create();
@@ -854,10 +865,20 @@ public class BoarderBookingFragment extends Fragment {
         void onRoomSelected(int roomId);
     }
 
+    private static class RoomSelectionState {
+        int selectedUnitId = -1;
+    }
+
     private class RoomTransferAdapter extends RecyclerView.Adapter<RoomTransferAdapter.ViewHolder> {
         private JSONArray rooms;
         private OnRoomSelectedListener listener;
-        private int selectedPos = -1;
+        private int expandedPos = -1;
+        private int selectedUnitId = -1;
+
+        public void setSelectedUnitId(int id) {
+            this.selectedUnitId = id;
+            notifyDataSetChanged();
+        }
 
         public RoomTransferAdapter(JSONArray rooms, OnRoomSelectedListener listener) {
             this.rooms = rooms;
@@ -878,19 +899,47 @@ public class BoarderBookingFragment extends Fragment {
                 String name = room.getString("room_name");
                 String category = room.getString("room_category");
                 double price = room.getDouble("price");
+                JSONArray units = room.optJSONArray("units");
                 
                 holder.tvRoomName.setText(name + " (" + category + ")");
                 holder.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
                 
-                holder.itemView.setBackgroundColor(selectedPos == position ? 0x22FBC02D : 0x00000000);
+                boolean isExpanded = expandedPos == position;
+                holder.ivRoomExpandIndicator.setImageResource(isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                holder.rgRoomUnits.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
                 
-                holder.itemView.setOnClickListener(v -> {
-                    int oldPos = selectedPos;
-                    selectedPos = holder.getAdapterPosition();
-                    notifyItemChanged(oldPos);
-                    notifyItemChanged(selectedPos);
-                    listener.onRoomSelected(room.optInt("bhr_id", 0));
+                if (isExpanded && units != null) {
+                    holder.rgRoomUnits.removeAllViews();
+                    for (int i = 0; i < units.length(); i++) {
+                        JSONObject unit = units.getJSONObject(i);
+                        int unitId = unit.getInt("room_id");
+                        String roomNumber = unit.getString("room_number");
+                        
+                        RadioButton rb = (RadioButton) LayoutInflater.from(holder.itemView.getContext())
+                                .inflate(R.layout.item_room_unit_selection, holder.rgRoomUnits, false);
+                        rb.setText("Room " + roomNumber);
+                        rb.setId(unitId);
+                        rb.setChecked(selectedUnitId == unitId);
+                        
+                        rb.setOnClickListener(v -> {
+                            selectedUnitId = unitId;
+                            listener.onRoomSelected(unitId);
+                            // We don't need to notifyDataSetChanged here if it's in the same RadioGroup
+                            // but usually it's better to ensure only one is selected overall.
+                            notifyDataSetChanged();
+                        });
+                        
+                        holder.rgRoomUnits.addView(rb);
+                    }
+                }
+                
+                holder.llRoomCategoryHeader.setOnClickListener(v -> {
+                    int oldExpanded = expandedPos;
+                    expandedPos = (expandedPos == position) ? -1 : holder.getAdapterPosition();
+                    notifyItemChanged(oldExpanded);
+                    notifyItemChanged(expandedPos);
                 });
+                
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -903,24 +952,42 @@ public class BoarderBookingFragment extends Fragment {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvRoomName, tvRoomPrice;
+            ImageView ivRoomExpandIndicator;
+            RadioGroup rgRoomUnits;
+            LinearLayout llRoomCategoryHeader;
+            
             ViewHolder(View v) {
                 super(v);
                 tvRoomName = v.findViewById(R.id.tvRoomName);
                 tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
+                ivRoomExpandIndicator = v.findViewById(R.id.ivRoomExpandIndicator);
+                rgRoomUnits = v.findViewById(R.id.rgRoomUnits);
+                llRoomCategoryHeader = v.findViewById(R.id.llRoomCategoryHeader);
             }
+        }
+    }
+
+    private static class RoomCategory {
+        JSONObject data;
+        boolean isExpanded = false;
+        
+        RoomCategory(JSONObject data) {
+            this.data = data;
         }
     }
 
     private static class RoomGroup {
         int bhId;
         String bhName;
-        List<JSONObject> rooms;
+        List<RoomCategory> categories = new ArrayList<>();
         boolean isExpanded = false;
 
         RoomGroup(int bhId, String bhName, List<JSONObject> rooms) {
             this.bhId = bhId;
             this.bhName = bhName;
-            this.rooms = rooms;
+            for (JSONObject r : rooms) {
+                this.categories.add(new RoomCategory(r));
+            }
         }
     }
 
@@ -931,7 +998,12 @@ public class BoarderBookingFragment extends Fragment {
         private List<RoomGroup> groups;
         private List<Object> flatList = new ArrayList<>();
         private OnRoomSelectedListener listener;
-        private int selectedRoomId = -1;
+        private int selectedUnitId = -1;
+
+        public void setSelectedUnitId(int id) {
+            this.selectedUnitId = id;
+            notifyDataSetChanged();
+        }
 
         public OtherBhRoomAdapter(List<RoomGroup> groups, OnRoomSelectedListener listener) {
             this.groups = groups;
@@ -944,7 +1016,7 @@ public class BoarderBookingFragment extends Fragment {
             for (RoomGroup group : groups) {
                 flatList.add(group);
                 if (group.isExpanded) {
-                    flatList.addAll(group.rooms);
+                    flatList.addAll(group.categories);
                 }
             }
         }
@@ -982,24 +1054,49 @@ public class BoarderBookingFragment extends Fragment {
                     notifyDataSetChanged();
                 });
             } else if (holder instanceof ChildViewHolder) {
-                JSONObject room = (JSONObject) item;
+                RoomCategory category = (RoomCategory) item;
                 ChildViewHolder c = (ChildViewHolder) holder;
                 try {
+                    JSONObject room = category.data;
                     String name = room.getString("room_name");
-                    String category = room.getString("room_category");
+                    String catName = room.getString("room_category");
                     double price = room.getDouble("price");
-                    int roomId = room.getInt("bhr_id");
+                    JSONArray units = room.optJSONArray("units");
                     
-                    c.tvRoomName.setText(name + " (" + category + ")");
+                    c.tvRoomName.setText(name + " (" + catName + ")");
                     c.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
                     
-                    c.itemView.setBackgroundColor(selectedRoomId == roomId ? 0x22FBC02D : 0x00000000);
+                    c.ivRoomExpandIndicator.setImageResource(category.isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                    c.rgRoomUnits.setVisibility(category.isExpanded ? View.VISIBLE : View.GONE);
                     
-                    c.itemView.setOnClickListener(v -> {
-                        selectedRoomId = roomId;
+                    if (category.isExpanded && units != null) {
+                        c.rgRoomUnits.removeAllViews();
+                        for (int i = 0; i < units.length(); i++) {
+                            JSONObject unit = units.getJSONObject(i);
+                            int uId = unit.getInt("room_id");
+                            String roomNumber = unit.getString("room_number");
+                            
+                            RadioButton rb = (RadioButton) LayoutInflater.from(c.itemView.getContext())
+                                    .inflate(R.layout.item_room_unit_selection, c.rgRoomUnits, false);
+                            rb.setText("Room " + roomNumber);
+                            rb.setId(uId);
+                            rb.setChecked(selectedUnitId == uId);
+                            
+                            rb.setOnClickListener(v -> {
+                                selectedUnitId = uId;
+                                listener.onRoomSelected(uId);
+                                notifyDataSetChanged();
+                            });
+                            
+                            c.rgRoomUnits.addView(rb);
+                        }
+                    }
+                    
+                    c.llRoomCategoryHeader.setOnClickListener(v -> {
+                        category.isExpanded = !category.isExpanded;
                         notifyDataSetChanged();
-                        listener.onRoomSelected(roomId);
                     });
+                    
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -1023,10 +1120,17 @@ public class BoarderBookingFragment extends Fragment {
 
         class ChildViewHolder extends RecyclerView.ViewHolder {
             TextView tvRoomName, tvRoomPrice;
+            ImageView ivRoomExpandIndicator;
+            RadioGroup rgRoomUnits;
+            LinearLayout llRoomCategoryHeader;
+            
             ChildViewHolder(View v) {
                 super(v);
                 tvRoomName = v.findViewById(R.id.tvRoomName);
                 tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
+                ivRoomExpandIndicator = v.findViewById(R.id.ivRoomExpandIndicator);
+                rgRoomUnits = v.findViewById(R.id.rgRoomUnits);
+                llRoomCategoryHeader = v.findViewById(R.id.llRoomCategoryHeader);
             }
         }
     }
