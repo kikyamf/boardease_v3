@@ -64,14 +64,15 @@ try {
 
     $stmt = $pdo->prepare("
         SELECT crr.*, 
-               u.f_name, 
-               u.l_name, 
+               r.first_name as f_name, 
+               r.last_name as l_name, 
                bhr_old.room_name as old_room_name, 
                bhr_new.room_name as new_room_name,
                bh_old.bh_name as bh_name,
                ru.room_number as new_room_number
         FROM change_room_requests crr
         JOIN users u ON crr.user_id = u.user_id
+        JOIN registrations r ON u.reg_id = r.id
         JOIN bookings b ON crr.booking_id = b.booking_id
         JOIN boarding_house_rooms bhr_old ON b.room_id = bhr_old.bhr_id
         JOIN boarding_house_rooms bhr_new ON crr.new_room_id = bhr_new.bhr_id
