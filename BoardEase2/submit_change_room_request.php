@@ -40,23 +40,7 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Ensure change_room_requests table exists and has new_unit_id column
-    $createTableSql = "CREATE TABLE IF NOT EXISTS change_room_requests (
-        change_request_id INT AUTO_INCREMENT PRIMARY KEY,
-        booking_id INT NOT NULL,
-        user_id INT NOT NULL,
-        new_room_id INT NOT NULL,
-        new_unit_id INT DEFAULT NULL,
-        reason VARCHAR(255) NOT NULL,
-        details TEXT,
-        status ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
-    $pdo->exec($createTableSql);
-
-    // Also try to add the column if the table already existed without it
+    // Ensure new_unit_id column exists
     try {
         $pdo->exec("ALTER TABLE change_room_requests ADD COLUMN new_unit_id INT DEFAULT NULL AFTER new_room_id");
     } catch (Exception $e) {
