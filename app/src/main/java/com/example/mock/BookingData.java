@@ -33,6 +33,7 @@ public class BookingData {
     private String remainingAmountToPay;
     private boolean isFullyPaid;
     private double paymentProgressPercent;
+    private String pendingPaymentAmount;
 
     // Original constructor for backward compatibility
     public BookingData(String boarderName, String email, String phoneNumber, String roomName, 
@@ -142,6 +143,9 @@ public class BookingData {
     public void setRemainingAmountToPay(String remainingAmountToPay) { this.remainingAmountToPay = remainingAmountToPay; }
     public void setFullyPaid(boolean isFullyPaid) { this.isFullyPaid = isFullyPaid; }
     public void setPaymentProgressPercent(double paymentProgressPercent) { this.paymentProgressPercent = paymentProgressPercent; }
+    
+    public String getPendingPaymentAmount() { return pendingPaymentAmount; }
+    public void setPendingPaymentAmount(String pendingPaymentAmount) { this.pendingPaymentAmount = pendingPaymentAmount; }
 }
 
 

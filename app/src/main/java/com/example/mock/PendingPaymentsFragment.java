@@ -198,7 +198,7 @@ public class PendingPaymentsFragment extends Fragment {
                     // Open payment details activity with remaining context (pending usually has remaining balance)
                     android.content.Intent intent = new android.content.Intent(getContext(), PaymentDetailsActivity.class);
                     intent.putExtra("payment", payment);
-                    intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_REMAINING);
+                    intent.putExtra("view_type", PaymentAdapter.VIEW_TYPE_PENDING);
                     startActivityForResult(intent, 1001);
                 }
 

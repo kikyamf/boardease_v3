@@ -499,7 +499,8 @@ public class PaymentApiService {
                     breakdownJson.optBoolean("is_paid", false),
                     breakdownJson.optString("due_date", ""),
                     breakdownJson.optString("payment_status", "Pending"),
-                    breakdownJson.optString("payment_date", "")
+                    breakdownJson.optString("payment_date", ""),
+                    breakdownJson.optString("payment_proof", "")
                 );
                 breakdowns.add(item);
             }
@@ -613,9 +614,8 @@ public class PaymentApiService {
                 JSONObject paymentJson = jsonArray.getJSONObject(i);
                 
                 // Log payment proof data for debugging
-                if (paymentJson.has("payment_proof") || paymentJson.has("receipt_url")) {
+                if (paymentJson.has("payment_proof")) {
                     Log.d(TAG, "Payment ID " + paymentJson.optInt("payment_id", 0) + 
-                          " - receipt_url: " + paymentJson.optString("receipt_url", "null") +
                           ", payment_proof: " + paymentJson.optString("payment_proof", "null"));
                 }
                 
@@ -623,8 +623,7 @@ public class PaymentApiService {
                 if (payment != null) {
                     payments.add(payment);
                     Log.d(TAG, "Parsed payment ID " + payment.getPaymentId() + 
-                          " - Payment Proof: " + payment.getPaymentProof() +
-                          ", Receipt URL: " + payment.getReceiptUrl());
+                          " - Payment Proof: " + payment.getPaymentProof());
                 }
             }
         } catch (JSONException e) {

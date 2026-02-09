@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,13 +34,15 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
 
     private ImageButton btnBack;
     private ImageView imgProfile, imgPaymentProof;
-    private LinearLayout layoutPaymentProof;
+    private LinearLayout layoutPaymentProof, layoutHighlightSection;
     private TextView tvBoarderName, tvEmail, tvPhone, tvRoom, tvRentType, tvAmountPaid, tvTotalAmount;
     private TextView tvPaymentStatus, tvRentalStatus, tvPaymentDate, tvDueDate;
-    private TextView tvPaymentMethod, tvNotes, tvCreatedAt, tvUpdatedAt, tvButtonInfo, tvNoProof;
+    private TextView tvPaymentMethod, tvCreatedAt, tvUpdatedAt, tvButtonInfo, tvNoProof;
     private TextView tvNoBreakdown;
+    private TextView tvBoardingHouseName, tvBoardingHouseAddress;
     private MaterialButton btnMarkAsPaid, btnMarkAsOverdue;
     private RecyclerView recyclerViewBreakdown;
+    private ScrollView scrollView;
     private PaymentBreakdownAdapter breakdownAdapter;
     private List<PaymentBreakdownItem> breakdownItems;
     
@@ -91,24 +94,65 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvPaymentDate = findViewById(R.id.tvPaymentDate);
         tvDueDate = findViewById(R.id.tvDueDate);
         tvPaymentMethod = findViewById(R.id.tvPaymentMethod);
-        tvNotes = findViewById(R.id.tvNotes);
+
         tvCreatedAt = findViewById(R.id.tvCreatedAt);
         tvUpdatedAt = findViewById(R.id.tvUpdatedAt);
         tvButtonInfo = findViewById(R.id.tvButtonInfo);
         imgPaymentProof = findViewById(R.id.imgPaymentProof);
         layoutPaymentProof = findViewById(R.id.layoutPaymentProof);
+        layoutHighlightSection = findViewById(R.id.layoutHighlightSection);
         tvNoProof = findViewById(R.id.tvNoProof);
+        
+        tvBoardingHouseName = findViewById(R.id.tvBoardingHouseName);
+        tvBoardingHouseAddress = findViewById(R.id.tvBoardingHouseAddress);
         
         btnMarkAsPaid = findViewById(R.id.btnMarkAsPaid);
         btnMarkAsOverdue = findViewById(R.id.btnMarkAsOverdue);
         
         // Breakdown views
         recyclerViewBreakdown = findViewById(R.id.recyclerViewBreakdown);
+        scrollView = findViewById(R.id.scrollView);
         tvNoBreakdown = findViewById(R.id.tvNoBreakdown);
         breakdownItems = new ArrayList<>();
         breakdownAdapter = new PaymentBreakdownAdapter(breakdownItems);
         recyclerViewBreakdown.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewBreakdown.setAdapter(breakdownAdapter);
+        
+        breakdownAdapter.setOnPaymentItemClickListener(item -> {
+            String proofUrl = item.getPaymentProof();
+            String paymentDate = item.getPaymentDate();
+            String dueDate = item.getDueDate();
+            boolean isPaid = item.isPaid();
+            
+            // If item is not paid, check if there is a payment date (Pending status)
+            if (!isPaid) {
+                if (paymentDate != null && !paymentDate.isEmpty() && !paymentDate.equals("null")) {
+                    // It has a date but not yet marked as paid (Pending)
+                    // Keep the paymentDate as is for display
+                } else {
+                    paymentDate = "No Payment Submitted Yet";
+                }
+            } else if (paymentDate == null || paymentDate.isEmpty()) {
+                paymentDate = "N/A";
+            }
+            
+            updatePaymentProofDisplay(proofUrl, paymentDate, dueDate, isPaid);
+            
+            // Visual feedback: Highlight the section
+            if (layoutHighlightSection != null) {
+                layoutHighlightSection.setBackgroundResource(R.drawable.bg_highlight_section);
+            }
+            
+            // Auto-scroll to the highlight section
+            if (scrollView != null && layoutHighlightSection != null) {
+                // Scroll to the Y position of the highlight section
+                scrollView.post(() -> {
+                   scrollView.smoothScrollTo(0, layoutHighlightSection.getTop());
+                });
+            }
+            
+            Toast.makeText(this, "Showing details for " + item.getPeriodLabel(), Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void setupClickListeners() {
@@ -128,7 +172,6 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         // Log payment data for debugging
         android.util.Log.d("PaymentDetails", "=== Payment Data ===");
         android.util.Log.d("PaymentDetails", "Payment ID: " + payment.getPaymentId());
-        android.util.Log.d("PaymentDetails", "Receipt URL: " + payment.getReceiptUrl());
         android.util.Log.d("PaymentDetails", "Payment Proof: " + payment.getPaymentProof());
         android.util.Log.d("PaymentDetails", "Payment Status: " + payment.getPaymentStatus());
         
@@ -162,6 +205,14 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         // Set room information
         tvRoom.setText(payment.getRoom() != null ? payment.getRoom() : "Room N/A");
         tvRentType.setText(payment.getRentType() != null ? payment.getRentType() : "N/A");
+        
+        // Set boarding house information
+        if (tvBoardingHouseName != null) {
+            tvBoardingHouseName.setText(payment.getBoardingHouseName() != null ? payment.getBoardingHouseName() : "Boarding House Name");
+        }
+        if (tvBoardingHouseAddress != null) {
+            tvBoardingHouseAddress.setText(payment.getBoardingHouseAddress() != null ? payment.getBoardingHouseAddress() : "Boarding House Address");
+        }
         
         // Set payment amounts based on view type
         if (viewType == PaymentAdapter.VIEW_TYPE_FULLY_PAID) {
@@ -461,8 +512,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvRentalStatus.setText(rentalStatus);
         
         // Set notes
-        String notes = payment.getNotes() != null && !payment.getNotes().isEmpty() ? payment.getNotes() : "No notes available";
-        tvNotes.setText(notes);
+
         
         // Set timestamps with formatting
         String createdAt = payment.getCreatedAt();
@@ -487,22 +537,49 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
     }
     
     private void loadPaymentProof() {
-        // Get payment proof URL (prefer receipt_url, fallback to payment_proof)
-        String receiptUrl = payment.getReceiptUrl();
+        // Get payment proof URL
         String paymentProof = payment.getPaymentProof();
+        String dueDate = payment.getDueDate();
         
-        android.util.Log.d("PaymentDetails", "Receipt URL: " + receiptUrl);
         android.util.Log.d("PaymentDetails", "Payment Proof: " + paymentProof);
         
         String paymentProofUrl = null;
-        if (receiptUrl != null && !receiptUrl.isEmpty() && !receiptUrl.equals("null")) {
-            paymentProofUrl = receiptUrl;
-        } else if (paymentProof != null && !paymentProof.isEmpty() && !paymentProof.equals("null")) {
+        if (paymentProof != null && !paymentProof.isEmpty() && !paymentProof.equals("null")) {
             paymentProofUrl = paymentProof;
         }
         
-        android.util.Log.d("PaymentDetails", "Final Payment Proof URL: " + paymentProofUrl);
+        // Update display with the resolved URL
+        // Pass original due date and check if main payment is paid
+        boolean isPaid = payment.getPaymentStatus() != null && 
+                         (payment.getPaymentStatus().equalsIgnoreCase("Paid") || 
+                          payment.getPaymentStatus().equalsIgnoreCase("Fully Paid") ||
+                          payment.getPaymentStatus().equalsIgnoreCase("Completed"));
+        updatePaymentProofDisplay(paymentProofUrl, null, dueDate, isPaid);
+    }
+    
+    private void updatePaymentProofDisplay(String paymentProofUrl, String paymentDate, String dueDate, boolean isPaid) {
+        // Update payment date if provided
+        if (paymentDate != null && !paymentDate.isEmpty() && !paymentDate.equals("N/A")) {
+            if (paymentDate.equals("No Payment Submitted Yet")) {
+                tvPaymentDate.setText(paymentDate);
+            } else {
+                tvPaymentDate.setText(formatDateTime(paymentDate));
+            }
+        } else if (paymentDate != null) {
+              tvPaymentDate.setText("N/A");
+        }
         
+        // Update due date if provided
+        if (dueDate != null && !dueDate.isEmpty() && !dueDate.equals("N/A")) {
+            tvDueDate.setText(formatDateTime(dueDate));
+        } else if (dueDate != null) {
+            tvDueDate.setText("N/A");
+        }
+        
+        android.util.Log.d("PaymentDetails", "Updating proof display. URL: " + paymentProofUrl + ", IsPaid: " + isPaid);
+        
+        // Attempt to load image if a proof URL exists, regardless of paid status
+        // This allows owners to see "Pending" payments that need verification
         if (paymentProofUrl != null && !paymentProofUrl.isEmpty() && !paymentProofUrl.equals("null")) {
             // Show image view and hide "no proof" text
             imgPaymentProof.setVisibility(View.VISIBLE);
@@ -512,35 +589,26 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             // Build full URL if it's a relative path
             String baseUrl = "https://boardease.calapebohol.com/";
             String urlToProcess = paymentProofUrl.trim();
-            String finalFullUrl;
             
-            if (urlToProcess.startsWith("http://") || urlToProcess.startsWith("https://")) {
-                // Already a full URL
-                finalFullUrl = urlToProcess;
-            } else {
-                // Relative path - try direct file access first, then fallback to endpoint
-                // Remove leading slash if present
-                if (urlToProcess.startsWith("/")) {
-                    urlToProcess = urlToProcess.substring(1);
-                }
-                // Remove "BoardEase2/" if it's already in the path
-                if (urlToProcess.startsWith("BoardEase2/")) {
-                    urlToProcess = urlToProcess.substring(11); // Remove "BoardEase2/"
-                }
-                
-                // First, try direct file access (faster)
-                String directUrl = baseUrl + urlToProcess;
-                // Also prepare endpoint URL as fallback
-                String endpointUrl = baseUrl + "get_payment_proof.php?path=" + android.net.Uri.encode(urlToProcess, "UTF-8");
-                
-                // Try endpoint first (more reliable for serving files through PHP)
-                finalFullUrl = endpointUrl;
-                
-                android.util.Log.d("PaymentDetails", "Direct URL: " + directUrl);
-                android.util.Log.d("PaymentDetails", "Endpoint URL: " + endpointUrl);
+            // Clean up path: Remove different versions of prefix
+            if (urlToProcess.startsWith("/")) {
+                urlToProcess = urlToProcess.substring(1);
+            }
+            if (urlToProcess.startsWith("BoardEase2/")) {
+                urlToProcess = urlToProcess.substring(11);
+            }
+            if (urlToProcess.startsWith("/BoardEase2/")) {
+                urlToProcess = urlToProcess.substring(12);
             }
             
-            android.util.Log.d("PaymentDetails", "Final Full URL: " + finalFullUrl);
+            String finalFullUrl;
+            if (urlToProcess.startsWith("http://") || urlToProcess.startsWith("https://")) {
+                finalFullUrl = urlToProcess;
+            } else {
+                // Use get_payment_proof.php for reliable path resolution
+                finalFullUrl = baseUrl + "get_payment_proof.php?path=" + Uri.encode(urlToProcess, "UTF-8");
+            }
+            
             android.util.Log.d("PaymentDetails", "Attempting to load image from: " + finalFullUrl);
             
             // Clear previous image first
@@ -565,33 +633,21 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                         public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
                             android.util.Log.e("PaymentDetails", "=== GLIDE LOAD FAILED ===");
                             android.util.Log.e("PaymentDetails", "URL: " + debugUrl);
-                            android.util.Log.e("PaymentDetails", "Original path: " + originalPath);
-                            android.util.Log.e("PaymentDetails", "Model: " + (model != null ? model.toString() : "null"));
                             if (e != null) {
                                 android.util.Log.e("PaymentDetails", "Exception: " + e.getMessage());
-                                if (e.getRootCauses() != null && !e.getRootCauses().isEmpty()) {
-                                    android.util.Log.e("PaymentDetails", "Root causes:");
-                                    for (Throwable cause : e.getRootCauses()) {
-                                        android.util.Log.e("PaymentDetails", "  - " + cause.getClass().getSimpleName() + ": " + cause.getMessage());
-                                    }
-                                }
                             }
                             
-                            // If endpoint failed, we could try direct URL, but for now just show error
                             runOnUiThread(() -> {
                                 tvNoProof.setText("Payment proof image not found.\nPath: " + originalPath);
                                 tvNoProof.setVisibility(View.VISIBLE);
                                 imgPaymentProof.setVisibility(View.GONE);
                             });
-                            return false; // Let Glide handle the error (show error placeholder)
+                            return false;
                         }
                         
                         @Override
                         public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
-                            android.util.Log.d("PaymentDetails", "=== GLIDE LOAD SUCCESS ===");
-                            android.util.Log.d("PaymentDetails", "URL: " + debugUrl);
-                            android.util.Log.d("PaymentDetails", "DataSource: " + dataSource.name());
-                            runOnUiThread(() -> {
+                             runOnUiThread(() -> {
                                 tvNoProof.setVisibility(View.GONE);
                             });
                             return false;
@@ -609,14 +665,19 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                     startActivity(intent);
                 } catch (Exception e) {
                     Toast.makeText(this, "Cannot open image viewer", Toast.LENGTH_SHORT).show();
-                    android.util.Log.e("PaymentDetails", "Error opening image viewer", e);
                 }
             });
         } else {
             // Hide image view and show "no proof" text
-            android.util.Log.d("PaymentDetails", "No payment proof URL available");
             imgPaymentProof.setVisibility(View.GONE);
             tvNoProof.setVisibility(View.VISIBLE);
+            
+            if (!isPaid) {
+                tvNoProof.setText("No payment submitted yet");
+            } else {
+                tvNoProof.setText("No payment proof for this item");
+            }
+            
             layoutPaymentProof.setVisibility(View.VISIBLE);
         }
     }
@@ -871,16 +932,25 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
     }
     
     private String formatDateTime(String dateTime) {
-        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        // Format from "YYYY-MM-DD HH:MM:SS" (UTC) to "MMM DD, YYYY hh:mm a" (Local Time)
+        // e.g., "2025-01-15 18:00:00" -> "Jan 16, 2025 02:00 AM" (if PHP+8)
         try {
             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            inputFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC")); // Server sends UTC
+            
             java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            outputFormat.setTimeZone(java.util.TimeZone.getDefault()); // Display in Local Time
+            
             java.util.Date date = inputFormat.parse(dateTime);
             return outputFormat.format(date);
         } catch (Exception e) {
             // If parsing fails, try date-only format
             try {
                 java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                // Date only usually doesn't need timezone conversion as it represents a day, 
+                // but if it's strictly UTC date, we might want to keep it as is or convert. 
+                // For due dates/payment dates without time, usually best to keep as is to avoid shifting day.
+                
                 java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
                 java.util.Date date = inputFormat.parse(dateTime);
                 return outputFormat.format(date);
@@ -939,6 +1009,33 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                 } else {
                     recyclerViewBreakdown.setVisibility(View.VISIBLE);
                     tvNoBreakdown.setVisibility(View.GONE);
+                    
+                    // Identify and display the latest relevant item (Paid or has Proof)
+                    PaymentBreakdownItem latestRelevant = null;
+                    // Scan backwards to find the most recent item that is either paid or has proof submitted
+                    for (int i = breakdownItems.size() - 1; i >= 0; i--) {
+                        PaymentBreakdownItem item = breakdownItems.get(i);
+                        String proof = item.getPaymentProof();
+                        boolean hasProof = proof != null && !proof.isEmpty() && !proof.equals("null");
+                        
+                        if (item.isPaid() || hasProof) {
+                            latestRelevant = item;
+                            break;
+                        }
+                    }
+                    
+                    if (latestRelevant != null) {
+                        android.util.Log.d("PaymentDetails", "Defaulting to latest relevant item: " + latestRelevant.getPeriodLabel());
+                        
+                        String pDate = latestRelevant.getPaymentDate();
+                        if (!latestRelevant.isPaid()) {
+                            if (pDate == null || pDate.isEmpty() || pDate.equals("null")) {
+                                pDate = "No Payment Submitted Yet";
+                            }
+                        }
+                        
+                        updatePaymentProofDisplay(latestRelevant.getPaymentProof(), pDate, latestRelevant.getDueDate(), latestRelevant.isPaid());
+                    }
                 }
             }
 

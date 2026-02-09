@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -621,6 +622,11 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
         if (holder.tvPaymentProgress != null) {
             holder.tvPaymentProgress.setVisibility(View.GONE);
         }
+        
+        // Hide payment progress container
+        if (holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.GONE);
+        }
     }
     
     private void bindPendingViewHolder(ViewHolder holder, PaymentData payment) {
@@ -766,11 +772,22 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.tvPaymentProgress.setVisibility(View.VISIBLE);
             holder.progressBarPayment.setVisibility(View.VISIBLE);
             holder.tvProgressPercent.setVisibility(View.VISIBLE);
+            
+            // Show container
+            if (holder.getLayoutPaymentProgress() != null) {
+                holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            }
         } else if (holder.progressBarPayment != null) {
             if (paidPeriods > 0 || totalPeriods > 0) {
                 holder.tvPaymentProgress.setVisibility(View.VISIBLE);
                 holder.progressBarPayment.setVisibility(View.VISIBLE);
                 holder.tvProgressPercent.setVisibility(View.VISIBLE);
+                
+                // Show container
+                if (holder.getLayoutPaymentProgress() != null) {
+                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+                }
+                
                 
                 if (totalPeriods > 0) {
                     int defaultProgress = (int) ((paidPeriods * 100.0) / totalPeriods);
@@ -784,10 +801,20 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
                     android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800"))
                 );
                 holder.tvPaymentProgress.setTextColor(Color.parseColor("#FF9800"));
+                
+                // Show container
+                if (holder.getLayoutPaymentProgress() != null) {
+                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+                }
             } else {
                 holder.tvPaymentProgress.setVisibility(View.GONE);
                 holder.progressBarPayment.setVisibility(View.GONE);
                 holder.tvProgressPercent.setVisibility(View.GONE);
+                
+                // Hide container
+                if (holder.getLayoutPaymentProgress() != null) {
+                    holder.getLayoutPaymentProgress().setVisibility(View.GONE);
+                }
             }
         }
         
@@ -1122,6 +1149,11 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.tvPaymentProgress.setVisibility(View.VISIBLE);
             holder.progressBarPayment.setVisibility(View.VISIBLE);
             holder.tvProgressPercent.setVisibility(View.VISIBLE);
+            
+            // Show container
+            if (holder.getLayoutPaymentProgress() != null) {
+                holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            }
         } else if (holder.progressBarPayment != null) {
             // If no period data, try to show progress based on payment status
             // For payments without breakdown, still try to show something
@@ -1130,6 +1162,11 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
                 holder.tvPaymentProgress.setVisibility(View.VISIBLE);
                 holder.progressBarPayment.setVisibility(View.VISIBLE);
                 holder.tvProgressPercent.setVisibility(View.VISIBLE);
+                
+                // Show container
+                if (holder.getLayoutPaymentProgress() != null) {
+                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+                }
                 
                 // Set default progress
                 if (totalPeriods > 0) {
@@ -1143,6 +1180,11 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
                 holder.tvPaymentProgress.setVisibility(View.GONE);
                 holder.progressBarPayment.setVisibility(View.GONE);
                 holder.tvProgressPercent.setVisibility(View.GONE);
+                
+                // Hide container
+                if (holder.getLayoutPaymentProgress() != null) {
+                    holder.getLayoutPaymentProgress().setVisibility(View.GONE);
+                }
             }
         }
         
@@ -1162,10 +1204,14 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
     }
     
     private String formatDateTime(String dateTime) {
-        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        // Format from "YYYY-MM-DD HH:MM:SS" (UTC) to "MMM DD, YYYY hh:mm a" (Local Time)
         try {
             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            inputFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC")); // Server sends UTC
+            
             java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            outputFormat.setTimeZone(java.util.TimeZone.getDefault()); // Display in Local Time
+            
             java.util.Date date = inputFormat.parse(dateTime);
             return outputFormat.format(date);
         } catch (Exception e) {
@@ -1240,6 +1286,21 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge); // Status badge for "Fully Paid"
             tvAmountPaidLabel = itemView.findViewById(R.id.tvAmountPaidLabel); // Label for amount paid
             btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
+            
+            // Layout containers
+            // layoutPaymentProgress might not exist in all layouts (e.g. fully paid layout)
+            try {
+                java.lang.reflect.Field field = R.id.class.getField("layoutPaymentProgress");
+                int id = field.getInt(null);
+                itemView.findViewById(id).setVisibility(View.GONE); // Default hide
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+        
+        // Helper to find layoutPaymentProgress since it might not be in all layouts
+        public LinearLayout getLayoutPaymentProgress() {
+             return itemView.findViewById(R.id.layoutPaymentProgress);
         }
     }
 }

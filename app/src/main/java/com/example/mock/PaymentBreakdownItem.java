@@ -17,6 +17,7 @@ public class PaymentBreakdownItem implements Serializable {
     private String dueDate;
     private String paymentStatus;
     private String paymentDate;
+    private String paymentProof;
     
     public PaymentBreakdownItem() {
     }
@@ -41,6 +42,28 @@ public class PaymentBreakdownItem implements Serializable {
         this.paymentDate = paymentDate;
     }
     
+    // Additional constructor for compatibility or future use
+    public PaymentBreakdownItem(int breakdownId, int bookingId, Integer paymentId, String periodType,
+                               int periodNumber, String periodLabel, String periodStartDate,
+                               String periodEndDate, String amount, boolean isSelected, boolean isPaid,
+                               String dueDate, String paymentStatus, String paymentDate, String paymentProof) {
+        this.breakdownId = breakdownId;
+        this.bookingId = bookingId;
+        this.paymentId = paymentId;
+        this.periodType = periodType;
+        this.periodNumber = periodNumber;
+        this.periodLabel = periodLabel;
+        this.periodStartDate = periodStartDate;
+        this.periodEndDate = periodEndDate;
+        this.amount = amount;
+        this.isSelected = isSelected;
+        this.isPaid = isPaid;
+        this.dueDate = dueDate;
+        this.paymentStatus = paymentStatus;
+        this.paymentDate = paymentDate;
+        this.paymentProof = paymentProof;
+    }
+    
     // Getters
     public int getBreakdownId() { return breakdownId; }
     public int getBookingId() { return bookingId; }
@@ -56,6 +79,7 @@ public class PaymentBreakdownItem implements Serializable {
     public String getDueDate() { return dueDate; }
     public String getPaymentStatus() { return paymentStatus; }
     public String getPaymentDate() { return paymentDate; }
+    public String getPaymentProof() { return paymentProof; }
     
     // Setters
     public void setBreakdownId(int breakdownId) { this.breakdownId = breakdownId; }
@@ -72,6 +96,7 @@ public class PaymentBreakdownItem implements Serializable {
     public void setDueDate(String dueDate) { this.dueDate = dueDate; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
     public void setPaymentDate(String paymentDate) { this.paymentDate = paymentDate; }
+    public void setPaymentProof(String paymentProof) { this.paymentProof = paymentProof; }
 }
 
 

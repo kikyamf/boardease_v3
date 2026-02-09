@@ -18,9 +18,18 @@ import java.util.Locale;
 public class PaymentBreakdownAdapter extends RecyclerView.Adapter<PaymentBreakdownAdapter.ViewHolder> {
     
     private List<PaymentBreakdownItem> breakdownItems;
+    private OnPaymentItemClickListener listener;
+    
+    public interface OnPaymentItemClickListener {
+        void onPaymentItemClick(PaymentBreakdownItem item);
+    }
     
     public PaymentBreakdownAdapter(List<PaymentBreakdownItem> breakdownItems) {
         this.breakdownItems = breakdownItems;
+    }
+    
+    public void setOnPaymentItemClickListener(OnPaymentItemClickListener listener) {
+        this.listener = listener;
     }
     
     @NonNull
@@ -64,6 +73,12 @@ public class PaymentBreakdownAdapter extends RecyclerView.Adapter<PaymentBreakdo
             holder.tvPeriodStatus.setTextColor(Color.parseColor("#F44336"));
             holder.tvPeriodStatus.setBackgroundColor(Color.parseColor("#FFEBEE"));
         }
+        
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onPaymentItemClick(item);
+            }
+        });
     }
     
     @Override

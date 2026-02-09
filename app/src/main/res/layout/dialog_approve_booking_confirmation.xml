@@ -17,6 +17,7 @@
 
         <!-- Title -->
         <TextView
+            android:id="@+id/tvDialogTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Verify Payment Before Approving"
@@ -50,6 +51,7 @@
 
         <!-- Payment Status - Prominent Display -->
         <TextView
+            android:id="@+id/tvPaymentStatusLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Payment Status:"
@@ -72,6 +74,7 @@
 
         <!-- Payment Amounts Summary -->
         <LinearLayout
+            android:id="@+id/layoutPaymentAmounts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -132,6 +135,7 @@
 
         <!-- Payment Proof Section - Most Important -->
         <TextView
+            android:id="@+id/tvPaymentProofLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Payment Proof (Screenshot)"

@@ -118,6 +118,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 bookingData.setTotalAmountForBooking(intent.getStringExtra("total_amount_for_booking"));
                 bookingData.setPaidAmountForBooking(intent.getStringExtra("paid_amount_for_booking"));
                 bookingData.setFullyPaid(intent.getBooleanExtra("is_fully_paid", false));
+                bookingData.setPendingPaymentAmount(intent.getStringExtra("pending_payment_amount"));
             }
             
             // Log payment status from Intent for debugging
@@ -310,7 +311,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
                     Log.d("BookingDetails", "Status used after processing: " + paymentStatus);
                 }
             } else {
-                // Database status is missing - this should not happen, but calculate as fallback
+                // Database status is missing - this should not happen, but calculate as fallbacka
                 // WARNING: This calculation might not match database if periods are incorrectly counted
                 // The database status is the source of truth, so this is only a fallback
                 // CRITICAL: Do NOT use isFullyPaid flag - only use period counts for calculation
@@ -533,10 +534,14 @@ public class BookingDetailsActivity extends AppCompatActivity {
     }
     
     private String formatDateTime(String dateTime) {
-        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        // Format from "YYYY-MM-DD HH:MM:SS" (UTC) to "MMM DD, YYYY hh:mm a" (Local Time)
         try {
             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            inputFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC")); // Server sends UTC
+            
             java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            outputFormat.setTimeZone(java.util.TimeZone.getDefault()); // Display in Local Time
+            
             java.util.Date date = inputFormat.parse(dateTime);
             return outputFormat.format(date);
         } catch (Exception e) {
@@ -643,6 +648,14 @@ public class BookingDetailsActivity extends AppCompatActivity {
         int statusColor;
         int statusBg;
         
+        // Initialize views that need visibility control
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        TextView tvPaymentStatusLabel = dialogView.findViewById(R.id.tvPaymentStatusLabel);
+        TextView tvPaymentProofLabel = dialogView.findViewById(R.id.tvPaymentProofLabel);
+        LinearLayout layoutPaymentAmounts = dialogView.findViewById(R.id.layoutPaymentAmounts);
+        
+        boolean shouldLoadProof = true;
+        
         if (isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods)) {
             paymentStatusText = "Fully Paid";
             statusColor = getResources().getColor(android.R.color.white);
@@ -669,19 +682,93 @@ public class BookingDetailsActivity extends AppCompatActivity {
                 tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
             }
         } else {
-            // This is likely Stage 2 (Initial Approval)
-            paymentStatusText = "No Payment Yet";
+            // This is Stage 2 (Initial Approval) (Booking Status = Pending/For Approval)
+            // Ensure title is Application Approval
+            if (tvDialogTitle != null) {
+                if ("Approved".equals(bookingData.getStatus())) {
+                     tvDialogTitle.setText("Payment Verification");
+                } else {
+                     tvDialogTitle.setText("Application Approval");
+                }
+            }
+             
+            paymentStatusText = "No Payment Yet"; // Default
             statusColor = getResources().getColor(android.R.color.white);
             statusBg = R.drawable.bg_status_pending;
             tvWarning.setVisibility(View.VISIBLE);
+            
             if ("Approved".equals(bookingData.getStatus())) {
-                tvWarning.setText("Boarder has not submitted payment proof yet. Only confirm if you've received payment through other means.");
-                tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+                // Booking is Approved, checking for payment
+                
+                // Check if payment is actually submitted
+                // If the PHP returns "Pending" for an Approved booking, it means there is a record in payments table with Pending status
+                // If it returns "Awaiting Payment", it means no record found
+                String specificPaymentStatus = bookingData.getPaymentStatus();
+                
+                if ("Pending".equals(specificPaymentStatus) || (paidAmount != null && !paidAmount.isEmpty() && Double.parseDouble(paidAmount) > 0)) {
+                    // Payment Submitted logic
+                    paymentStatusText = "Payment Submitted (For Verification)";
+                    statusBg = R.drawable.bg_status_completed; // Blue or similar for verification
+                    
+                    tvWarning.setText("Boarder has submitted a payment. Please review the details and proof below.");
+                    tvWarning.setBackgroundResource(R.drawable.bg_status_completed);
+                    
+                    // Show payment proof and details
+                    shouldLoadProof = true;
+                    if (tvPaymentStatusLabel != null) tvPaymentStatusLabel.setVisibility(View.VISIBLE);
+                    if (tvPaymentStatus != null) tvPaymentStatus.setVisibility(View.VISIBLE);
+                    if (layoutPaymentAmounts != null) layoutPaymentAmounts.setVisibility(View.VISIBLE);
+                    if (tvPaymentProofLabel != null) tvPaymentProofLabel.setVisibility(View.VISIBLE);
+                    if (layoutPaymentProof != null) layoutPaymentProof.setVisibility(View.VISIBLE);
+                    
+                } else {
+                    // No Payment Yet logic
+                    paymentStatusText = "No Payment Yet";
+                    statusBg = R.drawable.bg_status_pending; // Orange
+                    
+                    tvWarning.setText("Boarder has not submitted any payment yet.");
+                    tvWarning.setBackgroundResource(R.drawable.bg_rounded_red);
+                    
+                    // Hide proof for "No Payment Yet"
+                    shouldLoadProof = false; 
+                    // Hide proof section but maybe keep amounts visible (showing 0) or hide all? 
+                    // User said: "amount paid is 0 then theres no paymnet proof"
+                    if (tvPaymentProofLabel != null) tvPaymentProofLabel.setVisibility(View.GONE);
+                    if (layoutPaymentProof != null) layoutPaymentProof.setVisibility(View.GONE);
+                    
+                    // Disable confirm button since there is no payment to confirm
+                    btnConfirm.setEnabled(false);
+                    btnConfirm.setAlpha(0.5f); // Visual indication of disabled state
+                }
+                
             } else {
-                tvWarning.setText("This is an initial application. Approving will reserve the room for the boarder. Payment will be required after your approval.");
+                // this is Initial Application (Pending)
+                // ... (Existing logic for Initial Application)
+                shouldLoadProof = false;
+                
+                // Enable button for initial approval
+                btnConfirm.setEnabled(true);
+                btnConfirm.setAlpha(1.0f);
+                
+                if (tvPaymentStatusLabel != null) tvPaymentStatusLabel.setVisibility(View.GONE);
+                if (tvPaymentStatus != null) tvPaymentStatus.setVisibility(View.GONE);
+                if (layoutPaymentAmounts != null) layoutPaymentAmounts.setVisibility(View.GONE);
+                if (tvPaymentProofLabel != null) tvPaymentProofLabel.setVisibility(View.GONE);
+                if (layoutPaymentProof != null) layoutPaymentProof.setVisibility(View.GONE);
+                if (tvPaymentProgress != null) tvPaymentProgress.setVisibility(View.GONE);
+                if (progressBarPayment != null) progressBarPayment.setVisibility(View.GONE);
+                if (tvProgressPercent != null) tvProgressPercent.setVisibility(View.GONE);
+                
+                tvWarning.setText("This is an initial application. Approving will reserve the room for the boarder. Payment is required to confirm the booking.");
                 tvWarning.setTextColor(getResources().getColor(android.R.color.white));
-                tvWarning.setBackgroundResource(R.drawable.bg_status_completed); // Use blue/green instead of red warning
+                tvWarning.setBackgroundResource(R.drawable.bg_status_completed); 
             }
+        }
+        
+        // Ensure button is enabled for validation cases (Payment Submitted)
+        if ("Approved".equals(bookingData.getStatus()) && (paymentStatusText.contains("Submitted") || paymentStatusText.contains("Paid"))) {
+             btnConfirm.setEnabled(true);
+             btnConfirm.setAlpha(1.0f);
         }
         
         tvPaymentStatus.setText(paymentStatusText);
@@ -696,7 +783,38 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         // Set amounts
-        if (paidAmount != null && !paidAmount.isEmpty()) {
+        String pendingAmount = bookingData.getPendingPaymentAmount();
+        
+        // If we have a pending payment amount and the status indicates payment submitted, use that
+        if (pendingAmount != null && !pendingAmount.isEmpty() && !pendingAmount.equals("null") && 
+            (paymentStatusText.contains("Submitted") || "Pending".equals(bookingData.getPaymentStatus()))) {
+            try {
+                // Remove currency symbol if present
+                String cleanPending = pendingAmount.replace("P", "").replace("₱", "").replace(",", "").trim();
+                double pendingValue = Double.parseDouble(cleanPending);
+                if (pendingValue > 0) {
+                     tvAmountPaid.setText("₱" + formatAmount(cleanPending));
+                } else {
+                     // Fallback to paidAmount if pending is 0
+                     if (paidAmount != null && !paidAmount.isEmpty()) {
+                         try {
+                             double paidValue = Double.parseDouble(paidAmount);
+                             if (paidValue > 0) {
+                                 tvAmountPaid.setText("₱" + formatAmount(paidAmount));
+                             } else {
+                                 tvAmountPaid.setText("₱0.00");
+                             }
+                         } catch (NumberFormatException e) {
+                             tvAmountPaid.setText("₱0.00");
+                         }
+                     } else {
+                         tvAmountPaid.setText("₱0.00");
+                     }
+                }
+            } catch (NumberFormatException e) {
+                tvAmountPaid.setText("₱0.00");
+            }
+        } else if (paidAmount != null && !paidAmount.isEmpty()) {
             try {
                 double paidValue = Double.parseDouble(paidAmount);
                 if (paidValue > 0) {
@@ -770,7 +888,9 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         // Load payment proof
-        loadPaymentProofForDialog(imgPaymentProof, tvNoProof, layoutPaymentProof);
+        if (shouldLoadProof) {
+            loadPaymentProofForDialog(imgPaymentProof, tvNoProof, layoutPaymentProof);
+        }
         
         android.app.AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) {

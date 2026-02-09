@@ -147,72 +147,7 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
         
         holder.tvRentType.setText(booking.getRentType() != null ? booking.getRentType() : "");
         
-        // Set payment information
-        int paidPeriods = booking.getPaidPeriods();
-        String paidAmount = booking.getPaidAmountForBooking();
-        String totalAmount = booking.getTotalAmountForBooking();
-        double progressPercent = booking.getPaymentProgressPercent();
-        boolean isFullyPaid = booking.isFullyPaid();
-        
-        // Show payment info if there's payment data
-        if (totalPeriods > 0 || (paidAmount != null && !paidAmount.isEmpty() && Double.parseDouble(paidAmount) > 0)) {
-            holder.layoutPaymentInfo.setVisibility(View.VISIBLE);
-            
-            // Set amounts with fallback
-            if (paidAmount != null && !paidAmount.isEmpty() && Double.parseDouble(paidAmount) > 0) {
-                holder.tvAmountPaid.setText("₱" + formatAmount(paidAmount));
-            } else {
-                holder.tvAmountPaid.setText("₱0.00");
-            }
-            
-            if (totalAmount != null && !totalAmount.isEmpty() && Double.parseDouble(totalAmount) > 0) {
-                holder.tvTotalAmount.setText("₱" + formatAmount(totalAmount));
-            } else {
-                holder.tvTotalAmount.setText(booking.getAmount() != null ? booking.getAmount() : "₱0.00");
-            }
-            
-            // Show payment progress if available
-            if (totalPeriods > 0) {
-                holder.layoutPaymentProgress.setVisibility(View.VISIBLE);
-                
-                int totalMonths = booking.getTotalMonthsForBooking();
-                int paidMonths = booking.getPaidMonthsForBooking();
-                
-                // Show "months" only if all periods are exactly monthly
-                if (totalMonths > 0 && totalPeriods == totalMonths) {
-                    if (totalMonths == 1) {
-                        holder.tvPaymentProgress.setText(String.format("%d/%d month paid", paidMonths, totalMonths));
-                    } else {
-                        holder.tvPaymentProgress.setText(String.format("%d/%d months paid", paidMonths, totalMonths));
-                    }
-                } else {
-                    if (totalPeriods == 1) {
-                        holder.tvPaymentProgress.setText(String.format("%d/%d period paid", paidPeriods, totalPeriods));
-                    } else {
-                        holder.tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
-                    }
-                }
-                
-                holder.progressBarPayment.setProgress((int) progressPercent);
-                holder.tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
-                
-                // Set progress bar color
-                if (isFullyPaid) {
-                    holder.progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#4CAF50")));
-                    holder.tvPaymentProgress.setTextColor(Color.parseColor("#4CAF50"));
-                } else if (progressPercent >= 50) {
-                    holder.progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800")));
-                    holder.tvPaymentProgress.setTextColor(Color.parseColor("#FF9800"));
-                } else {
-                    holder.progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#F44336")));
-                    holder.tvPaymentProgress.setTextColor(Color.parseColor("#F44336"));
-                }
-            } else {
-                holder.layoutPaymentProgress.setVisibility(View.GONE);
-            }
-        } else {
-            holder.layoutPaymentInfo.setVisibility(View.GONE);
-        }
+
 
         // Hide Approve and Decline buttons in the card layout
         if (holder.btnApprove != null) {
@@ -251,13 +186,17 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
     }
     
     private String formatDateTime(String dateTime) {
-        // Format from "YYYY-MM-DD HH:MM:SS" to "MMM DD, YYYY hh:mm a" (e.g., "Jan 15, 2025 02:00 PM")
+        // Format from "YYYY-MM-DD HH:MM:SS" (UTC) to "MMM DD, YYYY hh:mm a" (Local Time)
         if (dateTime == null || dateTime.isEmpty()) {
             return "";
         }
         try {
             java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+            inputFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC")); // Server sends UTC
+            
             java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm a", java.util.Locale.getDefault());
+            outputFormat.setTimeZone(java.util.TimeZone.getDefault()); // Display in Local Time
+            
             java.util.Date date = inputFormat.parse(dateTime);
             return outputFormat.format(date);
         } catch (Exception e) {
@@ -275,9 +214,9 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvBoarderName, tvStatus, tvEmail, tvPhone, tvRoomName, tvStartDate, tvEndDate, tvAmount, tvRentType;
-        TextView tvTotalBookingAmount, tvAmountPaid, tvTotalAmount, tvPaymentProgress, tvProgressPercent;
-        LinearLayout layoutPaymentInfo, layoutPaymentProgress;
-        ProgressBar progressBarPayment;
+        TextView tvTotalBookingAmount;
+
+
         Button btnApprove, btnDecline, btnViewDetails;
 
         public ViewHolder(@NonNull View itemView) {
@@ -293,14 +232,7 @@ public class PendingBookingsAdapter extends RecyclerView.Adapter<PendingBookings
             tvTotalBookingAmount = itemView.findViewById(R.id.tvTotalBookingAmount);
             tvRentType = itemView.findViewById(R.id.tvRentType);
             
-            // Payment info views
-            layoutPaymentInfo = itemView.findViewById(R.id.layoutPaymentInfo);
-            layoutPaymentProgress = itemView.findViewById(R.id.layoutPaymentProgress);
-            tvAmountPaid = itemView.findViewById(R.id.tvAmountPaid);
-            tvTotalAmount = itemView.findViewById(R.id.tvTotalAmount);
-            tvPaymentProgress = itemView.findViewById(R.id.tvPaymentProgress);
-            tvProgressPercent = itemView.findViewById(R.id.tvProgressPercent);
-            progressBarPayment = itemView.findViewById(R.id.progressBarPayment);
+
             
             btnApprove = itemView.findViewById(R.id.btnApprove);
             btnDecline = itemView.findViewById(R.id.btnDecline);
