@@ -595,6 +595,8 @@ public class BoarderBookingFragment extends Fragment {
             TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
             com.google.android.material.button.MaterialButton btnMakePayment = dialogView.findViewById(R.id.btnMakePayment);
             com.google.android.material.button.MaterialButton btnReportMaintenance = dialogView.findViewById(R.id.btnReportMaintenance);
+            com.google.android.material.button.MaterialButton btnTerminate = dialogView.findViewById(R.id.btnTerminate);
+            com.google.android.material.button.MaterialButton btnChangeRoom = dialogView.findViewById(R.id.btnChangeRoom);
 
             // Set booking data
             if (booking.getImagePath() != null && !booking.getImagePath().isEmpty()) {
@@ -653,10 +655,75 @@ public class BoarderBookingFragment extends Fragment {
                 showMaintenanceReportDialog(booking);
             });
 
+            // Terminate button click listener
+            btnTerminate.setOnClickListener(v -> {
+                dialog.dismiss();
+                showTerminationReasonModal(booking);
+            });
+
+            // Change Room button click listener
+            btnChangeRoom.setOnClickListener(v -> {
+                dialog.dismiss();
+                showTerminationReasonModal(booking);
+            });
+
         } catch (Exception e) {
             Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showTerminationReasonModal(Booking booking) {
+        if (getContext() == null) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_termination_reason, null);
+            builder.setView(dialogView);
+
+            // Initialize views from the layout
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseTermination);
+            RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupTerminationReason);
+            com.google.android.material.textfield.TextInputEditText etDetails = dialogView.findViewById(R.id.etTerminationDetails);
+            com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelTermination);
+            com.google.android.material.button.MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitTermination);
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Close button listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Cancel button listener
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+            // Submit button listener
+            btnSubmit.setOnClickListener(v -> {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                if (selectedId == -1) {
+                    Toast.makeText(getContext(), "Please select a reason", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                RadioButton selectedRb = dialogView.findViewById(selectedId);
+                String reason = selectedRb.getText().toString();
+                String details = etDetails.getText() != null ? etDetails.getText().toString() : "";
+                
+                String fullReason = reason;
+                if (!details.isEmpty()) {
+                    fullReason += ": " + details;
+                }
+
+                // Call the API to submit termination
+                submitTerminationRequest(booking, reason, details, dialog);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing termination dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing termination dialog", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2517,5 +2584,56 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error submitting review", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void submitTerminationRequest(Booking booking, String reason, String details, AlertDialog dialog) {
+        if (getContext() == null) return;
+
+        String url = "https://boardease.calapebohol.com/terminate_booking.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            Toast.makeText(getContext(), "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            loadBookingData(); // Refresh data
+                        } else {
+                            Toast.makeText(getContext(), "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    String errorMessage = "Network error";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            Log.e(TAG, "Termination Error Data: " + responseBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error parsing error data", e);
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    Log.e(TAG, "Termination Request failed: " + errorMessage, error);
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(booking.getBookingId()));
+                params.put("user_id", String.valueOf(userId));
+                params.put("reason", reason);
+                params.put("details", details);
+                return params;
+            }
+        };
+
+        Volley.newRequestQueue(getContext()).add(stringRequest);
     }
 }
