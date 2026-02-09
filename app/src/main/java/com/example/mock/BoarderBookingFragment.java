@@ -839,6 +839,7 @@ public class BoarderBookingFragment extends Fragment {
             btnClose.setOnClickListener(v -> dialog.dismiss());
 
             btnSubmit.setOnClickListener(v -> {
+                android.util.Log.d("ChangeRoom", "Submit Request button clicked. selectedUnitId: " + selectedUnitId[0]);
                 if (selectedUnitId[0] == 0) {
                     Toast.makeText(getContext(), "Please select a room unit", Toast.LENGTH_SHORT).show();
                     return;
