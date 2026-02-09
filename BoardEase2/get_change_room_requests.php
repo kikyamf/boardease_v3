@@ -66,7 +66,8 @@ try {
         SELECT crr.*, u.user_fname, u.user_lname, 
                bhr_old.room_name as old_room_name, 
                bhr_new.room_name as new_room_name,
-               bh_new.bh_name as new_bh_name
+               bh_new.bh_name as new_bh_name,
+               ru.room_number as new_room_number
         FROM change_room_requests crr
         JOIN users u ON crr.user_id = u.user_id
         JOIN bookings b ON crr.booking_id = b.booking_id
@@ -74,6 +75,7 @@ try {
         JOIN boarding_house_rooms bhr_new ON crr.new_room_id = bhr_new.bhr_id
         JOIN boarding_houses bh_new ON bhr_new.bh_id = bh_new.bh_id
         JOIN boarding_houses bh_old ON bhr_old.bh_id = bh_old.bh_id
+        LEFT JOIN room_units ru ON crr.new_unit_id = ru.room_id
         WHERE bh_old.user_id = ? AND crr.status = 'Pending'
     ");
     $stmt->execute([$owner_id]);

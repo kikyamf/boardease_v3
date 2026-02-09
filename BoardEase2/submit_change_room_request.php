@@ -40,12 +40,13 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Ensure change_room_requests table exists
+    // Ensure change_room_requests table exists and has new_unit_id column
     $createTableSql = "CREATE TABLE IF NOT EXISTS change_room_requests (
         change_request_id INT AUTO_INCREMENT PRIMARY KEY,
         booking_id INT NOT NULL,
         user_id INT NOT NULL,
         new_room_id INT NOT NULL,
+        new_unit_id INT DEFAULT NULL,
         reason VARCHAR(255) NOT NULL,
         details TEXT,
         status ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
@@ -54,6 +55,13 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     $pdo->exec($createTableSql);
+
+    // Also try to add the column if the table already existed without it
+    try {
+        $pdo->exec("ALTER TABLE change_room_requests ADD COLUMN new_unit_id INT DEFAULT NULL AFTER new_room_id");
+    } catch (Exception $e) {
+        // Ignore if column already exists
+    }
 
     // Get input (handling JSON, POST, and GET)
     $json = file_get_contents('php://input');
@@ -70,20 +78,21 @@ try {
     $booking_id = isset($data['booking_id']) ? intval($data['booking_id']) : 0;
     $user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
     $new_room_id = isset($data['new_room_id']) ? intval($data['new_room_id']) : 0;
+    $new_unit_id = isset($data['new_unit_id']) ? intval($data['new_unit_id']) : NULL;
     $reason = isset($data['reason']) ? $data['reason'] : '';
     $details = isset($data['details']) ? $data['details'] : '';
 
     if ($booking_id == 0 || $user_id == 0 || $new_room_id == 0 || empty($reason)) {
         ob_clean();
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        echo json_encode(['success' => false, 'message' => 'Missing required fields: booking_id=' . $booking_id . ', user_id=' . $user_id . ', new_room_id=' . $new_room_id . ', reason=' . $reason]);
         ob_end_flush();
         exit;
     }
 
     // Insert request
-    $stmt = $pdo->prepare("INSERT INTO change_room_requests (booking_id, user_id, new_room_id, reason, details) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$booking_id, $user_id, $new_room_id, $reason, $details]);
+    $stmt = $pdo->prepare("INSERT INTO change_room_requests (booking_id, user_id, new_room_id, new_unit_id, reason, details) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$booking_id, $user_id, $new_room_id, $new_unit_id, $reason, $details]);
 
     ob_clean();
     echo json_encode(['success' => true, 'message' => 'Request submitted successfully']);
@@ -98,7 +107,11 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error: ' . $e->getMessage()
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'debug_info' => [
+            'error_info' => $pdo->errorInfo(),
+            'exception' => $e->getMessage()
+        ]
     ]);
     ob_end_flush();
 }

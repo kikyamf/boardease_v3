@@ -777,7 +777,8 @@ public class BoarderBookingFragment extends Fragment {
             JSONArray currentRoomsArray = data.getJSONArray("current_bh_rooms");
             JSONArray otherRoomsArray = data.getJSONArray("other_bh_rooms");
 
-            final int[] selectedRoomId = {0};
+            final int[] selectedBhrId = {0};
+            final int[] selectedUnitId = {0};
 
             // Group rooms by Boarding House
             Map<Integer, List<JSONObject>> groupedRooms = new HashMap<>();
@@ -804,11 +805,12 @@ public class BoarderBookingFragment extends Fragment {
             RoomSelectionState selectionState = new RoomSelectionState();
             
             // For the sake of this implementation, I'll use a simple list handler
-            setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, id -> {
-                selectedRoomId[0] = id;
-                selectionState.selectedUnitId = id;
+            setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, (bhrId, unitId) -> {
+                selectedBhrId[0] = bhrId;
+                selectedUnitId[0] = unitId;
+                selectionState.selectedUnitId = unitId;
                 if (rvOtherBhRooms.getAdapter() != null) {
-                    ((OtherBhRoomAdapter) rvOtherBhRooms.getAdapter()).setSelectedUnitId(id);
+                    ((OtherBhRoomAdapter) rvOtherBhRooms.getAdapter()).setSelectedUnitId(unitId);
                 }
             }, tvSection1Empty);
 
@@ -819,11 +821,12 @@ public class BoarderBookingFragment extends Fragment {
                 tvSection2Empty.setVisibility(View.GONE);
                 rvOtherBhRooms.setVisibility(View.VISIBLE);
                 rvOtherBhRooms.setLayoutManager(new LinearLayoutManager(getContext()));
-                OtherBhRoomAdapter otherAdapter = new OtherBhRoomAdapter(otherBhGroups, id -> {
-                    selectedRoomId[0] = id;
-                    selectionState.selectedUnitId = id;
+                OtherBhRoomAdapter otherAdapter = new OtherBhRoomAdapter(otherBhGroups, (bhrId, unitId) -> {
+                    selectedBhrId[0] = bhrId;
+                    selectedUnitId[0] = unitId;
+                    selectionState.selectedUnitId = unitId;
                     if (rvCurrentBahRooms.getAdapter() != null) {
-                        ((RoomTransferAdapter) rvCurrentBahRooms.getAdapter()).setSelectedUnitId(id);
+                        ((RoomTransferAdapter) rvCurrentBahRooms.getAdapter()).setSelectedUnitId(unitId);
                     }
                 });
                 rvOtherBhRooms.setAdapter(otherAdapter);
@@ -836,12 +839,12 @@ public class BoarderBookingFragment extends Fragment {
             btnClose.setOnClickListener(v -> dialog.dismiss());
 
             btnSubmit.setOnClickListener(v -> {
-                if (selectedRoomId[0] == 0) {
-                    Toast.makeText(getContext(), "Please select a room", Toast.LENGTH_SHORT).show();
+                if (selectedUnitId[0] == 0) {
+                    Toast.makeText(getContext(), "Please select a room unit", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 dialog.dismiss();
-                submitChangeRoomRequest(booking, selectedRoomId[0], reason, details);
+                submitChangeRoomRequest(booking, selectedBhrId[0], selectedUnitId[0], reason, details);
             });
 
         } catch (Exception e) {
@@ -862,7 +865,7 @@ public class BoarderBookingFragment extends Fragment {
     }
 
     private interface OnRoomSelectedListener {
-        void onRoomSelected(int roomId);
+        void onRoomSelected(int bhrId, int unitId);
     }
 
     private static class RoomSelectionState {
@@ -923,7 +926,7 @@ public class BoarderBookingFragment extends Fragment {
                         
                         rb.setOnClickListener(v -> {
                             selectedUnitId = unitId;
-                            listener.onRoomSelected(unitId);
+                            listener.onRoomSelected(room.optInt("bhr_id", 0), unitId);
                             // We don't need to notifyDataSetChanged here if it's in the same RadioGroup
                             // but usually it's better to ensure only one is selected overall.
                             notifyDataSetChanged();
@@ -1084,7 +1087,7 @@ public class BoarderBookingFragment extends Fragment {
                             
                             rb.setOnClickListener(v -> {
                                 selectedUnitId = uId;
-                                listener.onRoomSelected(uId);
+                                listener.onRoomSelected(room.optInt("bhr_id", 0), uId);
                                 notifyDataSetChanged();
                             });
                             
@@ -1135,7 +1138,7 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
 
-    private void submitChangeRoomRequest(Booking booking, int newRoomId, String reason, String details) {
+    private void submitChangeRoomRequest(Booking booking, int newBhrId, int newUnitId, String reason, String details) {
         if (getContext() == null) return;
 
         android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
@@ -1144,7 +1147,7 @@ public class BoarderBookingFragment extends Fragment {
 
         String url = BASE_URL + "submit_change_room_request.php";
         android.util.Log.d("ChangeRoom", "Submitting request to URL: " + url);
-        android.util.Log.d("ChangeRoom", "Params: booking_id=" + booking.getBookingId() + ", user_id=" + userId + ", new_room_id=" + newRoomId + ", reason=" + reason);
+        android.util.Log.d("ChangeRoom", "Params: booking_id=" + booking.getBookingId() + ", user_id=" + userId + ", new_room_id=" + newBhrId + ", new_unit_id=" + newUnitId + ", reason=" + reason);
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
             response -> {
@@ -1185,7 +1188,8 @@ public class BoarderBookingFragment extends Fragment {
                 Map<String, String> params = new HashMap<>();
                 params.put("booking_id", String.valueOf(booking.getBookingId()));
                 params.put("user_id", String.valueOf(userId));
-                params.put("new_room_id", String.valueOf(newRoomId));
+                params.put("new_room_id", String.valueOf(newBhrId));
+                params.put("new_unit_id", String.valueOf(newUnitId));
                 params.put("reason", reason);
                 params.put("details", details);
                 return params;
