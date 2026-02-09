@@ -777,24 +777,46 @@ public class BoarderBookingFragment extends Fragment {
             JSONArray currentRoomsArray = data.getJSONArray("current_bh_rooms");
             JSONArray otherRoomsArray = data.getJSONArray("other_bh_rooms");
 
-            // Simple adapter for room selection (could be a separate class for better logic)
-            // For now, let's assume we have a simple selector
             final int[] selectedRoomId = {0};
 
-            // Using RoomSelectionAdapter (conceptually, would need to create this or use a simple one)
-            // Let's implement a very basic one or use a RadioGroup if rooms are few, 
-            // but since we have two lists, RecyclerView is better.
+            // Group rooms by Boarding House
+            Map<Integer, List<JSONObject>> groupedRooms = new HashMap<>();
+            Map<Integer, String> bhNames = new HashMap<>();
+            
+            for (int i = 0; i < otherRoomsArray.length(); i++) {
+                JSONObject room = otherRoomsArray.getJSONObject(i);
+                int bhId = room.getInt("bh_id");
+                String bhName = room.getString("bh_name");
+                
+                if (!groupedRooms.containsKey(bhId)) {
+                    groupedRooms.put(bhId, new ArrayList<>());
+                    bhNames.put(bhId, bhName);
+                }
+                groupedRooms.get(bhId).add(room);
+            }
+
+            List<RoomGroup> otherBhGroups = new ArrayList<>();
+            for (Integer bhId : groupedRooms.keySet()) {
+                otherBhGroups.add(new RoomGroup(bhId, bhNames.get(bhId), groupedRooms.get(bhId)));
+            }
             
             // For the sake of this implementation, I'll use a simple list handler
             setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, id -> {
                 selectedRoomId[0] = id;
-                // Deselect from other rv if needed
+                // Since this is a different RV, ensure we handle selection state across them if needed
             }, tvSection1Empty);
 
-            setupRoomRecyclerView(rvOtherBhRooms, otherRoomsArray, id -> {
-                selectedRoomId[0] = id;
-                // Deselect from other rv if needed
-            }, tvSection2Empty);
+            if (otherBhGroups.isEmpty()) {
+                tvSection2Empty.setVisibility(View.VISIBLE);
+                rvOtherBhRooms.setVisibility(View.GONE);
+            } else {
+                tvSection2Empty.setVisibility(View.GONE);
+                rvOtherBhRooms.setVisibility(View.VISIBLE);
+                rvOtherBhRooms.setLayoutManager(new LinearLayoutManager(getContext()));
+                rvOtherBhRooms.setAdapter(new OtherBhRoomAdapter(otherBhGroups, id -> {
+                    selectedRoomId[0] = id;
+                }));
+            }
 
             AlertDialog dialog = builder.create();
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -845,7 +867,7 @@ public class BoarderBookingFragment extends Fragment {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_child, parent, false);
             return new ViewHolder(view);
         }
 
@@ -857,8 +879,8 @@ public class BoarderBookingFragment extends Fragment {
                 String category = room.getString("room_category");
                 double price = room.getDouble("price");
                 
-                holder.text1.setText(name + " (" + category + ")");
-                holder.text2.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
+                holder.tvRoomName.setText(name + " (" + category + ")");
+                holder.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
                 
                 holder.itemView.setBackgroundColor(selectedPos == position ? 0x22FBC02D : 0x00000000);
                 
@@ -867,7 +889,7 @@ public class BoarderBookingFragment extends Fragment {
                     selectedPos = holder.getAdapterPosition();
                     notifyItemChanged(oldPos);
                     notifyItemChanged(selectedPos);
-                    listener.onRoomSelected(room.optInt("bhr_id", room.optInt("bhr_id")));
+                    listener.onRoomSelected(room.optInt("bhr_id", 0));
                 });
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -880,11 +902,131 @@ public class BoarderBookingFragment extends Fragment {
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView text1, text2;
+            TextView tvRoomName, tvRoomPrice;
             ViewHolder(View v) {
                 super(v);
-                text1 = v.findViewById(android.R.id.text1);
-                text2 = v.findViewById(android.R.id.text2);
+                tvRoomName = v.findViewById(R.id.tvRoomName);
+                tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
+            }
+        }
+    }
+
+    private static class RoomGroup {
+        int bhId;
+        String bhName;
+        List<JSONObject> rooms;
+        boolean isExpanded = false;
+
+        RoomGroup(int bhId, String bhName, List<JSONObject> rooms) {
+            this.bhId = bhId;
+            this.bhName = bhName;
+            this.rooms = rooms;
+        }
+    }
+
+    private class OtherBhRoomAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private static final int TYPE_HEADER = 0;
+        private static final int TYPE_CHILD = 1;
+        
+        private List<RoomGroup> groups;
+        private List<Object> flatList = new ArrayList<>();
+        private OnRoomSelectedListener listener;
+        private int selectedRoomId = -1;
+
+        public OtherBhRoomAdapter(List<RoomGroup> groups, OnRoomSelectedListener listener) {
+            this.groups = groups;
+            this.listener = listener;
+            updateFlatList();
+        }
+
+        private void updateFlatList() {
+            flatList.clear();
+            for (RoomGroup group : groups) {
+                flatList.add(group);
+                if (group.isExpanded) {
+                    flatList.addAll(group.rooms);
+                }
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return flatList.get(position) instanceof RoomGroup ? TYPE_HEADER : TYPE_CHILD;
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == TYPE_HEADER) {
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_group, parent, false);
+                return new HeaderViewHolder(view);
+            } else {
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_child, parent, false);
+                return new ChildViewHolder(view);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            Object item = flatList.get(position);
+            
+            if (holder instanceof HeaderViewHolder) {
+                RoomGroup group = (RoomGroup) item;
+                HeaderViewHolder h = (HeaderViewHolder) holder;
+                h.tvBhName.setText(group.bhName);
+                h.ivExpandIndicator.setImageResource(group.isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                
+                h.itemView.setOnClickListener(v -> {
+                    group.isExpanded = !group.isExpanded;
+                    updateFlatList();
+                    notifyDataSetChanged();
+                });
+            } else if (holder instanceof ChildViewHolder) {
+                JSONObject room = (JSONObject) item;
+                ChildViewHolder c = (ChildViewHolder) holder;
+                try {
+                    String name = room.getString("room_name");
+                    String category = room.getString("room_category");
+                    double price = room.getDouble("price");
+                    int roomId = room.getInt("bhr_id");
+                    
+                    c.tvRoomName.setText(name + " (" + category + ")");
+                    c.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
+                    
+                    c.itemView.setBackgroundColor(selectedRoomId == roomId ? 0x22FBC02D : 0x00000000);
+                    
+                    c.itemView.setOnClickListener(v -> {
+                        selectedRoomId = roomId;
+                        notifyDataSetChanged();
+                        listener.onRoomSelected(roomId);
+                    });
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return flatList.size();
+        }
+
+        class HeaderViewHolder extends RecyclerView.ViewHolder {
+            TextView tvBhName;
+            ImageView ivExpandIndicator;
+            HeaderViewHolder(View v) {
+                super(v);
+                tvBhName = v.findViewById(R.id.tvBhName);
+                ivExpandIndicator = v.findViewById(R.id.ivExpandIndicator);
+            }
+        }
+
+        class ChildViewHolder extends RecyclerView.ViewHolder {
+            TextView tvRoomName, tvRoomPrice;
+            ChildViewHolder(View v) {
+                super(v);
+                tvRoomName = v.findViewById(R.id.tvRoomName);
+                tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
             }
         }
     }
