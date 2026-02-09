@@ -145,17 +145,7 @@ public class ChangeRoomRequestsFragment extends Fragment {
 
     private void updateUI() {
         if (adapter == null) {
-            adapter = new ChangeRoomRequestsAdapter(requests, new ChangeRoomRequestsAdapter.OnActionListener() {
-                @Override
-                public void onApprove(ChangeRoomRequestData request) {
-                    processRequest(request, "Approve");
-                }
-
-                @Override
-                public void onDecline(ChangeRoomRequestData request) {
-                    processRequest(request, "Decline");
-                }
-            });
+            adapter = new ChangeRoomRequestsAdapter(requests, request -> showRequestDetailsDialog(request));
             recyclerView.setAdapter(adapter);
         } else {
             adapter.notifyDataSetChanged();
@@ -163,6 +153,48 @@ public class ChangeRoomRequestsFragment extends Fragment {
 
         tvCount.setText(String.valueOf(requests.size()));
         emptyState.setVisibility(requests.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    private void showRequestDetailsDialog(ChangeRoomRequestData request) {
+        if (getContext() == null) return;
+
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_room_request_details, null);
+        
+        // Bind data to dialog views
+        TextView tvBoarderName = dialogView.findViewById(R.id.tvBoarderName);
+        TextView tvBhName = dialogView.findViewById(R.id.tvBhName);
+        TextView tvOldRoom = dialogView.findViewById(R.id.tvOldRoom);
+        TextView tvNewRoom = dialogView.findViewById(R.id.tvNewRoom);
+        TextView tvReason = dialogView.findViewById(R.id.tvReason);
+        TextView tvDetails = dialogView.findViewById(R.id.tvDetails);
+        TextView tvDate = dialogView.findViewById(R.id.tvDate);
+        
+        tvBoarderName.setText(request.getBoarderName());
+        tvBhName.setText(request.getBhName());
+        tvOldRoom.setText(request.getOldRoomName());
+        tvNewRoom.setText(request.getNewRoomName());
+        tvReason.setText(request.getReason());
+        tvDetails.setText(request.getDetails());
+        tvDate.setText(request.getCreatedAt());
+        
+        builder.setView(dialogView);
+        android.app.AlertDialog dialog = builder.create();
+        
+        // Set up buttons
+        dialogView.findViewById(R.id.btnApprove).setOnClickListener(v -> {
+            dialog.dismiss();
+            processRequest(request, "Approve");
+        });
+        
+        dialogView.findViewById(R.id.btnDecline).setOnClickListener(v -> {
+            dialog.dismiss();
+            processRequest(request, "Decline");
+        });
+        
+        dialogView.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
     }
 
     private void processRequest(ChangeRoomRequestData request, String action) {
