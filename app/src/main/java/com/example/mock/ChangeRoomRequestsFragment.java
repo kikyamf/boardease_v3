@@ -115,6 +115,19 @@ public class ChangeRoomRequestsFragment extends Fragment {
                 },
                 error -> {
                     swipeRefreshLayout.setRefreshing(false);
+                    
+                    // Log detailed error information
+                    android.util.Log.e(TAG, "Error loading change room requests");
+                    if (error.networkResponse != null) {
+                        android.util.Log.e(TAG, "Status Code: " + error.networkResponse.statusCode);
+                        android.util.Log.e(TAG, "Response Data: " + new String(error.networkResponse.data));
+                    } else {
+                        android.util.Log.e(TAG, "Network error: " + (error.getMessage() != null ? error.getMessage() : "Unknown error"));
+                    }
+                    if (error.getCause() != null) {
+                        android.util.Log.e(TAG, "Cause: " + error.getCause().getMessage());
+                    }
+                    
                     Toast.makeText(getContext(), "Error loading requests", Toast.LENGTH_SHORT).show();
                 });
 
