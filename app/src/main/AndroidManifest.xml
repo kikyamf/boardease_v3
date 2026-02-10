@@ -215,6 +215,9 @@
             android:name=".ChangeRoomRequestsActivity"
             android:exported="false" />
         <activity
+            android:name=".ChangeRoomRequestDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".CreateGroupChat"
             android:exported="false" />
         <activity

@@ -145,7 +145,7 @@ public class ChangeRoomRequestsFragment extends Fragment {
 
     private void updateUI() {
         if (adapter == null) {
-            adapter = new ChangeRoomRequestsAdapter(requests, request -> showRequestDetailsDialog(request));
+            adapter = new ChangeRoomRequestsAdapter(requests, request -> openRequestDetails(request));
             recyclerView.setAdapter(adapter);
         } else {
             adapter.notifyDataSetChanged();
@@ -155,95 +155,28 @@ public class ChangeRoomRequestsFragment extends Fragment {
         emptyState.setVisibility(requests.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
-    private void showRequestDetailsDialog(ChangeRoomRequestData request) {
-        if (getContext() == null) return;
-
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_room_request_details, null);
-        
-        // Bind data to dialog views
-        TextView tvBoarderName = dialogView.findViewById(R.id.tvBoarderName);
-        TextView tvBhName = dialogView.findViewById(R.id.tvBhName);
-        TextView tvOldRoom = dialogView.findViewById(R.id.tvOldRoom);
-        TextView tvNewRoom = dialogView.findViewById(R.id.tvNewRoom);
-        TextView tvReason = dialogView.findViewById(R.id.tvReason);
-        TextView tvDetails = dialogView.findViewById(R.id.tvDetails);
-        TextView tvDate = dialogView.findViewById(R.id.tvDate);
-        
-        tvBoarderName.setText(request.getBoarderName());
-        tvBhName.setText(request.getBhName());
-        tvOldRoom.setText(request.getOldRoomName());
-        tvNewRoom.setText(request.getNewRoomName());
-        tvReason.setText(request.getReason());
-        tvDetails.setText(request.getDetails());
-        tvDate.setText(request.getCreatedAt());
-        
-        builder.setView(dialogView);
-        android.app.AlertDialog dialog = builder.create();
-        
-        // Set up buttons
-        dialogView.findViewById(R.id.btnApprove).setOnClickListener(v -> {
-            dialog.dismiss();
-            processRequest(request, "Approve");
-        });
-        
-        dialogView.findViewById(R.id.btnDecline).setOnClickListener(v -> {
-            dialog.dismiss();
-            processRequest(request, "Decline");
-        });
-        
-        dialogView.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
-        
-        dialog.show();
+    private void openRequestDetails(ChangeRoomRequestData request) {
+        Intent intent = new Intent(getContext(), ChangeRoomRequestDetailsActivity.class);
+        intent.putExtra("request_id", request.getRequestId());
+        intent.putExtra("boarder_name", request.getBoarderName());
+        intent.putExtra("bh_name", request.getBhName());
+        intent.putExtra("old_room_name", request.getOldRoomName());
+        intent.putExtra("new_room_name", request.getNewRoomName());
+        intent.putExtra("reason", request.getReason());
+        intent.putExtra("details", request.getDetails());
+        intent.putExtra("created_at", request.getCreatedAt());
+        intent.putExtra("status", request.status); // Adding status field to pass
+        startActivityForResult(intent, 2001);
     }
 
-    private void processRequest(ChangeRoomRequestData request, String action) {
-        showProgressDialog(action + "ing request...");
-        String url = "https://boardease.calapebohol.com/process_change_room_request.php";
-
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                response -> {
-                    hideProgressDialog();
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        if (jsonResponse.getBoolean("success")) {
-                            Toast.makeText(getContext(), "Request " + action.toLowerCase() + "d", Toast.LENGTH_SHORT).show();
-                            loadRequests();
-                        } else {
-                            Toast.makeText(getContext(), jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                },
-                error -> {
-                    hideProgressDialog();
-                    Toast.makeText(getContext(), "Error processing request", Toast.LENGTH_SHORT).show();
-                }) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("change_request_id", String.valueOf(request.getRequestId()));
-                params.put("action", action);
-                return params;
-            }
-        };
-
-        requestQueue.add(stringRequest);
-    }
-
-    private void showProgressDialog(String message) {
-        progressDialog = new ProgressDialog(getContext());
-        progressDialog.setMessage(message);
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-    }
-
-    private void hideProgressDialog() {
-        if (progressDialog != null && progressDialog.isShowing()) {
-            progressDialog.dismiss();
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 2001 && resultCode == android.app.Activity.RESULT_OK) {
+            loadRequests();
         }
     }
+
 
     // Public methods for consistency with other booking fragments
     public void loadIfNeeded() {
