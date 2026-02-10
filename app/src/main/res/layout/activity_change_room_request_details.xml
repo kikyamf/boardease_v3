@@ -209,7 +209,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Room B"
                                 android:textSize="15sp"
-                                android:textColor="@color/green_text"
+                                android:textColor="@color/green"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
