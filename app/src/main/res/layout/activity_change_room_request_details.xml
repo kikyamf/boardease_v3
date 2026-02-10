@@ -180,6 +180,13 @@
                                 android:text="Room A"
                                 android:textSize="15sp"
                                 android:textColor="@color/black" />
+                            <TextView
+                                android:id="@+id/tvOldRoomNumber"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Unit 101"
+                                android:textSize="13sp"
+                                android:textColor="@color/gray" />
                         </LinearLayout>
 
                         <ImageView
@@ -211,6 +218,13 @@
                                 android:textSize="15sp"
                                 android:textColor="@color/green"
                                 android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tvNewRoomNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Unit 102"
+                                android:textSize="13sp"
+                                android:textColor="@color/green_enabled" />
                         </LinearLayout>
                     </LinearLayout>
 

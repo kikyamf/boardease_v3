@@ -109,7 +109,9 @@ public class ChangeRoomRequestsFragment extends Fragment {
                                         obj.getString("l_name"),
                                         obj.getString("bh_name"),
                                         obj.getString("old_room_name"),
-                                        obj.getString("new_room_name")
+                                        obj.getString("new_room_name"),
+                                        obj.optString("old_room_number", ""),
+                                        obj.optString("new_room_number", "")
                                 ));
                             }
                             android.util.Log.d(TAG, "Total requests added: " + requests.size());
@@ -166,7 +168,9 @@ public class ChangeRoomRequestsFragment extends Fragment {
         intent.putExtra("reason", request.getReason());
         intent.putExtra("details", request.getDetails());
         intent.putExtra("created_at", request.getCreatedAt());
-        intent.putExtra("status", request.getStatus()); // Passing status to handle UI state
+        intent.putExtra("status", request.getStatus());
+        intent.putExtra("old_room_number", request.getOldRoomNumber());
+        intent.putExtra("new_room_number", request.getNewRoomNumber());
         startActivityForResult(intent, 2001);
     }
 
@@ -193,9 +197,9 @@ public class ChangeRoomRequestsFragment extends Fragment {
     // Data class
     public static class ChangeRoomRequestData {
         private int requestId, bookingId, userId, newRoomId;
-        private String reason, details, status, createdAt, fName, lName, bhName, oldRoomName, newRoomName;
+        private String reason, details, status, createdAt, fName, lName, bhName, oldRoomName, newRoomName, oldRoomNumber, newRoomNumber;
 
-        public ChangeRoomRequestData(int requestId, int bookingId, int userId, int newRoomId, String reason, String details, String status, String createdAt, String fName, String lName, String bhName, String oldRoomName, String newRoomName) {
+        public ChangeRoomRequestData(int requestId, int bookingId, int userId, int newRoomId, String reason, String details, String status, String createdAt, String fName, String lName, String bhName, String oldRoomName, String newRoomName, String oldRoomNumber, String newRoomNumber) {
             this.requestId = requestId;
             this.bookingId = bookingId;
             this.userId = userId;
@@ -209,6 +213,8 @@ public class ChangeRoomRequestsFragment extends Fragment {
             this.bhName = bhName;
             this.oldRoomName = oldRoomName;
             this.newRoomName = newRoomName;
+            this.oldRoomNumber = oldRoomNumber;
+            this.newRoomNumber = newRoomNumber;
         }
 
         public int getRequestId() { return requestId; }
@@ -216,6 +222,8 @@ public class ChangeRoomRequestsFragment extends Fragment {
         public String getBhName() { return bhName; }
         public String getOldRoomName() { return oldRoomName; }
         public String getNewRoomName() { return newRoomName; }
+        public String getOldRoomNumber() { return oldRoomNumber; }
+        public String getNewRoomNumber() { return newRoomNumber; }
         public String getReason() { return reason; }
         public String getDetails() { return details; }
         public String getStatus() { return status; }

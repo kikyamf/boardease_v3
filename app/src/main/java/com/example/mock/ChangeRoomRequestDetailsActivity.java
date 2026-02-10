@@ -29,6 +29,7 @@ public class ChangeRoomRequestDetailsActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private ImageView imgProfile;
     private TextView tvBoarderName, tvStatus, tvBhName, tvOldRoom, tvNewRoom, tvReason, tvDetails, tvDate;
+    private TextView tvOldRoomNumber, tvNewRoomNumber;
     private MaterialButton btnApprove, btnDecline;
     private LinearLayout layoutActions;
 
@@ -59,6 +60,8 @@ public class ChangeRoomRequestDetailsActivity extends AppCompatActivity {
         tvReason = findViewById(R.id.tvReason);
         tvDetails = findViewById(R.id.tvDetails);
         tvDate = findViewById(R.id.tvDate);
+        tvOldRoomNumber = findViewById(R.id.tvOldRoomNumber);
+        tvNewRoomNumber = findViewById(R.id.tvNewRoomNumber);
         btnApprove = findViewById(R.id.btnApprove);
         btnDecline = findViewById(R.id.btnDecline);
         layoutActions = findViewById(R.id.layoutActions);
@@ -81,6 +84,23 @@ public class ChangeRoomRequestDetailsActivity extends AppCompatActivity {
             tvReason.setText(intent.getStringExtra("reason"));
             tvDetails.setText(intent.getStringExtra("details"));
             tvDate.setText(intent.getStringExtra("created_at"));
+
+            String oldRoomNumber = intent.getStringExtra("old_room_number");
+            String newRoomNumber = intent.getStringExtra("new_room_number");
+
+            if (oldRoomNumber != null && !oldRoomNumber.isEmpty()) {
+                tvOldRoomNumber.setText("Unit: " + oldRoomNumber);
+                tvOldRoomNumber.setVisibility(View.VISIBLE);
+            } else {
+                tvOldRoomNumber.setVisibility(View.GONE);
+            }
+
+            if (newRoomNumber != null && !newRoomNumber.isEmpty()) {
+                tvNewRoomNumber.setText("Unit: " + newRoomNumber);
+                tvNewRoomNumber.setVisibility(View.VISIBLE);
+            } else {
+                tvNewRoomNumber.setVisibility(View.GONE);
+            }
             
             String status = intent.getStringExtra("status");
             tvStatus.setText(status);
