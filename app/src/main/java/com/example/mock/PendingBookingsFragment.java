@@ -7,6 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.TranslateAnimation;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -208,11 +211,16 @@ public class PendingBookingsFragment extends Fragment {
                                 booking.setRemainingAmountToPay(bookingObj.optString("remaining_amount_to_pay", "0.00"));
                                 booking.setFullyPaid(bookingObj.optBoolean("is_fully_paid", false));
                                 booking.setPaymentProgressPercent(bookingObj.optDouble("payment_progress_percent", 0.0));
-                                
-                                // Parse pending_payment_amount
-                                String pendingPaymentAmount = bookingObj.optString("pending_payment_amount", null);
-                                if (pendingPaymentAmount != null && !pendingPaymentAmount.isEmpty() && !pendingPaymentAmount.equals("null")) {
-                                    booking.setPendingPaymentAmount(pendingPaymentAmount);
+                             // Parse payment status and method
+                            String paymentStatus = bookingObj.optString("payment_status", "Pending");
+                            String paymentMethod = bookingObj.optString("payment_method", "");
+                            String pendingAmount = bookingObj.optString("pending_payment_amount", null);
+                            
+                            booking.setPaymentStatus(paymentStatus);
+                            booking.setPaymentMethod(paymentMethod);
+                            booking.setPendingPaymentAmount(pendingAmount);
+                                if (pendingAmount != null && !pendingAmount.isEmpty() && !pendingAmount.equals("null")) {
+                                    booking.setPendingPaymentAmount(pendingAmount);
                                 } else {
                                     booking.setPendingPaymentAmount(null);
                                 }
@@ -265,6 +273,7 @@ public class PendingBookingsFragment extends Fragment {
                                         intent.putExtra("paid_amount_for_booking", booking.getPaidAmountForBooking());
                                         intent.putExtra("is_fully_paid", booking.isFullyPaid());
                                         intent.putExtra("pending_payment_amount", booking.getPendingPaymentAmount());
+                                        intent.putExtra("payment_method", booking.getPaymentMethod());
                                         
                                         if (getActivity() != null) {
                                             getActivity().startActivityForResult(intent, 1001);
@@ -332,27 +341,74 @@ public class PendingBookingsFragment extends Fragment {
         TextView tvPaymentStatus = dialogView.findViewById(R.id.tvPaymentStatus);
         TextView tvAmountPaid = dialogView.findViewById(R.id.tvAmountPaid);
         TextView tvTotalAmount = dialogView.findViewById(R.id.tvTotalAmount);
-        TextView tvPaymentProgress = dialogView.findViewById(R.id.tvPaymentProgress);
-        TextView tvProgressPercent = dialogView.findViewById(R.id.tvProgressPercent);
-        ProgressBar progressBarPayment = dialogView.findViewById(R.id.progressBarPayment);
-        TextView tvWarning = dialogView.findViewById(R.id.tvWarning);
-        android.widget.ImageView imgPaymentProof = dialogView.findViewById(R.id.imgPaymentProof);
-        TextView tvNoProof = dialogView.findViewById(R.id.tvNoProof);
+        TextView tvPaymentProofLabel = dialogView.findViewById(R.id.tvPaymentProofLabel);
         LinearLayout layoutPaymentProof = dialogView.findViewById(R.id.layoutPaymentProof);
-        android.widget.Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
-        android.widget.Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        ImageView imgPaymentProof = dialogView.findViewById(R.id.imgPaymentProof);
+        TextView tvWarning = dialogView.findViewById(R.id.tvWarning);
+        CheckBox cbConfirmCashPayment = dialogView.findViewById(R.id.cbConfirmCashPayment);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        com.google.android.material.button.MaterialButton btnConfirm = dialogView.findViewById(R.id.btnConfirm);
         
-        // Set booking information
-        tvBoarderName.setText(booking.getBoarderName() != null ? booking.getBoarderName() : "Unknown");
-        tvRoomName.setText(booking.getRoomName() != null ? booking.getRoomName() : "");
+        // Progress views
+        LinearLayout layoutPaymentProgress = dialogView.findViewById(R.id.layoutPaymentProgress);
+        TextView tvPaymentProgress = dialogView.findViewById(R.id.tvPaymentProgress);
+        ProgressBar progressBarPayment = dialogView.findViewById(R.id.progressBarPayment);
+        TextView tvProgressPercent = dialogView.findViewById(R.id.tvProgressPercent);
         
-        // Set payment information
-        int totalPeriods = booking.getTotalPeriods();
-        int paidPeriods = booking.getPaidPeriods();
-        String paidAmount = booking.getPaidAmountForBooking();
-        String totalAmount = booking.getTotalAmountForBooking();
-        boolean isFullyPaid = booking.isFullyPaid();
-        double progressPercent = booking.getPaymentProgressPercent();
+        // Populate data
+        tvBoarderName.setText(booking.getBoarderName());
+        tvRoomName.setText(booking.getRoomName());
+        
+        // Set payment status
+        String status = booking.getPaymentStatus();
+        String method = booking.getPaymentMethod();
+        tvPaymentStatus.setText(status);
+        
+        // Default visibility
+        layoutPaymentProof.setVisibility(View.GONE);
+        cbConfirmCashPayment.setVisibility(View.GONE);
+        tvWarning.setVisibility(View.GONE);
+        btnConfirm.setEnabled(true);
+        btnConfirm.setAlpha(1.0f);
+        
+        // Display based on Payment Method
+        if ("Cash".equalsIgnoreCase(method)) {
+            // Cash Payment Logic
+            tvPaymentStatus.setText(status + " (Cash)");
+            tvPaymentProofLabel.setVisibility(View.GONE);
+            layoutPaymentProof.setVisibility(View.GONE);
+            
+            // Show Cash Confirmation Checkbox
+            cbConfirmCashPayment.setVisibility(View.VISIBLE);
+            
+            // Show Booking Warning/Instruction
+            tvWarning.setText("Cash payments do not have digital receipts. Please confirm only after you have personally received the cash payment.");
+            tvWarning.setBackgroundResource(R.drawable.bg_rounded_orange); // Use orange for warning
+            tvWarning.setVisibility(View.VISIBLE);
+            
+            // Disable Confirm button initially for Cash
+            btnConfirm.setEnabled(false);
+            btnConfirm.setAlpha(0.5f);
+            
+            // Checkbox listener
+            cbConfirmCashPayment.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                btnConfirm.setEnabled(isChecked);
+                btnConfirm.setAlpha(isChecked ? 1.0f : 0.5f);
+            });
+            
+        } else {
+            // GCash/Other Payment Logic
+            if (method != null && !method.isEmpty()) {
+                tvPaymentStatus.setText(status + " (" + method + ")");
+            }
+            
+            tvPaymentProofLabel.setText("Payment Proof (GCash Receipt)");
+            tvPaymentProofLabel.setVisibility(View.VISIBLE);
+            layoutPaymentProof.setVisibility(View.VISIBLE);
+            
+            // Load proof image (if applicable)
+            // loadPaymentProofForDialog(booking, imgPaymentProof, layoutPaymentProof);
+        }
         
         // Determine payment status
         String paymentStatusText;
@@ -362,8 +418,16 @@ public class PendingBookingsFragment extends Fragment {
         // Initialize views that need visibility control
         TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
         TextView tvPaymentStatusLabel = dialogView.findViewById(R.id.tvPaymentStatusLabel);
-        TextView tvPaymentProofLabel = dialogView.findViewById(R.id.tvPaymentProofLabel);
+        // TextView tvPaymentProofLabel = dialogView.findViewById(R.id.tvPaymentProofLabel); // Already defined
         LinearLayout layoutPaymentAmounts = dialogView.findViewById(R.id.layoutPaymentAmounts);
+        
+        // Initialize payment progress variables from BookingData
+        boolean isFullyPaid = booking.isFullyPaid();
+        int totalPeriods = booking.getTotalPeriods();
+        int paidPeriods = booking.getPaidPeriods();
+        double progressPercent = booking.getPaymentProgressPercent();
+        String paidAmount = booking.getPaidAmountForBooking();
+        String totalAmount = booking.getTotalAmountForBooking();
         
         boolean shouldLoadProof = true;
         
@@ -421,7 +485,11 @@ public class PendingBookingsFragment extends Fragment {
                     paymentStatusText = "Payment Submitted (For Verification)";
                     statusBg = R.drawable.bg_status_completed; // Blue or similar for verification
                     
-                    tvWarning.setText("Boarder has submitted a payment. Please review the details and proof below.");
+                    if ("Cash".equalsIgnoreCase(method)) {
+                        tvWarning.setText("Boarder has selected Cash payment. Please review and confirm you have received the payment.");
+                    } else {
+                        tvWarning.setText("Boarder has submitted a payment. Please review the details and the proof of payment.");
+                    }
                     tvWarning.setBackgroundResource(R.drawable.bg_status_completed);
                     
                     // Show payment proof and details
@@ -599,9 +667,14 @@ public class PendingBookingsFragment extends Fragment {
             tvProgressPercent.setVisibility(View.GONE);
         }
         
+        // Disable proof loading for Cash payments
+        if ("Cash".equalsIgnoreCase(method)) {
+            shouldLoadProof = false;
+        }
+
         // Load payment proof
         if (shouldLoadProof) {
-            loadPaymentProofForDialog(booking, imgPaymentProof, tvNoProof, layoutPaymentProof);
+            loadPaymentProofForDialog(booking, imgPaymentProof, layoutPaymentProof);
         }
         
         android.app.AlertDialog dialog = builder.create();
@@ -618,11 +691,17 @@ public class PendingBookingsFragment extends Fragment {
         
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         
+        // Final enforcement of Cash UI state
+        if ("Cash".equalsIgnoreCase(method)) {
+            if (tvPaymentProofLabel != null) tvPaymentProofLabel.setVisibility(View.GONE);
+            if (layoutPaymentProof != null) layoutPaymentProof.setVisibility(View.GONE);
+        }
+
         dialog.show();
     }
     
     private void loadPaymentProofForDialog(BookingData booking, android.widget.ImageView imgPaymentProof, 
-                                          TextView tvNoProof, LinearLayout layoutPaymentProof) {
+                                          LinearLayout layoutPaymentProof) {
         // Fetch payment proof from the booking's payment record
         String url = "https://boardease.calapebohol.com/get_payment_proof_by_booking.php?booking_id=" + booking.getBookingId();
         
@@ -644,9 +723,8 @@ public class PendingBookingsFragment extends Fragment {
                         }
                         
                         if (proofUrl != null && !proofUrl.isEmpty() && !proofUrl.equals("null")) {
-                            // Show image view and hide "no proof" text
+                            // Show image view
                             imgPaymentProof.setVisibility(View.VISIBLE);
-                            tvNoProof.setVisibility(View.GONE);
                             layoutPaymentProof.setVisibility(View.VISIBLE);
                             
                             // Build full URL
@@ -688,32 +766,28 @@ public class PendingBookingsFragment extends Fragment {
                             } catch (Exception e) {
                                 android.util.Log.e("PendingBookingsFragment", "Error loading payment proof", e);
                                 imgPaymentProof.setVisibility(View.GONE);
-                                tvNoProof.setVisibility(View.VISIBLE);
+                                layoutPaymentProof.setVisibility(View.GONE);
                             }
                         } else {
                             // No payment proof available
                             imgPaymentProof.setVisibility(View.GONE);
-                            tvNoProof.setVisibility(View.VISIBLE);
-                            layoutPaymentProof.setVisibility(View.VISIBLE);
+                            layoutPaymentProof.setVisibility(View.GONE);
                         }
                     } else {
                         // No payment proof found
                         imgPaymentProof.setVisibility(View.GONE);
-                        tvNoProof.setVisibility(View.VISIBLE);
-                        layoutPaymentProof.setVisibility(View.VISIBLE);
+                        layoutPaymentProof.setVisibility(View.GONE);
                     }
                 } catch (org.json.JSONException e) {
                     android.util.Log.e("PendingBookingsFragment", "Error parsing payment proof response", e);
                     imgPaymentProof.setVisibility(View.GONE);
-                    tvNoProof.setVisibility(View.VISIBLE);
-                    layoutPaymentProof.setVisibility(View.VISIBLE);
+                    layoutPaymentProof.setVisibility(View.GONE);
                 }
             },
             error -> {
                 android.util.Log.e("PendingBookingsFragment", "Error fetching payment proof: " + error.getMessage());
                 imgPaymentProof.setVisibility(View.GONE);
-                tvNoProof.setVisibility(View.VISIBLE);
-                layoutPaymentProof.setVisibility(View.VISIBLE);
+                layoutPaymentProof.setVisibility(View.GONE);
             }
         );
         

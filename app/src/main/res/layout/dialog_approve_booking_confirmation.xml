@@ -163,17 +163,6 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/tvNoProof"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="⚠ No payment proof uploaded yet"
-                android:textSize="14sp"
-                android:textColor="@color/red"
-                android:gravity="center"
-                android:padding="16dp"
-                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Payment Progress (if applicable) -->
@@ -234,6 +223,17 @@
             android:layout_marginBottom="16dp"
             android:visibility="gone"
             android:gravity="center" />
+
+        <!-- Cash Payment Confirmation Checkbox -->
+        <CheckBox
+            android:id="@+id/cbConfirmCashPayment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I confirm that I have received the cash payment from the boarder."
+            android:textSize="14sp"
+            android:textColor="@color/black"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
 
         <!-- Buttons -->
         <LinearLayout

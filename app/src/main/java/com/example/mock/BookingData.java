@@ -146,6 +146,11 @@ public class BookingData {
     
     public String getPendingPaymentAmount() { return pendingPaymentAmount; }
     public void setPendingPaymentAmount(String pendingPaymentAmount) { this.pendingPaymentAmount = pendingPaymentAmount; }
+    
+    // Payment method
+    private String paymentMethod;
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }
 
 

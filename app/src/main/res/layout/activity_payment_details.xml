@@ -344,39 +344,6 @@
                         android:background="@color/light_gray"
                         android:layout_marginBottom="14dp" />
 
-                    <!-- Payment Method -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginBottom="14dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Payment Method"
-                            android:textSize="12sp"
-                            android:textColor="@color/gray"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:id="@+id/tvPaymentMethod"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Cash"
-                            android:textSize="16sp"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Divider -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/light_gray"
-                        android:layout_marginBottom="14dp" />
-
                     <!-- Interaction Section (Highlighted on Click) -->
                     <LinearLayout
                         android:id="@+id/layoutHighlightSection"
@@ -443,6 +410,32 @@
                                     android:textColor="@color/black"
                                     android:textStyle="bold" />
                             </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Added Payment Method -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Payment Method"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:id="@+id/tvDetailPaymentMethod"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Cash"
+                                android:textSize="15sp"
+                                android:textColor="@color/black"
+                                android:textStyle="bold" />
                         </LinearLayout>
 
                         <!-- Divider -->

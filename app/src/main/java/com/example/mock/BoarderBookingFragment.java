@@ -470,8 +470,11 @@ public class BoarderBookingFragment extends Fragment {
                 int roomId = bookingJson.optInt("room_id", 0);
                 int bhId = bookingJson.optInt("bh_id", 0);
                 
+                double confirmedPaid = bookingJson.optDouble("confirmed_paid", 0.0);
+                double totalPaid = bookingJson.optDouble("total_paid", 0.0);
+                
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid);
                 
                 bookingsList.add(booking);
             }
@@ -740,29 +743,59 @@ public class BoarderBookingFragment extends Fragment {
             TextView tvPaymentWarnings = dialogView.findViewById(R.id.tvPaymentWarnings);
             com.google.android.material.button.MaterialButton btnCancelApplication = dialogView.findViewById(R.id.btnCancelApplication);
             com.google.android.material.button.MaterialButton btnOk = dialogView.findViewById(R.id.btnOkPending);
+            android.widget.ImageButton btnClose = dialogView.findViewById(R.id.btnCloseDialog);
 
             AlertDialog dialog = builder.create();
+            
+            if (btnClose != null) {
+                btnClose.setOnClickListener(v -> dialog.dismiss());
+            }
             
             if ("Approved".equals(booking.getStatus())) {
                 if (tvTitle != null) tvTitle.setText("Application Approved!");
                 if (tvMessage != null) tvMessage.setText("Your application for " + booking.getBoardingHouseName() + " has been approved by the owner. Please proceed with the advance payment to confirm your booking.");
                 
                 // Show warnings and cancel button for Approved status
-                if (tvPaymentWarnings != null) tvPaymentWarnings.setVisibility(View.VISIBLE);
-                
                 if (btnCancelApplication != null) {
                     btnCancelApplication.setVisibility(View.VISIBLE);
-                    btnCancelApplication.setOnClickListener(v -> {
-                        dialog.dismiss();
-                        showCancelConfirmationDialog(booking);
-                    });
+                    
+                    // Disable cancel if payment is submitted (totalPaid > 0)
+                    if (booking.getTotalPaid() > 0) {
+                        btnCancelApplication.setEnabled(false);
+                        btnCancelApplication.setAlpha(0.5f);
+                        btnCancelApplication.setText("Cancel");
+                    } else {
+                        btnCancelApplication.setEnabled(true);
+                        btnCancelApplication.setAlpha(1.0f);
+                        btnCancelApplication.setText("Cancel");
+                        btnCancelApplication.setOnClickListener(v -> {
+                            dialog.dismiss();
+                            showCancelConfirmationDialog(booking);
+                        });
+                    }
                 }
 
-                btnOk.setOnClickListener(v -> {
-                    dialog.dismiss();
-                    fetchUnpaidPaymentBreakdowns(booking.getBookingId());
-                });
-                btnOk.setText("Pay Now");
+                // Check for other pending payments
+                if (hasOtherPendingPayments(booking.getBookingId())) {
+                    // Disable Pay Now button
+                    btnOk.setEnabled(false);
+                    btnOk.setAlpha(0.5f);
+                    btnOk.setText("Pay Now");
+                    
+                    // Show warning message
+                    if (tvPaymentWarnings != null) {
+                        tvPaymentWarnings.setVisibility(View.VISIBLE);
+                        tvPaymentWarnings.setText("You currently have a pending payment for another application. You can cancel this application or wait until the other payment is verified.");
+                    }
+                } else {
+                    btnOk.setEnabled(true);
+                    btnOk.setAlpha(1.0f);
+                    btnOk.setText("Pay Now");
+                    btnOk.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        fetchUnpaidPaymentBreakdowns(booking.getBookingId());
+                    });
+                }
             } else {
                 if (tvTitle != null) tvTitle.setText("Application Pending");
                 if (tvMessage != null) tvMessage.setText("Your application for " + booking.getBoardingHouseName() + " is currently pending approval from the owner. You will be notified once it is approved.");
@@ -868,10 +901,12 @@ public class BoarderBookingFragment extends Fragment {
         private String roomNumber;
         private int roomId;
         private int bhId;
+        private double confirmedPaid;
+        private double totalPaid;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
                       String startDate, String endDate, String monthlyDue, String balanceDue, String status,
-                      String roomCategory, String roomNumber, int roomId, int bhId) {
+                      String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
             this.imagePath = imagePath;
@@ -885,6 +920,8 @@ public class BoarderBookingFragment extends Fragment {
             this.roomNumber = roomNumber;
             this.roomId = roomId;
             this.bhId = bhId;
+            this.confirmedPaid = confirmedPaid;
+            this.totalPaid = totalPaid;
         }
 
         // Getters
@@ -901,6 +938,33 @@ public class BoarderBookingFragment extends Fragment {
         public String getRoomNumber() { return roomNumber; }
         public int getRoomId() { return roomId; }
         public int getBhId() { return bhId; }
+        public double getConfirmedPaid() { return confirmedPaid; }
+        public double getTotalPaid() { return totalPaid; }
+    }
+
+    /**
+     * Checks if there are any pending payments for other bookings
+     * @param currentBookingId The ID of the currently viewed booking to exclude
+     * @return true if another booking has a pending payment (totalPaid > confirmedPaid)
+     */
+    private boolean hasOtherPendingPayments(int currentBookingId) {
+        // Check current bookings (excluding the one being viewed)
+        if (currentBookings != null) {
+            for (Booking b : currentBookings) {
+                if (b.getBookingId() != currentBookingId && b.getTotalPaid() > b.getConfirmedPaid()) {
+                    return true;
+                }
+            }
+        }
+        // Check pending bookings (excluding the one being viewed)
+        if (pendingBookings != null) {
+            for (Booking b : pendingBookings) {
+                if (b.getBookingId() != currentBookingId && b.getTotalPaid() > b.getConfirmedPaid()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     // Payment Breakdown data class
@@ -1515,22 +1579,50 @@ public class BoarderBookingFragment extends Fragment {
             View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_payment_method, null);
             builder.setView(dialogView);
             
-            // Initialize views
-            ImageButton btnClosePayment = dialogView.findViewById(R.id.btnClosePayment);
-            RadioGroup rgPaymentMethod = dialogView.findViewById(R.id.rgPaymentMethod);
-            RadioButton rbCash = dialogView.findViewById(R.id.rbCash);
-            RadioButton rbGcash = dialogView.findViewById(R.id.rbGcash);
-            LinearLayout layoutCashPayment = dialogView.findViewById(R.id.layoutCashPayment);
-            LinearLayout layoutGcashPayment = dialogView.findViewById(R.id.layoutGcashPayment);
-            MaterialButton btnUploadCash = dialogView.findViewById(R.id.btnUploadCash);
-            MaterialButton btnUploadGcash = dialogView.findViewById(R.id.btnUploadGcash);
-            MaterialButton btnRemoveCash = dialogView.findViewById(R.id.btnRemoveCash);
-            MaterialButton btnRemoveGcash = dialogView.findViewById(R.id.btnRemoveGcash);
-            ImageView ivCashProof = dialogView.findViewById(R.id.ivCashProof);
-            ImageView ivGcashProof = dialogView.findViewById(R.id.ivGcashProof);
-            ImageView ivOwnerQrCode = dialogView.findViewById(R.id.ivOwnerQrCode);
-            TextView tvGcashNumber = dialogView.findViewById(R.id.tvGcashNumber);
-            MaterialButton btnSubmitPayment = dialogView.findViewById(R.id.btnSubmitPayment);
+            // View initialization
+            android.widget.RadioGroup rgPaymentMethod = dialogView.findViewById(R.id.rgPaymentMethod);
+            android.widget.RadioButton rbCash = dialogView.findViewById(R.id.rbCash);
+            android.widget.RadioButton rbGcash = dialogView.findViewById(R.id.rbGcash);
+            android.widget.LinearLayout layoutCashPayment = dialogView.findViewById(R.id.layoutCashPayment);
+            android.widget.LinearLayout layoutGcashPayment = dialogView.findViewById(R.id.layoutGcashPayment);
+            
+            // Dummy initialization for Cash proof views as they are not used but required for setTag
+            android.widget.ImageView ivCashProof = null;
+            com.google.android.material.button.MaterialButton btnRemoveCash = null;
+            
+
+            
+            // GCash controls
+            android.widget.ImageView ivOwnerQrCode = dialogView.findViewById(R.id.ivOwnerQrCode);
+            android.widget.TextView tvGcashNumber = dialogView.findViewById(R.id.tvGcashNumber);
+            com.google.android.material.button.MaterialButton btnUploadGcash = dialogView.findViewById(R.id.btnUploadGcash);
+            android.widget.ImageView ivGcashProof = dialogView.findViewById(R.id.ivGcashProof);
+            com.google.android.material.button.MaterialButton btnRemoveGcash = dialogView.findViewById(R.id.btnRemoveGcash);
+            
+            com.google.android.material.button.MaterialButton btnSubmitPayment = dialogView.findViewById(R.id.btnSubmitPayment);
+            android.widget.ImageButton btnClosePayment = dialogView.findViewById(R.id.btnClosePayment);
+            android.widget.TextView tvImportantRule = dialogView.findViewById(R.id.tvImportantRule);
+            
+            // Check if this is a pending booking (first payment/confirmation)
+            boolean isPending = false;
+            if (pendingBookings != null) {
+                for (Booking b : pendingBookings) {
+                    if (b.getBookingId() == bookingId) {
+                        isPending = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Set dynamic rule text
+            if (isPending) {
+                tvImportantRule.setText("IMPORTANT RULE: Submitting without actual payment may lead to booking cancellation.");
+            } else {
+                tvImportantRule.setText("IMPORTANT RULE: Submitting without actual payment may lead to penalties or stay termination.");
+            }
+            
+
+
             
             // Payment method and proof URIs
             String[] paymentMethod = {"Cash"}; // Use array to allow modification in inner classes
@@ -1550,43 +1642,40 @@ public class BoarderBookingFragment extends Fragment {
                 dialog.dismiss();
             });
             
-            // Payment method selection
+            // Set default view state - Cash selected by default
+            rgPaymentMethod.check(R.id.rbCash); // Ensure Cash is selected initially
+            layoutCashPayment.setVisibility(View.VISIBLE);
+            layoutGcashPayment.setVisibility(View.GONE);
+            
+            // Toggle views based on selection
             rgPaymentMethod.setOnCheckedChangeListener((group, checkedId) -> {
-                if (checkedId == rbCash.getId()) {
-                    paymentMethod[0] = "Cash";
+                if (checkedId == R.id.rbCash) {
                     layoutCashPayment.setVisibility(View.VISIBLE);
                     layoutGcashPayment.setVisibility(View.GONE);
-                } else if (checkedId == rbGcash.getId()) {
+                    paymentMethod[0] = "Cash";
+                } else if (checkedId == R.id.rbGcash) {
                     paymentMethod[0] = "GCash";
                     layoutCashPayment.setVisibility(View.GONE);
                     layoutGcashPayment.setVisibility(View.VISIBLE);
-                    // Load owner's GCash QR code
-                    loadOwnerGcashQr(bhId, ivOwnerQrCode, tvGcashNumber, ownerGcashQrPath, ownerGcashNumber);
+                    
+                    // Load GCash info if not already loaded
+                    if (ownerGcashQrPath[0] == null) {
+                        loadOwnerGcashQr(bhId, ivOwnerQrCode, tvGcashNumber, ownerGcashQrPath, ownerGcashNumber);
+                    }
                 }
             });
             
-            // Upload buttons
-            btnUploadCash.setOnClickListener(v -> {
-                if (cashImagePickerLauncher != null) {
-                    cashImagePickerLauncher.launch("image/*");
-                }
-            });
-            
+            // Upload GCash proof
             btnUploadGcash.setOnClickListener(v -> {
                 if (gcashImagePickerLauncher != null) {
                     gcashImagePickerLauncher.launch("image/*");
                 }
             });
             
-            // Remove buttons
-            btnRemoveCash.setOnClickListener(v -> {
-                cashProofUri[0] = null;
-                ivCashProof.setVisibility(View.GONE);
-                btnRemoveCash.setVisibility(View.GONE);
-            });
-            
+            // Remove GCash proof
             btnRemoveGcash.setOnClickListener(v -> {
                 gcashProofUri[0] = null;
+                ivGcashProof.setImageURI(null);
                 ivGcashProof.setVisibility(View.GONE);
                 btnRemoveGcash.setVisibility(View.GONE);
             });
@@ -1598,9 +1687,9 @@ public class BoarderBookingFragment extends Fragment {
             // Submit payment button
             btnSubmitPayment.setOnClickListener(v -> {
                 // Validate payment proof
-                if ("Cash".equals(paymentMethod[0]) && cashProofUri[0] == null) {
-                    Toast.makeText(getContext(), "Please upload cash transaction photo", Toast.LENGTH_SHORT).show();
-                    return;
+                // Validate payment proof
+                if ("Cash".equals(paymentMethod[0])) {
+                    // No validation needed for Cash
                 } else if ("GCash".equals(paymentMethod[0]) && gcashProofUri[0] == null) {
                     Toast.makeText(getContext(), "Please upload GCash payment screenshot", Toast.LENGTH_SHORT).show();
                     return;
@@ -1608,7 +1697,7 @@ public class BoarderBookingFragment extends Fragment {
                 
                 // Submit payment
                 submitPayment(selectedBreakdowns, bookingId, totalAmount, paymentMethod[0], 
-                    cashProofUri[0], gcashProofUri[0], dialog);
+                    null, gcashProofUri[0], dialog);
             });
             
         } catch (Exception e) {
@@ -2243,6 +2332,12 @@ public class BoarderBookingFragment extends Fragment {
      * Show review dialog when clicking on a booking history card
      */
     private void showReviewDialog(Booking booking) {
+        // Only allow review for Completed bookings
+        if (!"Completed".equals(booking.getStatus())) {
+            showBookingDetailsDialog(booking);
+            return;
+        }
+
         try {
             if (getContext() == null) {
                 return;
@@ -2391,6 +2486,86 @@ public class BoarderBookingFragment extends Fragment {
             Log.e(TAG, "Error showing review dialog: " + e.getMessage());
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing review dialog", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * Show booking details dialog for non-completed bookings (history)
+     */
+    private void showBookingDetailsDialog(Booking booking) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_cancelled_booking_details, null);
+            builder.setView(dialogView);
+
+            // Initialize dialog views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
+            ImageView imgBoardingHouse = dialogView.findViewById(R.id.imgBoardingHouse);
+            TextView tvBoardingHouseName = dialogView.findViewById(R.id.tvBoardingHouseName);
+            TextView tvLocation = dialogView.findViewById(R.id.tvLocation);
+            TextView tvRoomDetails = dialogView.findViewById(R.id.tvRoomDetails);
+            TextView tvStartDate = dialogView.findViewById(R.id.tvStartDate);
+            TextView tvEndDate = dialogView.findViewById(R.id.tvEndDate);
+            TextView tvMonthlyDue = dialogView.findViewById(R.id.tvMonthlyDue);
+            TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
+
+            // Set booking data
+            if (booking.getImagePath() != null && !booking.getImagePath().isEmpty()) {
+                Glide.with(getContext())
+                        .load(booking.getImagePath())
+                        .placeholder(R.drawable.sample_listing)
+                        .error(R.drawable.sample_listing)
+                        .into(imgBoardingHouse);
+            } else {
+                imgBoardingHouse.setImageResource(R.drawable.sample_listing);
+            }
+
+            tvBoardingHouseName.setText(booking.getBoardingHouseName());
+            tvLocation.setText(booking.getLocation());
+            
+            // Set room details
+            String roomDetails = booking.getRoomCategory();
+            if (booking.getRoomNumber() != null && !booking.getRoomNumber().isEmpty()) {
+                roomDetails += " | " + booking.getRoomNumber();
+            }
+            tvRoomDetails.setText(roomDetails);
+            
+            tvStartDate.setText(booking.getStartDate());
+            tvEndDate.setText(booking.getEndDate());
+            tvMonthlyDue.setText(booking.getMonthlyDue());
+            
+            // Display status
+            String status = booking.getStatus();
+            tvStatus.setText(status);
+
+            // Set status background
+            if ("Confirmed".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+            } else if ("Completed".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
+            } else if ("Cancelled".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
+            } else if ("Declined".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
+            } else {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+            }
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Close button click listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing booking details dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
         }
     }
 

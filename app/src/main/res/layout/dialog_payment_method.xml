@@ -39,6 +39,22 @@
 
         </LinearLayout>
 
+        <!-- IMPORTANT RULE -->
+        <TextView
+            android:id="@+id/tvImportantRule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="IMPORTANT RULE: Submitting without actual payment may lead to booking cancellation."
+            android:textSize="14sp"
+            android:textColor="@color/red"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="#FFEBEE"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp" />
+
+
+
         <!-- Payment Method Selection -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -102,49 +118,27 @@
                     android:layout_marginTop="16dp"
                     android:visibility="visible">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Upload Cash Transaction Photo"
-                        android:textSize="14sp"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Instruction: Cash payments must be given directly to the boarding house owner before submitting."
+            android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/black"
+                        android:background="#E8F5E9"
+                        android:padding="12dp"
+                        android:layout_marginBottom="8dp" />
+                        
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Note: No photo upload required for cash payments."
+                        android:textSize="12sp"
                         android:textColor="@color/dark_gray"
                         android:layout_marginBottom="8dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnUploadCash"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Select Photo"
-                        android:textSize="14sp"
-                        android:fontFamily="@font/poppins_medium"
-                        android:backgroundTint="@color/brown"
-                        android:textColor="@color/white"
-                        app:icon="@drawable/ic_camera1"
-                        app:iconTint="@color/white"
-                        app:cornerRadius="8dp"
-                        android:paddingVertical="12dp" />
-
-                    <ImageView
-                        android:id="@+id/ivCashProof"
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_marginTop="12dp"
-                        android:scaleType="centerCrop"
-                        android:visibility="gone"
-                        app:cornerRadius="12dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRemoveCash"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:text="Remove"
-                        android:textSize="12sp"
-                        android:textColor="@color/red"
-                        android:backgroundTint="@android:color/transparent"
-                        android:layout_marginTop="8dp"
-                        android:visibility="gone" />
+                        
+                    <!-- Hidden upload controls for Cash to keep layout code simple if needed, but per requirement we hide/remove them -->
+                    <!-- We just don't include them or set visibility GONE in code if they were shared. Here we simply replace them with the instructions -->
                 </LinearLayout>
 
                 <!-- GCash Payment Section (Collapsible) -->
@@ -192,7 +186,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Upload Payment Screenshot"
+                        android:text="Upload Payment Screenshot (Required)"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium"
                         android:textColor="@color/dark_gray"
@@ -235,6 +229,8 @@
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+
 
         <!-- Submit Payment Button -->
         <com.google.android.material.button.MaterialButton

@@ -37,7 +37,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
     private LinearLayout layoutPaymentProof, layoutHighlightSection;
     private TextView tvBoarderName, tvEmail, tvPhone, tvRoom, tvRentType, tvAmountPaid, tvTotalAmount;
     private TextView tvPaymentStatus, tvRentalStatus, tvPaymentDate, tvDueDate;
-    private TextView tvPaymentMethod, tvCreatedAt, tvUpdatedAt, tvButtonInfo, tvNoProof;
+    private TextView tvDetailPaymentMethod, tvCreatedAt, tvUpdatedAt, tvButtonInfo, tvNoProof;
     private TextView tvNoBreakdown;
     private TextView tvBoardingHouseName, tvBoardingHouseAddress;
     private MaterialButton btnMarkAsPaid, btnMarkAsOverdue;
@@ -93,7 +93,6 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         tvRentalStatus = findViewById(R.id.tvRentalStatus);
         tvPaymentDate = findViewById(R.id.tvPaymentDate);
         tvDueDate = findViewById(R.id.tvDueDate);
-        tvPaymentMethod = findViewById(R.id.tvPaymentMethod);
 
         tvCreatedAt = findViewById(R.id.tvCreatedAt);
         tvUpdatedAt = findViewById(R.id.tvUpdatedAt);
@@ -102,6 +101,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
         layoutPaymentProof = findViewById(R.id.layoutPaymentProof);
         layoutHighlightSection = findViewById(R.id.layoutHighlightSection);
         tvNoProof = findViewById(R.id.tvNoProof);
+        tvDetailPaymentMethod = findViewById(R.id.tvDetailPaymentMethod);
         
         tvBoardingHouseName = findViewById(R.id.tvBoardingHouseName);
         tvBoardingHouseAddress = findViewById(R.id.tvBoardingHouseAddress);
@@ -136,7 +136,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                 paymentDate = "N/A";
             }
             
-            updatePaymentProofDisplay(proofUrl, paymentDate, dueDate, isPaid);
+            updatePaymentProofDisplay(proofUrl, paymentDate, dueDate, isPaid, item.getPaymentMethod());
             
             // Visual feedback: Highlight the section
             if (layoutHighlightSection != null) {
@@ -417,8 +417,6 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             }
         }
         
-        // Set payment method
-        tvPaymentMethod.setText(payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "N/A");
         
         // Set dates with formatting
         String paymentDate = payment.getPaymentDate();
@@ -554,10 +552,16 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                          (payment.getPaymentStatus().equalsIgnoreCase("Paid") || 
                           payment.getPaymentStatus().equalsIgnoreCase("Fully Paid") ||
                           payment.getPaymentStatus().equalsIgnoreCase("Completed"));
-        updatePaymentProofDisplay(paymentProofUrl, null, dueDate, isPaid);
+        String paymentMethod = payment.getPaymentMethod();
+        updatePaymentProofDisplay(paymentProofUrl, null, dueDate, isPaid, paymentMethod);
     }
     
-    private void updatePaymentProofDisplay(String paymentProofUrl, String paymentDate, String dueDate, boolean isPaid) {
+    private void updatePaymentProofDisplay(String paymentProofUrl, String paymentDate, String dueDate, boolean isPaid, String paymentMethod) {
+        // Update payment method if provided
+        if (tvDetailPaymentMethod != null && paymentMethod != null && !paymentMethod.isEmpty()) {
+            tvDetailPaymentMethod.setText(paymentMethod);
+        }
+
         // Update payment date if provided
         if (paymentDate != null && !paymentDate.isEmpty() && !paymentDate.equals("N/A")) {
             if (paymentDate.equals("No Payment Submitted Yet")) {
@@ -672,10 +676,21 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             imgPaymentProof.setVisibility(View.GONE);
             tvNoProof.setVisibility(View.VISIBLE);
             
-            if (!isPaid) {
+            // Handle Cash payment specific message
+            if (paymentMethod != null && paymentMethod.equalsIgnoreCase("Cash")) {
+                if (!isPaid) {
+                    tvNoProof.setText("Cash Payment - no proof required. Please confirm or mark as paid if you have received the payment.");
+                    tvNoProof.setTextColor(getResources().getColor(R.color.brown));
+                } else {
+                    tvNoProof.setText("No proof uploaded for cash payments");
+                    tvNoProof.setTextColor(getResources().getColor(R.color.gray));
+                }
+            } else if (!isPaid) {
                 tvNoProof.setText("No payment submitted yet");
+                tvNoProof.setTextColor(getResources().getColor(R.color.gray));
             } else {
                 tvNoProof.setText("No payment proof for this item");
+                tvNoProof.setTextColor(getResources().getColor(R.color.gray));
             }
             
             layoutPaymentProof.setVisibility(View.VISIBLE);
@@ -1034,7 +1049,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                             }
                         }
                         
-                        updatePaymentProofDisplay(latestRelevant.getPaymentProof(), pDate, latestRelevant.getDueDate(), latestRelevant.isPaid());
+                        updatePaymentProofDisplay(latestRelevant.getPaymentProof(), pDate, latestRelevant.getDueDate(), latestRelevant.isPaid(), latestRelevant.getPaymentMethod());
                     }
                 }
             }

@@ -500,7 +500,8 @@ public class PaymentApiService {
                     breakdownJson.optString("due_date", ""),
                     breakdownJson.optString("payment_status", "Pending"),
                     breakdownJson.optString("payment_date", ""),
-                    breakdownJson.optString("payment_proof", "")
+                    breakdownJson.optString("payment_proof", ""),
+                    breakdownJson.optString("payment_method", "N/A")
                 );
                 breakdowns.add(item);
             }

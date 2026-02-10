@@ -18,6 +18,7 @@ public class PaymentBreakdownItem implements Serializable {
     private String paymentStatus;
     private String paymentDate;
     private String paymentProof;
+    private String paymentMethod;
     
     public PaymentBreakdownItem() {
     }
@@ -25,7 +26,7 @@ public class PaymentBreakdownItem implements Serializable {
     public PaymentBreakdownItem(int breakdownId, int bookingId, Integer paymentId, String periodType,
                                int periodNumber, String periodLabel, String periodStartDate,
                                String periodEndDate, String amount, boolean isSelected, boolean isPaid,
-                               String dueDate, String paymentStatus, String paymentDate) {
+                               String dueDate, String paymentStatus, String paymentDate, String paymentMethod) {
         this.breakdownId = breakdownId;
         this.bookingId = bookingId;
         this.paymentId = paymentId;
@@ -40,13 +41,14 @@ public class PaymentBreakdownItem implements Serializable {
         this.dueDate = dueDate;
         this.paymentStatus = paymentStatus;
         this.paymentDate = paymentDate;
+        this.paymentMethod = paymentMethod;
     }
     
     // Additional constructor for compatibility or future use
     public PaymentBreakdownItem(int breakdownId, int bookingId, Integer paymentId, String periodType,
                                int periodNumber, String periodLabel, String periodStartDate,
                                String periodEndDate, String amount, boolean isSelected, boolean isPaid,
-                               String dueDate, String paymentStatus, String paymentDate, String paymentProof) {
+                               String dueDate, String paymentStatus, String paymentDate, String paymentProof, String paymentMethod) {
         this.breakdownId = breakdownId;
         this.bookingId = bookingId;
         this.paymentId = paymentId;
@@ -62,6 +64,7 @@ public class PaymentBreakdownItem implements Serializable {
         this.paymentStatus = paymentStatus;
         this.paymentDate = paymentDate;
         this.paymentProof = paymentProof;
+        this.paymentMethod = paymentMethod;
     }
     
     // Getters
@@ -80,6 +83,7 @@ public class PaymentBreakdownItem implements Serializable {
     public String getPaymentStatus() { return paymentStatus; }
     public String getPaymentDate() { return paymentDate; }
     public String getPaymentProof() { return paymentProof; }
+    public String getPaymentMethod() { return paymentMethod; }
     
     // Setters
     public void setBreakdownId(int breakdownId) { this.breakdownId = breakdownId; }
@@ -97,6 +101,7 @@ public class PaymentBreakdownItem implements Serializable {
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
     public void setPaymentDate(String paymentDate) { this.paymentDate = paymentDate; }
     public void setPaymentProof(String paymentProof) { this.paymentProof = paymentProof; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }
 
 
