@@ -1,6 +1,7 @@
 package com.example.mock;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -165,7 +166,7 @@ public class ChangeRoomRequestsFragment extends Fragment {
         intent.putExtra("reason", request.getReason());
         intent.putExtra("details", request.getDetails());
         intent.putExtra("created_at", request.getCreatedAt());
-        intent.putExtra("status", request.status); // Adding status field to pass
+        intent.putExtra("status", request.getStatus()); // Passing status to handle UI state
         startActivityForResult(intent, 2001);
     }
 
@@ -217,6 +218,7 @@ public class ChangeRoomRequestsFragment extends Fragment {
         public String getNewRoomName() { return newRoomName; }
         public String getReason() { return reason; }
         public String getDetails() { return details; }
+        public String getStatus() { return status; }
         public String getCreatedAt() { return createdAt; }
     }
 }
