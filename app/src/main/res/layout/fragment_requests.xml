@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="General Requests"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Termination Requests -->
+    <LinearLayout
+        android:id="@+id/layoutTerminationRequests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:background="@drawable/profile_item_ripple"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginBottom="12dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_alert"
+            android:tint="#F44336" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Termination Requests"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View and process lease end requests"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_arrow_right1"
+            android:tint="#999999" />
+    </LinearLayout>
+
+    <!-- Change Room Requests -->
+    <LinearLayout
+        android:id="@+id/layoutChangeRoomRequests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:background="@drawable/profile_item_ripple"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_bed"
+            android:tint="#FFC107" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Change Room Requests"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View and process room transfer requests"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_arrow_right1"
+            android:tint="#999999" />
+    </LinearLayout>
+
+</LinearLayout>
