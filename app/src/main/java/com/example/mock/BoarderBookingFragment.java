@@ -667,7 +667,7 @@ public class BoarderBookingFragment extends Fragment {
             // Change Room button click listener
             btnChangeRoom.setOnClickListener(v -> {
                 dialog.dismiss();
-                showTerminationReasonModal(booking);
+                showChangeRoomReasonModal(booking);
             });
 
         } catch (Exception e) {
@@ -675,6 +675,550 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showChangeRoomReasonModal(Booking booking) {
+        if (getContext() == null) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_room_reason, null);
+            builder.setView(dialogView);
+
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseChangeRoom);
+            RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupChangeRoomReason);
+            com.google.android.material.textfield.TextInputEditText etDetails = dialogView.findViewById(R.id.etChangeRoomDetails);
+            com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelChangeRoom);
+            com.google.android.material.button.MaterialButton btnProceed = dialogView.findViewById(R.id.btnProceedChangeRoom);
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+            btnProceed.setOnClickListener(v -> {
+                int selectedId = radioGroup.getCheckedRadioButtonId();
+                if (selectedId == -1) {
+                    Toast.makeText(getContext(), "Please select a reason", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                RadioButton selectedRb = dialogView.findViewById(selectedId);
+                String reason = selectedRb.getText().toString();
+                String details = etDetails.getText() != null ? etDetails.getText().toString() : "";
+                
+                dialog.dismiss();
+                fetchAvailableRoomsForTransfer(booking, reason, details);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing change room reason dialog: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void fetchAvailableRoomsForTransfer(Booking booking, String reason, String details) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Loading available rooms...");
+        progressDialog.show();
+
+        String url = BASE_URL + "get_available_rooms_for_transfer.php?booking_id=" + booking.getBookingId() + "&bh_id=" + booking.getBhId();
+        android.util.Log.d("ChangeRoom", "Fetching rooms from URL: " + url);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            response -> {
+                progressDialog.dismiss();
+                android.util.Log.d("ChangeRoom", "Response received: " + response);
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        showRoomTransferSelectionModal(booking, reason, details, jsonResponse.getJSONObject("data"));
+                    } else {
+                        String message = jsonResponse.optString("message", "Unknown error from server");
+                        android.util.Log.e("ChangeRoom", "Server returned success=false: " + message);
+                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    android.util.Log.e("ChangeRoom", "JSON Parsing Error: " + e.getMessage() + " | Response: " + response);
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+                String errorMessage = "Unknown error";
+                if (error.networkResponse != null) {
+                    errorMessage = "Status Code: " + error.networkResponse.statusCode + " Data: " + new String(error.networkResponse.data);
+                } else if (error.getMessage() != null) {
+                    errorMessage = error.getMessage();
+                }
+                android.util.Log.e("ChangeRoom", "Volley Error fetching rooms: " + errorMessage);
+                Toast.makeText(getContext(), "Error fetching rooms: " + errorMessage, Toast.LENGTH_SHORT).show();
+            });
+
+        requestQueue.add(stringRequest);
+    }
+
+    private void showRoomTransferSelectionModal(Booking booking, String reason, String details, JSONObject data) {
+        if (getContext() == null) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_room_transfer_selection, null);
+            builder.setView(dialogView);
+
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseTransfer);
+            RecyclerView rvCurrentBahRooms = dialogView.findViewById(R.id.rvCurrentBhRooms);
+            RecyclerView rvOtherBhRooms = dialogView.findViewById(R.id.rvOtherBhRooms);
+            TextView tvSection1Empty = dialogView.findViewById(R.id.tvSection1Empty);
+            TextView tvSection2Empty = dialogView.findViewById(R.id.tvSection2Empty);
+            MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmitRequest);
+
+            JSONArray currentRoomsArray = data.getJSONArray("current_bh_rooms");
+            JSONArray otherRoomsArray = data.getJSONArray("other_bh_rooms");
+
+            final int[] selectedBhrId = {0};
+            final int[] selectedUnitId = {0};
+
+            // Group rooms by Boarding House
+            Map<Integer, List<JSONObject>> groupedRooms = new HashMap<>();
+            Map<Integer, String> bhNames = new HashMap<>();
+            
+            for (int i = 0; i < otherRoomsArray.length(); i++) {
+                JSONObject room = otherRoomsArray.getJSONObject(i);
+                int bhId = room.getInt("bh_id");
+                String bhName = room.getString("bh_name");
+                
+                if (!groupedRooms.containsKey(bhId)) {
+                    groupedRooms.put(bhId, new ArrayList<>());
+                    bhNames.put(bhId, bhName);
+                }
+                groupedRooms.get(bhId).add(room);
+            }
+
+            List<RoomGroup> otherBhGroups = new ArrayList<>();
+            for (Integer bhId : groupedRooms.keySet()) {
+                otherBhGroups.add(new RoomGroup(bhId, bhNames.get(bhId), groupedRooms.get(bhId)));
+            }
+            
+            // Coordination: share the selection state
+            RoomSelectionState selectionState = new RoomSelectionState();
+            
+            // For the sake of this implementation, I'll use a simple list handler
+            setupRoomRecyclerView(rvCurrentBahRooms, currentRoomsArray, (bhrId, unitId) -> {
+                selectedBhrId[0] = bhrId;
+                selectedUnitId[0] = unitId;
+                selectionState.selectedUnitId = unitId;
+                if (rvOtherBhRooms.getAdapter() != null) {
+                    ((OtherBhRoomAdapter) rvOtherBhRooms.getAdapter()).setSelectedUnitId(unitId);
+                }
+            }, tvSection1Empty);
+
+            if (otherBhGroups.isEmpty()) {
+                tvSection2Empty.setVisibility(View.VISIBLE);
+                rvOtherBhRooms.setVisibility(View.GONE);
+            } else {
+                tvSection2Empty.setVisibility(View.GONE);
+                rvOtherBhRooms.setVisibility(View.VISIBLE);
+                rvOtherBhRooms.setLayoutManager(new LinearLayoutManager(getContext()));
+                OtherBhRoomAdapter otherAdapter = new OtherBhRoomAdapter(otherBhGroups, (bhrId, unitId) -> {
+                    selectedBhrId[0] = bhrId;
+                    selectedUnitId[0] = unitId;
+                    selectionState.selectedUnitId = unitId;
+                    if (rvCurrentBahRooms.getAdapter() != null) {
+                        ((RoomTransferAdapter) rvCurrentBahRooms.getAdapter()).setSelectedUnitId(unitId);
+                    }
+                });
+                rvOtherBhRooms.setAdapter(otherAdapter);
+            }
+
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            btnSubmit.setOnClickListener(v -> {
+                android.util.Log.d("ChangeRoom", "Submit Request button clicked. selectedUnitId: " + selectedUnitId[0]);
+                if (selectedUnitId[0] == 0) {
+                    Toast.makeText(getContext(), "Please select a room unit", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                dialog.dismiss();
+                submitChangeRoomRequest(booking, selectedBhrId[0], selectedUnitId[0], reason, details);
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupRoomRecyclerView(RecyclerView rv, JSONArray rooms, OnRoomSelectedListener listener, TextView emptyView) throws JSONException {
+        if (rooms.length() == 0) {
+            emptyView.setVisibility(View.VISIBLE);
+            rv.setVisibility(View.GONE);
+            return;
+        }
+        emptyView.setVisibility(View.GONE);
+        rv.setVisibility(View.VISIBLE);
+        rv.setLayoutManager(new LinearLayoutManager(getContext()));
+        rv.setAdapter(new RoomTransferAdapter(rooms, listener));
+    }
+
+    private interface OnRoomSelectedListener {
+        void onRoomSelected(int bhrId, int unitId);
+    }
+
+    private static class RoomSelectionState {
+        int selectedUnitId = -1;
+    }
+
+    private class RoomTransferAdapter extends RecyclerView.Adapter<RoomTransferAdapter.ViewHolder> {
+        private JSONArray rooms;
+        private OnRoomSelectedListener listener;
+        private int expandedPos = -1;
+        private int selectedUnitId = -1;
+
+        public void setSelectedUnitId(int id) {
+            this.selectedUnitId = id;
+            notifyDataSetChanged();
+        }
+
+        public RoomTransferAdapter(JSONArray rooms, OnRoomSelectedListener listener) {
+            this.rooms = rooms;
+            this.listener = listener;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_child, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            try {
+                JSONObject room = rooms.getJSONObject(position);
+                String name = room.getString("room_name");
+                String category = room.getString("room_category");
+                double price = room.getDouble("price");
+                JSONArray units = room.optJSONArray("units");
+                
+                holder.tvRoomName.setText(name + " (" + category + ")");
+                holder.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
+                
+                boolean isExpanded = expandedPos == position;
+                holder.ivRoomExpandIndicator.setImageResource(isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                holder.rgRoomUnits.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
+                
+                if (isExpanded) {
+                    holder.rgRoomUnits.removeAllViews();
+                    if (units != null && units.length() > 0) {
+                        for (int i = 0; i < units.length(); i++) {
+                            JSONObject unit = units.getJSONObject(i);
+                            int unitId = unit.getInt("room_id");
+                            String roomNumber = unit.getString("room_number");
+                            
+                            RadioButton rb = (RadioButton) LayoutInflater.from(holder.itemView.getContext())
+                                    .inflate(R.layout.item_room_unit_selection, holder.rgRoomUnits, false);
+                            rb.setText("Room " + roomNumber);
+                            rb.setId(unitId);
+                            rb.setChecked(selectedUnitId == unitId);
+                            
+                            rb.setOnClickListener(v -> {
+                                selectedUnitId = unitId;
+                                listener.onRoomSelected(room.optInt("bhr_id", 0), unitId);
+                                notifyDataSetChanged();
+                            });
+                            
+                            holder.rgRoomUnits.addView(rb);
+                        }
+                    } else {
+                        // All rooms must reflect the room unit part, even if empty
+                        TextView tvEmpty = new TextView(holder.itemView.getContext());
+                        tvEmpty.setText("No available units for this room type");
+                        tvEmpty.setTextSize(12);
+                        tvEmpty.setPadding(32, 8, 0, 8);
+                        tvEmpty.setTextColor(0xFF888888);
+                        holder.rgRoomUnits.addView(tvEmpty);
+                    }
+                }
+                
+                holder.llRoomCategoryHeader.setOnClickListener(v -> {
+                    int oldExpanded = expandedPos;
+                    expandedPos = (expandedPos == position) ? -1 : holder.getAdapterPosition();
+                    notifyItemChanged(oldExpanded);
+                    notifyItemChanged(expandedPos);
+                });
+                
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return rooms.length();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvRoomName, tvRoomPrice;
+            ImageView ivRoomExpandIndicator;
+            RadioGroup rgRoomUnits;
+            LinearLayout llRoomCategoryHeader;
+            
+            ViewHolder(View v) {
+                super(v);
+                tvRoomName = v.findViewById(R.id.tvRoomName);
+                tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
+                ivRoomExpandIndicator = v.findViewById(R.id.ivRoomExpandIndicator);
+                rgRoomUnits = v.findViewById(R.id.rgRoomUnits);
+                llRoomCategoryHeader = v.findViewById(R.id.llRoomCategoryHeader);
+            }
+        }
+    }
+
+    private static class RoomCategory {
+        JSONObject data;
+        boolean isExpanded = false;
+        
+        RoomCategory(JSONObject data) {
+            this.data = data;
+        }
+    }
+
+    private static class RoomGroup {
+        int bhId;
+        String bhName;
+        List<RoomCategory> categories = new ArrayList<>();
+        boolean isExpanded = false;
+
+        RoomGroup(int bhId, String bhName, List<JSONObject> rooms) {
+            this.bhId = bhId;
+            this.bhName = bhName;
+            for (JSONObject r : rooms) {
+                this.categories.add(new RoomCategory(r));
+            }
+        }
+    }
+
+    private class OtherBhRoomAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private static final int TYPE_HEADER = 0;
+        private static final int TYPE_CHILD = 1;
+        
+        private List<RoomGroup> groups;
+        private List<Object> flatList = new ArrayList<>();
+        private OnRoomSelectedListener listener;
+        private int selectedUnitId = -1;
+
+        public void setSelectedUnitId(int id) {
+            this.selectedUnitId = id;
+            notifyDataSetChanged();
+        }
+
+        public OtherBhRoomAdapter(List<RoomGroup> groups, OnRoomSelectedListener listener) {
+            this.groups = groups;
+            this.listener = listener;
+            updateFlatList();
+        }
+
+        private void updateFlatList() {
+            flatList.clear();
+            for (RoomGroup group : groups) {
+                flatList.add(group);
+                if (group.isExpanded) {
+                    flatList.addAll(group.categories);
+                }
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return flatList.get(position) instanceof RoomGroup ? TYPE_HEADER : TYPE_CHILD;
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            if (viewType == TYPE_HEADER) {
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_group, parent, false);
+                return new HeaderViewHolder(view);
+            } else {
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_room_transfer_child, parent, false);
+                return new ChildViewHolder(view);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            Object item = flatList.get(position);
+            
+            if (holder instanceof HeaderViewHolder) {
+                RoomGroup group = (RoomGroup) item;
+                HeaderViewHolder h = (HeaderViewHolder) holder;
+                h.tvBhName.setText(group.bhName);
+                h.ivExpandIndicator.setImageResource(group.isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                
+                h.itemView.setOnClickListener(v -> {
+                    group.isExpanded = !group.isExpanded;
+                    updateFlatList();
+                    notifyDataSetChanged();
+                });
+            } else if (holder instanceof ChildViewHolder) {
+                RoomCategory category = (RoomCategory) item;
+                ChildViewHolder c = (ChildViewHolder) holder;
+                try {
+                    JSONObject room = category.data;
+                    String name = room.getString("room_name");
+                    String catName = room.getString("room_category");
+                    double price = room.getDouble("price");
+                    JSONArray units = room.optJSONArray("units");
+                    
+                    c.tvRoomName.setText(name + " (" + catName + ")");
+                    c.tvRoomPrice.setText("₱" + String.format(Locale.getDefault(), "%,.2f", price) + " per month");
+                    
+                    c.ivRoomExpandIndicator.setImageResource(category.isExpanded ? R.drawable.ic_arrow_up : R.drawable.ic_arrow_down);
+                    c.rgRoomUnits.setVisibility(category.isExpanded ? View.VISIBLE : View.GONE);
+                    
+                    if (category.isExpanded) {
+                        c.rgRoomUnits.removeAllViews();
+                        if (units != null && units.length() > 0) {
+                            for (int i = 0; i < units.length(); i++) {
+                                JSONObject unit = units.getJSONObject(i);
+                                int uId = unit.getInt("room_id");
+                                String roomNumber = unit.getString("room_number");
+                                
+                                RadioButton rb = (RadioButton) LayoutInflater.from(c.itemView.getContext())
+                                        .inflate(R.layout.item_room_unit_selection, c.rgRoomUnits, false);
+                                rb.setText("Room " + roomNumber);
+                                rb.setId(uId);
+                                rb.setChecked(selectedUnitId == uId);
+                                
+                                rb.setOnClickListener(v -> {
+                                    selectedUnitId = uId;
+                                    listener.onRoomSelected(room.optInt("bhr_id", 0), uId);
+                                    notifyDataSetChanged();
+                                });
+                                
+                                c.rgRoomUnits.addView(rb);
+                            }
+                        } else {
+                            // Ensure all rooms show unit section even if empty
+                            TextView tvEmpty = new TextView(c.itemView.getContext());
+                            tvEmpty.setText("No available units for this room type");
+                            tvEmpty.setTextSize(12);
+                            tvEmpty.setPadding(32, 8, 0, 8);
+                            tvEmpty.setTextColor(0xFF888888);
+                            c.rgRoomUnits.addView(tvEmpty);
+                        }
+                    }
+                    
+                    c.llRoomCategoryHeader.setOnClickListener(v -> {
+                        category.isExpanded = !category.isExpanded;
+                        notifyDataSetChanged();
+                    });
+                    
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return flatList.size();
+        }
+
+        class HeaderViewHolder extends RecyclerView.ViewHolder {
+            TextView tvBhName;
+            ImageView ivExpandIndicator;
+            HeaderViewHolder(View v) {
+                super(v);
+                tvBhName = v.findViewById(R.id.tvBhName);
+                ivExpandIndicator = v.findViewById(R.id.ivExpandIndicator);
+            }
+        }
+
+        class ChildViewHolder extends RecyclerView.ViewHolder {
+            TextView tvRoomName, tvRoomPrice;
+            ImageView ivRoomExpandIndicator;
+            RadioGroup rgRoomUnits;
+            LinearLayout llRoomCategoryHeader;
+            
+            ChildViewHolder(View v) {
+                super(v);
+                tvRoomName = v.findViewById(R.id.tvRoomName);
+                tvRoomPrice = v.findViewById(R.id.tvRoomPrice);
+                ivRoomExpandIndicator = v.findViewById(R.id.ivRoomExpandIndicator);
+                rgRoomUnits = v.findViewById(R.id.rgRoomUnits);
+                llRoomCategoryHeader = v.findViewById(R.id.llRoomCategoryHeader);
+            }
+        }
+    }
+
+    private void submitChangeRoomRequest(Booking booking, int newBhrId, int newUnitId, String reason, String details) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Submitting request...");
+        progressDialog.show();
+
+        String url = BASE_URL + "submit_change_room_request.php";
+        android.util.Log.d("ChangeRoom", "Submitting request to URL: " + url);
+        android.util.Log.d("ChangeRoom", "Params: booking_id=" + booking.getBookingId() + ", user_id=" + userId + ", new_room_id=" + newBhrId + ", new_unit_id=" + newUnitId + ", reason=" + reason);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            response -> {
+                progressDialog.dismiss();
+                android.util.Log.d("ChangeRoom", "Submit Response: " + response);
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        new AlertDialog.Builder(getContext())
+                            .setTitle("Success")
+                            .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
+                            .setPositiveButton("OK", null)
+                            .show();
+                        loadBookingData();
+                    } else {
+                        String message = jsonResponse.optString("message", "Unknown error from server");
+                        android.util.Log.e("ChangeRoom", "Submit failed: " + message);
+                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    android.util.Log.e("ChangeRoom", "Submit JSON error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+                String errorMessage = "Unknown error";
+                if (error.networkResponse != null) {
+                    errorMessage = "Status Code: " + error.networkResponse.statusCode + " Data: " + new String(error.networkResponse.data);
+                } else if (error.getMessage() != null) {
+                    errorMessage = error.getMessage();
+                }
+                android.util.Log.e("ChangeRoom", "Submit Volley Error: " + errorMessage);
+                Toast.makeText(getContext(), "Error submitting request: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(booking.getBookingId()));
+                params.put("user_id", String.valueOf(userId));
+                params.put("new_room_id", String.valueOf(newBhrId));
+                params.put("new_unit_id", String.valueOf(newUnitId));
+                params.put("reason", reason);
+                params.put("details", details);
+                return params;
+            }
+        };
+
+        requestQueue.add(stringRequest);
     }
 
     private void showTerminationReasonModal(Booking booking) {

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="600dp"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/dialog_background">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bed"
+                android:tint="#FBC02D"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Reason for Changing Room"
+                android:textSize="20sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_bold" />
+
+            <ImageButton
+                android:id="@+id/btnCloseChangeRoom"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close" />
+
+        </LinearLayout>
+
+        <!-- Info Text -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Please provide the reason for your room change request. This helps the owner understand your needs."
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:fontFamily="@font/poppins_regular"
+            android:layout_marginBottom="20dp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- Change Room Reason Options Section -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#FDFBF0"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Section Title -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_info"
+                        android:tint="#FBC02D"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select Reason"
+                        android:textSize="14sp"
+                        android:textColor="#666666"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+                <!-- Radio Group -->
+                <RadioGroup
+                    android:id="@+id/radioGroupChangeRoomReason"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radioBetterVentilation"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Better Ventilation"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="#FBC02D" />
+
+                    <RadioButton
+                        android:id="@+id/radioNoiseIssues"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Noise Issues"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="#FBC02D" />
+
+                    <RadioButton
+                        android:id="@+id/radioCloserToFacilities"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Closer to Facilities"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="#FBC02D" />
+
+                    <RadioButton
+                        android:id="@+id/radioPersonalPreference"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Personal Preference"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="#FBC02D" />
+
+                    <RadioButton
+                        android:id="@+id/radioOthersChangeRoom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Others"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingVertical="8dp"
+                        android:paddingStart="4dp"
+                        app:buttonTint="#FBC02D" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Additional Details Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilOtherReasonChange"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tell us more (Optional)"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="8dp"
+            app:boxCornerRadiusTopEnd="8dp"
+            app:boxCornerRadiusBottomStart="8dp"
+            app:boxCornerRadiusBottomEnd="8dp"
+            app:boxStrokeColor="#FBC02D"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="#FBC02D"
+            android:layout_marginBottom="20dp"
+            android:visibility="visible">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etChangeRoomDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:maxLines="5"
+                android:gravity="top"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:inputType="textMultiLine|textCapSentences" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelChangeRoom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="20dp"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:layout_marginEnd="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnProceedChangeRoom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Proceed"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:fontFamily="@font/poppins_medium"
+                android:backgroundTint="#FBC02D"
+                app:cornerRadius="20dp"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                app:icon="@drawable/ic_arrow_forward"
+                app:iconTint="#000000"
+                app:iconGravity="end"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
