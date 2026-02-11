@@ -60,13 +60,12 @@ public class BookingsActivity extends AppCompatActivity {
     private void refreshFragments() {
         // Refresh all fragments by finding them through FragmentManager
         // ViewPager2 creates fragments with tags like "f0", "f1", "f2" etc.
-        // Order: 0=Pending, 1=Approved, 2=History
+        // Order: 0=Pending, 1=Approved, 2=History, 3=Requests
         try {
             Fragment pendingFragment = getSupportFragmentManager().findFragmentByTag("f" + 0);
             Fragment approvedFragment = getSupportFragmentManager().findFragmentByTag("f" + 1);
             Fragment historyFragment = getSupportFragmentManager().findFragmentByTag("f" + 2);
-            Fragment terminationFragment = getSupportFragmentManager().findFragmentByTag("f" + 3);
-            Fragment changeRoomFragment = getSupportFragmentManager().findFragmentByTag("f" + 4);
+            Fragment requestsFragment = getSupportFragmentManager().findFragmentByTag("f" + 3);
             
             if (pendingFragment instanceof PendingBookingsFragment) {
                 ((PendingBookingsFragment) pendingFragment).refreshBookings();
@@ -77,12 +76,7 @@ public class BookingsActivity extends AppCompatActivity {
             if (historyFragment instanceof BookingHistoryFragment) {
                 ((BookingHistoryFragment) historyFragment).refreshBookings();
             }
-            if (terminationFragment instanceof TerminationRequestsFragment) {
-                ((TerminationRequestsFragment) terminationFragment).refreshBookings();
-            }
-            if (changeRoomFragment instanceof ChangeRoomRequestsFragment) {
-                ((ChangeRoomRequestsFragment) changeRoomFragment).refreshBookings();
-            }
+            // RequestsFragment doesn't need explicit refresh as it just hosts buttons
         } catch (Exception e) {
             // If fragment tags don't work, fragments will refresh on their onResume
             e.printStackTrace();
@@ -140,12 +134,8 @@ public class BookingsActivity extends AppCompatActivity {
                         } else if (position == 2 && fragment instanceof BookingHistoryFragment) {
                             // History tab
                             ((BookingHistoryFragment) fragment).loadIfNeeded();
-                        } else if (position == 3 && fragment instanceof TerminationRequestsFragment) {
-                            // Termination tab
-                            ((TerminationRequestsFragment) fragment).loadIfNeeded();
-                        } else if (position == 4 && fragment instanceof ChangeRoomRequestsFragment) {
-                            // Change Room tab
-                            ((ChangeRoomRequestsFragment) fragment).loadIfNeeded();
+                        } else if (position == 3 && fragment instanceof RequestsFragment) {
+                            // Requests tab - no specific load needed for now as it's static buttons
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -172,10 +162,7 @@ public class BookingsActivity extends AppCompatActivity {
                     tab.setText("History");
                     break;
                 case 3:
-                    tab.setText("Termination Request");
-                    break;
-                case 4:
-                    tab.setText("Change Room Request");
+                    tab.setText("Requests");
                     break;
             }
         }).attach();
@@ -198,9 +185,7 @@ public class BookingsActivity extends AppCompatActivity {
                 case 2:
                     return BookingHistoryFragment.newInstance(userId);
                 case 3:
-                    return TerminationRequestsFragment.newInstance(userId);
-                case 4:
-                    return ChangeRoomRequestsFragment.newInstance(userId);
+                    return RequestsFragment.newInstance(userId);
                 default:
                     return PendingBookingsFragment.newInstance(userId);
             }
@@ -208,7 +193,7 @@ public class BookingsActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 5;
+            return 4;
         }
     }
 }

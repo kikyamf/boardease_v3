@@ -209,6 +209,15 @@
             android:name=".AnalyticsActivity"
             android:exported="false" />
         <activity
+            android:name=".TerminationRequestsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChangeRoomRequestsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChangeRoomRequestDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".CreateGroupChat"
             android:exported="false" />
         <activity

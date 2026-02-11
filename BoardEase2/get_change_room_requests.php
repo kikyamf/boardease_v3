@@ -62,16 +62,46 @@ try {
         exit;
     }
 
-    // SIMPLIFIED QUERY FOR TESTING - Just get raw data from change_room_requests table
-    $sql = "SELECT * FROM change_room_requests WHERE status = 'Pending'";
+    // Get change room requests with boarder info, boarding house info, and room details
+    $sql = "SELECT 
+                crr.change_request_id,
+                crr.booking_id,
+                crr.user_id,
+                crr.new_room_id,
+                crr.new_unit_id,
+                crr.reason,
+                crr.details,
+                crr.status,
+                crr.created_at,
+                r.first_name as f_name,
+                r.last_name as l_name,
+                bh.bh_name,
+                bhr_old.room_name as old_room_name,
+                ru_old.room_number as old_room_number,
+                bhr_new.room_name as new_room_name,
+                ru_new.room_number as new_room_number
+            FROM change_room_requests crr
+            -- Join for boarder info
+            JOIN users u ON crr.user_id = u.user_id
+            JOIN registrations r ON u.reg_id = r.id
+            -- Join for current booking room info
+            JOIN bookings b ON crr.booking_id = b.booking_id
+            JOIN room_units ru_old ON b.room_id = ru_old.room_id
+            JOIN boarding_house_rooms bhr_old ON ru_old.bhr_id = bhr_old.bhr_id
+            -- Join for requested room info
+            JOIN boarding_house_rooms bhr_new ON crr.new_room_id = bhr_new.bhr_id
+            LEFT JOIN room_units ru_new ON crr.new_unit_id = ru_new.room_id
+            -- Join for BH info
+            JOIN boarding_houses bh ON bhr_new.bh_id = bh.bh_id
+            WHERE bh.user_id = ? AND crr.status = 'Pending'
+            ORDER BY crr.created_at DESC";
 
     $stmt = $pdo->prepare($sql);
     
-    error_log("Executing simplified query (no joins, no owner filter)");
-    $stmt->execute();
+    error_log("Executing query for owner_id: " . $owner_id);
+    $stmt->execute([$owner_id]);
     $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
     error_log("Query returned " . count($requests) . " requests");
-    error_log("Requests data: " . print_r($requests, true));
 
     $response = [
         'success' => true,

@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/light_gray">
+
+    <!-- Fixed Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="@color/brown"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Back"
+            android:tint="@color/white"
+            android:src="@drawable/ic_arrow_back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Change Room Request"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="@color/white" />
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="36dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Boarder Profile Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <com.example.mock.CircularImageView
+                        android:id="@+id/imgProfile"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:src="@drawable/ic_profile"
+                        android:scaleType="centerCrop" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:id="@+id/tvBoarderName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Boarder Name"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black" />
+
+                        <TextView
+                            android:id="@+id/tvStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="4dp"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:paddingTop="2dp"
+                            android:paddingBottom="2dp"
+                            android:background="@drawable/bg_status_pending"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Request Details Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Request Details"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="16dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/light_gray"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Boarding House -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Boarding House"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tvBhName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="BH Name"
+                        android:textSize="16sp"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Rooms Comparison -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="14dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Current Room"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tvOldRoom"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Room A"
+                                android:textSize="15sp"
+                                android:textColor="@color/black" />
+                            <TextView
+                                android:id="@+id/tvOldRoomNumber"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Unit 101"
+                                android:textSize="13sp"
+                                android:textColor="@color/gray" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_arrow_back"
+                            android:rotation="180"
+                            android:tint="@color/brown" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="end">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Requested Room"
+                                android:textSize="12sp"
+                                android:textColor="@color/gray"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tvNewRoom"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Room B"
+                                android:textSize="15sp"
+                                android:textColor="@color/green"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/tvNewRoomNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Unit 102"
+                                android:textSize="13sp"
+                                android:textColor="@color/green_enabled" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Reason -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reason for Transfer"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tvReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Reason text"
+                        android:textSize="15sp"
+                        android:textColor="@color/black"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Additional Details -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Additional Details"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tvDetails"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Details text"
+                        android:textSize="14sp"
+                        android:textColor="@color/gray"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Request Date -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Request Date"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tvDate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Date text"
+                        android:textSize="14sp"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Actions -->
+            <LinearLayout
+                android:id="@+id/layoutActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnApprove"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Approve Request"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/green"
+                    app:cornerRadius="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDecline"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Decline Request"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/red"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
