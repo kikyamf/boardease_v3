@@ -1025,15 +1025,18 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
                     recyclerViewBreakdown.setVisibility(View.VISIBLE);
                     tvNoBreakdown.setVisibility(View.GONE);
                     
-                    // Identify and display the latest relevant item (Paid or has Proof)
+                    // Identify and display the latest relevant item (Paid, has Proof, or has Submission)
                     PaymentBreakdownItem latestRelevant = null;
-                    // Scan backwards to find the most recent item that is either paid or has proof submitted
+                    // Scan backwards to find the most recent item that is either paid or has proof/info submitted
                     for (int i = breakdownItems.size() - 1; i >= 0; i--) {
                         PaymentBreakdownItem item = breakdownItems.get(i);
                         String proof = item.getPaymentProof();
                         boolean hasProof = proof != null && !proof.isEmpty() && !proof.equals("null");
                         
-                        if (item.isPaid() || hasProof) {
+                        // Check if a payment has been submitted (even if unpaid and no proof, e.g. Cash)
+                        boolean hasSubmission = item.getPaymentId() != null && item.getPaymentId() != 0;
+                        
+                        if (item.isPaid() || hasProof || hasSubmission) {
                             latestRelevant = item;
                             break;
                         }
