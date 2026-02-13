@@ -876,6 +876,7 @@ public class Messages extends AppCompatActivity {
                                         deleteGroupChat(chat);
                                     })
                                     .setNegativeButton("Cancel", null)
+                                    .setIcon(R.drawable.ic_delete_white)
                                     .show();
                         } else if (which == 1) {
                             // Leave GC option
@@ -886,6 +887,7 @@ public class Messages extends AppCompatActivity {
                                         leaveGroupChat(chat);
                                     })
                                     .setNegativeButton("Cancel", null)
+                                    .setIcon(R.drawable.ic_info_white)
                                     .show();
                         }
                     })
@@ -900,6 +902,7 @@ public class Messages extends AppCompatActivity {
                         leaveGroupChat(chat);
                     })
                     .setNegativeButton("Cancel", null)
+                    .setIcon(R.drawable.ic_info_white)
                     .show();
         } else {
             // Individual chat - delete
@@ -910,6 +913,7 @@ public class Messages extends AppCompatActivity {
                         deleteChat(chat);
                     })
                     .setNegativeButton("Cancel", null)
+                    .setIcon(R.drawable.ic_delete_white)
                     .show();
         }
     }

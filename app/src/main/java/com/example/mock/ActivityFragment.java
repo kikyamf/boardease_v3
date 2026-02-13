@@ -31,7 +31,10 @@ public class ActivityFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_activity, container, false);
+        // Force light mode for this fragment by wrapping the context with a Light theme
+        android.view.ContextThemeWrapper lightContext = new android.view.ContextThemeWrapper(getContext(), com.google.android.material.R.style.Theme_Material3_Light_NoActionBar);
+        LayoutInflater localInflater = inflater.cloneInContext(lightContext);
+        View view = localInflater.inflate(R.layout.fragment_activity, container, false);
 
         // Get userId from arguments
         if (getArguments() != null) {

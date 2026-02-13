@@ -110,6 +110,7 @@ public class InProgressMaintenanceFragment extends Fragment {
                 updateMaintenanceStatus(request, "Resolved");
             })
             .setNegativeButton("Cancel", null)
+            .setIcon(R.drawable.ic_info_white)
             .show();
     }
 
@@ -147,6 +148,7 @@ public class InProgressMaintenanceFragment extends Fragment {
                             }
                         })
                         .setCancelable(false)
+                        .setIcon(R.drawable.ic_check_white)
                         .show();
                 }
 

@@ -121,6 +121,7 @@ public class BoarderBookingFragment extends Fragment {
     private static final String GET_UNPAID_BREAKDOWNS_URL = BASE_URL + "get_unpaid_payment_breakdowns.php";
     private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details1.php";
     private static final String SUBMIT_PAYMENT_URL = BOARD_EASE2_URL + "submit_payment.php";
+    private static final String CHECK_PENDING_REQUESTS_URL = BASE_URL + "check_pending_requests.php";
     
     // Request queue
     private RequestQueue requestQueue;
@@ -661,13 +662,13 @@ public class BoarderBookingFragment extends Fragment {
             // Terminate button click listener
             btnTerminate.setOnClickListener(v -> {
                 dialog.dismiss();
-                showTerminationReasonModal(booking);
+                checkPendingRequests(userId, () -> showTerminationReasonModal(booking));
             });
 
             // Change Room button click listener
             btnChangeRoom.setOnClickListener(v -> {
                 dialog.dismiss();
-                showChangeRoomReasonModal(booking);
+                checkPendingRequests(userId, () -> showChangeRoomReasonModal(booking));
             });
 
         } catch (Exception e) {
@@ -675,6 +676,52 @@ public class BoarderBookingFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error showing booking details", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Checks if the user has any pending termination or change room requests.
+     */
+    private void checkPendingRequests(int userId, Runnable onAllowed) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Checking for pending requests...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        String url = CHECK_PENDING_REQUESTS_URL + "?user_id=" + userId;
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            response -> {
+                progressDialog.dismiss();
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.getBoolean("success")) {
+                        if (jsonResponse.getBoolean("has_pending")) {
+                            String pendingType = jsonResponse.optString("pending_type", "a request");
+                            new AlertDialog.Builder(getContext())
+                                .setTitle("Pending Request Found")
+                                .setMessage("You currently have a pending " + pendingType + " request. Please wait for it to be processed before submitting a new one.")
+                                .setPositiveButton("OK", null)
+                                .setIcon(R.drawable.ic_alert_white)
+                                .show();
+                        } else {
+                            onAllowed.run();
+                        }
+                    } else {
+                        Toast.makeText(getContext(), "Error checking requests: " + jsonResponse.optString("message"), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getContext(), "Error parsing validation response", Toast.LENGTH_SHORT).show();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Network error checking requests", Toast.LENGTH_SHORT).show();
+            });
+
+        requestQueue.add(stringRequest);
     }
 
     private void showChangeRoomReasonModal(Booking booking) {
@@ -1182,6 +1229,7 @@ public class BoarderBookingFragment extends Fragment {
                             .setTitle("Success")
                             .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
                             .setPositiveButton("OK", null)
+                            .setIcon(R.drawable.ic_check_white)
                             .show();
                         loadBookingData();
                     } else {
@@ -1371,6 +1419,7 @@ public class BoarderBookingFragment extends Fragment {
                 cancelBooking(booking);
             })
             .setNegativeButton("No", null)
+            .setIcon(R.drawable.ic_alert_white)
             .show();
     }
 
@@ -3315,11 +3364,21 @@ public class BoarderBookingFragment extends Fragment {
                     try {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
-                            Toast.makeText(getContext(), "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Success")
+                                    .setMessage("Termination request submitted successfully")
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_check_white)
+                                    .show();
                             dialog.dismiss();
                             loadBookingData(); // Refresh data
                         } else {
-                            Toast.makeText(getContext(), "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Error")
+                                    .setMessage(jsonResponse.getString("error"))
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_alert_white)
+                                    .show();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();

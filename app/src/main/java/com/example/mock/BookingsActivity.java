@@ -22,6 +22,9 @@ public class BookingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Force Light Mode for this activity and its fragments
+        getDelegate().setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO);
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bookings);
 

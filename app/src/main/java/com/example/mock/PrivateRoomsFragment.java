@@ -307,6 +307,7 @@ public class PrivateRoomsFragment extends Fragment {
                     deleteRoom(room.roomId);
                 })
                 .setNegativeButton("Cancel", null)
+                .setIcon(R.drawable.ic_alert_white)
                 .show();
     }
 
