@@ -123,7 +123,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                     .setMessage("You have unsaved changes. Are you sure you want to go back?")
                     .setPositiveButton("Discard", (dialog, which) -> finish())
                     .setNegativeButton("Cancel", null)
-                    .setIcon(R.drawable.ic_alert)
+                    .setIcon(R.drawable.ic_alert_white)
                     .show();
             } else {
                 finish();
@@ -804,7 +804,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                 .setMessage("You have unsaved changes. Are you sure you want to go back?")
                 .setPositiveButton("Discard", (dialog, which) -> super.onBackPressed())
                 .setNegativeButton("Cancel", null)
-                .setIcon(R.drawable.ic_alert)
+                .setIcon(R.drawable.ic_alert_white)
                 .show();
         } else {
             super.onBackPressed();

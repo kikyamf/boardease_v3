@@ -350,7 +350,7 @@ public class ResetPasswordActivity extends AppCompatActivity {
                 finish();
             })
             .setCancelable(false)
-            .setIcon(R.drawable.ic_check)
+            .setIcon(R.drawable.ic_check_white)
             .show();
     }
 

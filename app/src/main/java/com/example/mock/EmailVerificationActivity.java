@@ -95,7 +95,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                         startActivity(intent);
                                         finish();
                                     })
-                                    .setIcon(R.drawable.ic_info);
+                                    .setIcon(R.drawable.ic_info_white);
                                 dialogBuilder.show();
                                 return;
                             } else if ("pending".equals(status)) {
@@ -119,7 +119,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                         dialog.dismiss();
                                         finish();
                                     })
-                                    .setIcon(R.drawable.ic_alert);
+                                    .setIcon(R.drawable.ic_alert_white);
                                 dialogBuilder.show();
                                 return;
                             } else {
@@ -154,7 +154,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                         finish();
                                     })
                                     .setCancelable(false)
-                                    .setIcon(R.drawable.ic_alert)
+                                    .setIcon(R.drawable.ic_alert_white)
                                     .show();
                                 
                                 return;

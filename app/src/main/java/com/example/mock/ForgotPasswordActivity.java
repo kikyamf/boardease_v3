@@ -233,7 +233,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                     finish();
                 })
                 .setCancelable(false)
-                .setIcon(R.drawable.ic_check)
+                .setIcon(R.drawable.ic_check_white)
                 .show();
     }
     
@@ -245,7 +245,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                     dialog.dismiss();
                 })
                 .setCancelable(false)
-                .setIcon(R.drawable.ic_alert)
+                .setIcon(R.drawable.ic_alert_white)
                 .show();
     }
 

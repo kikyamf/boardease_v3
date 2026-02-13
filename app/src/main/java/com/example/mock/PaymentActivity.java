@@ -144,7 +144,7 @@ public class PaymentActivity extends AppCompatActivity {
                     finish();
                 })
                 .setCancelable(false)
-                .setIcon(R.drawable.ic_check)
+                .setIcon(R.drawable.ic_check_white)
                 .show();
     }
     
@@ -153,7 +153,7 @@ public class PaymentActivity extends AppCompatActivity {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("OK", null)
-                .setIcon(R.drawable.ic_alert)
+                .setIcon(R.drawable.ic_alert_white)
                 .show();
     }
 }

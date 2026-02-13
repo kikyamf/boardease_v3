@@ -250,7 +250,7 @@ public class ManageFragment extends Fragment {
                     // User cancelled, do nothing
                     dialog.dismiss();
                 })
-                .setIcon(R.drawable.ic_alert)
+                .setIcon(R.drawable.ic_alert_white)
                 .show();
     }
     

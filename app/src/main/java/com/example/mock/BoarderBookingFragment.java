@@ -703,7 +703,7 @@ public class BoarderBookingFragment extends Fragment {
                                 .setTitle("Pending Request Found")
                                 .setMessage("You currently have a pending " + pendingType + " request. Please wait for it to be processed before submitting a new one.")
                                 .setPositiveButton("OK", null)
-                                .setIcon(R.drawable.ic_alert)
+                                .setIcon(R.drawable.ic_alert_white)
                                 .show();
                         } else {
                             onAllowed.run();
@@ -1229,7 +1229,7 @@ public class BoarderBookingFragment extends Fragment {
                             .setTitle("Success")
                             .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
                             .setPositiveButton("OK", null)
-                            .setIcon(R.drawable.ic_check)
+                            .setIcon(R.drawable.ic_check_white)
                             .show();
                         loadBookingData();
                     } else {
@@ -1419,7 +1419,7 @@ public class BoarderBookingFragment extends Fragment {
                 cancelBooking(booking);
             })
             .setNegativeButton("No", null)
-            .setIcon(R.drawable.ic_alert)
+            .setIcon(R.drawable.ic_alert_white)
             .show();
     }
 
@@ -3368,7 +3368,7 @@ public class BoarderBookingFragment extends Fragment {
                                     .setTitle("Success")
                                     .setMessage("Termination request submitted successfully")
                                     .setPositiveButton("OK", null)
-                                    .setIcon(R.drawable.ic_check)
+                                    .setIcon(R.drawable.ic_check_white)
                                     .show();
                             dialog.dismiss();
                             loadBookingData(); // Refresh data
@@ -3377,7 +3377,7 @@ public class BoarderBookingFragment extends Fragment {
                                     .setTitle("Error")
                                     .setMessage(jsonResponse.getString("error"))
                                     .setPositiveButton("OK", null)
-                                    .setIcon(R.drawable.ic_alert)
+                                    .setIcon(R.drawable.ic_alert_white)
                                     .show();
                         }
                     } catch (JSONException e) {
