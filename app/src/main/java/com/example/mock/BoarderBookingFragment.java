@@ -703,6 +703,7 @@ public class BoarderBookingFragment extends Fragment {
                                 .setTitle("Pending Request Found")
                                 .setMessage("You currently have a pending " + pendingType + " request. Please wait for it to be processed before submitting a new one.")
                                 .setPositiveButton("OK", null)
+                                .setIcon(R.drawable.ic_alert)
                                 .show();
                         } else {
                             onAllowed.run();
@@ -1228,6 +1229,7 @@ public class BoarderBookingFragment extends Fragment {
                             .setTitle("Success")
                             .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
                             .setPositiveButton("OK", null)
+                            .setIcon(R.drawable.ic_check)
                             .show();
                         loadBookingData();
                     } else {
@@ -1417,6 +1419,7 @@ public class BoarderBookingFragment extends Fragment {
                 cancelBooking(booking);
             })
             .setNegativeButton("No", null)
+            .setIcon(R.drawable.ic_alert)
             .show();
     }
 
@@ -3361,11 +3364,21 @@ public class BoarderBookingFragment extends Fragment {
                     try {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
-                            Toast.makeText(getContext(), "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Success")
+                                    .setMessage("Termination request submitted successfully")
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_check)
+                                    .show();
                             dialog.dismiss();
                             loadBookingData(); // Refresh data
                         } else {
-                            Toast.makeText(getContext(), "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Error")
+                                    .setMessage(jsonResponse.getString("error"))
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_alert)
+                                    .show();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();

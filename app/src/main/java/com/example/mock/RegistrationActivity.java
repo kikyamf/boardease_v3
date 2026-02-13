@@ -848,7 +848,7 @@ public class RegistrationActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Validation Error");
         builder.setMessage(errorMessage);
-        builder.setIcon(android.R.drawable.ic_dialog_alert);
+        builder.setIcon(R.drawable.ic_alert);
         builder.setPositiveButton("OK", (dialog, which) -> {
             dialog.dismiss();
         });

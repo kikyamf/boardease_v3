@@ -94,7 +94,8 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                                         startActivity(intent);
                                         finish();
-                                    });
+                                    })
+                                    .setIcon(R.drawable.ic_info);
                                 dialogBuilder.show();
                                 return;
                             } else if ("pending".equals(status)) {
@@ -117,7 +118,8 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                     .setPositiveButton("OK", (dialog, which) -> {
                                         dialog.dismiss();
                                         finish();
-                                    });
+                                    })
+                                    .setIcon(R.drawable.ic_alert);
                                 dialogBuilder.show();
                                 return;
                             } else {
@@ -152,6 +154,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                         finish();
                                     })
                                     .setCancelable(false)
+                                    .setIcon(R.drawable.ic_alert)
                                     .show();
                                 
                                 return;
