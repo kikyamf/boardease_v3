@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:background="@android:color/white">
 
     <!-- Header -->
     <LinearLayout
@@ -29,7 +29,7 @@
             android:text="Booking History"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface" />
+            android:textColor="#000000" />
 
         <TextView
             android:id="@+id/tvCount"
@@ -74,7 +74,7 @@
                 android:gravity="center"
                 android:text="No booking history yet"
                 android:textSize="16sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="#666666"
                 android:padding="32dp"
                 android:visibility="gone" />
 

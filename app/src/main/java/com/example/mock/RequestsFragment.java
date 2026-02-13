@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.fragment.app.Fragment;
 
 public class RequestsFragment extends Fragment {
@@ -27,9 +26,7 @@ public class RequestsFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Force Light Mode for this fragment
-        final LayoutInflater localInflater = inflater.cloneInContext(new ContextThemeWrapper(getActivity(), R.style.Theme_Mock));
-        View view = localInflater.inflate(R.layout.fragment_requests, container, false);
+        View view = inflater.inflate(R.layout.fragment_requests, container, false);
 
         if (getArguments() != null) {
             userId = getArguments().getInt(ARG_USER_ID);

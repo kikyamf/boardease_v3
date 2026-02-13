@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface"
+    android:background="@android:color/white"
     android:padding="16dp">
 
     <!-- Header with Title -->
@@ -21,7 +21,7 @@
             android:textSize="20sp"
             android:fontFamily="@font/poppins_medium"
             android:gravity="center"
-            android:textColor="?attr/colorOnSurface" />
+            android:textColor="#000000" />
     </LinearLayout>
 
     <!-- Menu Items -->
@@ -62,14 +62,14 @@
                     android:text="Bookings"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View approved, pending, and booking history"
                     android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="#666666"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
@@ -112,7 +112,7 @@
                     android:text="Payment Status"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -162,7 +162,7 @@
                     android:text="Boarders Rented"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -212,7 +212,7 @@
                     android:text="Maintenance Requests"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -262,7 +262,7 @@
                     android:text="Reviews"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -311,7 +311,7 @@
                     android:text="Analytics"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
