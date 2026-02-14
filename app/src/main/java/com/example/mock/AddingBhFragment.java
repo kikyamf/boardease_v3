@@ -295,6 +295,18 @@ public class AddingBhFragment extends Fragment {
     }
 
     private void goToAddingRooms() {
+        // Check verification status first
+        String status = Login.getCurrentUserStatus(getContext());
+        if (!"approved".equals(status)) {
+            new AlertDialog.Builder(getActivity())
+                    .setTitle("Verification Required")
+                    .setMessage("You need to be an approved owner to add listings. Your current status is: " + 
+                            (status != null ? status.replace("_", " ") : "pending"))
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+
         // Validate all fields
         String validationError = validateAllFields();
         if (validationError != null) {

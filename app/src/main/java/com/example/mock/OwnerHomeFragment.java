@@ -67,6 +67,10 @@ public class OwnerHomeFragment extends Fragment {
     private TextView badgeCount, badgeNotifCount;
     private LinearLayout numofListings, layoutTotalBoarders;
     private com.github.mikephil.charting.charts.LineChart chartMonthlyRevenue;
+    private com.google.android.material.card.MaterialCardView cardVerificationStatus;
+    private TextView tvStatusTitle, tvStatusMessage;
+    private View viewStatusAccent;
+    private ImageView ivStatusIcon;
     
     // Store popular listing data for navigation
     private int popularListingBhId = -1;
@@ -143,6 +147,12 @@ public class OwnerHomeFragment extends Fragment {
         if (tvOwnerName == null) {
             // Bind views
             tvOwnerName = view.findViewById(R.id.tvOwnerName);
+            
+            // Load name from session immediately
+            android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+            String firstName = prefs.getString("user_first_name", "Owner");
+             tvOwnerName.setText("Hello, " + firstName + "!");
+            
             tvListingsCount = view.findViewById(R.id.tvListingsCount);
             tvBoardersCount = view.findViewById(R.id.tvBoardersCount);
             tvViewsCount = view.findViewById(R.id.tvViewsCount);
@@ -157,6 +167,13 @@ public class OwnerHomeFragment extends Fragment {
             ivMessage = view.findViewById(R.id.ivMessage);
             badgeMsg = view.findViewById(R.id.badgeMsg);
             badgeNotif = view.findViewById(R.id.badgeNotif);
+            cardVerificationStatus = view.findViewById(R.id.cardVerificationStatus);
+            tvStatusTitle = view.findViewById(R.id.tvStatusTitle);
+            tvStatusMessage = view.findViewById(R.id.tvStatusMessage);
+            viewStatusAccent = view.findViewById(R.id.viewStatusAccent);
+            ivStatusIcon = view.findViewById(R.id.ivStatusIcon);
+            
+            checkUserStatus();
             
             // Initialize chart
             if (chartMonthlyRevenue != null) {
@@ -251,19 +268,23 @@ public class OwnerHomeFragment extends Fragment {
 
         // Setup click listeners (always, regardless of whether views were just initialized)
         ivNotification.setOnClickListener(v -> {
-            if (getContext() != null) { // or getActivity() if inside a fragment
-                // Hide badge when opening notifications
-                hideNotificationBadge();
-                Intent intent = new Intent(getContext(), Notification.class);
-                startActivity(intent);
+            if (getContext() != null) {
+                if (Login.checkFeatureAccess(getContext())) {
+                    // Hide badge when opening notifications
+                    hideNotificationBadge();
+                    Intent intent = new Intent(getContext(), Notification.class);
+                    startActivity(intent);
+                }
             }
         });
 
         ivMessage.setOnClickListener(v -> {
-            if (getContext() != null) { // or getActivity() if inside a fragment
-                // Don't hide badge here - only hide when opening actual conversation
-                Intent intent = new Intent(getContext(), Messages.class);
-                startActivity(intent);
+            if (getContext() != null) {
+                if (Login.checkFeatureAccess(getContext())) {
+                    // Don't hide badge here - only hide when opening actual conversation
+                    Intent intent = new Intent(getContext(), Messages.class);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -532,6 +553,14 @@ public class OwnerHomeFragment extends Fragment {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("user_id", String.valueOf(userId));
+                // Add email for robust lookup
+                if (getContext() != null) {
+                    android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+                    String email = prefs.getString("user_email", "");
+                    if (!email.isEmpty()) {
+                        params.put("email", email);
+                    }
+                }
                 return params;
             }
         };
@@ -799,7 +828,7 @@ public class OwnerHomeFragment extends Fragment {
                 badgeCount.setScaleX(1f);
                 badgeCount.setScaleY(1f);
                 badgeCount.setVisibility(View.VISIBLE);
-                android.util.Log.d("MessageBadge", "Count badge visibility set to VISIBLE");
+                android.util.Log.d("MessageBadge", "Badge is now VISIBLE");
                 android.util.Log.d("MessageBadge", "Badge parent: " + (badgeCount.getParent() != null ? badgeCount.getParent().getClass().getSimpleName() : "null"));
                 android.util.Log.d("MessageBadge", "Badge visibility: " + badgeCount.getVisibility());
                 android.util.Log.d("MessageBadge", "Badge text: " + badgeCount.getText());
@@ -1169,4 +1198,62 @@ public class OwnerHomeFragment extends Fragment {
     
     // Chart methods removed - moved to AnalyticsActivity
     // All revenue analytics and charts are now in AnalyticsActivity
+
+    private void checkUserStatus() {
+        if (getContext() == null) return;
+        
+        android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String status = sharedPreferences.getString("user_status", "approved");
+        
+        if (cardVerificationStatus == null) return;
+        
+        // Reset defaults
+        int accentColor = android.graphics.Color.parseColor("#F57C00"); // Orange
+        int iconRes = R.drawable.ic_info;
+        String title = "Status";
+        String message = "";
+        boolean visible = true;
+        
+        switch (status) {
+            case "profile_incomplete":
+                accentColor = android.graphics.Color.parseColor("#455A64"); // Blue Gray
+                iconRes = R.drawable.ic_info1;
+                title = "Profile Incomplete";
+                message = "Please complete your profile to unlock all features.";
+                break;
+            case "pending_admin_review":
+                accentColor = android.graphics.Color.parseColor("#FFA000"); // Amber
+                iconRes = R.drawable.ic_info;
+                title = "Verification Pending";
+                message = "Admin is currently reviewing your documents.";
+                break;
+            case "rejected":
+                accentColor = android.graphics.Color.parseColor("#D32F2F"); // Red
+                iconRes = R.drawable.ic_close;
+                title = "Account Rejected";
+                message = "Your application was rejected. Please check your email for details.";
+                break;
+            case "approved":
+            default:
+                visible = false;
+                break;
+        }
+        
+        if (visible) {
+            cardVerificationStatus.setVisibility(View.VISIBLE);
+            if (viewStatusAccent != null) viewStatusAccent.setBackgroundColor(accentColor);
+            if (ivStatusIcon != null) {
+                ivStatusIcon.setImageResource(iconRes);
+                ivStatusIcon.setColorFilter(accentColor);
+            }
+            if (tvStatusTitle != null) {
+                tvStatusTitle.setText(title);
+            }
+            if (tvStatusMessage != null) {
+                tvStatusMessage.setText(message);
+            }
+        } else {
+            cardVerificationStatus.setVisibility(View.GONE);
+        }
+    }
 }

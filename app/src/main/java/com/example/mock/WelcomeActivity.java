@@ -10,7 +10,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.mock.adapters.CarouselAdapter;
 
-//import me.relex.circleindicator.CircleIndicator3;
+import me.relex.circleindicator.CircleIndicator3;
 
 public class WelcomeActivity extends AppCompatActivity {
 
@@ -18,9 +18,28 @@ public class WelcomeActivity extends AppCompatActivity {
     private Button nextButton;
 //    private CircleIndicator3 indicator; // Instance variable
 
-    private int[] images = {R.drawable.carousel3, R.drawable.carousel2, R.drawable.carousel1};
-    private String[] titles = {"Welcome!", "Explore Features", "Get Started"};
-    
+    private int[] images = {
+            R.drawable.carousel3,
+            R.drawable.login_bg_bh,
+            R.drawable.carousel2,
+            R.drawable.carousel1,
+            R.drawable.carousel3
+    };
+    private String[] titles = {
+            "Welcome to BoardEase!",
+            "What is BoardEase?",
+            "Easy to Get Started",
+            "Empowering Features",
+            "Ready to Dive In?"
+    };
+    private String[] descriptions = {
+            "Your ultimate companion for finding and managing your perfect boarding house.",
+            "Streamlining the boarding house experience for owners and boarders alike.",
+            "Register, verify your email, and start searching or managing in minutes.",
+            "Real-time messaging, secure payments, and smart management at your fingertips.",
+            "Join our growing community and experience housing simplified."
+    };
+
     // SharedPreferences for checking user session
     private SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "UserSession";
@@ -41,15 +60,19 @@ public class WelcomeActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         nextButton = findViewById(R.id.nextButton);
 
-        CarouselAdapter adapter = new CarouselAdapter(images, titles);
+        CarouselAdapter adapter = new CarouselAdapter(images, titles, descriptions);
         viewPager.setAdapter(adapter);
 
+        // Link indicator with ViewPager2
+        CircleIndicator3 indicator = findViewById(R.id.indicator);
+        indicator.setViewPager(viewPager);
+
+        // Add interactive feedback to button
+        addButtonClickAnimation(nextButton);
 
         nextButton.setOnClickListener(v -> {
             int current = viewPager.getCurrentItem();
-            // Using adapter.getItemCount() is safer than images.length
-            // if the adapter is the source of truth for page count.
-            if (adapter != null && current < adapter.getItemCount() - 1) {
+            if (current < images.length - 1) {
                 viewPager.setCurrentItem(current + 1);
             } else {
                 startActivity(new Intent(WelcomeActivity.this, Login.class));
@@ -60,13 +83,27 @@ public class WelcomeActivity extends AppCompatActivity {
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
-                // Using adapter.getItemCount() is safer
-                if (adapter != null && position == adapter.getItemCount() - 1) {
+                if (position == images.length - 1) {
                     nextButton.setText("Get Started");
                 } else {
                     nextButton.setText("Next");
                 }
             }
+        });
+    }
+
+    private void addButtonClickAnimation(android.view.View view) {
+        view.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start();
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
+                    break;
+            }
+            return false;
         });
     }
     

@@ -51,6 +51,9 @@ public class BoarderDashboard extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_boarder_dashboard);
         
+        // Redirection check for hybrid soft registration
+        showWelcomeDialogIfIncomplete();
+        
         // Create notification channel early
         NotificationUtils.createNotificationChannel(this);
         
@@ -199,8 +202,12 @@ public class BoarderDashboard extends AppCompatActivity {
                             selectedFragment = favoriteFragment;
                             tag = "favorite";
                         } else if (itemId == R.id.nav_activity) {
-                            selectedFragment = bookingFragment;
-                            tag = "booking";
+                            if (Login.checkFeatureAccess(this)) {
+                                selectedFragment = bookingFragment;
+                                tag = "booking";
+                            } else {
+                                return false;
+                            }
                         } else if (itemId == R.id.nav_profile) {
                             selectedFragment = profileFragment;
                             tag = "profile";
@@ -345,5 +352,32 @@ public class BoarderDashboard extends AppCompatActivity {
         
         // Add request to queue
         Volley.newRequestQueue(this).add(stringRequest);
+    }
+
+    private void showWelcomeDialogIfIncomplete() {
+        android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+        String status = prefs.getString("user_status", "approved");
+        
+        if ("profile_incomplete".equals(status)) {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Welcome to BoardEase!")
+                .setMessage("You can now explore the app/dashboard! To verify your account and unlock all features (like booking rooms), please complete your profile.")
+                .setPositiveButton("Complete Profile", (dialog, which) -> {
+                    android.content.Intent intent = new android.content.Intent(this, UpdateProfileActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Explore First", null)
+                .setCancelable(false)
+                .show();
+        } else if ("pending_admin_review".equals(status)) {
+             new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Profile Under Review")
+                .setMessage("Your profile is currently being reviewed by the admin. You can explore the app, but some features may be restricted until approved.")
+                .setPositiveButton("Check Status", (dialog, which) -> {
+                     android.widget.Toast.makeText(this, "Status: Pending Review", android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Explore", null)
+                .show();
+        }
     }
 }

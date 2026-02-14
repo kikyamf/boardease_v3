@@ -61,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         
+        // Redirection check for hybrid soft registration
+        showWelcomeDialogIfIncomplete();
+        
         // Create notification channel early
         NotificationUtils.createNotificationChannel(this);
         
@@ -221,17 +224,29 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = homeFragment;
                 tag = "home";
             } else if (id == R.id.nav_post) {
-                selectedFragment = addingBhFragment;
-                tag = "adding_bh";
+                if (Login.checkFeatureAccess(this)) {
+                    selectedFragment = addingBhFragment;
+                    tag = "adding_bh";
+                } else {
+                    return false;
+                }
             } else if (id == R.id.nav_profile) {
                 selectedFragment = profileFragment;
                 tag = "profile";
             } else if (id == R.id.nav_activity) {
-                selectedFragment = activityFragment;
-                tag = "activity";
+                if (Login.checkFeatureAccess(this)) {
+                    selectedFragment = activityFragment;
+                    tag = "activity";
+                } else {
+                    return false;
+                }
             } else if (id == R.id.nav_manage) {
-                selectedFragment = manageFragment;
-                tag = "manage";
+                if (Login.checkFeatureAccess(this)) {
+                    selectedFragment = manageFragment;
+                    tag = "manage";
+                } else {
+                    return false;
+                }
             }
 
             if (selectedFragment != null) {
@@ -359,4 +374,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void showWelcomeDialogIfIncomplete() {
+        android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+        String status = prefs.getString("user_status", "approved");
+        
+        if ("profile_incomplete".equals(status)) {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Welcome to BoardEase!")
+                .setMessage("You can now explore the app! To verify your account and unlock all features (like posting boarding houses), please complete your profile.")
+                .setPositiveButton("Complete Profile", (dialog, which) -> {
+                    android.content.Intent intent = new android.content.Intent(this, UpdateProfileActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Explore First", null)
+                .setCancelable(false)
+                .show();
+        } else if ("pending_admin_review".equals(status)) {
+             new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Profile Under Review")
+                .setMessage("Your profile is currently being reviewed by the admin. You can explore the app, but some features may be restricted until approved.")
+                .setPositiveButton("Check Status", (dialog, which) -> {
+                     // Optional: refresh logic
+                     android.widget.Toast.makeText(this, "Status: Pending Review", android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Explore", null)
+                .show();
+        }
+    }
 }

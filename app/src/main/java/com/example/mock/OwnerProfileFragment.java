@@ -40,7 +40,7 @@ public class OwnerProfileFragment extends Fragment {
     private int userId;
 
     private ImageView ivProfilePic, ivEditProfile;
-    private TextView tvOwnerName, tvOwnerEmail, tvSignOut;
+    private TextView tvOwnerName, tvOwnerEmail, tvUserStatus, tvSignOut;
     private LinearLayout layoutNotifications, layoutMessages, layoutAccountSettings, layoutGcashInfo, layoutAboutApp;
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -76,6 +76,7 @@ public class OwnerProfileFragment extends Fragment {
         ivEditProfile = view.findViewById(R.id.ivEditProfile);
         tvOwnerName = view.findViewById(R.id.tvOwnerName);
         tvOwnerEmail = view.findViewById(R.id.tvOwnerEmail);
+        tvUserStatus = view.findViewById(R.id.tvUserStatus);
         tvSignOut = view.findViewById(R.id.tvSignOut);
 
         layoutNotifications = view.findViewById(R.id.layoutNotifications);
@@ -98,36 +99,62 @@ public class OwnerProfileFragment extends Fragment {
         loadOwnerProfile();
 
         // Click Events
-        ivEditProfile.setOnClickListener(v -> openEditProfile());
-        ivProfilePic.setOnClickListener(v -> openEditProfile());
+        ivEditProfile.setOnClickListener(v -> checkRestricted(() -> openEditProfile()));
+        ivProfilePic.setOnClickListener(v -> checkRestricted(() -> openEditProfile()));
         
-        layoutNotifications.setOnClickListener(v -> openNotifications());
-        layoutMessages.setOnClickListener(v -> openMessages());
-        layoutAccountSettings.setOnClickListener(v -> openAccountSettings());
-        layoutGcashInfo.setOnClickListener(v -> openGcashInfo());
+        layoutNotifications.setOnClickListener(v -> checkRestricted(() -> openNotifications()));
+        layoutMessages.setOnClickListener(v -> checkRestricted(() -> openMessages()));
+        layoutAccountSettings.setOnClickListener(v -> checkRestricted(() -> openAccountSettings()));
+        layoutGcashInfo.setOnClickListener(v -> checkRestricted(() -> openGcashInfo()));
         layoutAboutApp.setOnClickListener(v -> showAboutAppDialog());
 
         tvSignOut.setOnClickListener(v -> showSignOutConfirmationDialog());
 
         return view;
     }
+
+    private void checkRestricted(Runnable onSuccess) {
+        if (getContext() == null) return;
+        android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String status = prefs.getString("user_status", "approved");
+
+        if ("profile_incomplete".equals(status)) {
+            new AlertDialog.Builder(getContext())
+                .setTitle("Complete Profile Required")
+                .setMessage("You need to complete your profile to access this feature.")
+                .setPositiveButton("Complete Now", (dialog, which) -> {
+                    Intent intent = new Intent(getContext(), UpdateProfileActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Later", null)
+                .show();
+        } else if ("pending_admin_review".equals(status)) {
+             new AlertDialog.Builder(getContext())
+                .setTitle("Pending Review")
+                .setMessage("Your account is currently under review. Some features are restricted.")
+                .setPositiveButton("OK", null)
+                .show();
+        } else {
+            onSuccess.run();
+        }
+    }
     
     private void openEditProfile() {
         Intent intent = new Intent(getContext(), EditOwnerProfileActivity.class);
         intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 100); // Use request code 100 for profile edit
+        startActivityForResult(intent, 100); 
     }
     
     private void openAccountSettings() {
         Intent intent = new Intent(getContext(), AccountSettingsActivity.class);
         intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 200); // Use request code 200 for account settings
+        startActivityForResult(intent, 200); 
     }
     
     private void openGcashInfo() {
         Intent intent = new Intent(getContext(), GcashInfoActivity.class);
         intent.putExtra("user_id", userId);
-        startActivityForResult(intent, 300); // Use request code 300 for GCash info
+        startActivityForResult(intent, 300); 
     }
     
     private void openNotifications() {
@@ -151,6 +178,9 @@ public class OwnerProfileFragment extends Fragment {
     }
     
     private void loadOwnerProfile() {
+        android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String email = prefs.getString("user_email", "");
+
         StringRequest request = new StringRequest(Request.Method.POST, GET_OWNER_PROFILE_URL,
             new Response.Listener<String>() {
                 @Override
@@ -206,6 +236,9 @@ public class OwnerProfileFragment extends Fragment {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("user_id", String.valueOf(userId));
+                if (!email.isEmpty()) {
+                    params.put("email", email);
+                }
                 return params;
             }
         };
@@ -253,6 +286,8 @@ public class OwnerProfileFragment extends Fragment {
                     ivProfilePic.setImageResource(R.drawable.btn_profile);
                 }
             }
+            
+            updateStatusBadge(profileData.optString("status", "approved"));
             
         } catch (Exception e) {
             Log.e("OwnerProfile", "Error populating profile data", e);
@@ -340,6 +375,29 @@ public class OwnerProfileFragment extends Fragment {
             dialog.show();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void updateStatusBadge(String status) {
+        if (!isAdded() || tvUserStatus == null) return;
+        
+        tvUserStatus.setVisibility(View.VISIBLE);
+        tvUserStatus.setTextColor(android.graphics.Color.WHITE);
+        
+        if ("pending_admin_review".equals(status)) {
+            tvUserStatus.setText("PENDING REVIEW");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_pending);
+        } else if ("rejected".equals(status)) {
+            tvUserStatus.setText("REJECTED");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_rejected);
+        } else if ("approved".equals(status)) {
+            tvUserStatus.setText("APPROVED");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_approved);
+        } else if ("profile_incomplete".equals(status)) {
+            tvUserStatus.setText("PROFILE INCOMPLETE");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_incomplete);
+        } else {
+            tvUserStatus.setVisibility(View.GONE);
         }
     }
 }

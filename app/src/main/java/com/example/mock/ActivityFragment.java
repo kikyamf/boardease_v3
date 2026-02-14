@@ -67,12 +67,36 @@ public class ActivityFragment extends Fragment {
         layoutReviews = view.findViewById(R.id.layoutReviews);
 
         // Click Events
-        layoutBookings.setOnClickListener(v -> openBookingsActivity());
-        layoutPaymentStatus.setOnClickListener(v -> openActivityDetails("payment_status"));
-        layoutBoardersRented.setOnClickListener(v -> openActivityDetails("boarders_rented"));
-        layoutMaintenanceRequests.setOnClickListener(v -> openMaintenanceRequestsActivity());
-        layoutAnalytics.setOnClickListener(v -> openAnalyticsActivity());
-        layoutReviews.setOnClickListener(v -> openReviewsActivity());
+        layoutBookings.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openBookingsActivity();
+            }
+        });
+        layoutPaymentStatus.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openActivityDetails("payment_status");
+            }
+        });
+        layoutBoardersRented.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openActivityDetails("boarders_rented");
+            }
+        });
+        layoutMaintenanceRequests.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openMaintenanceRequestsActivity();
+            }
+        });
+        layoutAnalytics.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openAnalyticsActivity();
+            }
+        });
+        layoutReviews.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(getContext())) {
+                openReviewsActivity();
+            }
+        });
 
         return view;
     }

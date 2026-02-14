@@ -97,6 +97,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private View badgeNotif;
     private TextView badgeNotifCount;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private com.google.android.material.card.MaterialCardView cardVerificationStatus;
+    private TextView tvStatusTitle, tvStatusMessage;
+    private View viewStatusAccent;
+    private ImageView ivStatusIcon;
 
     // Adapters
     private BoardingHouseCarouselAdapter recommendedAdapter;
@@ -135,6 +139,19 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private LinearLayout layoutLocation;
     private TextView tvCurrentSearchLocation;
     
+    private void setupSearch(View view) {
+        etSearch = view.findViewById(R.id.etSearch);
+        ivClearSearch = view.findViewById(R.id.ivClearSearch);
+        btnSeeAll = view.findViewById(R.id.btnSeeAll);
+        
+        ivNotification = view.findViewById(R.id.ivNotification);
+        ivMessage = view.findViewById(R.id.ivMessage);
+        badgeMsg = view.findViewById(R.id.badgeMsg);
+        badgeCount = view.findViewById(R.id.badgeCount);
+        badgeNotif = view.findViewById(R.id.badgeNotif);
+        badgeNotifCount = view.findViewById(R.id.badgeNotifCount);
+    }
+    
     // Flags to track filtering completion
     private boolean recommendedFiltered = false;
     private boolean nearbyFiltered = false;
@@ -144,6 +161,20 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     
     // Flag to track if we should refresh data (set when activity pauses while fragment is visible)
     private boolean shouldRefreshOnResume = false;
+    
+    private void loadUserInfoFromSession() {
+        android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+        boarderFirstName = prefs.getString("user_first_name", "Guest");
+        boarderLastName = prefs.getString("user_last_name", "");
+        boarderAddress = prefs.getString("user_address", "");
+        boarderProvince = prefs.getString("user_province", ""); // Assuming these are saved or parsed from address
+        boarderMunicipality = prefs.getString("user_municipality", ""); 
+        
+        // For incomplete profiles, address might be empty, so we can set defaults or just hide location logic
+        if (boarderAddress.isEmpty()) {
+            boarderAddress = "Bohol, Philippines"; // Default
+        }
+    }
     
     // Real-time Location
     private FusedLocationProviderClient fusedLocationClient;
@@ -220,10 +251,27 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         
         // Check if views are already initialized (fragment was hidden/shown, not recreated)
         if (layoutLocation == null) {
+            // Initialize search UI
+            layoutLocation = view.findViewById(R.id.layoutLocation);
+            tvCurrentSearchLocation = view.findViewById(R.id.tvCurrentSearchLocation);
+            
+            // Load user info from session immediately
+            loadUserInfoFromSession();
+            
+            // Setup Search
+            setupSearch(view);
             // Views not initialized yet, initialize them
         initializeViews(view);
         setupRecyclerViews();
         setupClickListeners();
+        
+        cardVerificationStatus = view.findViewById(R.id.cardVerificationStatus);
+        tvStatusTitle = view.findViewById(R.id.tvStatusTitle);
+        tvStatusMessage = view.findViewById(R.id.tvStatusMessage);
+        viewStatusAccent = view.findViewById(R.id.viewStatusAccent);
+        ivStatusIcon = view.findViewById(R.id.ivStatusIcon);
+        
+        checkUserStatus();
         }
         
         // Only load data if it hasn't been loaded yet (first time only)
@@ -799,9 +847,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             if (progressBarNearby != null) {
                 progressBarNearby.setVisibility(View.VISIBLE);
             }
-            if (rvRecommendedBH != null) {
-                rvRecommendedBH.setVisibility(View.GONE);
-            }
             if (rvNearbyBH != null) {
                 rvNearbyBH.setVisibility(View.GONE);
             }
@@ -1050,13 +1095,15 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             ivMessage.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    android.util.Log.d("BoarderHomeFragment", "Message icon clicked!");
-                    try {
-                        Intent intent = new Intent(getContext(), Messages.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        android.util.Log.e("BoarderHomeFragment", "Error starting Messages activity", e);
-                        Toast.makeText(getContext(), "Error opening messages: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (Login.checkFeatureAccess(getContext())) {
+                        android.util.Log.d("BoarderHomeFragment", "Message icon clicked!");
+                        try {
+                            Intent intent = new Intent(getContext(), Messages.class);
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            android.util.Log.e("BoarderHomeFragment", "Error starting Messages activity", e);
+                            Toast.makeText(getContext(), "Error opening messages: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             });
@@ -1070,15 +1117,17 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             ivNotification.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    android.util.Log.d("BoarderHomeFragment", "Notification icon clicked!");
-                    try {
-                        // Hide notification badge when opening notifications
-                        hideNotificationBadge();
-                        Intent intent = new Intent(getContext(), Notification.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        android.util.Log.e("BoarderHomeFragment", "Error starting Notification activity", e);
-                        Toast.makeText(getContext(), "Error opening notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (Login.checkFeatureAccess(getContext())) {
+                        android.util.Log.d("BoarderHomeFragment", "Notification icon clicked!");
+                        try {
+                            // Hide notification badge when opening notifications
+                            hideNotificationBadge();
+                            Intent intent = new Intent(getContext(), Notification.class);
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            android.util.Log.e("BoarderHomeFragment", "Error starting Notification activity", e);
+                            Toast.makeText(getContext(), "Error opening notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             });
@@ -1098,14 +1147,18 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         if (userId == null || userId.isEmpty()) {
             Log.e(TAG, "User ID not found");
             // Load boarding houses anyway (without filtering)
-            if (isAdded() && getContext() != null) {
+                if (isAdded() && getContext() != null) {
                 loadBoardingHouses();
             }
             return;
         }
 
+        // Get email from session to support robust lookup for incomplete profiles
+        android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+        String email = prefs.getString("user_email", "");
+
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
-        String url = BOARDER_INFO_API + "?user_id=" + userId;
+        String url = BOARDER_INFO_API + "?user_id=" + userId + "&email=" + email;
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -2842,5 +2895,63 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 Toast.makeText(getContext(), "Could not find that location. Please be more specific.", Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void checkUserStatus() {
+        if (getContext() == null) return;
+        
+        android.content.SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String status = sharedPreferences.getString("user_status", "approved");
+        
+        if (cardVerificationStatus == null) return;
+        
+        // Reset defaults
+        int accentColor = android.graphics.Color.parseColor("#F57C00"); // Orange
+        int iconRes = R.drawable.ic_info;
+        String title = "Status";
+        String message = "";
+        boolean visible = true;
+        
+        switch (status) {
+            case "profile_incomplete":
+                accentColor = android.graphics.Color.parseColor("#455A64"); // Blue Gray
+                iconRes = R.drawable.ic_info;
+                title = "Profile Incomplete";
+                message = "Please complete your profile to unlock all features.";
+                break;
+            case "pending_admin_review":
+                accentColor = android.graphics.Color.parseColor("#FFA000"); // Amber
+                iconRes = R.drawable.ic_info;
+                title = "Verification Pending";
+                message = "Admin is currently reviewing your documents.";
+                break;
+            case "rejected":
+                accentColor = android.graphics.Color.parseColor("#D32F2F"); // Red
+                iconRes = R.drawable.ic_close;
+                title = "Account Rejected";
+                message = "Your application was rejected. Please check your email for details.";
+                break;
+            case "approved":
+            default:
+                visible = false;
+                break;
+        }
+        
+        if (visible) {
+            cardVerificationStatus.setVisibility(View.VISIBLE);
+            if (viewStatusAccent != null) viewStatusAccent.setBackgroundColor(accentColor);
+            if (ivStatusIcon != null) {
+                ivStatusIcon.setImageResource(iconRes);
+                ivStatusIcon.setColorFilter(accentColor);
+            }
+            if (tvStatusTitle != null) {
+                tvStatusTitle.setText(title);
+            }
+            if (tvStatusMessage != null) {
+                tvStatusMessage.setText(message);
+            }
+        } else {
+            cardVerificationStatus.setVisibility(View.GONE);
+        }
     }
 }

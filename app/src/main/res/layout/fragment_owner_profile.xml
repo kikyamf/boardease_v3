@@ -35,59 +35,92 @@
             android:textColor="#000000" />
     </LinearLayout>
 
-    <!-- Profile Header -->
-    <LinearLayout
+    <!-- Profile Header Section -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp">
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
-        <FrameLayout
-            android:layout_width="100dp"
-            android:layout_height="100dp">
-
-            <!-- Profile Picture -->
-            <com.example.mock.CircularImageView
-                android:id="@+id/ivProfilePic"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:src="@drawable/btn_profile"
-                android:scaleType="centerCrop"
-                android:background="@drawable/circle_clip" />
-
-            <!-- Overlay edit icon -->
-            <ImageView
-                android:id="@+id/ivEditProfile"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="bottom|end"
-                android:src="@drawable/ic_camera1"
-                android:tint="@color/white"
-                android:background="@drawable/dot_inactive"
-                android:padding="4dp"
-                android:elevation="4dp" />
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/tvOwnerName"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Owner Name"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:layout_marginTop="12dp"
-            android:textColor="#000000" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="20dp"
+            android:background="#FAFAFA">
 
-        <TextView
-            android:id="@+id/tvOwnerEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="owner@email.com"
-            android:textSize="14sp"
-            android:textColor="#777777" />
-    </LinearLayout>
+            <FrameLayout
+                android:layout_width="110dp"
+                android:layout_height="110dp"
+                android:padding="5dp"
+                android:background="@drawable/circle_clip"
+                android:backgroundTint="#F0F0F0">
+
+                <!-- Profile Picture -->
+                <com.example.mock.CircularImageView
+                    android:id="@+id/ivProfilePic"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/btn_profile"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/circle_clip" />
+
+                <!-- Overlay edit icon -->
+                <ImageView
+                    android:id="@+id/ivEditProfile"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="bottom|end"
+                    android:src="@drawable/ic_camera1"
+                    android:tint="@color/white"
+                    android:background="@drawable/dot_inactive"
+                    android:backgroundTint="#795548"
+                    android:padding="6dp"
+                    android:elevation="6dp" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvOwnerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Owner Name"
+                android:fontFamily="@font/poppins_bold"
+                android:textSize="20sp"
+                android:layout_marginTop="16dp"
+                android:textColor="#212121" />
+
+            <TextView
+                android:id="@+id/tvOwnerEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="owner@email.com"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_regular"
+                android:textColor="#757575" />
+
+            <TextView
+                android:id="@+id/tvUserStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/status_badge_pending"
+                android:fontFamily="@font/poppins_semibold"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="6dp"
+                android:text="PENDING REVIEW"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.05"
+                android:visibility="gone" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Divider -->
     <View

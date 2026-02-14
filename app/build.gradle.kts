@@ -65,4 +65,7 @@ dependencies {
 
     // Location services for real-time tracking
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // Google Sign-In SDK
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 }

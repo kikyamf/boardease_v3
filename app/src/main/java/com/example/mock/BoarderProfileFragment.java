@@ -61,6 +61,7 @@ public class BoarderProfileFragment extends Fragment {
     private ImageView ivEditProfile;
     private TextView tvBoarderName;
     private TextView tvBoarderEmail;
+    private TextView tvUserStatus;
     private TextView tvSignOut;
     private LinearLayout layoutSignOut;
     private android.widget.Button btnLogout;
@@ -125,6 +126,7 @@ public class BoarderProfileFragment extends Fragment {
             ivEditProfile = view.findViewById(R.id.ivEditProfile);
             tvBoarderName = view.findViewById(R.id.tvBoarderName);
             tvBoarderEmail = view.findViewById(R.id.tvBoarderEmail);
+            tvUserStatus = view.findViewById(R.id.tvUserStatus);
             
             // Menu items
             layoutAccountSettings = view.findViewById(R.id.layoutAccountSettings);
@@ -211,7 +213,6 @@ public class BoarderProfileFragment extends Fragment {
             if (btnBack != null) {
                 btnBack.setOnClickListener(v -> {
                     try {
-                        // Navigate back or close profile
                         if (getActivity() != null) {
                             getActivity().onBackPressed();
                         }
@@ -221,90 +222,51 @@ public class BoarderProfileFragment extends Fragment {
                 });
             }
 
-            // Edit profile picture - opens edit profile activity (like owner side)
+            // Edit profile picture - Restricted
             if (ivEditProfile != null) {
-                ivEditProfile.setOnClickListener(v -> {
-                    try {
-                        openEditProfile();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                ivEditProfile.setOnClickListener(v -> checkRestricted(() -> openEditProfile()));
             }
             
-            // Profile picture click - opens edit profile activity (like owner side)
+            // Profile picture click - Restricted
             if (ivProfilePic != null) {
-                ivProfilePic.setOnClickListener(v -> {
-                    try {
-                        openEditProfile();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                ivProfilePic.setOnClickListener(v -> checkRestricted(() -> openEditProfile()));
             }
 
-            // Account Settings - opens account settings with email/password change (like owner side)
+            // Account Settings - Restricted
             if (layoutAccountSettings != null) {
-                layoutAccountSettings.setOnClickListener(v -> {
-                    try {
-                        openAccountSettings();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                layoutAccountSettings.setOnClickListener(v -> checkRestricted(() -> openAccountSettings()));
             }
 
-            // Notifications
+            // Notifications - Restricted
             if (layoutNotifications != null) {
-                layoutNotifications.setOnClickListener(v -> {
-                    try {
-                        Intent intent = new Intent(getActivity(), Notification.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening notifications", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                layoutNotifications.setOnClickListener(v -> checkRestricted(() -> {
+                    Intent intent = new Intent(getActivity(), Notification.class);
+                    startActivity(intent);
+                }));
             }
 
-            // Messages
+            // Messages - Restricted
             if (layoutMessages != null) {
-                layoutMessages.setOnClickListener(v -> {
-                    try {
-                        Intent intent = new Intent(getActivity(), Messages.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening messages", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                layoutMessages.setOnClickListener(v -> checkRestricted(() -> {
+                    Intent intent = new Intent(getActivity(), Messages.class);
+                    startActivity(intent);
+                }));
             }
 
-            // Payment History
+            // Payment History - Restricted
             if (layoutPaymentHistory != null) {
-                layoutPaymentHistory.setOnClickListener(v -> {
-                    try {
-                        Intent intent = new Intent(getActivity(), PaymentHistoryActivity.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening payment history", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                layoutPaymentHistory.setOnClickListener(v -> checkRestricted(() -> {
+                    Intent intent = new Intent(getActivity(), PaymentHistoryActivity.class);
+                    startActivity(intent);
+                }));
             }
 
-            // Maintenance History
+            // Maintenance History - Restricted
             if (layoutMaintenanceHistory != null) {
-                layoutMaintenanceHistory.setOnClickListener(v -> {
-                    try {
-                        Intent intent = new Intent(getActivity(), MaintenanceHistoryActivity.class);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), "Error opening maintenance history", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                layoutMaintenanceHistory.setOnClickListener(v -> checkRestricted(() -> {
+                    Intent intent = new Intent(getActivity(), MaintenanceHistoryActivity.class);
+                    startActivity(intent);
+                }));
             }
 
             // About App
@@ -318,28 +280,42 @@ public class BoarderProfileFragment extends Fragment {
                 });
             }
 
-            // Sign Out - Both text and button trigger logout
+            // Sign Out
             if (layoutSignOut != null) {
-                layoutSignOut.setOnClickListener(v -> {
-                    try {
-                        showSignOutConfirmationDialog();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                layoutSignOut.setOnClickListener(v -> showSignOutConfirmationDialog());
             }
             
             if (btnLogout != null) {
-                btnLogout.setOnClickListener(v -> {
-                    try {
-                        showSignOutConfirmationDialog();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                btnLogout.setOnClickListener(v -> showSignOutConfirmationDialog());
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void checkRestricted(Runnable onSuccess) {
+        if (getContext() == null) return;
+        android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String status = prefs.getString("user_status", "approved");
+
+        if ("profile_incomplete".equals(status)) {
+            new AlertDialog.Builder(getContext())
+                .setTitle("Complete Profile Required")
+                .setMessage("You need to complete your profile to access this feature.")
+                .setPositiveButton("Complete Now", (dialog, which) -> {
+                    Intent intent = new Intent(getContext(), UpdateProfileActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Later", null)
+                .show();
+        } else if ("pending_admin_review".equals(status)) {
+             new AlertDialog.Builder(getContext())
+                .setTitle("Pending Review")
+                .setMessage("Your account is currently under review. Some features are restricted.")
+                .setPositiveButton("OK", null)
+                .show();
+        } else {
+            onSuccess.run();
         }
     }
 
@@ -361,7 +337,7 @@ public class BoarderProfileFragment extends Fragment {
             
             Intent intent = new Intent(getActivity(), BoarderAccountSettingsActivity.class);
             intent.putExtra("user_id", userId);
-            startActivityForResult(intent, 100); // Use request code 100 for profile edit
+            startActivityForResult(intent, 100); 
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error opening edit profile", Toast.LENGTH_SHORT).show();
@@ -386,7 +362,7 @@ public class BoarderProfileFragment extends Fragment {
             
             Intent intent = new Intent(getActivity(), AccountSettingsActivity.class);
             intent.putExtra("user_id", userId);
-            startActivityForResult(intent, 200); // Use request code 200 for account settings
+            startActivityForResult(intent, 200); 
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error opening account settings", Toast.LENGTH_SHORT).show();
@@ -397,7 +373,6 @@ public class BoarderProfileFragment extends Fragment {
         // Get user ID
         String userIdString = Login.getCurrentUserId(getContext());
         if (userIdString == null || userIdString.isEmpty()) {
-            // Fallback to SharedPreferences data
             loadUserDataFromSharedPreferences();
             return;
         }
@@ -406,17 +381,19 @@ public class BoarderProfileFragment extends Fragment {
         try {
             userId = Integer.parseInt(userIdString);
         } catch (NumberFormatException e) {
-            // Fallback to SharedPreferences data
             loadUserDataFromSharedPreferences();
             return;
         }
         
+        // Get email from session for robust lookup
+        android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
+        String email = prefs.getString("user_email", "");
+
         // Load profile data from server
         StringRequest request = new StringRequest(Request.Method.POST, GET_BOARDER_PROFILE_URL,
             new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
-                    // Check if fragment is still attached before processing response
                     if (!isAdded() || getContext() == null) {
                         return;
                     }
@@ -426,15 +403,12 @@ public class BoarderProfileFragment extends Fragment {
                         if (jsonResponse.getBoolean("success")) {
                             populateProfileData(jsonResponse);
                         } else {
-                            // Fallback to SharedPreferences data
                             loadUserDataFromSharedPreferences();
                         }
                     } catch (JSONException e) {
                         android.util.Log.e("BoarderProfile", "Error parsing profile response", e);
-                        // Fallback to SharedPreferences data
                         loadUserDataFromSharedPreferences();
                     } finally {
-                        // Stop refresh indicator
                         if (swipeRefreshLayout != null) {
                             swipeRefreshLayout.setRefreshing(false);
                         }
@@ -445,9 +419,7 @@ public class BoarderProfileFragment extends Fragment {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     android.util.Log.e("BoarderProfile", "Error loading profile", error);
-                    // Fallback to SharedPreferences data
                     loadUserDataFromSharedPreferences();
-                    // Stop refresh indicator
                     if (swipeRefreshLayout != null) {
                         swipeRefreshLayout.setRefreshing(false);
                     }
@@ -458,6 +430,9 @@ public class BoarderProfileFragment extends Fragment {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("user_id", userIdString);
+                if (!email.isEmpty()) {
+                    params.put("email", email);
+                }
                 return params;
             }
         };
@@ -512,6 +487,8 @@ public class BoarderProfileFragment extends Fragment {
                     ivProfilePic.setImageResource(R.drawable.btn_profile);
                 }
             }
+            
+            updateStatusBadge(profileData.optString("status", "approved"));
             
         } catch (Exception e) {
             android.util.Log.e("BoarderProfile", "Error populating profile data", e);
@@ -767,6 +744,29 @@ public class BoarderProfileFragment extends Fragment {
             return bitmap;
         } catch (Exception e) {
             throw new IOException("Error processing image: " + e.getMessage(), e);
+        }
+    }
+
+    private void updateStatusBadge(String status) {
+        if (!isAdded() || tvUserStatus == null) return;
+        
+        tvUserStatus.setVisibility(View.VISIBLE);
+        tvUserStatus.setTextColor(android.graphics.Color.WHITE);
+        
+        if ("pending_admin_review".equals(status)) {
+            tvUserStatus.setText("PENDING REVIEW");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_pending);
+        } else if ("rejected".equals(status)) {
+            tvUserStatus.setText("REJECTED");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_rejected);
+        } else if ("approved".equals(status)) {
+            tvUserStatus.setText("APPROVED");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_approved);
+        } else if ("profile_incomplete".equals(status)) {
+            tvUserStatus.setText("PROFILE INCOMPLETE");
+            tvUserStatus.setBackgroundResource(R.drawable.status_badge_incomplete);
+        } else {
+            tvUserStatus.setVisibility(View.GONE);
         }
     }
     

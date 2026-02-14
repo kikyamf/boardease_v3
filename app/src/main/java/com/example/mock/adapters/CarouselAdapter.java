@@ -12,10 +12,12 @@ import com.example.mock.R;
 public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHolder> {
     private int[] images;
     private String[] titles;
+    private String[] descriptions;
 
-    public CarouselAdapter(int[] images, String[] titles) {
+    public CarouselAdapter(int[] images, String[] titles, String[] descriptions) {
         this.images = images;
         this.titles = titles;
+        this.descriptions = descriptions;
     }
 
     @NonNull
@@ -29,6 +31,7 @@ public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHo
     public void onBindViewHolder(@NonNull CarouselAdapter.ViewHolder holder, int position) {
         holder.image.setImageResource(images[position]);
         holder.text.setText(titles[position]);
+        holder.description.setText(descriptions[position]);
     }
 
     @Override
@@ -39,10 +42,13 @@ public class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHo
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView image;
         TextView text;
+        TextView description;
+
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.carouselImage);
             text = itemView.findViewById(R.id.carouselText);
+            description = itemView.findViewById(R.id.carouselDescription);
         }
     }
 }

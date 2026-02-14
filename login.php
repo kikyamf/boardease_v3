@@ -88,7 +88,7 @@ if ($result->num_rows === 0) {
     
     if ($passwordValid) {
         // Check if account is approved by admin
-        if ($user['status'] === 'approved') {
+        if ($user['status'] === 'approved' || $user['status'] === 'profile_incomplete' || $user['status'] === 'pending_admin_review') {
             $response = array(
                 "success" => true,
                 "message" => "Login successful",
@@ -99,26 +99,28 @@ if ($result->num_rows === 0) {
                     "lastName" => $user['last_name'],
                     "suffix" => $user['suffix'],
                     "email" => $user['email'],
-                    "phone" => $user['phone'] ?? "" // Include phone number from registrations table
+                    "phone" => $user['phone'] ?? "", // Include phone number from registrations table
+                    "status" => $user['status'] // Include status for the app to handle restrictions
                 )
             );
-            error_log("Login successful for user: " . $email);
-            error_log("Response being sent: " . json_encode($response));
+            error_log("Login successful for user: " . $email . " with status: " . $user['status']);
             echo json_encode($response);
-        } else if ($user['status'] === 'unverified') {
+        } else if ($user['status'] === 'email_unverified' || $user['status'] === 'unverified') {
             $response = array(
                 "success" => false,
-                "message" => "Please verify your email address before logging in. Check your email for the verification code.",
+                "message" => "Please verify your email address before logging in.",
                 "requires_verification" => true
             );
             error_log("Login blocked - account unverified for: " . $email);
             echo json_encode($response);
-        } else if ($user['status'] === 'pending') {
+        } else if ($user['status'] === 'pending' || $user['status'] === 'pending_admin_review') {
+            // NOTE: pending_admin_review is allowed to login but with restricted access (handled above)
+            // This block is for legacy 'pending' status if it somehow bypasses the above OR if we want to block it.
+            // For now, let's treat 'pending' as 'pending_admin_review' for login if we want them to see their status.
             $response = array(
                 "success" => false,
                 "message" => "Your account is still pending admin approval. Please wait for approval before logging in."
             );
-            error_log("Login blocked - account pending approval for: " . $email);
             echo json_encode($response);
         } else if ($user['status'] === 'rejected') {
             $response = array(

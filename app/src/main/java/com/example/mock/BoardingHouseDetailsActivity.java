@@ -426,7 +426,11 @@ public class BoardingHouseDetailsActivity extends AppCompatActivity {
         
         btnEmail.setOnClickListener(v -> emailOwner());
         
-        btnChooseAccommodation.setOnClickListener(v -> openChooseAccommodationActivity());
+        btnChooseAccommodation.setOnClickListener(v -> {
+            if (Login.checkFeatureAccess(this)) {
+                openChooseAccommodationActivity();
+            }
+        });
         
         tvSeeAllReviews.setOnClickListener(v -> openAllReviewsActivity());
     }

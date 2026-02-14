@@ -82,13 +82,22 @@ public class EmailVerificationActivity extends AppCompatActivity {
                             
                             Log.d("EmailVerification", "Email already verified. Status: " + status);
                             
-                            if ("approved".equals(status)) {
-                                // Account approved - navigate to login
+                            if ("approved".equals(status) || "profile_incomplete".equals(status) || "pending_admin_review".equals(status) || "pending".equals(status)) {
+                                // Account approved or ready for setup - navigate to login
+                                String title = "Email Verified";
+                                String msg = message;
+                                
+                                if ("approved".equals(status)) {
+                                    msg += "\n\nYour account is approved. You can now log in.";
+                                } else {
+                                    msg += "\n\nPlease log in to complete your profile setup.";
+                                }
+
                                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(EmailVerificationActivity.this)
-                                    .setTitle("Email Already Verified")
-                                    .setMessage(message + "\n\nYour account has been approved. You can now log in.")
+                                    .setTitle(title)
+                                    .setMessage(msg)
                                     .setCancelable(false)
-                                    .setPositiveButton("OK", (dialog, which) -> {
+                                    .setPositiveButton("Go to Login", (dialog, which) -> {
                                         dialog.dismiss();
                                         Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
                                         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -97,17 +106,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                     })
                                     .setIcon(R.drawable.ic_info_white);
                                 dialogBuilder.show();
-                                return;
-                            } else if ("pending".equals(status)) {
-                                // Account pending - show approval container
-                                Log.d("EmailVerification", "Email verified but pending approval - showing approval container");
-                                // Initialize views if not already initialized
-                                if (tvEmail == null) {
-                                    initializeViews();
-                                    setupClickListeners();
-                                }
-                                // Show the approval container
-                                showAdminApprovalMessage();
                                 return;
                             } else if ("rejected".equals(status)) {
                                 // Account rejected - show rejection dialog
@@ -123,13 +121,12 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                 dialogBuilder.show();
                                 return;
                             } else {
-                                // Unknown status - show approval container as fallback
-                                Log.d("EmailVerification", "Email verified with unknown status: " + status + " - showing approval container");
-                                if (tvEmail == null) {
-                                    initializeViews();
-                                    setupClickListeners();
-                                }
-                                showAdminApprovalMessage();
+                                // Unknown status - navigate to login as safest fallback for valid users
+                                Log.d("EmailVerification", "Email verified with unknown status: " + status + " - redirecting to login");
+                                Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                finish();
                                 return;
                             }
                         }
@@ -469,10 +466,29 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         String message = jsonResponse.getString("message");
                         
                         if (success) {
-                            // Show admin approval message
-                            showAdminApprovalMessage();
+                            // Show success message and navigate to Login
+                            Log.d("EmailVerification", "Verification successful, navigating to Login");
+                            Toast.makeText(EmailVerificationActivity.this, "Verification Successful!", Toast.LENGTH_SHORT).show();
+                            
+                            Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.putExtra("email", email); 
+                            startActivity(intent);
+                            finish();
                         } else {
-                            Toast.makeText(EmailVerificationActivity.this, message, Toast.LENGTH_LONG).show();
+                            // Check if the message indicates already verified
+                            if (message.contains("already been verified")) {
+                                Log.d("EmailVerification", "Email already verified, navigating to Login");
+                                Toast.makeText(EmailVerificationActivity.this, message, Toast.LENGTH_LONG).show();
+                                
+                                Intent intent = new Intent(EmailVerificationActivity.this, Login.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                intent.putExtra("email", email);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                Toast.makeText(EmailVerificationActivity.this, message, Toast.LENGTH_LONG).show();
+                            }
                         }
                     } catch (JSONException e) {
                         Log.e("EmailVerification", "JSON parsing error: " + e.getMessage());

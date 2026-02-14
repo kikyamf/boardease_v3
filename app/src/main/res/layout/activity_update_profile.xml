@@ -29,13 +29,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="Join BoardEase"
+            android:text="Complete Your Profile"
             android:fontFamily="@font/poppins_semibold"
             android:textSize="22sp"
             android:textColor="@android:color/white"/>
     </LinearLayout>
 
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -45,7 +46,7 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="20dp">
 
             <!-- Progress Indicator -->
             <LinearLayout
@@ -53,7 +54,7 @@
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="24dp"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="40dp">
 
@@ -82,44 +83,28 @@
                     android:textColor="#666666"
                     android:gravity="center"
                     android:background="@drawable/progress_circle_hollow" />
+
+                <View
+                    android:id="@+id/progressLine3"
+                    android:layout_width="0dp"
+                    android:layout_height="2dp"
+                    android:layout_weight="1"
+                    android:background="#DDDDDD"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/progressCircle3"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="3"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#666666"
+                    android:gravity="center"
+                    android:background="@drawable/progress_circle_hollow"
+                    android:visibility="gone"/>
             </LinearLayout>
 
-            <!-- Google Sign-Up Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGoogleSignUp"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginBottom="12dp"
-                android:text="Sign up with Google"
-                android:textAllCaps="false"
-                android:fontFamily="@font/poppins_medium"
-                android:textColor="#444444"
-                android:textSize="16sp"
-                android:backgroundTint="@android:color/white"
-                app:cornerRadius="12dp"
-                app:strokeColor="#DDDDDD"
-                app:strokeWidth="1dp"
-                app:icon="@drawable/google"
-                app:iconTint="@null"
-                app:iconGravity="textStart"
-                app:iconSize="24dp"
-                app:iconPadding="12dp"
-                android:elevation="2dp" />
-
-            <!-- "OR" Divider -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="16dp">
-                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#EEEEEE" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginHorizontal="12dp"
-                    android:text="OR CONTINUE WITH EMAIL" android:fontFamily="@font/poppins_medium" android:textColor="#AAAAAA" android:textSize="10sp" android:letterSpacing="0.1" />
-                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#EEEEEE" />
-            </LinearLayout>
-
-            <!-- Step 1: Basic Information -->
+            <!-- Step 1: Permanent Address -->
             <LinearLayout
                 android:id="@+id/step1Layout"
                 android:layout_width="match_parent"
@@ -141,31 +126,30 @@
                         android:padding="16dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Step 1: Basic Information"
+                            android:text="Permanent Address"
+                            android:fontFamily="@font/poppins_semibold"
                             android:textSize="18sp"
                             android:textColor="#212529"
-                            android:fontFamily="@font/poppins_semibold"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- Join as -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Join as *"
+                            android:text="Province *"
                             android:textSize="14sp"
                             android:textColor="#495057"
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp" />
 
                         <AutoCompleteTextView
-                            android:id="@+id/spinnerRole"
+                            android:id="@+id/spinnerProvince"
                             android:layout_width="match_parent"
                             android:layout_height="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
-                            android:hint="Select role"
+                            android:hint="Select Province"
                             android:textColor="#212529"
                             android:textColorHint="#6C757D"
                             android:fontFamily="@font/poppins_regular"
@@ -175,95 +159,22 @@
                             android:drawablePadding="8dp"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- First Name -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="First Name *"
-                            android:textSize="14sp"
-                            android:textColor="#495057"
-                            android:fontFamily="@font/poppins_medium"
-                            android:layout_marginBottom="8dp" />
-
-                        <EditText
-                            android:id="@+id/etFirstName"
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:background="@drawable/modern_edittext_focused"
-                            android:padding="16dp"
-                            android:hint="Enter first name"
-                            android:textColor="#212529"
-                            android:textColorHint="#6C757D"
-                            android:fontFamily="@font/poppins_regular"
-                            android:textSize="16sp"
-                            android:inputType="textCapWords"
-                            android:layout_marginBottom="16dp" />
-
-                        <!-- Middle Name -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Middle Name"
-                            android:textSize="14sp"
-                            android:textColor="#495057"
-                            android:fontFamily="@font/poppins_medium"
-                            android:layout_marginBottom="8dp" />
-
-                        <EditText
-                            android:id="@+id/etMiddleName"
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:background="@drawable/modern_edittext_focused"
-                            android:padding="16dp"
-                            android:hint="Enter middle name (optional)"
-                            android:textColor="#212529"
-                            android:textColorHint="#6C757D"
-                            android:fontFamily="@font/poppins_regular"
-                            android:textSize="16sp"
-                            android:inputType="textCapWords"
-                            android:layout_marginBottom="16dp" />
-
-                        <!-- Last Name -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Last Name *"
-                            android:textSize="14sp"
-                            android:textColor="#495057"
-                            android:fontFamily="@font/poppins_medium"
-                            android:layout_marginBottom="8dp" />
-
-                        <EditText
-                            android:id="@+id/etLastName"
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:background="@drawable/modern_edittext_focused"
-                            android:padding="16dp"
-                            android:hint="Enter last name"
-                            android:textColor="#212529"
-                            android:textColorHint="#6C757D"
-                            android:fontFamily="@font/poppins_regular"
-                            android:textSize="16sp"
-                            android:inputType="textCapWords"
-                            android:layout_marginBottom="16dp" />
-
-                        <!-- Suffix -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Suffix"
+                            android:text="Municipality/City *"
                             android:textSize="14sp"
                             android:textColor="#495057"
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp" />
 
                         <AutoCompleteTextView
-                            android:id="@+id/spinnerSuffix"
+                            android:id="@+id/spinnerMunicipality"
                             android:layout_width="match_parent"
                             android:layout_height="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
-                            android:hint="Select suffix"
+                            android:hint="Select Municipality"
                             android:textColor="#212529"
                             android:textColorHint="#6C757D"
                             android:fontFamily="@font/poppins_regular"
@@ -273,40 +184,61 @@
                             android:drawablePadding="8dp"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- Birthdate -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Birthdate *"
+                            android:text="Barangay *"
+                            android:textSize="14sp"
+                            android:textColor="#495057"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginBottom="8dp" />
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinnerBarangay"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/modern_edittext_focused"
+                            android:padding="16dp"
+                            android:hint="Select Barangay"
+                            android:textColor="#212529"
+                            android:textColorHint="#6C757D"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="16sp"
+                            android:cursorVisible="false"
+                            android:drawableEnd="@drawable/ic_dropdown_arrow"
+                            android:drawablePadding="8dp"
+                            android:layout_marginBottom="16dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Detailed Address *"
                             android:textSize="14sp"
                             android:textColor="#495057"
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp" />
 
                         <EditText
-                            android:id="@+id/etBirthDate"
+                            android:id="@+id/etDetailedAddress"
                             android:layout_width="match_parent"
-                            android:layout_height="56dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
-                            android:hint="Select birthdate"
+                            android:hint="Street Name, Building, House No."
                             android:textColor="#212529"
                             android:textColorHint="#6C757D"
                             android:fontFamily="@font/poppins_regular"
                             android:textSize="16sp"
-                            android:focusable="false"
-                            android:clickable="true"
-                            android:cursorVisible="false"
-                            android:drawableStart="@drawable/ic_calendar"
-                            app:drawableTint="#A18167"
-                            android:drawablePadding="8dp" />
+                            android:inputType="textCapSentences|textMultiLine"
+                            android:layout_marginBottom="16dp" />
 
                     </LinearLayout>
-
                 </androidx.cardview.widget.CardView>
+
             </LinearLayout>
 
-            <!-- Step 2: Contact & Security -->
+            <!-- Step 2: Identity Verification -->
             <LinearLayout
                 android:id="@+id/step2Layout"
                 android:layout_width="match_parent"
@@ -329,54 +261,161 @@
                         android:padding="16dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Step 2: Contact &amp; Security"
+                            android:text="Identity Verification"
+                            android:fontFamily="@font/poppins_semibold"
                             android:textSize="18sp"
                             android:textColor="#212529"
-                            android:fontFamily="@font/poppins_semibold"
                             android:layout_marginBottom="16dp" />
 
-                        <!-- Email Address -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Email Address *"
+                            android:text="Valid ID Type *"
+                            android:textSize="14sp"
+                            android:textColor="#495057"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginBottom="8dp" />
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinnerVId"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/modern_edittext_focused"
+                            android:padding="16dp"
+                            android:hint="Select ID Type"
+                            android:textColor="#212529"
+                            android:textColorHint="#6C757D"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="16sp"
+                            android:cursorVisible="false"
+                            android:drawableEnd="@drawable/ic_dropdown_arrow"
+                            android:drawablePadding="8dp"
+                            android:layout_marginBottom="16dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Upload Front ID Photo *"
+                            android:fontFamily="@font/poppins_medium"
+                            android:textSize="14sp"
+                            android:textColor="#495057"
+                            android:layout_marginBottom="8dp"/>
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="180dp"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F9F9F9">
+                            <ImageView
+                                android:id="@+id/ivUploadF"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/upload"
+                                android:scaleType="centerInside"
+                                android:padding="30dp" />
+                        </androidx.cardview.widget.CardView>
+
+                        <LinearLayout
+                            android:id="@+id/backIdSection"
+                            android:orientation="vertical"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Upload Back ID Photo *"
+                                android:fontFamily="@font/poppins_medium"
+                                android:textSize="14sp"
+                                android:textColor="#495057"
+                                android:layout_marginBottom="8dp"/>
+
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="match_parent"
+                                android:layout_height="180dp"
+                                android:layout_marginBottom="16dp"
+                                app:cardCornerRadius="12dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="#F9F9F9">
+                                <ImageView
+                                    android:id="@+id/ivUploadB"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@drawable/upload"
+                                    android:scaleType="centerInside"
+                                    android:padding="30dp" />
+                            </androidx.cardview.widget.CardView>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ID Number *"
                             android:textSize="14sp"
                             android:textColor="#495057"
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp" />
 
                         <EditText
-                            android:id="@+id/etEmail"
+                            android:id="@+id/etIdNumber"
                             android:layout_width="match_parent"
                             android:layout_height="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
-                            android:hint="Enter email address"
+                            android:hint="Enter ID Number"
                             android:textColor="#212529"
                             android:textColorHint="#6C757D"
                             android:fontFamily="@font/poppins_regular"
                             android:textSize="16sp"
-                            android:inputType="textEmailAddress"
-                            android:layout_marginBottom="4dp" />
+                            android:inputType="text"
+                            android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+                            android:layout_marginBottom="16dp" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+            <!-- Step 3: Permits and Payment (Owners) -->
+            <LinearLayout
+                android:id="@+id/step3Layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="#FFFFFF">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
                         <TextView
-                            android:id="@+id/tvEmailValidation"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            android:layout_marginStart="8dp"
-                            android:fontFamily="@font/poppins_regular"
-                            android:textSize="12sp"
-                            android:visibility="gone"
-                            android:textColor="#D32F2F" />
+                            android:text="Payment Information"
+                            android:fontFamily="@font/poppins_semibold"
+                            android:textSize="18sp"
+                            android:textColor="#212529"
+                            android:layout_marginBottom="16dp"
+                            android:layout_marginTop="8dp"/>
 
-                        <!-- Phone Number -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Phone Number *"
+                            android:text="GCash Number *"
                             android:textSize="14sp"
                             android:textColor="#495057"
                             android:fontFamily="@font/poppins_medium"
@@ -401,12 +440,12 @@
                                 android:textSize="16sp" />
 
                             <EditText
-                                android:id="@+id/etPhone"
+                                android:id="@+id/etGcashNum"
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
                                 android:layout_weight="1"
                                 android:background="@android:color/transparent"
-                                android:hint="Enter phone number"
+                                android:hint="Enter GCash Number"
                                 android:textColor="#212529"
                                 android:textColorHint="#6C757D"
                                 android:fontFamily="@font/poppins_regular"
@@ -414,125 +453,97 @@
                                 android:inputType="phone" />
                         </LinearLayout>
 
-                        <!-- Password -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Create Password *"
+                            android:text="Upload GCash QR Code *"
+                            android:fontFamily="@font/poppins_medium"
                             android:textSize="14sp"
                             android:textColor="#495057"
-                            android:fontFamily="@font/poppins_medium"
-                            android:layout_marginBottom="8dp" />
+                            android:layout_marginBottom="8dp"/>
 
-                        <FrameLayout
+                        <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:layout_marginBottom="8dp">
-
-                            <EditText
-                                android:id="@+id/etPassword"
+                            android:layout_height="200dp"
+                            android:layout_marginBottom="16dp"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F9F9F9">
+                            <ImageView
+                                android:id="@+id/UploadQr"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:background="@drawable/modern_edittext_focused"
-                                android:padding="16dp"
-                                android:paddingEnd="48dp"
-                                android:hint="Enter password"
-                                android:textColor="#212529"
-                                android:textColorHint="#6C757D"
-                                android:fontFamily="@font/poppins_regular"
-                                android:textSize="16sp"
-                                android:inputType="textPassword" />
+                                android:src="@drawable/upload"
+                                android:scaleType="centerInside"
+                                android:padding="40dp" />
+                        </androidx.cardview.widget.CardView>
 
-                            <ImageView
-                                android:id="@+id/ivPasswordToggle"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="end|center_vertical"
-                                android:layout_marginEnd="16dp"
-                                android:src="@drawable/ic_eye_off"
-                                android:contentDescription="Toggle password visibility"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:background="?attr/selectableItemBackgroundBorderless" />
-                        </FrameLayout>
 
-                        <!-- Password Criteria -->
+                        <!-- Business Permit Section (Owners Only) -->
                         <LinearLayout
+                            android:id="@+id/businessPermitSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:paddingHorizontal="8dp"
-                            android:layout_marginBottom="16dp">
-                            <TextView android:id="@+id/tvCriteriaLength" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• At least 8 characters" android:fontFamily="@font/poppins_regular" android:textSize="11sp" android:textColor="#D32F2F" />
-                            <TextView android:id="@+id/tvCriteriaUpper" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• One Uppercase Letter (A-Z)" android:fontFamily="@font/poppins_regular" android:textSize="11sp" android:textColor="#D32F2F" />
-                            <TextView android:id="@+id/tvCriteriaLower" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• One Lowercase Letter (a-z)" android:fontFamily="@font/poppins_regular" android:textSize="11sp" android:textColor="#D32F2F" />
-                            <TextView android:id="@+id/tvCriteriaDigit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• One Digit (0-9)" android:fontFamily="@font/poppins_regular" android:textSize="11sp" android:textColor="#D32F2F" />
-                            <TextView android:id="@+id/tvCriteriaSpecial" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="• One Special character" android:fontFamily="@font/poppins_regular" android:textSize="11sp" android:textColor="#D32F2F" />
-                        </LinearLayout>
+                            android:layout_marginTop="8dp">
 
-                        <!-- Terms and Conditions -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-                            <CheckBox
-                                android:id="@+id/cbAgree"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                app:buttonTint="#A18167" />
                             <TextView
-                                android:id="@+id/tvAgreeText"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="I agree to the Terms and Privacy"
+                                android:text="Business Permits"
+                                android:fontFamily="@font/poppins_semibold"
+                                android:textColor="#212529"
+                                android:textSize="18sp"
+                                android:layout_marginBottom="4dp" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Required for owners to verify business legitimacy."
                                 android:fontFamily="@font/poppins_regular"
-                                android:textColor="#444444"
-                                android:textSize="13sp" />
+                                android:textColor="#666666"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="12dp" />
+
+                            <LinearLayout
+                                android:id="@+id/businessPermitContainer"
+                                android:orientation="vertical"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAddPermit"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="+ Add Business Permit"
+                                android:textAllCaps="false"
+                                android:fontFamily="@font/poppins_medium"
+                                android:textColor="#A18167"
+                                app:strokeColor="#A18167"
+                                android:layout_marginTop="8dp" />
                         </LinearLayout>
 
                     </LinearLayout>
-
                 </androidx.cardview.widget.CardView>
             </LinearLayout>
 
-            <!-- Register Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNext"
+                android:id="@+id/btnSubmit"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:text="NEXT"
                 android:fontFamily="@font/poppins_bold"
-                android:textColor="@android:color/white"
+                android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:background="@drawable/button_primary_gradient"
                 app:backgroundTint="@null"
                 app:cornerRadius="12dp"
-                android:elevation="4dp"/>
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Already have an account?"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textColor="#666666" />
-                <TextView
-                    android:id="@+id/tvLogin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="Login"
-                    android:fontFamily="@font/poppins_bold"
-                    android:textColor="#A18167" />
-            </LinearLayout>
+                android:layout_marginBottom="24dp"
+                android:elevation="4dp" />
+
         </LinearLayout>
     </ScrollView>
+
 </LinearLayout>

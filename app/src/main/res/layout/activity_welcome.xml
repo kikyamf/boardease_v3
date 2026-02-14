@@ -10,25 +10,32 @@
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:background="#FAFAFA" />
 
     <me.relex.circleindicator.CircleIndicator3
         android:id="@+id/indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="24dp"
         app:ci_drawable="@drawable/dot_active"
-        app:ci_drawable_unselected="@drawable/dot_inactive" /> <!-- Use this for the unselected dot -->
+        app:ci_drawable_unselected="@drawable/dot_inactive" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/nextButton"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="32dp"
         android:text="Next"
-        android:backgroundTint="#A18167"
+        android:textAllCaps="false"
+        android:textSize="17sp"
+        android:fontFamily="@font/poppins_bold"
         android:textColor="@android:color/white"
-        android:layout_margin="16dp"/>
+        android:backgroundTint="#A18167"
+        app:cornerRadius="16dp"
+        app:elevation="4dp" />
 </LinearLayout>
 
 
