@@ -883,11 +883,13 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         layout.addView(buttonsLayout);
         
         builder.setView(layout);
+        builder.setCancelable(false);
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
 
         btnCancel.setOnClickListener(v -> {
             dialog.dismiss();
+            finish();
         });
 
         btnProceed.setOnClickListener(v -> {
