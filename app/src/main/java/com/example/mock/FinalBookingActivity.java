@@ -133,6 +133,7 @@ public class FinalBookingActivity extends AppCompatActivity {
         setupClickListeners();
         
         // Load booking summary
+        Log.d(TAG, "Activity created. Initializing summary...");
         loadBookingSummary();
     }
     
@@ -197,6 +198,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void initializeViews() {
+        Log.d(TAG, "Initializing views...");
         btnBack = findViewById(R.id.btnBack);
         ivBhImage = findViewById(R.id.ivBhImage);
         tvBhName = findViewById(R.id.tvBhName);
@@ -288,6 +290,7 @@ public class FinalBookingActivity extends AppCompatActivity {
         
         // Book button - prevent double clicks
         btnBook.setOnClickListener(v -> {
+            Log.d(TAG, "Submit Application button clicked. User ID: " + userId + ", Room ID: " + roomId);
             // Prevent multiple clicks
             if (isBookingInProgress) {
                 Log.w(TAG, "Booking already in progress, ignoring click");
@@ -295,9 +298,12 @@ public class FinalBookingActivity extends AppCompatActivity {
             }
             
             if (validateForm()) {
+                Log.d(TAG, "Form validation successful. Proceeding with booking creation.");
                 // Disable button immediately to prevent double clicks
                 btnBook.setEnabled(false);
                 createBooking();
+            } else {
+                Log.w(TAG, "Form validation failed.");
             }
         });
     }
