@@ -839,7 +839,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Message
         TextView messageView = new TextView(this);
-        messageView.setText("Reminder: You have an active booking. Would you still proceed to choose an accommodation?");
+        messageView.setText("You have an active booking. Would you still proceed to choose an accommodation?");
         messageView.setTextSize(14);
         messageView.setTextColor(getResources().getColor(android.R.color.white));
         messageView.setLineSpacing(8, 1.2f);
