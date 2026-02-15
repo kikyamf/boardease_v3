@@ -857,29 +857,47 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
 
         // Buttons Layout
         android.widget.LinearLayout buttonsLayout = new android.widget.LinearLayout(this);
-        buttonsLayout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        buttonsLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
         buttonsLayout.setGravity(android.view.Gravity.CENTER);
+
+        // BOOK Button (Primary Action)
+        MaterialButton btnBook = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnBook.setText("Book a new stay");
+        btnBook.setBackgroundColor(getResources().getColor(R.color.green));
+        btnBook.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams bookParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        bookParams.setMargins(0, 0, 0, 16);
+        btnBook.setLayoutParams(bookParams);
+
+        // TERMINATE Button
+        MaterialButton btnTerminate = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnTerminate.setText("Terminate stay");
+        btnTerminate.setBackgroundColor(getResources().getColor(R.color.brown));
+        btnTerminate.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams terminateParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        terminateParams.setMargins(0, 0, 0, 16);
+        btnTerminate.setLayoutParams(terminateParams);
 
         // CANCEL Button
         MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
         btnCancel.setText("Cancel");
         btnCancel.setBackgroundColor(getResources().getColor(R.color.red));
         btnCancel.setTextColor(getResources().getColor(android.R.color.white));
-        android.widget.LinearLayout.LayoutParams cancelParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        cancelParams.setMargins(0, 0, 8, 0);
+        android.widget.LinearLayout.LayoutParams cancelParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
         btnCancel.setLayoutParams(cancelParams);
 
-        // PROCEED Button
-        MaterialButton btnProceed = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
-        btnProceed.setText("Proceed");
-        btnProceed.setBackgroundColor(getResources().getColor(R.color.green));
-        btnProceed.setTextColor(getResources().getColor(android.R.color.white));
-        android.widget.LinearLayout.LayoutParams proceedParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        proceedParams.setMargins(8, 0, 0, 0);
-        btnProceed.setLayoutParams(proceedParams);
-
+        buttonsLayout.addView(btnBook);
+        buttonsLayout.addView(btnTerminate);
         buttonsLayout.addView(btnCancel);
-        buttonsLayout.addView(btnProceed);
         layout.addView(buttonsLayout);
         
         builder.setView(layout);
@@ -892,7 +910,12 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
             finish();
         });
 
-        btnProceed.setOnClickListener(v -> {
+        btnTerminate.setOnClickListener(v -> {
+            dialog.dismiss();
+            showTerminationReasonModal();
+        });
+
+        btnBook.setOnClickListener(v -> {
             dialog.dismiss();
             isForcedBookingMode = true;
             loadAccommodations(); // Reload to enable buttons
@@ -1005,15 +1028,53 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         layout.addView(titleView);
         layout.addView(messageView);
         
-        builder.setView(layout);
-        builder.setPositiveButton("OK", (dialog, which) -> {
-            dialog.dismiss();
-        });
+        // Buttons Layout
+        android.widget.LinearLayout buttonsLayout = new android.widget.LinearLayout(this);
+        buttonsLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        buttonsLayout.setGravity(android.view.Gravity.CENTER);
+
+        // BOOK Button
+        MaterialButton btnBook = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnBook.setText("Book a new stay");
+        btnBook.setBackgroundColor(getResources().getColor(R.color.green));
+        btnBook.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams bookParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        bookParams.setMargins(0, 0, 0, 16);
+        btnBook.setLayoutParams(bookParams);
+
+        // CANCEL Button
+        MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnCancel.setText("Cancel");
+        btnCancel.setBackgroundColor(getResources().getColor(R.color.red));
+        btnCancel.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams cancelParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        btnCancel.setLayoutParams(cancelParams);
+
+        buttonsLayout.addView(btnBook);
+        buttonsLayout.addView(btnCancel);
+        layout.addView(buttonsLayout);
         
+        builder.setView(layout);
+        builder.setCancelable(false);
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
-        
-        // Button uses default color (no custom styling)
+
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            finish();
+        });
+
+        btnBook.setOnClickListener(v -> {
+            dialog.dismiss();
+            isForcedBookingMode = true;
+            loadAccommodations(); // Reload to enable buttons
+        });
     }
     
     /**
