@@ -28,6 +28,9 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
+import android.os.Handler;
+import android.os.Looper;
+import com.android.volley.toolbox.JsonObjectRequest;
 
 public class BoarderDashboard extends AppCompatActivity {
 
@@ -170,6 +173,9 @@ public class BoarderDashboard extends AppCompatActivity {
                 loadFragment(homeFragment, "home");
             }
         }
+        
+        // Schedule review prompt check after 5 seconds
+        new Handler(Looper.getMainLooper()).postDelayed(this::checkAndPromptForReview, 5000);
     }
     
     @Override
@@ -379,5 +385,58 @@ public class BoarderDashboard extends AppCompatActivity {
                 .setNegativeButton("Explore", null)
                 .show();
         }
+    }
+
+    /**
+     * Checks if the user has any completed bookings without a review and prompts them.
+     */
+    private void checkAndPromptForReview() {
+        if (userId == 0) return;
+
+        String url = "https://boardease.calapebohol.com/check_pending_reviews.php?user_id=" + userId;
+        
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+            response -> {
+                try {
+                    if (response.getBoolean("success") && response.getBoolean("has_pending_review")) {
+                        JSONObject b = response.getJSONObject("booking");
+                        
+                        // Create Booking object from JSON
+                        BoarderBookingFragment.Booking booking = new BoarderBookingFragment.Booking(
+                            b.getInt("booking_id"),
+                            b.getString("boarding_house_name"),
+                            b.optString("image_path", null),
+                            b.getString("location"),
+                            b.getString("start_date"),
+                            b.getString("end_date"),
+                            b.getString("monthly_due"),
+                            "0", // balanceDue not strictly needed for review
+                            b.getString("booking_status"),
+                            b.getString("room_category"),
+                            b.getString("room_number"),
+                            b.getInt("room_id"),
+                            b.getInt("bh_id"),
+                            0, 0 // paid counts not needed for review
+                        );
+
+                        // Show review dialog
+                        ReviewDialogHelper.showReviewDialog(this, booking, success -> {
+                            if (success) {
+                                // Review submitted, maybe refresh some data if needed
+                                if (bookingFragment != null && bookingFragment.isAdded()) {
+                                    // Refresh booking history if it's currently visible
+                                    // bookingFragment.loadBookingData(); 
+                                }
+                            }
+                        });
+                    }
+                } catch (JSONException e) {
+                    Log.e("BoarderDashboard", "Error parsing review check response", e);
+                }
+            },
+            error -> Log.e("BoarderDashboard", "Error checking for pending reviews", error)
+        );
+
+        Volley.newRequestQueue(this).add(request);
     }
 }
