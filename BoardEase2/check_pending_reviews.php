@@ -26,6 +26,7 @@ try {
     }
 
     $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : (isset($_POST['user_id']) ? intval($_POST['user_id']) : 0);
+    error_log("check_pending_reviews: checking userId: " . $userId);
 
     if ($userId === 0) {
         throw new Exception("User ID is required", 400);
@@ -62,6 +63,7 @@ try {
         LIMIT 1
     ";
 
+    error_log("check_pending_reviews: executing query for userId: " . $userId);
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
@@ -72,6 +74,7 @@ try {
     $result = $stmt->get_result();
 
     if ($booking = $result->fetch_assoc()) {
+        error_log("check_pending_reviews: pending review found for booking_id: " . $booking['booking_id']);
         // Format image path if exists
         if ($booking['image_path']) {
             $booking['image_path'] = "http://192.168.1.4/boardease_v3/" . $booking['image_path'];
@@ -83,6 +86,7 @@ try {
             'booking' => $booking
         ]);
     } else {
+        error_log("check_pending_reviews: no pending reviews found for userId: " . $userId);
         echo json_encode([
             'success' => true,
             'has_pending_review' => false

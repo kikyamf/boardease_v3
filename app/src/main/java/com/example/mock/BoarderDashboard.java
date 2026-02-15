@@ -391,50 +391,69 @@ public class BoarderDashboard extends AppCompatActivity {
      * Checks if the user has any completed bookings without a review and prompts them.
      */
     private void checkAndPromptForReview() {
-        if (userId == 0) return;
+        if (userId == 0) {
+            Log.d("BoarderDashboard", "checkAndPromptForReview: userId is 0, skipping");
+            return;
+        }
 
         String url = "https://boardease.calapebohol.com/check_pending_reviews.php?user_id=" + userId;
+        Log.d("BoarderDashboard", "checkAndPromptForReview: checking URL: " + url);
         
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
             response -> {
+                Log.d("BoarderDashboard", "checkAndPromptForReview: response received: " + response.toString());
                 try {
-                    if (response.getBoolean("success") && response.getBoolean("has_pending_review")) {
-                        JSONObject b = response.getJSONObject("booking");
-                        
-                        // Create Booking object from JSON
-                        BoarderBookingFragment.Booking booking = new BoarderBookingFragment.Booking(
-                            b.getInt("booking_id"),
-                            b.getString("boarding_house_name"),
-                            b.optString("image_path", null),
-                            b.getString("location"),
-                            b.getString("start_date"),
-                            b.getString("end_date"),
-                            b.getString("monthly_due"),
-                            "0", // balanceDue not strictly needed for review
-                            b.getString("booking_status"),
-                            b.getString("room_category"),
-                            b.getString("room_number"),
-                            b.getInt("room_id"),
-                            b.getInt("bh_id"),
-                            0, 0 // paid counts not needed for review
-                        );
+                    if (response.getBoolean("success")) {
+                        if (response.getBoolean("has_pending_review")) {
+                            JSONObject b = response.getJSONObject("booking");
+                            Log.d("BoarderDashboard", "checkAndPromptForReview: pending review found for booking ID: " + b.optInt("booking_id"));
+                            
+                            // Create Booking object from JSON
+                            BoarderBookingFragment.Booking booking = new BoarderBookingFragment.Booking(
+                                b.getInt("booking_id"),
+                                b.getString("boarding_house_name"),
+                                b.optString("image_path", null),
+                                b.getString("location"),
+                                b.getString("start_date"),
+                                b.getString("end_date"),
+                                b.getString("monthly_due"),
+                                "0", // balanceDue not strictly needed for review
+                                b.getString("booking_status"),
+                                b.getString("room_category"),
+                                b.getString("room_number"),
+                                b.getInt("room_id"),
+                                b.getInt("bh_id"),
+                                0, 0 // paid counts not needed for review
+                            );
 
-                        // Show review dialog
-                        ReviewDialogHelper.showReviewDialog(this, booking, success -> {
-                            if (success) {
-                                // Review submitted, maybe refresh some data if needed
-                                if (bookingFragment != null && bookingFragment.isAdded()) {
-                                    // Refresh booking history if it's currently visible
-                                    // bookingFragment.loadBookingData(); 
+                            Log.d("BoarderDashboard", "checkAndPromptForReview: showing ReviewDialog");
+                            // Show review dialog
+                            ReviewDialogHelper.showReviewDialog(this, booking, success -> {
+                                Log.d("BoarderDashboard", "checkAndPromptForReview: ReviewDialog result: " + success);
+                                if (success) {
+                                    // Review submitted, maybe refresh some data if needed
+                                    if (bookingFragment != null && bookingFragment.isAdded()) {
+                                        // Refresh booking history if it's currently visible
+                                        // bookingFragment.loadBookingData(); 
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        } else {
+                            Log.d("BoarderDashboard", "checkAndPromptForReview: no pending review found according to API");
+                        }
+                    } else {
+                        Log.e("BoarderDashboard", "checkAndPromptForReview: API returned success: false, error: " + response.optString("error"));
                     }
                 } catch (JSONException e) {
-                    Log.e("BoarderDashboard", "Error parsing review check response", e);
+                    Log.e("BoarderDashboard", "checkAndPromptForReview: Error parsing JSON response", e);
                 }
             },
-            error -> Log.e("BoarderDashboard", "Error checking for pending reviews", error)
+            error -> {
+                Log.e("BoarderDashboard", "checkAndPromptForReview: Volley error", error);
+                if (error.networkResponse != null) {
+                    Log.e("BoarderDashboard", "checkAndPromptForReview: status code: " + error.networkResponse.statusCode);
+                }
+            }
         );
 
         Volley.newRequestQueue(this).add(request);
