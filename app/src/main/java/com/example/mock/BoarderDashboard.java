@@ -50,6 +50,7 @@ public class BoarderDashboard extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("BoarderDashboard", "onCreate: BoarderDashboard started");
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_boarder_dashboard);

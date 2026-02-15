@@ -41,15 +41,18 @@ public class SplashActivity extends AppCompatActivity {
         // Check if user is already logged in
         String userId = sharedPreferences.getString(KEY_USER_ID, null);
         String userRole = sharedPreferences.getString(KEY_USER_ROLE, null);
+        Log.d("SplashActivity", "checkExistingSession: userId=" + userId + ", role=" + userRole);
         
         if (userId != null && userRole != null) {
             // User is already logged in, navigate directly to appropriate dashboard
             new Handler().postDelayed(() -> {
+                Log.d("SplashActivity", "checkExistingSession: Navigating to dashboard for role: " + userRole);
                 navigateToDashboard(userRole);
             }, SPLASH_DURATION);
         } else {
             // User is not logged in, proceed to Welcome screen
             new Handler().postDelayed(() -> {
+                Log.d("SplashActivity", "checkExistingSession: No session, navigating to WelcomeActivity");
                 startActivity(new Intent(SplashActivity.this, WelcomeActivity.class));
                 finish();
             }, SPLASH_DURATION);
@@ -58,15 +61,19 @@ public class SplashActivity extends AppCompatActivity {
     
     private void navigateToDashboard(String userRole) {
         Intent intent;
+        Log.d("SplashActivity", "navigateToDashboard: role=" + userRole);
         
         if ("Boarder".equals(userRole)) {
             // Navigate to BoarderDashboard
+            Log.d("SplashActivity", "navigateToDashboard: Intent for BoarderDashboard");
             intent = new Intent(SplashActivity.this, BoarderDashboard.class);
         } else if ("BH Owner".equals(userRole)) {
             // Navigate to MainActivity (Owner Dashboard)
+            Log.d("SplashActivity", "navigateToDashboard: Intent for MainActivity (Owner)");
             intent = new Intent(SplashActivity.this, MainActivity.class);
         } else {
             // Unknown role, go to Welcome screen
+            Log.d("SplashActivity", "navigateToDashboard: Unknown role, Intent for WelcomeActivity");
             intent = new Intent(SplashActivity.this, WelcomeActivity.class);
         }
         
