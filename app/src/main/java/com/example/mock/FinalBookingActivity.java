@@ -972,8 +972,8 @@ public class FinalBookingActivity extends AppCompatActivity {
                                     builder.setCancelable(false);
                                     builder.show();
                                 } else {
-                                    Log.e(TAG, "Showing error dialog with message: " + message);
-                                    showErrorDialog("Unsuccessful: " + message);
+                                    Log.e(TAG, "Showing error Toast with message: " + message);
+                                    Toast.makeText(FinalBookingActivity.this, "Unsuccessful: " + message, Toast.LENGTH_LONG).show();
                                 }
                             }
                         } catch (JSONException e) {
@@ -983,7 +983,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                             Log.e(TAG, "Error: " + e.getMessage());
                             Log.e(TAG, "Response that failed to parse: " + response);
                             e.printStackTrace();
-                            showErrorDialog("Error parsing response: " + e.getMessage());
+                            Toast.makeText(FinalBookingActivity.this, "Error parsing response: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
                 },
@@ -1016,7 +1016,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                         if (error.getCause() != null) {
                             Log.e(TAG, "  - Cause: " + error.getCause().getMessage());
                         }
-                        showErrorDialog("Unsuccessful: " + errorMessage);
+                        Toast.makeText(FinalBookingActivity.this, "Unsuccessful: " + errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
             @Override
@@ -1158,12 +1158,5 @@ public class FinalBookingActivity extends AppCompatActivity {
         }
     }
     
-    private void showErrorDialog(String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Booking Unsuccessful");
-        builder.setMessage("Unsuccessful\n\nError Details: " + message);
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-        builder.show();
-    }
 }
 
