@@ -290,20 +290,27 @@ public class FinalBookingActivity extends AppCompatActivity {
         
         // Book button - prevent double clicks
         btnBook.setOnClickListener(v -> {
-            Log.d(TAG, "Submit Application button clicked. User ID: " + userId + ", Room ID: " + roomId);
+            Log.d(TAG, "=== SUBMIT APPLICATION CLICKED ===");
+            Log.d(TAG, "User ID: " + userId);
+            Log.d(TAG, "Room ID: " + roomId);
+            Log.d(TAG, "Boarding House ID: " + bhId);
+            Log.d(TAG, "Dates: " + startDate + " to " + endDate);
+            Log.d(TAG, "Amount: " + totalPaymentAmount);
+            
             // Prevent multiple clicks
             if (isBookingInProgress) {
                 Log.w(TAG, "Booking already in progress, ignoring click");
                 return;
             }
             
+            Log.d(TAG, "Validating form...");
             if (validateForm()) {
-                Log.d(TAG, "Form validation successful. Proceeding with booking creation.");
+                Log.d(TAG, "✓ Form validation successful. Proceeding with booking creation.");
                 // Disable button immediately to prevent double clicks
                 btnBook.setEnabled(false);
                 createBooking();
             } else {
-                Log.w(TAG, "Form validation failed.");
+                Log.w(TAG, "✗ Form validation failed.");
             }
         });
     }
