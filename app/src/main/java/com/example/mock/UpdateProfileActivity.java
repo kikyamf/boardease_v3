@@ -108,6 +108,21 @@ public class UpdateProfileActivity extends AppCompatActivity {
         userRole = prefs.getString("user_role", "");
         isBoarder = "Boarder".equalsIgnoreCase(userRole);
 
+        // Check for verified status - Link/Access Expiration Logic
+        String status = prefs.getString("user_status", "");
+        // Block access if already pending review, active, or verified
+        if ("pending_admin_review".equals(status) || "active".equals(status) || "verified".equals(status) || "approved".equals(status)) {
+            new AlertDialog.Builder(this)
+                .setTitle("Profile Verified")
+                .setMessage("Your profile has already been submitted or verified. You cannot edit it at this stage.")
+                .setPositiveButton("OK", (dialog, which) -> {
+                    finish(); // Close activity
+                })
+                .setCancelable(false)
+                .show();
+            return; // Stop further initialization
+        }
+
         initViews();
         initializeAddressPicker();
         setupIdTypeSpinner();

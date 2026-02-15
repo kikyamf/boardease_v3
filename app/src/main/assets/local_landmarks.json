@@ -1,0 +1,121 @@
+[
+  {
+    "name": "Calape Public Market",
+    "keywords": ["public market", "market", "palengke"],
+    "municipality": "Calape",
+    "lat": 9.891828,
+    "lon": 123.874371
+  },
+  {
+    "name": "Calape Integrated Terminal",
+    "keywords": ["terminal", "bus terminal", "v-hire"],
+    "municipality": "Calape",
+    "lat": 9.891800,
+    "lon": 123.874300
+  },
+  {
+    "name": "St. Vincent Ferrer Parish Church",
+    "keywords": ["church", "simbahan", "saint vincent", "st vincent"],
+    "municipality": "Calape",
+    "lat": 9.891410,
+    "lon": 123.872560
+  },
+  {
+    "name": "Calape Plaza",
+    "keywords": ["plaza", "town square", "park"],
+    "municipality": "Calape",
+    "lat": 9.891600,
+    "lon": 123.873500
+  },
+  {
+    "name": "Calape Municipal Hall",
+    "keywords": ["municipal hall", "municipal building", "munisipyo", "town hall"],
+    "municipality": "Calape",
+    "lat": 9.891800,
+    "lon": 123.870800
+  },
+  {
+    "name": "Calape Cultural Center & Sports Complex",
+    "keywords": ["cultural center", "sports complex", "tennis court", "gym"],
+    "municipality": "Calape",
+    "lat": 9.890846,
+    "lon": 123.870866
+  },
+  {
+    "name": "Mother and Child Hospital",
+    "keywords": ["hospital", "doctor", "mother and child", "primary care"],
+    "municipality": "Calape",
+    "lat": 9.894450,
+    "lon": 123.881300
+  },
+  {
+    "name": "Calape Forest Resort / Cemetery Area",
+    "keywords": ["cemetery", "menteryo"],
+    "municipality": "Calape",
+    "lat": 9.893030,
+    "lon": 123.883130
+  },
+  {
+    "name": "Bohol Island State University - Calape Campus",
+    "keywords": ["bisu", "university", "college", "school"],
+    "municipality": "Calape",
+    "lat": 9.900420,
+    "lon": 123.868770
+  },
+  {
+    "name": "Tubigon Port",
+    "keywords": ["port", "pier", "dunggoanan"],
+    "municipality": "Tubigon",
+    "lat": 9.956400,
+    "lon": 123.957700
+  },
+  {
+    "name": "Tubigon Parish Church",
+    "keywords": ["church", "simbahan"],
+    "municipality": "Tubigon",
+    "lat": 9.950300,
+    "lon": 123.962900
+  },
+  {
+    "name": "Tubigon Plaza",
+    "keywords": ["plaza", "town square"],
+    "municipality": "Tubigon",
+    "lat": 9.951100,
+    "lon": 123.961900
+  },
+  {
+    "name": "Tubigon Public Market",
+    "keywords": ["public market", "market"],
+    "municipality": "Tubigon",
+    "lat": 9.952000,
+    "lon": 123.960000
+  },
+  {
+    "name": "McDonald's Tubigon",
+    "keywords": ["mcdonalds", "mcdo", "fast food"],
+    "municipality": "Tubigon",
+    "lat": 9.955500,
+    "lon": 123.958000
+  },
+  {
+    "name": "Loon Parish Church (Nuestra Señora de la Luz)",
+    "keywords": ["church", "simbahan"],
+    "municipality": "Loon",
+    "lat": 9.798900,
+    "lon": 123.792500
+  },
+  {
+    "name": "Loon Town Plaza",
+    "keywords": ["plaza", "park"],
+    "municipality": "Loon",
+    "lat": 9.799000,
+    "lon": 123.792600
+  },
+  {
+    "name": "Loon Public Market",
+    "keywords": ["public market", "market"],
+    "municipality": "Loon",
+    "lat": 9.799500,
+    "lon": 123.793000
+  }
+]

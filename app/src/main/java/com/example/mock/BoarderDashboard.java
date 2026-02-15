@@ -354,6 +354,83 @@ public class BoarderDashboard extends AppCompatActivity {
         Volley.newRequestQueue(this).add(stringRequest);
     }
 
+    // Polling for status updates
+    private android.os.Handler statusHandler = new android.os.Handler();
+    private Runnable statusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkUserStatus();
+            statusHandler.postDelayed(this, 5000); // Poll every 5 seconds
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Start polling
+        statusHandler.post(statusRunnable);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop polling to save battery
+        statusHandler.removeCallbacks(statusRunnable);
+    }
+
+    private void checkUserStatus() {
+        if (userId == 0) return;
+
+        String url = "https://boardease.calapebohol.com/get_user_status.php?user_id=" + userId;
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.getBoolean("success")) {
+                            String serverStatus = jsonObject.getString("status");
+                            
+                            // Get local status
+                            android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+                            String localStatus = prefs.getString("user_status", "");
+
+                            // Check for transition to approved
+                            if (!serverStatus.equals(localStatus)) {
+                                prefs.edit().putString("user_status", serverStatus).apply();
+                                if ("approved".equals(serverStatus) && ("pending_admin_review".equals(localStatus) || "profile_incomplete".equals(localStatus) || "email_unverified".equals(localStatus))) {
+                                    // Status changed to approved!
+                                    showApprovalDialog();
+                                } else {
+                                    // Just update storage for other changes, maybe refresh silently if needed
+                                    // If moving from valid to invalid, maybe force logout? But for now focused on approval.
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    // Fail silently for polling
+                });
+        
+        Volley.newRequestQueue(this).add(request);
+    }
+
+    private void showApprovalDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Account Approved!")
+            .setMessage("Your account has been fully verified and approved by the admin. You now have full access to all features.")
+            .setPositiveButton("OK", (dialog, which) -> {
+                // Refresh activity to update UI and go to Home
+                android.content.Intent intent = new android.content.Intent(this, BoarderDashboard.class);
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
+            })
+            .setCancelable(false)
+            .show();
+    }
+
     private void showWelcomeDialogIfIncomplete() {
         android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
         String status = prefs.getString("user_status", "approved");

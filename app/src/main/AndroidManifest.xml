@@ -254,6 +254,9 @@
                 <data android:scheme="boardease" android:host="update-profile" />
             </intent-filter>
         </activity>
+        <activity android:name=".SearchActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name="IdCaptureActivity"
             android:exported="false"/>
         

@@ -19,7 +19,12 @@ public class Listing {
     // Owner contact information
     private String ownerName;
     private String ownerPhone;
+
     private String ownerEmail;
+    
+    // Coordinates for map matching
+    private Double lat;
+    private Double lon;
 
     public Listing(int bhId, String bhName, String imagePath) {
         this.bhId = bhId;
@@ -147,6 +152,12 @@ public class Listing {
     public void setOwnerEmail(String ownerEmail) {
         this.ownerEmail = ownerEmail;
     }
+    
+    public Double getLat() { return lat; }
+    public void setLat(Double lat) { this.lat = lat; }
+    
+    public Double getLon() { return lon; }
+    public void setLon(Double lon) { this.lon = lon; }
 
     public String getFormattedPrice() {
         if (minPrice == null) {

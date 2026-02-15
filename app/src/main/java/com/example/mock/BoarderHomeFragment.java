@@ -141,6 +141,12 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     
     private void setupSearch(View view) {
         etSearch = view.findViewById(R.id.etSearch);
+        // Make EditText behave like a button
+        etSearch.setFocusable(false);
+        etSearch.setClickable(true);
+        etSearch.setLongClickable(false);
+        etSearch.setInputType(0); // Disable soft keyboard
+        
         ivClearSearch = view.findViewById(R.id.ivClearSearch);
         btnSeeAll = view.findViewById(R.id.btnSeeAll);
         
@@ -1027,27 +1033,16 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         }
         
         // Search functionality
+        // Search functionality - Open SearchActivity
         if (etSearch != null) {
-            etSearch.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    try {
-                        // Show/hide clear icon based on text
-                        if (ivClearSearch != null) {
-                            ivClearSearch.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
-                        }
-                        // Filter boarding houses based on search query
-                        filterBoardingHousesBySearch(s.toString());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            etSearch.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(getContext(), SearchActivity.class);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getContext(), "Error opening search", Toast.LENGTH_SHORT).show();
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
             });
         }
 
