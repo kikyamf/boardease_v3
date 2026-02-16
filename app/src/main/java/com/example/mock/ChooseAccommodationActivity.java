@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+//
 
 public class ChooseAccommodationActivity extends AppCompatActivity {
     
@@ -818,56 +819,6 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void submitTerminationRequest(String reason, String details, androidx.appcompat.app.AlertDialog dialog) {
-        String url = "https://boardease.calapebohol.com/terminate_booking.php";
-
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                response -> {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        if (jsonResponse.getBoolean("success")) {
-                            Toast.makeText(this, "Termination request submitted successfully", Toast.LENGTH_SHORT).show();
-                            dialog.dismiss();
-                            finish(); // Go back after termination
-                        } else {
-                            Toast.makeText(this, "Error: " + jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
-                    }
-                },
-                error -> {
-                    String errorMessage = "Network error";
-                    if (error.networkResponse != null) {
-                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
-                        try {
-                            String responseBody = new String(error.networkResponse.data, "utf-8");
-                            Log.e(TAG, "Termination Error Data: " + responseBody);
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing error data", e);
-                        }
-                    } else if (error.getMessage() != null) {
-                        errorMessage += ": " + error.getMessage();
-                    }
-                    Log.e(TAG, "Termination Request failed: " + errorMessage, error);
-                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
-                }) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("booking_id", String.valueOf(activeBookingId));
-                params.put("user_id", String.valueOf(currentUserId));
-                params.put("reason", reason);
-                params.put("details", details);
-                return params;
-            }
-        };
-
-        if (requestQueue == null) {
-            requestQueue = Volley.newRequestQueue(this);
-        }
-        requestQueue.add(stringRequest);
     }
 }
 
