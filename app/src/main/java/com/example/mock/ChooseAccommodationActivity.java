@@ -820,5 +820,5 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     }
 
     }
-}
+
 
