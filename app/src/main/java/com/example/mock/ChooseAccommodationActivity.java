@@ -478,6 +478,28 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         boolean shouldDisable = false;
         String disableReason = "";
         
+        // For Bed Spacer, disable only if capacity is full (occupied >= total)
+        // For Private Room, disable if no available rooms
+        if ("Bed Spacer".equals(roomCategory)) {
+            int occupiedCapacity = room.optInt("occupied_capacity", 0);
+            int totalCapacity = room.optInt("total_capacity", 0);
+            
+            if (totalCapacity > 0 && occupiedCapacity >= totalCapacity) {
+                // Bed Spacer is at full capacity
+                shouldDisable = true;
+                disableReason = "Room is at full capacity";
+            }
+        } else {
+            // For Private Room, disable if no available rooms
+            if (availableRooms == 0) {
+                shouldDisable = true;
+                disableReason = "No available rooms";
+            }
+        }
+        
+        // Make variables final for lambda expression
+        final int finalAvailableRooms = availableRooms;
+        
         // Set button state
         if (shouldDisable) {
             btnSelect.setEnabled(false);
