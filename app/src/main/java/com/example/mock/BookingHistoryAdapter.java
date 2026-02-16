@@ -56,6 +56,9 @@ public class BookingHistoryAdapter extends RecyclerView.Adapter<BookingHistoryAd
         } else if ("Completed".equals(status)) {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Completed
+        } else if ("Expired".equals(status)) {
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_rounded_red);
         } else {
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending

@@ -133,6 +133,7 @@ public class FinalBookingActivity extends AppCompatActivity {
         setupClickListeners();
         
         // Load booking summary
+        Log.d(TAG, "Activity created. Initializing summary...");
         loadBookingSummary();
     }
     
@@ -197,6 +198,7 @@ public class FinalBookingActivity extends AppCompatActivity {
     }
     
     private void initializeViews() {
+        Log.d(TAG, "Initializing views...");
         btnBack = findViewById(R.id.btnBack);
         ivBhImage = findViewById(R.id.ivBhImage);
         tvBhName = findViewById(R.id.tvBhName);
@@ -288,16 +290,27 @@ public class FinalBookingActivity extends AppCompatActivity {
         
         // Book button - prevent double clicks
         btnBook.setOnClickListener(v -> {
+            Log.d(TAG, "=== SUBMIT APPLICATION CLICKED ===");
+            Log.d(TAG, "User ID: " + userId);
+            Log.d(TAG, "Room ID: " + roomId);
+            Log.d(TAG, "Boarding House ID: " + bhId);
+            Log.d(TAG, "Dates: " + startDate + " to " + endDate);
+            Log.d(TAG, "Amount: " + totalPaymentAmount);
+            
             // Prevent multiple clicks
             if (isBookingInProgress) {
                 Log.w(TAG, "Booking already in progress, ignoring click");
                 return;
             }
             
+            Log.d(TAG, "Validating form...");
             if (validateForm()) {
+                Log.d(TAG, "✓ Form validation successful. Proceeding with booking creation.");
                 // Disable button immediately to prevent double clicks
                 btnBook.setEnabled(false);
                 createBooking();
+            } else {
+                Log.w(TAG, "✗ Form validation failed.");
             }
         });
     }
@@ -972,8 +985,8 @@ public class FinalBookingActivity extends AppCompatActivity {
                                     builder.setCancelable(false);
                                     builder.show();
                                 } else {
-                                    Log.e(TAG, "Showing error dialog with message: " + message);
-                                    showErrorDialog("Unsuccessful: " + message);
+                                    Log.e(TAG, "Showing error Toast with message: " + message);
+                                    Toast.makeText(FinalBookingActivity.this, "Unsuccessful: " + message, Toast.LENGTH_LONG).show();
                                 }
                             }
                         } catch (JSONException e) {
@@ -983,7 +996,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                             Log.e(TAG, "Error: " + e.getMessage());
                             Log.e(TAG, "Response that failed to parse: " + response);
                             e.printStackTrace();
-                            showErrorDialog("Error parsing response: " + e.getMessage());
+                            Toast.makeText(FinalBookingActivity.this, "Error parsing response: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
                 },
@@ -1016,7 +1029,7 @@ public class FinalBookingActivity extends AppCompatActivity {
                         if (error.getCause() != null) {
                             Log.e(TAG, "  - Cause: " + error.getCause().getMessage());
                         }
-                        showErrorDialog("Unsuccessful: " + errorMessage);
+                        Toast.makeText(FinalBookingActivity.this, "Unsuccessful: " + errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }) {
             @Override
@@ -1158,12 +1171,5 @@ public class FinalBookingActivity extends AppCompatActivity {
         }
     }
     
-    private void showErrorDialog(String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Booking Unsuccessful");
-        builder.setMessage("Unsuccessful\n\nError Details: " + message);
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-        builder.show();
-    }
 }
 
