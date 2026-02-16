@@ -1495,6 +1495,7 @@ public class BoarderBookingFragment extends Fragment {
         private String roomNumber;
         private int roomId;
         private int bhId;
+        private double confirmedPaid;
         private double totalPaid;
         private boolean isReviewed;
 
