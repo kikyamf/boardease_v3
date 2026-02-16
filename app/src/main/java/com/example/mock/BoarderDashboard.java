@@ -517,7 +517,7 @@ public class BoarderDashboard extends AppCompatActivity {
                     isReviewPromptShown = true;
                     // Navigate to Booking History or show review dialog directly
                     // For now, let's navigate them to the Bookings fragment
-                    bottomNavigationView.setSelectedItemId(R.id.nav_bookings);
+                    bottomNavigationView.setSelectedItemId(R.id.nav_activity);
                     // Pass intent extra to trigger the dialog in the fragment
                     // But wait, the fragment is already initialized. 
                     // Better yet, just show the dialog here if we can.
