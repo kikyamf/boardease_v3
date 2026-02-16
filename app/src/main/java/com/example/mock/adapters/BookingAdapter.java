@@ -81,10 +81,10 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
         } else if ("Approved".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Approved (Action Required)
-        } else if ("Cancelled".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Cancelled
-        } else if ("Declined".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Declined
+        } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled_gray); // Gray for Cancelled/Declined
+        } else if ("Expired".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_expired); // Red for Expired
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Default
         }
