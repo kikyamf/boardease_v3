@@ -472,64 +472,101 @@ public class BoarderDashboard extends AppCompatActivity {
     }
 
     private void checkForUnreviewedStays() {
-        if (userId == 0) return;
+        if (userId <= 0) return;
 
         String url = GET_BOOKINGS_URL + "?user_id=" + userId;
-        Log.d("ReviewPrompt", "Checking for unreviewed stays at: " + url);
+        Log.d(TAG, "Checking for unreviewed stays: " + url);
 
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                response -> {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        if (jsonResponse.getBoolean("success")) {
-                            org.json.JSONArray historyArray = jsonResponse.getJSONObject("data").getJSONArray("history");
-                            
-                            for (int i = 0; i < historyArray.length(); i++) {
-                                JSONObject bookingJson = historyArray.getJSONObject(i);
-                                String status = bookingJson.getString("booking_status");
-                                boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
-                                
-                                if ("Completed".equals(status) && !isReviewed) {
-                                    showReviewPrompt(bookingJson);
-                                    break; // Only show one prompt
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+            response -> {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.optBoolean("success")) {
+                        JSONObject data = jsonResponse.optJSONObject("data");
+                        if (data != null) {
+                            JSONArray history = data.optJSONArray("history");
+                            if (history != null) {
+                                for (int i = 0; i < history.length(); i++) {
+                                    JSONObject booking = history.getJSONObject(i);
+                                    String status = booking.optString("booking_status");
+                                    boolean isReviewed = booking.optBoolean("is_reviewed", false);
+                                    int bookingId = booking.optInt("booking_id");
+                                    String bhName = booking.optString("bh_name");
+
+                                    if ("Completed".equals(status) && !isReviewed) {
+                                        // Check if user opted out of reviewing this specific boarding house
+                                        android.content.SharedPreferences prefs = getSharedPreferences("BoardEasePrefs", MODE_PRIVATE);
+                                        boolean isOptedOut = prefs.getBoolean("review_opt_out_" + bookingId, false);
+                                        
+                                        if (!isOptedOut) {
+                                            showReviewPrompt(bookingId, bhName);
+                                            break; // Only show one prompt
+                                        }
+                                    }
                                 }
                             }
                         }
-                    } catch (JSONException e) {
-                        Log.e("ReviewPrompt", "Error parsing bookings: " + e.getMessage());
                     }
-                },
-                error -> Log.e("ReviewPrompt", "Error fetching bookings: " + error.getMessage()));
+                } catch (Exception e) {
+                    Log.e(TAG, "Error checking unreviewed stays", e);
+                }
+            },
+            error -> Log.e(TAG, "Volley error checking unreviewed stays", error)
+        );
 
-        Volley.newRequestQueue(this).add(stringRequest);
+        Volley.newRequestQueue(this).add(request);
     }
 
-    private void showReviewPrompt(JSONObject bookingJson) {
-        try {
-            int bookingId = bookingJson.getInt("booking_id");
-            String bhName = bookingJson.getString("bh_name");
-            int bhId = bookingJson.getInt("bh_id");
+    private void showReviewPrompt(int bookingId, String bhName) {
+        if (isReviewPromptShown || isFinishing()) return;
 
-            new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Enjoyed your stay?")
-                .setMessage("We noticed you recently completed your stay at " + bhName + ". Would you like to leave a review?")
-                .setPositiveButton("Write a Review", (dialog, which) -> {
-                    isReviewPromptShown = true;
-                    // Navigate to Booking History or show review dialog directly
-                    // For now, let's navigate them to the Bookings fragment
-                    bottomNavigationView.setSelectedItemId(R.id.nav_activity);
-                    // Pass intent extra to trigger the dialog in the fragment
-                    // But wait, the fragment is already initialized. 
-                    // Better yet, just show the dialog here if we can.
-                    // Or let the fragment handle it.
-                })
-                .setNegativeButton("Later", (dialog, which) -> isReviewPromptShown = true)
-                .setCancelable(true)
-                .show();
-            
-            isReviewPromptShown = true; // Mark as shown regardless of choice for this session
-        } catch (JSONException e) {
-            e.printStackTrace();
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            android.view.View dialogView = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_review_prompt, null);
+            builder.setView(dialogView);
+            builder.setCancelable(false); // Make outside not clickable
+
+            AlertDialog dialog = builder.create();
+            // Make background transparent for rounded corners
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            }
+
+            android.widget.TextView tvMessage = dialogView.findViewById(R.id.tvPromptMessage);
+            android.widget.Button btnWrite = dialogView.findViewById(R.id.btnWriteReview);
+            android.widget.Button btnLater = dialogView.findViewById(R.id.btnLater);
+            android.widget.Button btnNoThanks = dialogView.findViewById(R.id.btnNoThanks);
+
+            String message = "We noticed you recently completed your stay at " + bhName + ". Your review will be appreciated for the betterment of our service!";
+            tvMessage.setText(message);
+
+            btnWrite.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                dialog.dismiss();
+                
+                // Navigate to Bookings tab (nav_activity)
+                bottomNavigationView.setSelectedItemId(R.id.nav_activity);
+                
+                // We'll add a static variable or interface to tell the fragment to highlight this booking
+                BoarderBookingFragment.setTargetBookingHighlight(bookingId);
+            });
+
+            btnLater.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                dialog.dismiss();
+            });
+
+            btnNoThanks.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                // Save opt-out to SharedPreferences
+                android.content.SharedPreferences prefs = getSharedPreferences("BoardEasePrefs", MODE_PRIVATE);
+                prefs.edit().putBoolean("review_opt_out_" + bookingId, true).apply();
+                dialog.dismiss();
+            });
+
+            dialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing review prompt", e);
         }
     }
 }

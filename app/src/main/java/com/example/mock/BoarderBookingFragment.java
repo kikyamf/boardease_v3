@@ -135,6 +135,13 @@ public class BoarderBookingFragment extends Fragment {
     private ActivityResultLauncher<String> cashImagePickerLauncher;
     private ActivityResultLauncher<String> gcashImagePickerLauncher;
 
+    // Target booking to highlight (deep link from dashboard)
+    private static int targetBookingId = -1;
+
+    public static void setTargetBookingHighlight(int bookingId) {
+        targetBookingId = bookingId;
+    }
+
     public BoarderBookingFragment() {
         // Required empty public constructor
     }
@@ -576,9 +583,38 @@ public class BoarderBookingFragment extends Fragment {
                     layoutBookingHistoryEmpty.setVisibility(View.GONE);
                 }
             }
+            
+            // Check if we need to highlight a specific booking
+            if (targetBookingId != -1) {
+                highlightBookingItem(targetBookingId);
+                targetBookingId = -1; // Reset after use
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error updating UI: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void highlightBookingItem(int bookingId) {
+        if (bookingHistory == null || rvBookingHistory == null) return;
+
+        for (int i = 0; i < bookingHistory.size(); i++) {
+            if (bookingHistory.get(i).getBookingId() == bookingId) {
+                final int position = i;
+                rvBookingHistory.postDelayed(() -> {
+                    rvBookingHistory.smoothScrollToPosition(position);
+                    
+                    // Wait for scroll to complete then animate
+                    rvBookingHistory.postDelayed(() -> {
+                        RecyclerView.ViewHolder holder = rvBookingHistory.findViewHolderForAdapterPosition(position);
+                        if (holder != null) {
+                            android.view.animation.Animation highlightAnim = android.view.animation.AnimationUtils.loadAnimation(getContext(), R.anim.pop_highlight);
+                            holder.itemView.startAnimation(highlightAnim);
+                        }
+                    }, 500);
+                }, 100);
+                break;
+            }
         }
     }
 
