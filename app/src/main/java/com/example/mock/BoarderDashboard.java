@@ -23,6 +23,8 @@ import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import androidx.appcompat.app.AlertDialog;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,6 +33,7 @@ import java.util.Map;
 
 public class BoarderDashboard extends AppCompatActivity {
 
+    private static final String TAG = "BoarderDashboard";
     private BottomNavigationView bottomNavigationView;
     private Fragment currentFragment;
     private int userId;
