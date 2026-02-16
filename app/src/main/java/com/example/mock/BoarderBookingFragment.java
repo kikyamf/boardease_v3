@@ -471,6 +471,8 @@ public class BoarderBookingFragment extends Fragment {
                 int roomId = bookingJson.optInt("room_id", 0);
                 int bhId = bookingJson.optInt("bh_id", 0);
                 
+                double confirmedPaid = bookingJson.optDouble("confirmed_paid", 0.0);
+                double totalPaid = bookingJson.optDouble("total_paid", 0.0);
                 boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
