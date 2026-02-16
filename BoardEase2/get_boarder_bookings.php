@@ -97,9 +97,9 @@ try {
             bhr.price - COALESCE(SUM(CASE WHEN p.payment_status = 'Completed' THEN p.payment_amount ELSE 0 END), 0) as balance_due,
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'current'
-                WHEN b.booking_status = 'Pending' THEN 'pending'
-                WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 'history'
-                ELSE 'other'
+                WHEN b.booking_status IN ('Pending', 'Approved') OR (b.booking_status = 'Confirmed' AND CURDATE() < b.start_date) THEN 'pending'
+                WHEN b.booking_status IN ('Completed', 'Cancelled', 'Expired', 'Declined') OR (b.booking_status = 'Confirmed' AND CURDATE() > b.end_date) THEN 'history'
+                ELSE 'history'
             END as section,
             IF((SELECT COUNT(*) FROM reviews WHERE user_id = b.user_id AND bh_id = bhr.bh_id) > 0, 1, 0) as is_reviewed
         FROM bookings b
@@ -108,15 +108,15 @@ try {
         INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
         LEFT JOIN payments p ON b.booking_id = p.booking_id
         WHERE b.user_id = ? 
-            AND b.booking_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')
+            AND b.booking_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled', 'Expired', 'Declined', 'Approved')
         GROUP BY b.booking_id, b.room_id, b.user_id, b.start_date, b.end_date, 
                  b.booking_status, b.booking_date, ru.room_number, bhr.room_category, 
                  bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description
         ORDER BY 
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 1
-                WHEN b.booking_status = 'Pending' THEN 2
-                WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 3
+                WHEN b.booking_status IN ('Pending', 'Approved') OR (b.booking_status = 'Confirmed' AND CURDATE() < b.start_date) THEN 2
+                WHEN b.booking_status IN ('Completed', 'Cancelled', 'Expired', 'Declined') OR (b.booking_status = 'Confirmed' AND CURDATE() > b.end_date) THEN 3
                 ELSE 4
             END,
             b.booking_date DESC
