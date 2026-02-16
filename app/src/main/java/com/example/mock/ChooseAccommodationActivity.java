@@ -53,6 +53,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
     private String activeStartDateLabel = "";
     private String activeEndDateLabel = "";
     private String activeEndDateRaw = "";
+    private String forcedStartDate = "";
     private boolean isForcedBookingMode = false;
     private int activeBookingId = 0;
     
@@ -560,6 +561,10 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                     intent.putExtra("room_data", roomData.toString());
                     intent.putExtra("bh_id", boardingHouseId); // Also pass as separate extra for safety
                     
+                    if (isForcedBookingMode && !forcedStartDate.isEmpty()) {
+                        intent.putExtra("forced_start_date", forcedStartDate);
+                    }
+                    
                     Log.d(TAG, "Starting BookingActivity with bh_id: " + boardingHouseId + ", bhr_id: " + bhrId);
                     startActivity(intent);
                 } catch (JSONException e) {
@@ -762,7 +767,19 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
                                         activeEndDateLabel = bookingDetails.optString("end_date_label", "--");
                                         activeEndDateRaw = bookingDetails.optString("end_date", "");
                                         
-                                        activeEndDateRaw = bookingDetails.optString("end_date", "");
+                                        // Calculate forced start date (day after end date)
+                                        if (!activeEndDateRaw.isEmpty()) {
+                                            try {
+                                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+                                                java.util.Date endDate = sdf.parse(activeEndDateRaw);
+                                                java.util.Calendar cal = java.util.Calendar.getInstance();
+                                                cal.setTime(endDate);
+                                                cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+                                                forcedStartDate = sdf.format(cal.getTime());
+                                            } catch (Exception e) {
+                                                Log.e(TAG, "Error calculating forced start date: " + e.getMessage());
+                                            }
+                                        }
                                     }
 
                                     // Show different modal based on booking status
@@ -819,7 +836,7 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Title
         TextView titleView = new TextView(this);
-        titleView.setText("Reminder");
+        titleView.setText("Active Booking Found");
         titleView.setTextSize(20);
         try {
             Typeface boldTypeface = Typeface.createFromAsset(getAssets(), "fonts/poppins_bold.ttf");
@@ -839,11 +856,17 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         
         // Message
         TextView messageView = new TextView(this);
-        messageView.setText("You have an active booking. Would you still proceed to choose an accommodation?");
+        messageView.setText("You are an active Boarder.\n\n" +
+                "BH Name: " + activeBhName + "\n" +
+                "Start Date: " + activeStartDateLabel + "\n" +
+                "End Date: " + activeEndDateLabel + "\n\n" +
+                "Note: You can have another booking but by default, the start date will be set to " + 
+                (forcedStartDate.isEmpty() ? "the day after your end date" : formatDateForDisplay(forcedStartDate)) + 
+                ", unless you choose to terminate your current stay.");
         messageView.setTextSize(14);
         messageView.setTextColor(getResources().getColor(android.R.color.white));
         messageView.setLineSpacing(8, 1.2f);
-        messageView.setGravity(android.view.Gravity.CENTER);
+        messageView.setGravity(android.view.Gravity.START);
         
         android.widget.LinearLayout.LayoutParams messageParams = new android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -860,45 +883,54 @@ public class ChooseAccommodationActivity extends AppCompatActivity {
         buttonsLayout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
         buttonsLayout.setGravity(android.view.Gravity.CENTER);
 
-        // CANCEL Button
-        MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
-        btnCancel.setText("Cancel");
-        btnCancel.setBackgroundColor(getResources().getColor(R.color.red));
-        btnCancel.setTextColor(getResources().getColor(android.R.color.white));
-        android.widget.LinearLayout.LayoutParams cancelParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        cancelParams.setMargins(0, 0, 8, 0);
-        btnCancel.setLayoutParams(cancelParams);
+        // TERMINATE Button
+        MaterialButton btnTerminate = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnTerminate.setText("TERMINATE");
+        btnTerminate.setBackgroundColor(getResources().getColor(R.color.red));
+        btnTerminate.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams terminateParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        terminateParams.setMargins(0, 0, 8, 0);
+        btnTerminate.setLayoutParams(terminateParams);
 
-        // PROCEED Button
-        MaterialButton btnProceed = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
-        btnProceed.setText("Proceed");
-        btnProceed.setBackgroundColor(getResources().getColor(R.color.green));
-        btnProceed.setTextColor(getResources().getColor(android.R.color.white));
-        android.widget.LinearLayout.LayoutParams proceedParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        proceedParams.setMargins(8, 0, 0, 0);
-        btnProceed.setLayoutParams(proceedParams);
+        // BOOK Button
+        MaterialButton btnBook = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonStyle);
+        btnBook.setText("BOOK");
+        btnBook.setBackgroundColor(getResources().getColor(R.color.green));
+        btnBook.setTextColor(getResources().getColor(android.R.color.white));
+        android.widget.LinearLayout.LayoutParams bookParams = new android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        bookParams.setMargins(8, 0, 0, 0);
+        btnBook.setLayoutParams(bookParams);
 
-        buttonsLayout.addView(btnCancel);
-        buttonsLayout.addView(btnProceed);
+        buttonsLayout.addView(btnTerminate);
+        buttonsLayout.addView(btnBook);
         layout.addView(buttonsLayout);
         
         builder.setView(layout);
-        builder.setCancelable(false);
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         dialog.show();
 
-        btnCancel.setOnClickListener(v -> {
+        btnTerminate.setOnClickListener(v -> {
             dialog.dismiss();
-            finish();
+            showTerminationReasonModal();
         });
 
-        btnProceed.setOnClickListener(v -> {
+        btnBook.setOnClickListener(v -> {
             dialog.dismiss();
             isForcedBookingMode = true;
             loadAccommodations(); // Reload to enable buttons
         });
     }
 
+    private String formatDateForDisplay(String dateStr) {
+        try {
+            java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+            java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault());
+            java.util.Date date = inputFormat.parse(dateStr);
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            return dateStr;
+        }
+    }
 
     private void showTerminationReasonModal() {
         if (isFinishing()) return;

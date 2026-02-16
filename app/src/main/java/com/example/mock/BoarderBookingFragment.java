@@ -2931,13 +2931,154 @@ public class BoarderBookingFragment extends Fragment {
             return;
         }
 
-        if (getContext() != null) {
-            ReviewDialogHelper.showReviewDialog(getContext(), booking, success -> {
-                if (success) {
-                    // Refresh data if needed or just let the toast handle it
-                    // loadBookingData(); 
+        try {
+            if (getContext() == null) {
+                return;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_review, null);
+            builder.setView(dialogView);
+
+            // Initialize dialog views
+            ImageButton btnClose = dialogView.findViewById(R.id.btnCloseReview);
+            ImageView ivStar1 = dialogView.findViewById(R.id.ivStar1);
+            ImageView ivStar2 = dialogView.findViewById(R.id.ivStar2);
+            ImageView ivStar3 = dialogView.findViewById(R.id.ivStar3);
+            ImageView ivStar4 = dialogView.findViewById(R.id.ivStar4);
+            ImageView ivStar5 = dialogView.findViewById(R.id.ivStar5);
+            TextView tvRatingText = dialogView.findViewById(R.id.tvRatingText);
+            com.google.android.material.textfield.TextInputEditText etReviewComments = dialogView.findViewById(R.id.etReviewComments);
+            com.google.android.material.button.MaterialButton btnSubmitReview = dialogView.findViewById(R.id.btnSubmitReview);
+
+            // Array of star ImageViews for easier management
+            ImageView[] stars = {ivStar1, ivStar2, ivStar3, ivStar4, ivStar5};
+            
+            // Rating state (0 = no rating, 1-5 = rating)
+            final int[] currentRating = {0};
+
+            // Function to validate and update button state
+            Runnable updateSubmitButtonState = () -> {
+                boolean hasRating = currentRating[0] > 0;
+                String comments = etReviewComments.getText() != null ? 
+                    etReviewComments.getText().toString().trim() : "";
+                boolean hasComments = !comments.isEmpty();
+                
+                boolean isEnabled = hasRating && hasComments;
+                btnSubmitReview.setEnabled(isEnabled);
+                
+                // Update button color based on enabled state
+                if (isEnabled) {
+                    btnSubmitReview.setBackgroundTintList(
+                        ContextCompat.getColorStateList(getContext(), R.color.blue));
+                } else {
+                    btnSubmitReview.setBackgroundTintList(
+                        ContextCompat.getColorStateList(getContext(), R.color.blue_disabled));
+                }
+            };
+
+            // Function to update stars based on rating
+            Runnable updateStars = () -> {
+                for (int i = 0; i < stars.length; i++) {
+                    if (i < currentRating[0]) {
+                        // Fill the star (gold/yellow color)
+                        stars[i].setImageResource(R.drawable.ic_star_filled);
+                        // Use ImageViewCompat to properly tint vector drawables
+                        ImageViewCompat.setImageTintList(stars[i], 
+                            android.content.res.ColorStateList.valueOf(0xFFFFC107)); // Gold color #FFC107
+                    } else {
+                        // Empty star (gray color)
+                        stars[i].setImageResource(R.drawable.ic_star_empty);
+                        // Use ImageViewCompat to properly tint vector drawables
+                        ImageViewCompat.setImageTintList(stars[i], 
+                            android.content.res.ColorStateList.valueOf(0xFFCCCCCC)); // Gray color
+                    }
+                }
+                
+                // Update rating text based on rating
+                String ratingText;
+                switch (currentRating[0]) {
+                    case 1:
+                        ratingText = "Poor";
+                        break;
+                    case 2:
+                        ratingText = "Fair";
+                        break;
+                    case 3:
+                        ratingText = "Good";
+                        break;
+                    case 4:
+                        ratingText = "Very Good";
+                        break;
+                    case 5:
+                        ratingText = "Excellent";
+                        break;
+                    default:
+                        ratingText = "Tap to rate";
+                        break;
+                }
+                tvRatingText.setText(ratingText);
+                
+                // Update submit button state after rating change
+                updateSubmitButtonState.run();
+            };
+
+            // Set click listeners for each star
+            for (int i = 0; i < stars.length; i++) {
+                final int rating = i + 1;
+                stars[i].setOnClickListener(v -> {
+                    currentRating[0] = rating;
+                    updateStars.run();
+                });
+            }
+
+            // Initialize stars to empty state
+            updateStars.run();
+
+            // Add text watcher to comments field to validate button state
+            etReviewComments.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    updateSubmitButtonState.run();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
                 }
             });
+
+            // Create and show dialog
+            AlertDialog dialog = builder.create();
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Initialize button state (disabled by default)
+            updateSubmitButtonState.run();
+
+            // Close button click listener
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Submit Review button click listener
+            btnSubmitReview.setOnClickListener(v -> {
+                if (!btnSubmitReview.isEnabled()) {
+                    return; // Prevent action if button is disabled
+                }
+
+                String comments = etReviewComments.getText() != null ? 
+                    etReviewComments.getText().toString().trim() : "";
+
+                // Submit review to database
+                submitReview(booking.getBookingId(), currentRating[0], comments, dialog);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing review dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error showing review dialog", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -3021,6 +3162,197 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
 
+    /**
+     * Submit review to server
+     */
+    private void submitReview(int bookingId, int rating, String comments, AlertDialog dialog) {
+        try {
+            if (getContext() == null) {
+                return;
+            }
+
+            // Get user ID from SharedPreferences
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserSession", getContext().MODE_PRIVATE);
+            String userIdString = sharedPreferences.getString("user_id", "0");
+            int userId = 0;
+            try {
+                userId = Integer.parseInt(userIdString);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid user_id in SharedPreferences: " + userIdString);
+                Toast.makeText(getContext(), "Error: Invalid user session", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (userId == 0) {
+                Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Get boarding house ID from the booking
+            // We need to find the booking in our lists to get bh_id
+            int bhId = 0;
+            for (Booking booking : bookingHistory) {
+                if (booking.getBookingId() == bookingId) {
+                    bhId = booking.getBhId();
+                    break;
+                }
+            }
+
+            if (bhId == 0) {
+                Toast.makeText(getContext(), "Error: Could not find boarding house information", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show loading indicator
+            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+            progressDialog.setMessage("Submitting review...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
+            // API URL - Use localhost for review submission
+            // Try multiple possible IPs - user can update this based on their network
+            // If your XAMPP document root includes boardease_v3 folder, use: "http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php"
+            // If your XAMPP document root is boardease_v3, use: "http://192.168.1.5/BoardEase2/submit_review.php"
+            String localhostUrl = "https://boardease.calapebohol.com/";
+            String url = localhostUrl + "submit_review.php";
+            
+            Log.d(TAG, "=== REVIEW SUBMISSION DEBUG ===");
+            Log.d(TAG, "Submitting review to: " + url);
+            Log.d(TAG, "Review data - userId: " + userId + ", bhId: " + bhId + ", rating: " + rating);
+            Log.d(TAG, "Comment length: " + (comments != null ? comments.length() : 0));
+            
+            // Check if we can reach the server (basic test)
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) 
+                getContext().getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            Log.d(TAG, "Network connected: " + isConnected);
+            if (activeNetwork != null) {
+                Log.d(TAG, "Network type: " + activeNetwork.getTypeName());
+                Log.d(TAG, "Network state: " + activeNetwork.getDetailedState());
+            }
+
+            // Create JSON request body
+            JSONObject requestBody = new JSONObject();
+            try {
+                requestBody.put("user_id", userId);
+                requestBody.put("bh_id", bhId);
+                requestBody.put("rating", rating);
+                requestBody.put("comment", comments);
+                Log.d(TAG, "Request body: " + requestBody.toString());
+            } catch (JSONException e) {
+                Log.e(TAG, "Error creating request body: " + e.getMessage());
+                progressDialog.dismiss();
+                Toast.makeText(getContext(), "Error preparing request", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Create request
+            com.android.volley.toolbox.JsonObjectRequest jsonRequest = new com.android.volley.toolbox.JsonObjectRequest(
+                com.android.volley.Request.Method.POST,
+                url,
+                requestBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        progressDialog.dismiss();
+                        Log.d(TAG, "Review submission response: " + response.toString());
+                        try {
+                            if (response.getBoolean("success")) {
+                                // Close the review dialog
+                                dialog.dismiss();
+                                // Show success message
+                                Toast.makeText(getContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String error = response.optString("error", "Failed to submit review");
+                                Log.e(TAG, "Review submission failed: " + error);
+                                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing response: " + e.getMessage());
+                            e.printStackTrace();
+                            Toast.makeText(getContext(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        progressDialog.dismiss();
+                        
+                        // Enhanced error logging
+                        Log.e(TAG, "Volley error type: " + error.getClass().getSimpleName());
+                        Log.e(TAG, "Volley error message: " + (error.getMessage() != null ? error.getMessage() : "null"));
+                        
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Network response status code: " + error.networkResponse.statusCode);
+                            if (error.networkResponse.data != null) {
+                                try {
+                                    String responseBody = new String(error.networkResponse.data, "utf-8");
+                                    Log.e(TAG, "Error response body: " + responseBody);
+                                    JSONObject errorJson = new JSONObject(responseBody);
+                                    String errorMsg = errorJson.optString("error", "Network error");
+                                    Toast.makeText(getContext(), errorMsg, Toast.LENGTH_LONG).show();
+                                    return;
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Error parsing error response: " + e.getMessage());
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "No network response - connection failed or timeout");
+                        }
+                        
+                        // More specific error messages
+                        String errorMessage = "Network error";
+                        if (error instanceof com.android.volley.TimeoutError) {
+                            errorMessage = "Connection timeout. Server might be slow or unreachable.\n\nPlease verify:\n• XAMPP Apache is running\n• URL: http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php\n• Device is on same WiFi network";
+                        } else if (error instanceof com.android.volley.NoConnectionError) {
+                            // For localhost, this might just mean server is not reachable, not necessarily no internet
+                            errorMessage = "Cannot connect to server.\n\nTroubleshooting:\n1. Test in browser: http://192.168.1.5/boardease_v3/BoardEase2/submit_review.php\n2. Ensure device & PC are on same WiFi\n3. Check Windows Firewall allows port 80\n4. Verify XAMPP Apache is running\n5. Try accessing from device browser first";
+                        } else if (error.getMessage() != null && !error.getMessage().isEmpty()) {
+                            errorMessage = "Error: " + error.getMessage();
+                        } else {
+                            String testUrl = "https://boardease.calapebohol.com/submit_review.php";
+                            errorMessage = "Failed to connect to server.\n\nTest this URL in your device's browser:\n" + testUrl + "\n\nIf browser can't access it, check:\n• Same WiFi network\n• XAMPP running\n• Firewall settings";
+                        }
+                        
+                        // Show detailed error in Logcat and user-friendly message
+                        Log.e(TAG, "=== CONNECTION FAILED ===");
+                        Log.e(TAG, "URL attempted: " + url);
+                        Log.e(TAG, "Error class: " + error.getClass().getSimpleName());
+                        Log.e(TAG, "Full error: " + error.toString());
+                        
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
+            ) {
+                @Override
+                public Map<String, String> getHeaders() {
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Content-Type", "application/json");
+                    headers.put("User-Agent", "BoardEase-Android-App");
+                    headers.put("Accept", "application/json");
+                    headers.put("ngrok-skip-browser-warning", "true");
+                    return headers;
+                }
+            };
+            
+            // Set retry policy
+            jsonRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                10000, // 10 seconds timeout
+                com.android.volley.DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            // Add request to queue
+            RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+            requestQueue.add(jsonRequest);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error submitting review: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error submitting review", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private void submitTerminationRequest(Booking booking, String reason, String details, AlertDialog dialog) {
         if (getContext() == null) return;
