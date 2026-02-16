@@ -471,7 +471,7 @@ public class BoarderDashboard extends AppCompatActivity {
             if (!isFinishing() && !isReviewPromptShown) {
                 checkForUnreviewedStays();
             }
-        }, 5000); // 5 seconds delay
+        }, 10000); // 10 seconds delay
     }
 
     private void checkForUnreviewedStays() {
@@ -530,8 +530,9 @@ public class BoarderDashboard extends AppCompatActivity {
             builder.setCancelable(false); // Make outside not clickable
 
             AlertDialog dialog = builder.create();
-            // Make background transparent for rounded corners
+            // Apply animation style
             if (dialog.getWindow() != null) {
+                dialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
                 dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             }
 
