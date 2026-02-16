@@ -547,11 +547,11 @@ public class BoarderDashboard extends AppCompatActivity {
                 isReviewPromptShown = true;
                 dialog.dismiss();
                 
+                // Set the detail FIRST so fragment sees it when it starts/resumes
+                BoarderBookingFragment.setTargetBookingHighlight(bookingId);
+                
                 // Navigate to Bookings tab (nav_activity)
                 bottomNavigationView.setSelectedItemId(R.id.nav_activity);
-                
-                // We'll add a static variable or interface to tell the fragment to highlight this booking
-                BoarderBookingFragment.setTargetBookingHighlight(bookingId);
             });
 
             btnLater.setOnClickListener(v -> {

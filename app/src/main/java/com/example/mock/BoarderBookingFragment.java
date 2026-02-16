@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.ImageViewCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -75,6 +76,7 @@ public class BoarderBookingFragment extends Fragment {
     private LinearLayout layoutPendingBookingsEmpty;
     private LinearLayout layoutBookingHistoryEmpty;
     private ProgressBar progressBar;
+    private androidx.core.widget.NestedScrollView nestedScrollView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // Adapters
@@ -228,6 +230,15 @@ public class BoarderBookingFragment extends Fragment {
     }
 
     @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            // Refresh data when fragment becomes visible (from tab switch)
+            loadBookingData();
+        }
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         // Stop polling when fragment is not visible to save battery/data
@@ -252,6 +263,7 @@ public class BoarderBookingFragment extends Fragment {
             layoutPendingBookingsEmpty = view.findViewById(R.id.layoutPendingBookingsEmpty);
             layoutBookingHistoryEmpty = view.findViewById(R.id.layoutBookingHistoryEmpty);
             progressBar = view.findViewById(R.id.progressBar);
+            nestedScrollView = view.findViewById(R.id.nestedScrollView);
             swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
             
             // Set up pull-to-refresh listener
@@ -596,23 +608,37 @@ public class BoarderBookingFragment extends Fragment {
     }
 
     private void highlightBookingItem(int bookingId) {
-        if (bookingHistory == null || rvBookingHistory == null) return;
+        if (bookingHistory == null || rvBookingHistory == null || nestedScrollView == null) return;
 
         for (int i = 0; i < bookingHistory.size(); i++) {
             if (bookingHistory.get(i).getBookingId() == bookingId) {
                 final int position = i;
                 rvBookingHistory.postDelayed(() -> {
-                    rvBookingHistory.smoothScrollToPosition(position);
-                    
-                    // Wait for scroll to complete then animate
-                    rvBookingHistory.postDelayed(() -> {
-                        RecyclerView.ViewHolder holder = rvBookingHistory.findViewHolderForAdapterPosition(position);
-                        if (holder != null) {
+                    // Find the view holder to get coordinates
+                    RecyclerView.ViewHolder holder = rvBookingHistory.findViewHolderForAdapterPosition(position);
+                    if (holder != null) {
+                        // Get the top of the item relative to the NestedScrollView
+                        int[] location = new int[2];
+                        holder.itemView.getLocationOnScreen(location);
+                        
+                        int[] scrollViewLocation = new int[2];
+                        nestedScrollView.getLocationOnScreen(scrollViewLocation);
+                        
+                        int relativeTop = location[1] - scrollViewLocation[1] + nestedScrollView.getScrollY();
+                        
+                        // Scroll the NestedScrollView
+                        nestedScrollView.smoothScrollTo(0, relativeTop - 100); // Offset 100px from top
+                        
+                        // Wait for scroll to complete then animate
+                        nestedScrollView.postDelayed(() -> {
                             android.view.animation.Animation highlightAnim = android.view.animation.AnimationUtils.loadAnimation(getContext(), R.anim.pop_highlight);
                             holder.itemView.startAnimation(highlightAnim);
-                        }
-                    }, 500);
-                }, 100);
+                        }, 500);
+                    } else {
+                        // If holder is null, it might not be bound yet. Try basic scroll.
+                        rvBookingHistory.smoothScrollToPosition(position);
+                    }
+                }, 200);
                 break;
             }
         }
