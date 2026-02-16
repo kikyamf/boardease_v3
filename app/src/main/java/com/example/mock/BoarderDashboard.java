@@ -34,6 +34,8 @@ public class BoarderDashboard extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private Fragment currentFragment;
     private int userId;
+    private boolean isReviewPromptShown = false;
+    private static final String GET_BOOKINGS_URL = "https://boardease.calapebohol.com/get_boarder_bookings.php";
     
     // Cache fragment instances to avoid recreating them
     private BoarderHomeFragment homeFragment;
@@ -79,6 +81,9 @@ public class BoarderDashboard extends AppCompatActivity {
         
         // Initialize FCM token
         initializeFCMToken();
+        
+        // Schedule Review Prompt after 5 seconds
+        scheduleReviewPrompt();
         
         // Try to restore fragments from FragmentManager first (they persist across configuration changes)
         homeFragment = (BoarderHomeFragment) getSupportFragmentManager().findFragmentByTag("home");
@@ -455,6 +460,76 @@ public class BoarderDashboard extends AppCompatActivity {
                 })
                 .setNegativeButton("Explore", null)
                 .show();
+        }
+    }
+
+    private void scheduleReviewPrompt() {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isReviewPromptShown) {
+                checkForUnreviewedStays();
+            }
+        }, 5000); // 5 seconds delay
+    }
+
+    private void checkForUnreviewedStays() {
+        if (userId == 0) return;
+
+        String url = GET_BOOKINGS_URL + "?user_id=" + userId;
+        Log.d("ReviewPrompt", "Checking for unreviewed stays at: " + url);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            org.json.JSONArray historyArray = jsonResponse.getJSONObject("data").getJSONArray("history");
+                            
+                            for (int i = 0; i < historyArray.length(); i++) {
+                                JSONObject bookingJson = historyArray.getJSONObject(i);
+                                String status = bookingJson.getString("booking_status");
+                                boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
+                                
+                                if ("Completed".equals(status) && !isReviewed) {
+                                    showReviewPrompt(bookingJson);
+                                    break; // Only show one prompt
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        Log.e("ReviewPrompt", "Error parsing bookings: " + e.getMessage());
+                    }
+                },
+                error -> Log.e("ReviewPrompt", "Error fetching bookings: " + error.getMessage()));
+
+        Volley.newRequestQueue(this).add(stringRequest);
+    }
+
+    private void showReviewPrompt(JSONObject bookingJson) {
+        try {
+            int bookingId = bookingJson.getInt("booking_id");
+            String bhName = bookingJson.getString("bh_name");
+            int bhId = bookingJson.getInt("bh_id");
+
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Enjoyed your stay?")
+                .setMessage("We noticed you recently completed your stay at " + bhName + ". Would you like to leave a review?")
+                .setPositiveButton("Write a Review", (dialog, which) -> {
+                    isReviewPromptShown = true;
+                    // Navigate to Booking History or show review dialog directly
+                    // For now, let's navigate them to the Bookings fragment
+                    bottomNavigationView.setSelectedItemId(R.id.nav_bookings);
+                    // Pass intent extra to trigger the dialog in the fragment
+                    // But wait, the fragment is already initialized. 
+                    // Better yet, just show the dialog here if we can.
+                    // Or let the fragment handle it.
+                })
+                .setNegativeButton("Later", (dialog, which) -> isReviewPromptShown = true)
+                .setCancelable(true)
+                .show();
+            
+            isReviewPromptShown = true; // Mark as shown regardless of choice for this session
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 }

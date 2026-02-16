@@ -100,17 +100,19 @@ try {
                 WHEN b.booking_status = 'Pending' THEN 'pending'
                 WHEN b.booking_status IN ('Completed', 'Cancelled') THEN 'history'
                 ELSE 'other'
-            END as section
+            END as section,
+            IF(rev.review_id IS NOT NULL, 1, 0) as is_reviewed
         FROM bookings b
         INNER JOIN room_units ru ON b.room_id = ru.room_id
         INNER JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
         INNER JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
         LEFT JOIN payments p ON b.booking_id = p.booking_id
+        LEFT JOIN reviews rev ON b.booking_id = rev.booking_id
         WHERE b.user_id = ? 
             AND b.booking_status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')
         GROUP BY b.booking_id, b.room_id, b.user_id, b.start_date, b.end_date, 
                  b.booking_status, b.booking_date, ru.room_number, bhr.room_category, 
-                 bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description
+                 bhr.price, bhr.bh_id, bh.bh_name, bh.bh_address, bh.bh_description, rev.review_id
         ORDER BY 
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 1
@@ -155,7 +157,8 @@ try {
             'total_paid' => floatval($row['total_paid']),
             'confirmed_paid' => floatval($row['confirmed_paid']),
             'balance_due' => floatval($row['balance_due']),
-            'section' => $row['section']
+            'section' => $row['section'],
+            'is_reviewed' => (int)$row['is_reviewed'] === 1
         );
         
         // Categorize by section

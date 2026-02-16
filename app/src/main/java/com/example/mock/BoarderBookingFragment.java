@@ -471,11 +471,10 @@ public class BoarderBookingFragment extends Fragment {
                 int roomId = bookingJson.optInt("room_id", 0);
                 int bhId = bookingJson.optInt("bh_id", 0);
                 
-                double confirmedPaid = bookingJson.optDouble("confirmed_paid", 0.0);
-                double totalPaid = bookingJson.optDouble("total_paid", 0.0);
+                boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid, isReviewed);
                 
                 bookingsList.add(booking);
             }
@@ -1494,12 +1493,12 @@ public class BoarderBookingFragment extends Fragment {
         private String roomNumber;
         private int roomId;
         private int bhId;
-        private double confirmedPaid;
         private double totalPaid;
+        private boolean isReviewed;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
                       String startDate, String endDate, String monthlyDue, String balanceDue, String status,
-                      String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid) {
+                      String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid, boolean isReviewed) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
             this.imagePath = imagePath;
@@ -1515,6 +1514,7 @@ public class BoarderBookingFragment extends Fragment {
             this.bhId = bhId;
             this.confirmedPaid = confirmedPaid;
             this.totalPaid = totalPaid;
+            this.isReviewed = isReviewed;
         }
 
         // Getters
@@ -1533,6 +1533,7 @@ public class BoarderBookingFragment extends Fragment {
         public int getBhId() { return bhId; }
         public double getConfirmedPaid() { return confirmedPaid; }
         public double getTotalPaid() { return totalPaid; }
+        public boolean isReviewed() { return isReviewed; }
     }
 
     /**
