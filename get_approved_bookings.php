@@ -6,9 +6,9 @@ header('Access-Control-Allow-Headers: Content-Type, User-Agent, Accept');
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+$dbname = 'u223444398_boardease';
+$username = 'u223444398_userboardease';
+$password = '!Boardease2026';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

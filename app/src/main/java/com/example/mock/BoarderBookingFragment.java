@@ -691,9 +691,9 @@ public class BoarderBookingFragment extends Fragment {
             tvEndDate.setText(booking.getEndDate());
             tvMonthlyDue.setText(booking.getMonthlyDue());
             
-            // Display "Active" instead of "Confirmed"
+            // Display actual status (e.g. Active or Upcoming)
             String status = booking.getStatus();
-            String displayStatus = "Confirmed".equals(status) ? "Active" : status;
+            String displayStatus = booking.getDisplayStatus();
             tvStatus.setText(displayStatus);
 
             // Set status background
@@ -3205,10 +3205,10 @@ public class BoarderBookingFragment extends Fragment {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
             } else if ("Completed".equals(status)) {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
-            } else if ("Cancelled".equals(status)) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
-            } else if ("Declined".equals(status)) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
+            } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled_gray);
+            } else if ("Expired".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_expired);
             } else {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
             }
