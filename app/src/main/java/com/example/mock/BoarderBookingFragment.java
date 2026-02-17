@@ -483,6 +483,7 @@ public class BoarderBookingFragment extends Fragment {
                 String balanceDueStr = "₱" + String.format(Locale.getDefault(), "%.2f", balanceDue);
                 
                 String status = bookingJson.getString("booking_status");
+                String displayStatus = bookingJson.optString("display_status", status);
                 
                 // Get room category and room number
                 String roomCategory = bookingJson.optString("room_category", "Private Room");
@@ -495,7 +496,7 @@ public class BoarderBookingFragment extends Fragment {
                 boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid, isReviewed);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, displayStatus, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid, isReviewed);
                 
                 bookingsList.add(booking);
             }
@@ -1430,19 +1431,8 @@ public class BoarderBookingFragment extends Fragment {
                     }
                 }
 
-                // Check for other pending payments
-                if (hasOtherPendingPayments(booking.getBookingId())) {
-                    // Disable Pay Now button
-                    btnOk.setEnabled(false);
-                    btnOk.setAlpha(0.5f);
-                    btnOk.setText("Pay Now");
-                    
-                    // Show warning message
-                    if (tvPaymentWarnings != null) {
-                        tvPaymentWarnings.setVisibility(View.VISIBLE);
-                        tvPaymentWarnings.setText("You currently have a pending payment for another application. You can cancel this application or wait until the other payment is verified.");
-                    }
-                } else {
+                // Always enable Pay Now button for Approved status (removed other pending payment block)
+                if (btnOk != null) {
                     btnOk.setEnabled(true);
                     btnOk.setAlpha(1.0f);
                     btnOk.setText("Pay Now");
@@ -1450,6 +1440,11 @@ public class BoarderBookingFragment extends Fragment {
                         dialog.dismiss();
                         fetchUnpaidPaymentBreakdowns(booking.getBookingId());
                     });
+                }
+                
+                // Hide payment warnings as they are no longer used to block flow
+                if (tvPaymentWarnings != null) {
+                    tvPaymentWarnings.setVisibility(View.GONE);
                 }
             } else {
                 if (tvTitle != null) tvTitle.setText("Application Pending");
@@ -1553,6 +1548,7 @@ public class BoarderBookingFragment extends Fragment {
         private String monthlyDue;
         private String balanceDue;
         private String status;
+        private String displayStatus;
         private String roomCategory;
         private String roomNumber;
         private int roomId;
@@ -1562,7 +1558,7 @@ public class BoarderBookingFragment extends Fragment {
         private boolean isReviewed;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
-                      String startDate, String endDate, String monthlyDue, String balanceDue, String status,
+                      String startDate, String endDate, String monthlyDue, String balanceDue, String status, String displayStatus,
                       String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid, boolean isReviewed) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
@@ -1573,6 +1569,7 @@ public class BoarderBookingFragment extends Fragment {
             this.monthlyDue = monthlyDue;
             this.balanceDue = balanceDue;
             this.status = status;
+            this.displayStatus = displayStatus;
             this.roomCategory = roomCategory;
             this.roomNumber = roomNumber;
             this.roomId = roomId;
@@ -1592,6 +1589,7 @@ public class BoarderBookingFragment extends Fragment {
         public String getMonthlyDue() { return monthlyDue; }
         public String getBalanceDue() { return balanceDue; }
         public String getStatus() { return status; }
+        public String getDisplayStatus() { return displayStatus; }
         public String getRoomCategory() { return roomCategory; }
         public String getRoomNumber() { return roomNumber; }
         public int getRoomId() { return roomId; }
@@ -3199,7 +3197,8 @@ public class BoarderBookingFragment extends Fragment {
             
             // Display status
             String status = booking.getStatus();
-            tvStatus.setText(status);
+            String displayStatus = booking.getDisplayStatus();
+            tvStatus.setText(displayStatus);
 
             // Set status background
             if ("Confirmed".equals(status)) {

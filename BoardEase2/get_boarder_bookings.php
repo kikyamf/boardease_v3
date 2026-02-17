@@ -96,8 +96,13 @@ try {
             COALESCE(SUM(CASE WHEN p.payment_status = 'Completed' THEN p.payment_amount ELSE 0 END), 0) as confirmed_paid,
             bhr.price - COALESCE(SUM(CASE WHEN p.payment_status = 'Completed' THEN p.payment_amount ELSE 0 END), 0) as balance_due,
             CASE 
-                WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'current'
-                WHEN b.booking_status IN ('Pending', 'Approved') OR (b.booking_status = 'Confirmed' AND CURDATE() < b.start_date) THEN 'pending'
+                WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'Active'
+                WHEN b.booking_status = 'Confirmed' AND CURDATE() < b.start_date THEN 'Upcoming'
+                ELSE b.booking_status
+            END as display_status,
+            CASE 
+                WHEN b.booking_status = 'Confirmed' AND CURDATE() <= b.end_date THEN 'current'
+                WHEN b.booking_status IN ('Pending', 'Approved') THEN 'pending'
                 WHEN b.booking_status IN ('Completed', 'Cancelled', 'Expired', 'Declined') OR (b.booking_status = 'Confirmed' AND CURDATE() > b.end_date) THEN 'history'
                 ELSE 'history'
             END as section,
@@ -115,9 +120,10 @@ try {
         ORDER BY 
             CASE 
                 WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 1
-                WHEN b.booking_status IN ('Pending', 'Approved') OR (b.booking_status = 'Confirmed' AND CURDATE() < b.start_date) THEN 2
-                WHEN b.booking_status IN ('Completed', 'Cancelled', 'Expired', 'Declined') OR (b.booking_status = 'Confirmed' AND CURDATE() > b.end_date) THEN 3
-                ELSE 4
+                WHEN b.booking_status = 'Confirmed' AND CURDATE() < b.start_date THEN 2
+                WHEN b.booking_status IN ('Pending', 'Approved') THEN 3
+                WHEN b.booking_status IN ('Completed', 'Cancelled', 'Expired', 'Declined') OR (b.booking_status = 'Confirmed' AND CURDATE() > b.end_date) THEN 4
+                ELSE 5
             END,
             b.booking_date DESC
     ";
@@ -157,6 +163,7 @@ try {
             'confirmed_paid' => floatval($row['confirmed_paid']),
             'balance_due' => floatval($row['balance_due']),
             'section' => $row['section'],
+            'display_status' => $row['display_status'],
             'is_reviewed' => (int)$row['is_reviewed'] === 1
         );
         
