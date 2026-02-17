@@ -21,9 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+$dbname = 'u223444398_boardease';
+$username = 'u223444398_userboardease';
+$password = '!Boardease2026';
 
 try {
     // Connect to database
@@ -54,16 +54,27 @@ try {
 
     $pdo->beginTransaction();
 
-    // 0. Get current status of the booking
-    $currentStatusSql = "SELECT booking_status FROM bookings WHERE booking_id = ?";
+    // 0. Get current status and dates of the booking
+    $currentStatusSql = "SELECT booking_status, start_date, end_date FROM bookings WHERE booking_id = ?";
     $stmt = $pdo->prepare($currentStatusSql);
     $stmt->execute([$bookingId]);
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
     $currentStatus = $booking ? $booking['booking_status'] : '';
+    $startDate = $booking ? $booking['start_date'] : '';
+    $endDate = $booking ? $booking['end_date'] : '';
 
+    $today = date('Y-m-d');
     $newStatus = 'Approved';
+    
     if ($currentStatus === 'Approved') {
-        $newStatus = 'Confirmed';
+        // When transitioning from Approved (payment confirmation), pick correct status based on date
+        if ($today < $startDate) {
+            $newStatus = 'Upcoming';
+        } elseif ($today <= $endDate) {
+            $newStatus = 'Active';
+        } else {
+            $newStatus = 'Completed';
+        }
     }
 
     // 1. Verify ownership and update booking status
@@ -100,8 +111,8 @@ try {
         $pdo->prepare($forceUpdateSql)->execute([$newStatus, $bookingId]);
     }
 
-    // 2. If transitioning to 'Confirmed', update payments and breakdowns
-    if ($newStatus === 'Confirmed') {
+    // 2. If transitioning to finalized states, update payments and breakdowns
+    if (in_array($newStatus, ['Confirmed', 'Upcoming', 'Active', 'Completed'])) {
         // Mark all 'Pending' payments for this booking as 'Completed'
         $updatePaymentSql = "UPDATE payments SET payment_status = 'Completed' WHERE booking_id = ? AND payment_status = 'Pending'";
         $pdo->prepare($updatePaymentSql)->execute([$bookingId]);
@@ -110,7 +121,16 @@ try {
         $updateBreakdownsSql = "UPDATE payment_breakdowns SET is_paid = 1, payment_status = 'Paid' WHERE booking_id = ? AND payment_status = 'Pending'";
         $pdo->prepare($updateBreakdownsSql)->execute([$bookingId]);
         
-        error_log("Payment confirmed for booking $bookingId. Status updated to Confirmed and payments/breakdowns marked as Completed/Paid.");
+        // If Active, update room status
+        if ($newStatus === 'Active') {
+            $sqlRoom = "UPDATE room_units ru 
+                       JOIN bookings b ON ru.room_id = b.room_id 
+                       SET ru.status = 'Occupied' 
+                       WHERE b.booking_id = ?";
+            $pdo->prepare($sqlRoom)->execute([$bookingId]);
+        }
+
+        error_log("Payment confirmed for booking $bookingId. Status updated to $newStatus and payments/breakdowns marked as Completed/Paid.");
     }
 
     // 3. HEALING: Generate payment breakdowns if they don't exist (useful for both stages if somehow missing)

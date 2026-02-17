@@ -58,7 +58,7 @@ try {
         JOIN registrations r ON u.reg_id = r.id
         WHERE (bh.user_id = :owner_id OR bh.user_id = (SELECT reg_id FROM users WHERE user_id = :owner_id LIMIT 1))
         AND (
-            b.booking_status = 'Confirmed'
+            b.booking_status IN ('Confirmed', 'Upcoming', 'Active')
             OR (
                 b.booking_status = 'Approved' 
                 AND NOT EXISTS (SELECT 1 FROM payments WHERE booking_id = b.booking_id AND payment_status = 'Pending')
