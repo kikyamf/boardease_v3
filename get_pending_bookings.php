@@ -33,7 +33,6 @@ try {
             b.end_date,
             b.booking_status as status,
             b.booking_date,
-            b.notes,
             ru.room_number as room_name,
             bhr.room_category,
             bhr.price as amount,
@@ -57,8 +56,9 @@ try {
         JOIN room_units ru ON b.room_id = ru.room_id
         JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
         JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
-        JOIN registrations r ON b.user_id = r.id
-        WHERE bh.user_id = :owner_id
+        JOIN users u ON b.user_id = u.user_id
+        JOIN registrations r ON u.reg_id = r.id
+        WHERE (bh.user_id = :owner_id OR bh.user_id = (SELECT reg_id FROM users WHERE user_id = :owner_id LIMIT 1))
         AND (
             b.booking_status = 'Pending'
             OR (
@@ -98,7 +98,7 @@ try {
             'boarding_house_address' => $row['boarding_house_address'],
             'booking_date' => $row['booking_date'],
             'payment_status' => $row['payment_status'] ?? 'Pending',
-            'notes' => $row['notes'],
+            'notes' => '',
             'boarder_id' => intval($row['boarder_id']),
             'room_id' => intval($row['room_id']),
             'boarding_house_id' => intval($row['boarding_house_id']),
