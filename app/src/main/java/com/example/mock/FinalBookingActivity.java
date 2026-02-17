@@ -238,6 +238,10 @@ public class FinalBookingActivity extends AppCompatActivity {
         cardPaymentMethod = findViewById(R.id.cardPaymentMethod);
         
         
+        // Hide payment UI for booking application (payment happens after approval)
+        if (cardPaymentMethod != null) cardPaymentMethod.setVisibility(View.GONE);
+        if (layoutPaymentSelection != null) layoutPaymentSelection.setVisibility(View.GONE);
+        
         // Update UI for booking application
         if (tvTitle != null) tvTitle.setText("Booking Application Summary");
         if (btnBook != null) {
