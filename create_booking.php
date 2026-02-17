@@ -148,76 +148,8 @@ try {
     ]);
     $bookingId = $pdo->lastInsertId();
 
-    // Handle payment proof
-    $paymentProofPath = '';
-    if (!empty($paymentProofBase64)) {
-        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $paymentProofBase64);
-        $imageData = base64_decode($base64Data);
-        if ($imageData) {
-            $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
-            $uploadDir = 'uploads/payment_proofs/';
-            if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
-            if (file_put_contents($uploadDir . $filename, $imageData)) {
-                $paymentProofPath = $uploadDir . $filename;
-            }
-        }
-    }
-
-    // Get owner_id and price
-    $getOwnerSql = "SELECT bh.user_id as owner_id, bhr.price 
-                    FROM boarding_house_rooms bhr 
-                    JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
-                    WHERE bhr.bhr_id = :bhr_id";
-    $getOwnerStmt = $pdo->prepare($getOwnerSql);
-    $getOwnerStmt->execute([':bhr_id' => $roomUnit['bhr_id']]);
-    $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
-    $ownerId = $ownerData['owner_id'] ?? 0;
-    $amount = ($totalAmount > 0) ? $totalAmount : ($ownerData['price'] ?? 0);
-
-    // Identify actual owner_id in users table
-    $actualOwnerId = $ownerId;
-    $checkOwnerStmt = $pdo->prepare("SELECT user_id FROM users WHERE reg_id = ?");
-    $checkOwnerStmt->execute([$ownerId]);
-    if ($row = $checkOwnerStmt->fetch()) {
-        $actualOwnerId = $row['user_id'];
-    }
-
-    // Create payment record
-    $insertPaymentSql = "INSERT INTO payments (booking_id, user_id, owner_id, payment_amount, payment_method, payment_proof, payment_status, payment_date) 
-                         VALUES (:booking_id, :user_id, :owner_id, :amount, :method, :proof, 'Pending', NOW())";
-    $pdo->prepare($insertPaymentSql)->execute([
-        ':booking_id' => $bookingId,
-        ':user_id' => $actualUserId,
-        ':owner_id' => $actualOwnerId,
-        ':amount' => $amount,
-        ':method' => $paymentMethod,
-        ':proof' => $paymentProofPath
-    ]);
-    $paymentId = $pdo->lastInsertId();
-
-    // Save breakdown if provided
-    if (!empty($paymentBreakdownJson)) {
-        $breakdowns = is_array($paymentBreakdownJson) ? $paymentBreakdownJson : json_decode($paymentBreakdownJson, true);
-        if (is_array($breakdowns)) {
-            $insertBreakdownSql = "INSERT INTO payment_breakdowns (booking_id, payment_id, period_type, period_number, period_label, period_start_date, period_end_date, amount, is_selected, payment_status, due_date) 
-                                   VALUES (:bid, :pid, :type, :num, :label, :start, :end, :amount, :selected, 'Pending', :due)";
-            $breakdownStmt = $pdo->prepare($insertBreakdownSql);
-            foreach ($breakdowns as $pb) {
-                $breakdownStmt->execute([
-                    ':bid' => $bookingId,
-                    ':pid' => $paymentId,
-                    ':type' => $pb['period_type'] ?? 'month',
-                    ':num' => $pb['period_number'] ?? 0,
-                    ':label' => $pb['label'] ?? $pb['period_label'] ?? '',
-                    ':start' => $pb['start_date'] ?? $startDate,
-                    ':end' => $pb['end_date'] ?? $endDate,
-                    ':amount' => $pb['amount'] ?? 0,
-                    ':selected' => ($pb['is_selected'] ?? false) ? 1 : 0,
-                    ':due' => $pb['start_date'] ?? $startDate
-                ]);
-            }
-        }
-    }
+    // Note: Payment records are NOT created during application submission.
+    // They will be created later when the boarder submits payment after owner approval.
 
     $pdo->commit();
     ob_clean();
