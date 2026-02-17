@@ -54,16 +54,32 @@ try {
 
     $pdo->beginTransaction();
 
+    // 0. Get current status of the booking
+    $currentStatusSql = "SELECT booking_status FROM bookings WHERE booking_id = ?";
+    $stmt = $pdo->prepare($currentStatusSql);
+    $stmt->execute([$bookingId]);
+    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+    $currentStatus = $booking ? $booking['booking_status'] : '';
+
+    $newStatus = 'Approved';
+    if ($currentStatus === 'Approved') {
+        $newStatus = 'Confirmed';
+    }
+
     // 1. Verify ownership and update booking status
     // ownerId refers to registrations.id of the boarding house owner
     $updateSql = "UPDATE bookings b
                   JOIN room_units ru ON b.room_id = ru.room_id
                   JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
                   JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id
-                  SET b.booking_status = 'Approved'
-                  WHERE b.booking_id = ? AND bh.user_id = ?";
+                  SET b.booking_status = :new_status
+                  WHERE b.booking_id = :booking_id AND bh.user_id = :owner_id";
     $updateStmt = $pdo->prepare($updateSql);
-    $updateStmt->execute([$bookingId, $ownerId]);
+    $updateStmt->execute([
+        ':new_status' => $newStatus,
+        ':booking_id' => $bookingId,
+        ':owner_id' => $ownerId
+    ]);
 
     if ($updateStmt->rowCount() === 0) {
         // Double check if booking exists even if owner mismatch
@@ -79,21 +95,33 @@ try {
         }
         
         // If owner mismatch, it might be due to user_id vs reg_id confusion in the system
-        // Let's force update for now if we're sure about the booking_id, 
-        // but ideally we should verify ownership robustly.
-        // For debugging let's proceed with update if we are sure it's the right booking
-        $forceUpdateSql = "UPDATE bookings SET booking_status = 'Approved' WHERE booking_id = ?";
-        $pdo->prepare($forceUpdateSql)->execute([$bookingId]);
+        // Let's force update for now if we're sure about the booking_id
+        $forceUpdateSql = "UPDATE bookings SET booking_status = ? WHERE booking_id = ?";
+        $pdo->prepare($forceUpdateSql)->execute([$newStatus, $bookingId]);
     }
 
-    // 2. HEALING: Generate payment breakdowns if they don't exist
+    // 2. If transitioning to 'Confirmed', update payments and breakdowns
+    if ($newStatus === 'Confirmed') {
+        // Mark all 'Pending' payments for this booking as 'Completed'
+        $updatePaymentSql = "UPDATE payments SET payment_status = 'Completed' WHERE booking_id = ? AND payment_status = 'Pending'";
+        $pdo->prepare($updatePaymentSql)->execute([$bookingId]);
+
+        // Mark all 'Pending' breakdowns for this booking as 'Paid'
+        $updateBreakdownsSql = "UPDATE payment_breakdowns SET is_paid = 1, payment_status = 'Paid' WHERE booking_id = ? AND payment_status = 'Pending'";
+        $pdo->prepare($updateBreakdownsSql)->execute([$bookingId]);
+        
+        error_log("Payment confirmed for booking $bookingId. Status updated to Confirmed and payments/breakdowns marked as Completed/Paid.");
+    }
+
+    // 3. HEALING: Generate payment breakdowns if they don't exist (useful for both stages if somehow missing)
     $checkExistSql = "SELECT COUNT(*) FROM payment_breakdowns WHERE booking_id = :booking_id";
     $checkExistStmt = $pdo->prepare($checkExistSql);
     $checkExistStmt->execute([':booking_id' => $bookingId]);
     $totalBreakdowns = $checkExistStmt->fetchColumn();
     
     if ($totalBreakdowns == 0) {
-        // Get booking details and room price
+        // ... (existing healing logic remains the same)
+        // Note: keeping the existing healing logic here as it's safe and helpful
         $bookingQuery = "
             SELECT b.start_date, b.end_date, bhr.price
             FROM bookings b
@@ -110,7 +138,7 @@ try {
             $endDate = $bookingData['end_date'];
             $monthlyPrice = floatval($bookingData['price']);
             
-            // Calculate periods
+            // Calculate periods...
             $startDateObj = new DateTime($startDate);
             $endDateObj = new DateTime($endDate);
             $diff = $startDateObj->diff($endDateObj);
@@ -119,7 +147,6 @@ try {
             if ($numberOfDays > 0) {
                 $cal = clone $startDateObj;
                 $cal->modify('+1 day');
-                
                 $remainingDays = $numberOfDays;
                 $monthCount = 0;
                 
@@ -136,20 +163,13 @@ try {
                 ";
                 $insertBreakdownStmt = $pdo->prepare($insertBreakdownSql);
 
-                // Monthly periods
                 while ($remainingDays >= 30) {
                     $monthCount++;
                     $periodStart = clone $cal;
                     $periodEnd = clone $cal;
                     $periodEnd->modify('+29 days');
                     
-                    $label = "";
-                    switch ($monthCount) {
-                        case 1: $label = "1st month"; break;
-                        case 2: $label = "2nd month"; break;
-                        case 3: $label = "3rd month"; break;
-                        default: $label = $monthCount . "th month"; break;
-                    }
+                    $label = ($monthCount == 1) ? "1st month" : (($monthCount == 2) ? "2nd month" : (($monthCount == 3) ? "3rd month" : $monthCount . "th month"));
                     
                     $insertBreakdownStmt->execute([
                         ':booking_id' => $bookingId,
@@ -166,7 +186,6 @@ try {
                     $remainingDays -= 30;
                 }
                 
-                // Remaining days
                 if ($remainingDays > 0) {
                     $periodStart = clone $cal;
                     $periodEnd = clone $cal;
@@ -196,7 +215,7 @@ try {
     ob_clean();
     echo json_encode([
         'success' => true,
-        'message' => 'Booking approved successfully.'
+        'message' => ($newStatus === 'Confirmed' ? 'Payment confirmed successfully.' : 'Booking approved successfully.')
     ]);
     ob_end_flush();
 
