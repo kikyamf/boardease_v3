@@ -183,18 +183,15 @@ try {
     }
 
     // Create payment record
-    $insertPaymentSql = "INSERT INTO payments (booking_id, user_id, owner_id, payment_amount, payment_method, payment_proof, payment_status, payment_date, payment_month, payment_year, payment_month_number) 
-                         VALUES (:booking_id, :user_id, :owner_id, :amount, :method, :proof, 'Pending', NOW(), :month, :year, :month_num)";
+    $insertPaymentSql = "INSERT INTO payments (booking_id, user_id, owner_id, payment_amount, payment_method, payment_proof, payment_status, payment_date) 
+                         VALUES (:booking_id, :user_id, :owner_id, :amount, :method, :proof, 'Pending', NOW())";
     $pdo->prepare($insertPaymentSql)->execute([
         ':booking_id' => $bookingId,
         ':user_id' => $actualUserId,
         ':owner_id' => $actualOwnerId,
         ':amount' => $amount,
         ':method' => $paymentMethod,
-        ':proof' => $paymentProofPath,
-        ':month' => date('Y-m', strtotime($startDate)),
-        ':year' => date('Y', strtotime($startDate)),
-        ':month_num' => date('m', strtotime($startDate))
+        ':proof' => $paymentProofPath
     ]);
     $paymentId = $pdo->lastInsertId();
 

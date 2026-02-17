@@ -185,10 +185,6 @@ try {
     
     try {
         // Create payment record with status 'Pending' (waiting for BH Owner approval)
-        $paymentMonth = date('Y-m');
-        $paymentYear = intval(date('Y'));
-        $paymentMonthNumber = intval(date('m'));
-        
         $insertPaymentSql = "
             INSERT INTO payments (
                 booking_id,
@@ -198,11 +194,7 @@ try {
                 payment_method,
                 payment_proof,
                 payment_status,
-                payment_date,
-                payment_month,
-                payment_year,
-                payment_month_number,
-                is_monthly_payment
+                payment_date
             ) VALUES (
                 :booking_id,
                 :user_id,
@@ -211,11 +203,7 @@ try {
                 :payment_method,
                 :payment_proof,
                 'Pending',
-                NOW(),
-                :payment_month,
-                :payment_year,
-                :payment_month_number,
-                1
+                NOW()
             )
         ";
         
@@ -227,10 +215,7 @@ try {
                 ':owner_id' => $ownerId,
                 ':payment_amount' => $totalAmount,
                 ':payment_method' => $paymentMethod,
-                ':payment_proof' => $paymentProofPath,
-                ':payment_month' => $paymentMonth,
-                ':payment_year' => $paymentYear,
-                ':payment_month_number' => $paymentMonthNumber
+                ':payment_proof' => $paymentProofPath
             ]);
             
             $paymentId = $pdo->lastInsertId();
