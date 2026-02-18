@@ -23,7 +23,13 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.util.Log;
+import android.view.ViewGroup;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,9 +41,20 @@ import java.util.Map;
 public class EditBoardingHouseActivity extends AppCompatActivity {
 
     private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    private EditText etDetailedAddress;
+    private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private ViewPager2 viewPagerImages;
     private ImageView ivPlaceholder;
     private com.google.android.material.floatingactionbutton.FloatingActionButton fabAddImages;
+
+    private static final String TAG = "EditBoardingHouse";
+    
+    // Address picker data
+    private String selectedProvince = "";
+    private String selectedMunicipality = "";
+    private String selectedBarangay = "";
+    private String selectedDetailedAddress = "";
+    private String pendingAddressToParse = ""; 
 
     private ArrayList<Uri> imageUris = new ArrayList<>();
     private ArrayList<Uri> originalImageUris = new ArrayList<>(); // Track original images
@@ -65,9 +82,19 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         etBathrooms = findViewById(R.id.etBathrooms);
         etArea = findViewById(R.id.etArea);
         etBuildYear = findViewById(R.id.etBuildYear);
+        
+        // Address views
+        spinnerProvince = findViewById(R.id.spinnerProvince);
+        spinnerMunicipality = findViewById(R.id.spinnerMunicipality);
+        spinnerBarangay = findViewById(R.id.spinnerBarangay);
+        etDetailedAddress = findViewById(R.id.etDetailedAddress);
+        
         viewPagerImages = findViewById(R.id.viewPagerImages);
         ivPlaceholder = findViewById(R.id.ivPlaceholder);
         fabAddImages = findViewById(R.id.fabAddImages);
+
+        // Initialize address picker
+        initializeAddressPicker();
 
         // Get data from intent
         Intent intent = getIntent();
@@ -203,9 +230,36 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
     private void saveChanges() {
         String name = etBhName.getText().toString().trim();
         String address = etBhAddress.getText().toString().trim();
+        
+        if (TextUtils.isEmpty(name)) {
+            etBhName.setError("Listing name is required");
+            etBhName.requestFocus();
+            return;
+        }
 
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(address)) {
-            Toast.makeText(this, "Please fill all required fields", Toast.LENGTH_SHORT).show();
+        if (spinnerProvince.getSelectedItemPosition() <= 0) {
+            Toast.makeText(this, "Please select a province", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (spinnerMunicipality.getSelectedItemPosition() <= 0) {
+            Toast.makeText(this, "Please select a municipality", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (spinnerBarangay.getSelectedItemPosition() <= 0) {
+            Toast.makeText(this, "Please select a barangay", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (TextUtils.isEmpty(etDetailedAddress.getText().toString().trim())) {
+            etDetailedAddress.setError("Detailed address is required");
+            etDetailedAddress.requestFocus();
+            return;
+        }
+
+        if (TextUtils.isEmpty(address)) {
+            Toast.makeText(this, "Address cannot be empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -336,12 +390,18 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                         
                         // Populate fields
                         etBhName.setText(obj.optString("bh_name", ""));
-                        etBhAddress.setText(obj.optString("bh_address", ""));
+                        String fullAddress = obj.optString("bh_address", "");
+                        etBhAddress.setText(fullAddress);
                         etBhDescription.setText(obj.optString("bh_description", ""));
                         etBhRules.setText(obj.optString("bh_rules", ""));
                         etBathrooms.setText(obj.optString("number_of_bathroom", ""));
                         etArea.setText(obj.optString("area", ""));
                         etBuildYear.setText(obj.optString("build_year", ""));
+                        
+                        // Parse address to populate spinners
+                        if (!fullAddress.isEmpty()) {
+                            parseAndPopulateAddress(fullAddress);
+                        }
 
                         // Handle images
                         if (obj.has("images") && !obj.isNull("images")) {
@@ -816,6 +876,687 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         super.onDestroy();
         hideLoadingDialog();
         hideImageUploadDialog();
+    }
+
+    private void initializeAddressPicker() {
+        // Initialize barangay spinner with default option
+        String[] defaultBarangayArray = {"Select Barangay"};
+        ArrayAdapter<String> defaultBarangayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, defaultBarangayArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                android.widget.TextView textView = (android.widget.TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000); // Black text color for selected item
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof android.widget.TextView) {
+                    android.widget.TextView textView = (android.widget.TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        defaultBarangayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBarangay.setAdapter(defaultBarangayAdapter);
+        
+        loadProvinces();
+        
+        spinnerProvince.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) {
+                    String newProvince = parent.getItemAtPosition(position).toString();
+                    if (!newProvince.equals(selectedProvince)) {
+                        clearMunicipalityAndBarangay();
+                        selectedMunicipality = "";
+                        selectedBarangay = "";
+                        selectedProvince = newProvince;
+                        loadMunicipalities(selectedProvince);
+                    } else {
+                        selectedProvince = newProvince;
+                    }
+                } else {
+                    selectedProvince = "";
+                    clearMunicipalityAndBarangay();
+                    selectedMunicipality = "";
+                    selectedBarangay = "";
+                }
+                updateCompleteAddress();
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        spinnerMunicipality.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) {
+                    String newMunicipality = parent.getItemAtPosition(position).toString();
+                    
+                    // If municipality changed, reset barangay
+                    if (!newMunicipality.equals(selectedMunicipality)) {
+                        clearBarangay();
+                        selectedBarangay = "";
+                        
+                        // Set new municipality and load barangays
+                        selectedMunicipality = newMunicipality;
+                        loadBarangays(selectedMunicipality);
+                    } else {
+                        // Same municipality selected, just update
+                        selectedMunicipality = newMunicipality;
+                    }
+                } else {
+                    // "Select Municipality" selected
+                    selectedMunicipality = "";
+                    clearBarangay();
+                    selectedBarangay = "";
+                }
+                updateCompleteAddress();
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        // Set up barangay selection listener
+        spinnerBarangay.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                if (position > 0) { // Skip "Select Barangay" option
+                    selectedBarangay = parent.getItemAtPosition(position).toString();
+                } else {
+                    selectedBarangay = "";
+                }
+                updateCompleteAddress();
+            }
+            
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+        
+        etDetailedAddress.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                selectedDetailedAddress = s.toString().trim();
+                updateCompleteAddress();
+            }
+        });
+    }
+
+    private void loadProvinces() {
+        String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=provinces";
+        
+        com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+            Request.Method.GET, url, null,
+            response -> {
+                try {
+                    if (response.getBoolean("success")) {
+                        org.json.JSONArray provincesArray = response.getJSONArray("data");
+                        
+                        String[] provinceNames = new String[provincesArray.length() + 1];
+                        provinceNames[0] = "Select Province";
+                        
+                        for (int i = 0; i < provincesArray.length(); i++) {
+                            org.json.JSONObject province = provincesArray.getJSONObject(i);
+                            provinceNames[i + 1] = province.getString("name");
+                        }
+                        
+                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, provinceNames) {
+                            @Override
+                            public View getView(int position, View convertView, ViewGroup parent) {
+                                View view = super.getView(position, convertView, parent);
+                                android.widget.TextView textView = (android.widget.TextView) view;
+                                textView.setTextColor(0xFF000000);
+                                textView.setTextSize(16);
+                                return view;
+                            }
+
+                            @Override
+                            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                View view = super.getDropDownView(position, convertView, parent);
+                                if (view instanceof android.widget.TextView) {
+                                    android.widget.TextView textView = (android.widget.TextView) view;
+                                    textView.setTextColor(0xFFFFFFFF);
+                                    textView.setTextSize(16);
+                                    textView.setPadding(16, 16, 16, 16);
+                                    textView.setBackgroundColor(0xFF2C2C2C);
+                                } else {
+                                    android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                                    if (textView != null) {
+                                        textView.setTextColor(0xFFFFFFFF);
+                                        textView.setTextSize(16);
+                                        textView.setPadding(16, 16, 16, 16);
+                                    }
+                                    view.setBackgroundColor(0xFF2C2C2C);
+                                }
+                                return view;
+                            }
+                        };
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        spinnerProvince.setAdapter(adapter);
+                        
+                        if (!pendingAddressToParse.isEmpty()) {
+                            parseAndPopulateAddress(pendingAddressToParse);
+                            pendingAddressToParse = "";
+                        }
+                    } else {
+                        loadProvincesFallback();
+                    }
+                } catch (org.json.JSONException e) {
+                    Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                    loadProvincesFallback();
+                }
+            },
+            error -> {
+                Log.e(TAG, "Network error loading provinces: " + error.getMessage());
+                loadProvincesFallback();
+            }
+        );
+        
+        Volley.newRequestQueue(this).add(request);
+    }
+    
+    private void loadProvincesFallback() {
+        String[] fallbackProvinces = {
+            "Select Province", "Abra", "Agusan del Norte", "Agusan del Sur", "Aklan", "Albay", "Antique", "Apayao", "Aurora",
+            "Basilan", "Bataan", "Batanes", "Batangas", "Benguet", "Biliran", "Bohol", "Bukidnon", "Bulacan",
+            "Cagayan", "Camarines Norte", "Camarines Sur", "Camiguin", "Capiz", "Catanduanes", "Cavite", "Cebu",
+            "Cotabato", "Davao del Norte", "Davao del Sur", "Davao Oriental", "Davao de Oro", "Davao Occidental",
+            "Dinagat Islands", "Eastern Samar", "Guimaras", "Ifugao", "Ilocos Norte", "Ilocos Sur", "Iloilo",
+            "Isabela", "Kalinga", "Laguna", "Lanao del Norte", "Lanao del Sur", "La Union", "Leyte", "Maguindanao",
+            "Marinduque", "Masbate", "Metro Manila", "Misamis Occidental", "Misamis Oriental", "Mountain Province",
+            "Negros Occidental", "Negros Oriental", "Northern Samar", "Nueva Ecija", "Nueva Vizcaya",
+            "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Pampanga", "Pangasinan", "Quezon", "Quirino",
+            "Rizal", "Romblon", "Samar", "Sarangani", "Siquijor", "Sorsogon", "South Cotabato", "Southern Leyte",
+            "Sultan Kudarat", "Sulu", "Surigao del Norte", "Surigao del Sur", "Tarlac", "Tawi-Tawi", "Zambales",
+            "Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"
+        };
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, fallbackProvinces) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                android.widget.TextView textView = (android.widget.TextView) view;
+                textView.setTextColor(0xFF000000);
+                textView.setTextSize(16);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof android.widget.TextView) {
+                    android.widget.TextView textView = (android.widget.TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerProvince.setAdapter(adapter);
+        
+        if (!pendingAddressToParse.isEmpty()) {
+            parseAndPopulateAddress(pendingAddressToParse);
+            pendingAddressToParse = "";
+        }
+    }
+    
+    private void loadMunicipalities(String province) {
+        loadMunicipalitiesWithCallback(province, null);
+    }
+    
+    private void loadMunicipalitiesWithCallback(String province, Runnable callback) {
+        try {
+            String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=municipalities&province_name=" + 
+                java.net.URLEncoder.encode(province, "UTF-8");
+            
+            com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+                Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            org.json.JSONArray municipalitiesArray = response.getJSONArray("data");
+                            
+                            if (municipalitiesArray.length() > 0) {
+                                String[] municipalityNames = new String[municipalitiesArray.length() + 1];
+                                municipalityNames[0] = "Select Municipality";
+                                
+                                for (int i = 0; i < municipalitiesArray.length(); i++) {
+                                    org.json.JSONObject municipality = municipalitiesArray.getJSONObject(i);
+                                    municipalityNames[i + 1] = municipality.getString("name");
+                                }
+                                
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, municipalityNames) {
+                                    @Override
+                                    public View getView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getView(position, convertView, parent);
+                                        android.widget.TextView textView = (android.widget.TextView) view;
+                                        textView.setTextColor(0xFF000000);
+                                        textView.setTextSize(16);
+                                        return view;
+                                    }
+
+                                    @Override
+                                    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getDropDownView(position, convertView, parent);
+                                        if (view instanceof android.widget.TextView) {
+                                            android.widget.TextView textView = (android.widget.TextView) view;
+                                            textView.setTextColor(0xFFFFFFFF);
+                                            textView.setTextSize(16);
+                                            textView.setPadding(16, 16, 16, 16);
+                                            textView.setBackgroundColor(0xFF2C2C2C);
+                                        } else {
+                                            android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                                            if (textView != null) {
+                                                textView.setTextColor(0xFFFFFFFF);
+                                                textView.setTextSize(16);
+                                                textView.setPadding(16, 16, 16, 16);
+                                            }
+                                            view.setBackgroundColor(0xFF2C2C2C);
+                                        }
+                                        return view;
+                                    }
+                                };
+                                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                spinnerMunicipality.setAdapter(adapter);
+                                
+                                if (callback != null) {
+                                    runOnUiThread(callback);
+                                }
+                            }
+                        }
+                    } catch (org.json.JSONException e) {
+                        Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Error loading municipalities: " + error.getMessage());
+                }
+            );
+            
+            Volley.newRequestQueue(this).add(request);
+        } catch (Exception e) {
+            Log.e(TAG, "Error encoding province name: " + e.getMessage());
+        }
+    }
+    
+    private void loadBarangays(String municipality) {
+        loadBarangaysWithCallback(municipality, null);
+    }
+    
+    private void loadBarangaysWithCallback(String municipality, Runnable callback) {
+        try {
+            String url = "https://boardease.calapebohol.com/philippine_address_api.php?action=barangays&municipality_name=" + 
+                java.net.URLEncoder.encode(municipality, "UTF-8");
+            
+            com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
+                Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getBoolean("success")) {
+                            org.json.JSONArray barangaysArray = response.getJSONArray("data");
+                            
+                            if (barangaysArray.length() > 0) {
+                                String[] barangayNames = new String[barangaysArray.length() + 1];
+                                barangayNames[0] = "Select Barangay";
+                                
+                                for (int i = 0; i < barangaysArray.length(); i++) {
+                                    org.json.JSONObject barangay = barangaysArray.getJSONObject(i);
+                                    barangayNames[i + 1] = barangay.getString("name");
+                                }
+                                
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, barangayNames) {
+                                    @Override
+                                    public View getView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getView(position, convertView, parent);
+                                        android.widget.TextView textView = (android.widget.TextView) view;
+                                        textView.setTextColor(0xFF000000);
+                                        textView.setTextSize(16);
+                                        return view;
+                                    }
+
+                                    @Override
+                                    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                                        View view = super.getDropDownView(position, convertView, parent);
+                                        if (view instanceof android.widget.TextView) {
+                                            android.widget.TextView textView = (android.widget.TextView) view;
+                                            textView.setTextColor(0xFFFFFFFF);
+                                            textView.setTextSize(16);
+                                            textView.setPadding(16, 16, 16, 16);
+                                            textView.setBackgroundColor(0xFF2C2C2C);
+                                        } else {
+                                            android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                                            if (textView != null) {
+                                                textView.setTextColor(0xFFFFFFFF);
+                                                textView.setTextSize(16);
+                                                textView.setPadding(16, 16, 16, 16);
+                                            }
+                                            view.setBackgroundColor(0xFF2C2C2C);
+                                        }
+                                        return view;
+                                    }
+                                };
+                                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                                spinnerBarangay.setAdapter(adapter);
+                                
+                                if (callback != null) {
+                                    runOnUiThread(callback);
+                                }
+                            }
+                        }
+                    } catch (org.json.JSONException e) {
+                        Log.e(TAG, "JSON parsing error: " + e.getMessage());
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Error loading barangays: " + error.getMessage());
+                }
+            );
+            
+            Volley.newRequestQueue(this).add(request);
+        } catch (Exception e) {
+            Log.e(TAG, "Error encoding municipality name: " + e.getMessage());
+        }
+    }
+    
+    private void clearMunicipalityAndBarangay() {
+        String[] emptyArray = {"Select Municipality"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                android.widget.TextView textView = (android.widget.TextView) view;
+                textView.setTextColor(0xFF000000);
+                textView.setTextSize(16);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof android.widget.TextView) {
+                    android.widget.TextView textView = (android.widget.TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMunicipality.setAdapter(adapter);
+        clearBarangay();
+    }
+    
+    private void clearBarangay() {
+        String[] emptyArray = {"Select Barangay"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, emptyArray) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                android.widget.TextView textView = (android.widget.TextView) view.findViewById(android.R.id.text1);
+                if (textView != null) {
+                    textView.setTextColor(0xFF000000);
+                }
+                return view;
+            }
+            
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof android.widget.TextView) {
+                    android.widget.TextView textView = (android.widget.TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                } else {
+                    android.widget.TextView textView = view.findViewById(android.R.id.text1);
+                    if (textView != null) {
+                        textView.setTextColor(0xFFFFFFFF);
+                        textView.setTextSize(16);
+                        textView.setPadding(16, 16, 16, 16);
+                    }
+                    view.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        if (spinnerBarangay != null) {
+            spinnerBarangay.setAdapter(adapter);
+        }
+        selectedBarangay = "";
+    }
+    
+    private void updateCompleteAddress() {
+        StringBuilder completeAddress = new StringBuilder();
+        
+        if (!selectedDetailedAddress.isEmpty()) {
+            completeAddress.append(selectedDetailedAddress);
+        }
+        
+        if (!selectedBarangay.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedBarangay);
+        }
+        
+        if (!selectedMunicipality.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedMunicipality);
+        }
+        
+        if (!selectedProvince.isEmpty()) {
+            if (completeAddress.length() > 0) completeAddress.append(", ");
+            completeAddress.append(selectedProvince);
+        }
+        
+        etBhAddress.setText(completeAddress.toString());
+    }
+    
+    private void parseAndPopulateAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            return;
+        }
+        
+        android.widget.SpinnerAdapter adapter = spinnerProvince.getAdapter();
+        if (!(adapter instanceof ArrayAdapter) || adapter == null || adapter.getCount() == 0) {
+            pendingAddressToParse = address;
+            return;
+        }
+
+        @SuppressWarnings("unchecked")
+        ArrayAdapter<String> provinceAdapter = (ArrayAdapter<String>) adapter;
+        
+        String[] parts = address.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].trim();
+        }
+        
+        String foundProvince = null;
+        int provinceIndex = -1;
+        
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String potentialProvince = findProvinceInAddress(parts[i], provinceAdapter);
+            if (potentialProvince != null) {
+                foundProvince = potentialProvince;
+                provinceIndex = i;
+                break;
+            }
+        }
+        
+        if (foundProvince != null && provinceIndex >= 0) {
+            selectedProvince = foundProvince;
+            
+            if (provinceIndex == parts.length - 1) {
+                if (parts.length >= 4) {
+                    selectedDetailedAddress = parts[0];
+                    selectedBarangay = parts[1];
+                    selectedMunicipality = parts[2];
+                } else if (parts.length == 3) {
+                    selectedBarangay = parts[0];
+                    selectedMunicipality = parts[1];
+                } else if (parts.length == 2) {
+                    selectedMunicipality = parts[0];
+                }
+            } else {
+                StringBuilder detailedAddr = new StringBuilder();
+                for (int i = 0; i < provinceIndex; i++) {
+                    if (i > 0) detailedAddr.append(", ");
+                    detailedAddr.append(parts[i]);
+                }
+                
+                if (provinceIndex >= 3) {
+                    selectedDetailedAddress = parts[0];
+                    selectedBarangay = parts[1];
+                    selectedMunicipality = parts[2];
+                } else if (provinceIndex == 2) {
+                    selectedBarangay = parts[0];
+                    selectedMunicipality = parts[1];
+                } else if (provinceIndex == 1) {
+                    selectedMunicipality = parts[0];
+                } else {
+                    selectedDetailedAddress = detailedAddr.toString();
+                }
+            }
+        } else {
+            if (parts.length >= 4) {
+                selectedDetailedAddress = parts[0];
+                selectedBarangay = parts[1];
+                selectedMunicipality = parts[2];
+                selectedProvince = parts[3];
+            } else if (parts.length == 3) {
+                selectedBarangay = parts[0];
+                selectedMunicipality = parts[1];
+                selectedProvince = parts[2];
+            } else if (parts.length == 2) {
+                selectedMunicipality = parts[0];
+                selectedProvince = parts[1];
+            } else {
+                String potentialProvince = findProvinceInAddress(parts[0], provinceAdapter);
+                if (potentialProvince != null) {
+                    selectedProvince = potentialProvince;
+                } else {
+                    selectedDetailedAddress = parts[0];
+                }
+            }
+        }
+        
+        if (!selectedDetailedAddress.isEmpty()) {
+            etDetailedAddress.setText(selectedDetailedAddress);
+        }
+        
+        if (!selectedProvince.isEmpty()) {
+            setProvinceSelection(selectedProvince);
+        }
+    }
+    
+    private String findProvinceInAddress(String text, ArrayAdapter<String> provinceAdapter) {
+        if (provinceAdapter == null || text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        String cleanText = text.trim();
+        for (int i = 1; i < provinceAdapter.getCount(); i++) {
+            String province = provinceAdapter.getItem(i);
+            if (province != null) {
+                if (province.equalsIgnoreCase(cleanText) || cleanText.contains(province) || province.contains(cleanText)) {
+                    return province;
+                }
+            }
+        }
+        return null;
+    }
+    
+    private void setProvinceSelection(String provinceName) {
+        android.widget.SpinnerAdapter spinnerAdapter = spinnerProvince.getAdapter();
+        if (spinnerAdapter instanceof ArrayAdapter) {
+            @SuppressWarnings("unchecked")
+            ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerAdapter;
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (adapter.getItem(i).equals(provinceName)) {
+                    spinnerProvince.setSelection(i, false);
+                    selectedProvince = provinceName;
+                    loadMunicipalitiesWithCallback(selectedProvince, () -> setMunicipalitySelection(selectedMunicipality));
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void setMunicipalitySelection(String municipalityName) {
+        android.widget.SpinnerAdapter spinnerAdapter = spinnerMunicipality.getAdapter();
+        if (spinnerAdapter instanceof ArrayAdapter && !municipalityName.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerAdapter;
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (adapter.getItem(i).equals(municipalityName)) {
+                    spinnerMunicipality.setSelection(i, false);
+                    selectedMunicipality = municipalityName;
+                    loadBarangaysWithCallback(selectedMunicipality, () -> setBarangaySelection(selectedBarangay));
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void setBarangaySelection(String barangayName) {
+        android.widget.SpinnerAdapter spinnerAdapter = spinnerBarangay.getAdapter();
+        if (spinnerAdapter instanceof ArrayAdapter && !barangayName.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            ArrayAdapter<String> adapter = (ArrayAdapter<String>) spinnerAdapter;
+            for (int i = 0; i < adapter.getCount(); i++) {
+                String item = adapter.getItem(i);
+                if (item != null && item.equalsIgnoreCase(barangayName)) {
+                    spinnerBarangay.setSelection(i, false);
+                    selectedBarangay = item;
+                    break;
+                }
+            }
+        }
     }
 
     /**
