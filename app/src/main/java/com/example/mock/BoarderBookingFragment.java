@@ -140,7 +140,7 @@ public class BoarderBookingFragment extends Fragment {
     // Target booking to highlight (deep link from dashboard)
     private static int targetBookingId = -1;
 
-    public static void setTargetBookingHighlight(int bookingId) {
+    public static void setTargetBookingToOpen(int bookingId) {
         targetBookingId = bookingId;
     }
 
@@ -597,10 +597,38 @@ public class BoarderBookingFragment extends Fragment {
                 }
             }
             
-            // Check if we need to highlight a specific booking
+            // Check if we need to open a specific booking details (Deep Link)
             if (targetBookingId != -1) {
-                highlightBookingItem(targetBookingId);
-                targetBookingId = -1; // Reset after use
+                // Search in current bookings first
+                for (Booking booking : currentBookings) {
+                    if (booking.getBookingId() == targetBookingId) {
+                        showCurrentBookingDetailsDialog(booking);
+                        targetBookingId = -1; // Reset after usage
+                        return;
+                    }
+                }
+                
+                // Search in pending bookings
+                for (Booking booking : pendingBookings) {
+                    if (booking.getBookingId() == targetBookingId) {
+                         showPendingBookingDialog(booking);
+                        targetBookingId = -1;
+                        return;
+                    }
+                }
+                
+                // Search in history
+                 for (Booking booking : bookingHistory) {
+                    if (booking.getBookingId() == targetBookingId) {
+                         // Maybe show history details if you have a dialog for it
+                        targetBookingId = -1;
+                        return;
+                    }
+                }
+                
+                // If not found yet, maybe data hasn't loaded? Keep it set for next update? 
+                // For now, reset to avoid getting stuck if ID is invalid
+               // targetBookingId = -1; 
             }
         } catch (Exception e) {
             Log.e(TAG, "Error updating UI: " + e.getMessage());

@@ -102,6 +102,27 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
     private String currentUserMunicipality = null;
     private String currentUserProvince = null;
     private String currentUserBarangay = null;
+    
+    private boolean isWaitingForLocationSettings = false;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isWaitingForLocationSettings) {
+            if (isLocationEnabled()) {
+                isWaitingForLocationSettings = false;
+                Toast.makeText(this, "Location enabled! Updating...", Toast.LENGTH_SHORT).show();
+                // Refresh location and trigger "Near Me"
+                getCurrentLocation(true); 
+            }
+        }
+    }
+
+    private boolean isLocationEnabled() {
+        android.location.LocationManager locationManager = (android.location.LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) || 
+               locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +146,7 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
         setupRecyclerViews();
         
         // Initial data load
-        getCurrentLocation();
+        getCurrentLocation(false);
         loadBoardingHouses();
     }
     
@@ -331,7 +352,8 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
                  filterByProximity(userLat, userLon);
                 return;
             } else {
-                Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                showLocationEnableDialog();
                 return;
             }
         }
@@ -710,7 +732,7 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
         Volley.newRequestQueue(this).add(request);
     }
     
-    private void getCurrentLocation() {
+    private void getCurrentLocation(boolean triggerSearch) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
             return;
@@ -723,8 +745,16 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
                     userLon = location.getLongitude();
                     loadMap(userLat, userLon);
                     fetchUserLocationContext(userLat, userLon);
+                    
+                    if (triggerSearch) {
+                        etSearch.setText("Near Me");
+                        performSearch("Near Me");
+                    }
                 } else {
                      loadMap(null, null);
+                     if (triggerSearch) {
+                         Toast.makeText(this, "Could not retrieve location. Please check signal.", Toast.LENGTH_SHORT).show();
+                     }
                 }
             });
     }
@@ -761,6 +791,19 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
             error -> Log.e(TAG, "Error fetching location context", error)
         );
         Volley.newRequestQueue(this).add(request);
+    }
+
+    private void showLocationEnableDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Location Services Required")
+            .setMessage("To use 'Near Me' search, please enable location services on your device.")
+            .setPositiveButton("Settings", (dialog, which) -> {
+                isWaitingForLocationSettings = true;
+                Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void updateMapMarkers() {

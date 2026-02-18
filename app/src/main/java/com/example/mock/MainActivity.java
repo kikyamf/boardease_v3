@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
             }
             
             // Show selected fragment (or add if first time)
-            if (fragment.isAdded()) {
+            if (getSupportFragmentManager().findFragmentByTag(tag) != null) {
                 transaction.show(fragment);
             } else {
                 transaction.add(R.id.fragment_container, fragment, tag);

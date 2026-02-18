@@ -270,6 +270,8 @@ public class BoarderDashboard extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(tabId);
         }
     }
+
+
     
     /**
      * Setup notification permission launcher for Android 13+
@@ -549,7 +551,7 @@ public class BoarderDashboard extends AppCompatActivity {
                 dialog.dismiss();
                 
                 // Set the detail FIRST so fragment sees it when it starts/resumes
-                BoarderBookingFragment.setTargetBookingHighlight(bookingId);
+                BoarderBookingFragment.setTargetBookingToOpen(bookingId);
                 
                 // Navigate to Bookings tab (nav_activity)
                 bottomNavigationView.setSelectedItemId(R.id.nav_activity);
