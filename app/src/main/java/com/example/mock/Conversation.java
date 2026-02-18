@@ -61,6 +61,22 @@ public class Conversation extends AppCompatActivity {
     private ProgressDialog progressDialog; // Progress dialog for loading messages
     private String currentUserType; // Store user role
     
+    // Group Chat Waiting Modal
+    private AlertDialog waitingDialog;
+    private boolean hasShownWaitingDialog = false;
+
+    private void showWaitingDialog() {
+        if (isFinishing()) return;
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Welcome to " + chatUserName.getText().toString());
+        builder.setMessage("This community is ready. Members will be automatically added once their rental becomes active.\n\nNo members yet. Waiting for approved boarders.");
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.setCancelable(false); // Make it persistent until dismissed by user or logic
+        waitingDialog = builder.create();
+        waitingDialog.show();
+    }
+    
     // Polling for realtime updates
     private android.os.Handler pollingHandler = new android.os.Handler();
     private static final long POLLING_INTERVAL = 2000; // 2 seconds (faster for conversation)
@@ -497,6 +513,22 @@ public class Conversation extends AppCompatActivity {
                             }
                             
                             android.util.Log.d("LoadMessages", "Final message list size: " + messageList.size());
+                            
+                            // Check member count for Group Chat Modal
+                            if ("group".equals(chatType)) {
+                                int memberCount = data.optInt("member_count", 0);
+                                if (memberCount <= 1) {
+                                    if (!hasShownWaitingDialog) {
+                                        showWaitingDialog();
+                                        hasShownWaitingDialog = true;
+                                    }
+                                } else {
+                                    // If member joined, dismiss the dialog if it's showing
+                                    if (waitingDialog != null && waitingDialog.isShowing()) {
+                                        waitingDialog.dismiss();
+                                    }
+                                }
+                            }
                             
                             // Update empty state first
                             updateMessagesEmptyState();

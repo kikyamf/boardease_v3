@@ -813,15 +813,17 @@ public class AddingRoomsFragment extends Fragment {
                 // If used in AddRoomsActivity, just finish the activity (goes back to RoomViewActivity)
                 getActivity().finish();
             } else {
-                // If used in other contexts (like main Add New Listing flow), go back to AddingBhFragment
+                // Return to the previous AddingBhFragment state
                 getActivity().getSupportFragmentManager().popBackStack();
                 
-                // Clear the form by creating a new AddingBhFragment
-                AddingBhFragment newFragment = AddingBhFragment.newInstance(userId);
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, newFragment)
-                        .commit();
+                // Then programmatically switch to the Manage tab in MainActivity
+                if (getActivity() != null) {
+                    com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
+                        getActivity().findViewById(R.id.bottom_navigation);
+                    if (bottomNav != null) {
+                        bottomNav.setSelectedItemId(R.id.nav_manage);
+                    }
+                }
             }
         }
     }

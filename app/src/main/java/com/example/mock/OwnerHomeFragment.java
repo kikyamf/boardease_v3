@@ -143,15 +143,14 @@ public class OwnerHomeFragment extends Fragment {
             }
         });
 
-        // Check if views are already initialized (fragment was hidden/shown, not recreated)
-        if (tvOwnerName == null) {
-            // Bind views
+        // Always bind views (onCreateView provides a fresh view instance)
+        // Bind views
             tvOwnerName = view.findViewById(R.id.tvOwnerName);
             
             // Load name from session immediately
             android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
             String firstName = prefs.getString("user_first_name", "Owner");
-             tvOwnerName.setText("Hello, " + firstName + "!");
+        if (tvOwnerName != null) tvOwnerName.setText("Hello, " + firstName + "!");
             
             tvListingsCount = view.findViewById(R.id.tvListingsCount);
             tvBoardersCount = view.findViewById(R.id.tvBoardersCount);
@@ -219,7 +218,6 @@ public class OwnerHomeFragment extends Fragment {
                 android.util.Log.d("MessageBadge", "Parent ViewGroup: " + parent.getClass().getSimpleName());
                 android.util.Log.d("MessageBadge", "Parent child count: " + parent.getChildCount());
             }
-        }
         
         // Create a TextView for notification badge count if it doesn't exist
         android.util.Log.d("NotificationBadge", "Initializing notification badge, badgeNotif is null: " + (badgeNotif == null));
@@ -228,14 +226,14 @@ public class OwnerHomeFragment extends Fragment {
             android.util.Log.d("NotificationBadge", "Created badgeNotifCount TextView");
             
             // Create FrameLayout.LayoutParams for proper positioning (same as badgeNotif)
-            FrameLayout.LayoutParams badgeParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams notifBadgeParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, 
                 FrameLayout.LayoutParams.WRAP_CONTENT
             );
-            badgeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
-            badgeParams.topMargin = 6; // Same as badgeNotif
-            badgeParams.rightMargin = 6; // Same as badgeNotif
-            badgeNotifCount.setLayoutParams(badgeParams);
+            notifBadgeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            notifBadgeParams.topMargin = 6; // Same as badgeNotif
+            notifBadgeParams.rightMargin = 6; // Same as badgeNotif
+            badgeNotifCount.setLayoutParams(notifBadgeParams);
             
             // Enhanced badge styling
             badgeNotifCount.setBackground(getResources().getDrawable(R.drawable.red_dot));
@@ -274,6 +272,8 @@ public class OwnerHomeFragment extends Fragment {
                     hideNotificationBadge();
                     Intent intent = new Intent(getContext(), Notification.class);
                     startActivity(intent);
+                } else {
+                    Toast.makeText(getContext(), "Account Verification Pending", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -284,6 +284,8 @@ public class OwnerHomeFragment extends Fragment {
                     // Don't hide badge here - only hide when opening actual conversation
                     Intent intent = new Intent(getContext(), Messages.class);
                     startActivity(intent);
+                } else {
+                    Toast.makeText(getContext(), "Account Verification Pending", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -416,12 +418,30 @@ public class OwnerHomeFragment extends Fragment {
         stopPolling();
     }
 
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            // Refresh data when fragment becomes visible (e.g. from tab navigation)
+            Log.d("OwnerHomeFragment", "Fragment shown, refreshing data...");
+            fetchOwnerDashboardData();
+            checkUnreadMessages();
+            checkUnreadNotifications();
+            checkUserStatus();
+        }
+    }
+
     private void fetchOwnerDashboardData() {
         // Manual call (first time or swipe refresh)
         fetchOwnerDashboardDataInternal(true);
     }
 
     private void fetchOwnerDashboardDataInternal(boolean showLoading) {
+        if (userId == -1) {
+            if (showLoading) Log.e("OwnerHomeFragment", "Cannot fetch dashboard data: User ID is -1");
+            return;
+        }
+
         String url = "https://boardease.calapebohol.com/get_owner_dashboard.php";
         if (showLoading) {
             Log.d("OwnerHomeFragment", "=== FETCHING OWNER DASHBOARD DATA ===");

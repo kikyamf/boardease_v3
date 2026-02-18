@@ -188,36 +188,64 @@ public class AddingBhFragment extends Fragment {
     
     private void restoreSavedData() {
         // Restore images from static variable
+        // Always sync with static variable to ensure state matches (e.g. if cleared)
+        imageUris.clear();
         if (!savedImageUris.isEmpty()) {
-            imageUris.clear();
             imageUris.addAll(savedImageUris);
         }
     }
     
     private void populateFieldsWithSavedData() {
-        if (etBhName != null) etBhName.setText(savedBhName);
+        if (etBhName != null) etBhName.setText(savedBhName != null ? savedBhName : "");
         
-        // Populate Address components
-        if (!savedProvince.isEmpty()) {
-            // Spinners need to be set after items are loaded. 
-            // The loading methods (loadProvinces, etc.) already have logic to set selection if savedX matches.
+        // Reset Address Spinners if data is empty
+        if (savedProvince.isEmpty()) {
+            if (spinnerProvince != null) spinnerProvince.setSelection(0);
+            if (spinnerMunicipality != null) spinnerMunicipality.setSelection(0);
+            if (spinnerBarangay != null) spinnerBarangay.setSelection(0);
+            selectedProvince = "";
+            selectedMunicipality = "";
+            selectedBarangay = "";
         }
         
-        if (etBhDescription != null) etBhDescription.setText(savedBhDescription);
-        if (etBhRules != null) etBhRules.setText(savedBhRules);
-        if (etBathrooms != null) etBathrooms.setText(savedBhBathrooms);
-        if (etArea != null) etArea.setText(savedBhArea);
-        if (etBuildYear != null) etBuildYear.setText(savedBhBuildYear);
-        if (etLandmark != null) etLandmark.setText(savedLandmark);
+        if (etBhDescription != null) etBhDescription.setText(savedBhDescription != null ? savedBhDescription : "");
+        if (etBhRules != null) etBhRules.setText(savedBhRules != null ? savedBhRules : "");
+        if (etBathrooms != null) etBathrooms.setText(savedBhBathrooms != null ? savedBhBathrooms : "");
+        if (etArea != null) etArea.setText(savedBhArea != null ? savedBhArea : "");
+        if (etBuildYear != null) etBuildYear.setText(savedBhBuildYear != null ? savedBhBuildYear : "");
+        if (etLandmark != null) etLandmark.setText(savedLandmark != null ? savedLandmark : "");
         
-        //Address confirmation status logic restoration already in onCreateView
+        // Always update address confirmation flag
+        isAddressConfirmed = savedAddressConfirmed;
+        
+        // If address is cleared, reset map visibility
+        if (!isAddressConfirmed && webViewMap != null) {
+            webViewMap.setVisibility(View.GONE);
+            if (llMapLoading != null) llMapLoading.setVisibility(View.GONE);
+            String html = "<html><body style='display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#666;text-align:center;'>Map will appear here after selecting address.</body></html>";
+            webViewMap.loadData(html, "text/html", "UTF-8");
+        }
         
         // Update image adapter if there are saved images
-        if (!imageUris.isEmpty() && imageAdapter != null) {
+        if (imageAdapter != null) {
             imageAdapter.notifyDataSetChanged();
             if (ivPlaceholder != null) {
-                ivPlaceholder.setVisibility(View.GONE);
+                ivPlaceholder.setVisibility(imageUris.isEmpty() ? View.VISIBLE : View.GONE);
             }
+            if (viewPagerImages != null) {
+                viewPagerImages.setVisibility(imageUris.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+        }
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            // When fragment becomes visible (e.g., coming back from success or tab switch), sync data
+            Log.d("AddBhDebug", "Fragment shown, syncing fields with saved data");
+            restoreSavedData();
+            populateFieldsWithSavedData();
         }
     }
 
@@ -524,7 +552,6 @@ public class AddingBhFragment extends Fragment {
     // Method to clear saved data (call this after successful save)
     public static void clearSavedData() {
         savedBhName = "";
-        // savedBhAddress removed
         savedProvince = "";
         savedMunicipality = "";
         savedBarangay = "";
@@ -537,6 +564,7 @@ public class AddingBhFragment extends Fragment {
         savedBhBuildYear = "";
         savedLandmark = "";
         savedImageUris.clear();
+        Log.d("AddBhDebug", "All saved data cleared");
     }
 
     // NEW: Save images when fragment is about to be destroyed
@@ -747,6 +775,7 @@ public class AddingBhFragment extends Fragment {
         com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
             com.android.volley.Request.Method.GET, url, null,
             response -> {
+                if (!isAdded() || getContext() == null) return;
                 try {
                     Log.d("AddressPicker", "Provinces response received: " + response.toString());
                     
@@ -867,6 +896,7 @@ public class AddingBhFragment extends Fragment {
         com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
             com.android.volley.Request.Method.GET, url, null,
             response -> {
+                if (!isAdded() || getContext() == null) return;
                 try {
                     if (response.getBoolean("success")) {
                         org.json.JSONArray municipalitiesArray = response.getJSONArray("data");
@@ -956,6 +986,7 @@ public class AddingBhFragment extends Fragment {
         com.android.volley.toolbox.JsonObjectRequest request = new com.android.volley.toolbox.JsonObjectRequest(
             com.android.volley.Request.Method.GET, url, null,
             response -> {
+                if (!isAdded() || getContext() == null) return;
                 try {
                     if (response.getBoolean("success")) {
                         org.json.JSONArray barangaysArray = response.getJSONArray("data");
@@ -1093,6 +1124,8 @@ public class AddingBhFragment extends Fragment {
         
         // Wrap WebView in FrameLayout and add full-screen button (programmatic overlay)
         webViewMap.post(() -> {
+            if (!isAdded() || getContext() == null) return;
+
             android.view.ViewParent parent = webViewMap.getParent();
             if (parent instanceof android.view.ViewGroup) {
                 android.view.ViewGroup parentGroup = (android.view.ViewGroup) parent;
