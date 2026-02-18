@@ -725,9 +725,25 @@ public class BookingActivity extends AppCompatActivity {
         }
         
         // Validate phone
-        if (etPhone.getText().toString().trim().isEmpty()) {
+        String phone = etPhone.getText().toString().trim();
+        if (phone.isEmpty()) {
             etPhone.setError("Phone number is required");
             isValid = false;
+        } else {
+            if (phone.startsWith("9")) {
+                if (phone.length() != 10) {
+                    etPhone.setError("Phone number starting with 9 must be 10 digits");
+                    isValid = false;
+                }
+            } else if (phone.startsWith("0")) {
+                if (phone.length() != 11) {
+                    etPhone.setError("Phone number starting with 0 must be 11 digits");
+                    isValid = false;
+                }
+            } else {
+                etPhone.setError("Phone number must start with 0 or 9");
+                isValid = false;
+            }
         }
         
         return isValid;
