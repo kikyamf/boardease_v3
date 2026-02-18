@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+//
 
 public class BookingActivity extends AppCompatActivity {
     
@@ -84,7 +85,6 @@ public class BookingActivity extends AppCompatActivity {
     }
     private Calendar startDateCalendar;
     private Calendar endDateCalendar;
-    private String forcedStartDate;
     private SimpleDateFormat dateFormat;
     private RequestQueue requestQueue;
     
@@ -133,10 +133,8 @@ public class BookingActivity extends AppCompatActivity {
             
             roomId = intent.getIntExtra("bhr_id", 0);
             String roomDataString = intent.getStringExtra("room_data");
-            forcedStartDate = intent.getStringExtra("forced_start_date");
             
             Log.d(TAG, "Received roomId: " + roomId);
-            Log.d(TAG, "Received forcedStartDate: " + forcedStartDate);
             Log.d(TAG, "Received roomDataString: " + (roomDataString != null ? roomDataString.substring(0, Math.min(100, roomDataString.length())) : "null"));
             
             if (roomId == 0 || roomDataString == null || roomDataString.isEmpty()) {
@@ -636,23 +634,8 @@ public class BookingActivity extends AppCompatActivity {
                 startDateCalendar.get(Calendar.DAY_OF_MONTH)
         );
         
-        // Set minimum date to today or forced start date
+        // Set minimum date to today
         long minDate = System.currentTimeMillis();
-        if (forcedStartDate != null && !forcedStartDate.isEmpty()) {
-            try {
-                java.util.Date forcedDate = dateFormat.parse(forcedStartDate);
-                if (forcedDate != null) {
-                    minDate = forcedDate.getTime();
-                    // If forced start date is in the future, set the calendar to it
-                    if (etStartDate.getText().toString().isEmpty()) {
-                        startDateCalendar.setTime(forcedDate);
-                        etStartDate.setText(forcedStartDate);
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error parsing forced start date: " + e.getMessage());
-            }
-        }
         
         datePickerDialog.getDatePicker().setMinDate(minDate);
         datePickerDialog.show();

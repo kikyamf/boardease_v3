@@ -63,28 +63,26 @@ public class BookingAdapter extends RecyclerView.Adapter<BookingAdapter.BookingV
         // Set monthly due
         holder.tvMonthlyDue.setText(booking.getMonthlyDue());
         
-        // Set status - Display "Active" instead of "Confirmed" for Current Boarding House Booked section
+        // Set status
         String status = booking.getStatus();
-        String displayStatus = status;
-        if ("Confirmed".equals(status)) {
-            displayStatus = "Active";
-        }
+        String displayStatus = booking.getDisplayStatus();
         holder.tvStatus.setText(displayStatus);
         
-        // Set status background based on status (use original status, not display status)
+        // Set status background based on status (use original status or display status for fine-tuning)
         // Pending - orange, Confirmed - blue, Completed - green
         if ("Confirmed".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Active
+            // Both Active and Upcoming bookings are "Confirmed"
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_approved); // Green for Confirmed (Active/Upcoming)
         } else if ("Completed".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Completed/History
         } else if ("Pending".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Pending
         } else if ("Approved".equals(status)) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_completed); // Blue for Approved (Action Required)
-        } else if ("Cancelled".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Cancelled
-        } else if ("Declined".equals(status)) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); // Red for Declined
+        } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled_gray); // Gray for Cancelled/Declined
+        } else if ("Expired".equals(status)) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_expired); // Red for Expired
         } else {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); // Orange for Default
         }

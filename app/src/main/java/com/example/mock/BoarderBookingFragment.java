@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.ImageViewCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -75,6 +76,7 @@ public class BoarderBookingFragment extends Fragment {
     private LinearLayout layoutPendingBookingsEmpty;
     private LinearLayout layoutBookingHistoryEmpty;
     private ProgressBar progressBar;
+    private androidx.core.widget.NestedScrollView nestedScrollView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     // Adapters
@@ -134,6 +136,13 @@ public class BoarderBookingFragment extends Fragment {
     // Activity result launchers for image picking
     private ActivityResultLauncher<String> cashImagePickerLauncher;
     private ActivityResultLauncher<String> gcashImagePickerLauncher;
+
+    // Target booking to highlight (deep link from dashboard)
+    private static int targetBookingId = -1;
+
+    public static void setTargetBookingHighlight(int bookingId) {
+        targetBookingId = bookingId;
+    }
 
     public BoarderBookingFragment() {
         // Required empty public constructor
@@ -221,6 +230,15 @@ public class BoarderBookingFragment extends Fragment {
     }
 
     @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            // Refresh data when fragment becomes visible (from tab switch)
+            loadBookingData();
+        }
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         // Stop polling when fragment is not visible to save battery/data
@@ -245,6 +263,7 @@ public class BoarderBookingFragment extends Fragment {
             layoutPendingBookingsEmpty = view.findViewById(R.id.layoutPendingBookingsEmpty);
             layoutBookingHistoryEmpty = view.findViewById(R.id.layoutBookingHistoryEmpty);
             progressBar = view.findViewById(R.id.progressBar);
+            nestedScrollView = view.findViewById(R.id.nestedScrollView);
             swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
             
             // Set up pull-to-refresh listener
@@ -464,6 +483,7 @@ public class BoarderBookingFragment extends Fragment {
                 String balanceDueStr = "₱" + String.format(Locale.getDefault(), "%.2f", balanceDue);
                 
                 String status = bookingJson.getString("booking_status");
+                String displayStatus = bookingJson.optString("display_status", status);
                 
                 // Get room category and room number
                 String roomCategory = bookingJson.optString("room_category", "Private Room");
@@ -473,9 +493,10 @@ public class BoarderBookingFragment extends Fragment {
                 
                 double confirmedPaid = bookingJson.optDouble("confirmed_paid", 0.0);
                 double totalPaid = bookingJson.optDouble("total_paid", 0.0);
+                boolean isReviewed = bookingJson.optBoolean("is_reviewed", false);
                 
                 Booking booking = new Booking(bookingId, bhName, imagePath, location, 
-                    startDate, endDate, monthlyDue, balanceDueStr, status, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid);
+                    startDate, endDate, monthlyDue, balanceDueStr, status, displayStatus, roomCategory, roomNumber, roomId, bhId, confirmedPaid, totalPaid, isReviewed);
                 
                 bookingsList.add(booking);
             }
@@ -575,9 +596,52 @@ public class BoarderBookingFragment extends Fragment {
                     layoutBookingHistoryEmpty.setVisibility(View.GONE);
                 }
             }
+            
+            // Check if we need to highlight a specific booking
+            if (targetBookingId != -1) {
+                highlightBookingItem(targetBookingId);
+                targetBookingId = -1; // Reset after use
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error updating UI: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void highlightBookingItem(int bookingId) {
+        if (bookingHistory == null || rvBookingHistory == null || nestedScrollView == null) return;
+
+        for (int i = 0; i < bookingHistory.size(); i++) {
+            if (bookingHistory.get(i).getBookingId() == bookingId) {
+                final int position = i;
+                rvBookingHistory.postDelayed(() -> {
+                    // Find the view holder to get coordinates
+                    RecyclerView.ViewHolder holder = rvBookingHistory.findViewHolderForAdapterPosition(position);
+                    if (holder != null) {
+                        // Get the top of the item relative to the NestedScrollView
+                        int[] location = new int[2];
+                        holder.itemView.getLocationOnScreen(location);
+                        
+                        int[] scrollViewLocation = new int[2];
+                        nestedScrollView.getLocationOnScreen(scrollViewLocation);
+                        
+                        int relativeTop = location[1] - scrollViewLocation[1] + nestedScrollView.getScrollY();
+                        
+                        // Scroll the NestedScrollView
+                        nestedScrollView.smoothScrollTo(0, relativeTop - 100); // Offset 100px from top
+                        
+                        // Wait for scroll to complete then animate
+                        nestedScrollView.postDelayed(() -> {
+                            android.view.animation.Animation highlightAnim = android.view.animation.AnimationUtils.loadAnimation(getContext(), R.anim.pop_highlight);
+                            holder.itemView.startAnimation(highlightAnim);
+                        }, 500);
+                    } else {
+                        // If holder is null, it might not be bound yet. Try basic scroll.
+                        rvBookingHistory.smoothScrollToPosition(position);
+                    }
+                }, 200);
+                break;
+            }
         }
     }
 
@@ -627,9 +691,9 @@ public class BoarderBookingFragment extends Fragment {
             tvEndDate.setText(booking.getEndDate());
             tvMonthlyDue.setText(booking.getMonthlyDue());
             
-            // Display "Active" instead of "Confirmed"
+            // Display actual status (e.g. Active or Upcoming)
             String status = booking.getStatus();
-            String displayStatus = "Confirmed".equals(status) ? "Active" : status;
+            String displayStatus = booking.getDisplayStatus();
             tvStatus.setText(displayStatus);
 
             // Set status background
@@ -1367,19 +1431,8 @@ public class BoarderBookingFragment extends Fragment {
                     }
                 }
 
-                // Check for other pending payments
-                if (hasOtherPendingPayments(booking.getBookingId())) {
-                    // Disable Pay Now button
-                    btnOk.setEnabled(false);
-                    btnOk.setAlpha(0.5f);
-                    btnOk.setText("Pay Now");
-                    
-                    // Show warning message
-                    if (tvPaymentWarnings != null) {
-                        tvPaymentWarnings.setVisibility(View.VISIBLE);
-                        tvPaymentWarnings.setText("You currently have a pending payment for another application. You can cancel this application or wait until the other payment is verified.");
-                    }
-                } else {
+                // Always enable Pay Now button for Approved status (removed other pending payment block)
+                if (btnOk != null) {
                     btnOk.setEnabled(true);
                     btnOk.setAlpha(1.0f);
                     btnOk.setText("Pay Now");
@@ -1387,6 +1440,11 @@ public class BoarderBookingFragment extends Fragment {
                         dialog.dismiss();
                         fetchUnpaidPaymentBreakdowns(booking.getBookingId());
                     });
+                }
+                
+                // Hide payment warnings as they are no longer used to block flow
+                if (tvPaymentWarnings != null) {
+                    tvPaymentWarnings.setVisibility(View.GONE);
                 }
             } else {
                 if (tvTitle != null) tvTitle.setText("Application Pending");
@@ -1490,16 +1548,18 @@ public class BoarderBookingFragment extends Fragment {
         private String monthlyDue;
         private String balanceDue;
         private String status;
+        private String displayStatus;
         private String roomCategory;
         private String roomNumber;
         private int roomId;
         private int bhId;
         private double confirmedPaid;
         private double totalPaid;
+        private boolean isReviewed;
 
         public Booking(int bookingId, String boardingHouseName, String imagePath, String location,
-                      String startDate, String endDate, String monthlyDue, String balanceDue, String status,
-                      String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid) {
+                      String startDate, String endDate, String monthlyDue, String balanceDue, String status, String displayStatus,
+                      String roomCategory, String roomNumber, int roomId, int bhId, double confirmedPaid, double totalPaid, boolean isReviewed) {
             this.bookingId = bookingId;
             this.boardingHouseName = boardingHouseName;
             this.imagePath = imagePath;
@@ -1509,12 +1569,14 @@ public class BoarderBookingFragment extends Fragment {
             this.monthlyDue = monthlyDue;
             this.balanceDue = balanceDue;
             this.status = status;
+            this.displayStatus = displayStatus;
             this.roomCategory = roomCategory;
             this.roomNumber = roomNumber;
             this.roomId = roomId;
             this.bhId = bhId;
             this.confirmedPaid = confirmedPaid;
             this.totalPaid = totalPaid;
+            this.isReviewed = isReviewed;
         }
 
         // Getters
@@ -1527,12 +1589,14 @@ public class BoarderBookingFragment extends Fragment {
         public String getMonthlyDue() { return monthlyDue; }
         public String getBalanceDue() { return balanceDue; }
         public String getStatus() { return status; }
+        public String getDisplayStatus() { return displayStatus; }
         public String getRoomCategory() { return roomCategory; }
         public String getRoomNumber() { return roomNumber; }
         public int getRoomId() { return roomId; }
         public int getBhId() { return bhId; }
         public double getConfirmedPaid() { return confirmedPaid; }
         public double getTotalPaid() { return totalPaid; }
+        public boolean isReviewed() { return isReviewed; }
     }
 
     /**
@@ -3133,17 +3197,18 @@ public class BoarderBookingFragment extends Fragment {
             
             // Display status
             String status = booking.getStatus();
-            tvStatus.setText(status);
+            String displayStatus = booking.getDisplayStatus();
+            tvStatus.setText(displayStatus);
 
             // Set status background
             if ("Confirmed".equals(status)) {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
             } else if ("Completed".equals(status)) {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_completed);
-            } else if ("Cancelled".equals(status)) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
-            } else if ("Declined".equals(status)) {
-                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
+            } else if ("Cancelled".equals(status) || "Declined".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled_gray);
+            } else if ("Expired".equals(status)) {
+                tvStatus.setBackgroundResource(R.drawable.bg_status_expired);
             } else {
                 tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
             }

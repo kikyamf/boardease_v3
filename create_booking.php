@@ -9,6 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Start output buffering
+ob_start();
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -22,241 +25,142 @@ $password = 'boardease';
 
 try {
     // Create PDO connection
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Get POST data
-    $roomId = isset($_POST['room_id']) ? intval($_POST['room_id']) : 0;
-    $userId = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-    $startDate = isset($_POST['start_date']) ? trim($_POST['start_date']) : '';
-    $endDate = isset($_POST['end_date']) ? trim($_POST['end_date']) : '';
-    $paymentMethod = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : 'Cash';
-    $paymentProofBase64 = isset($_POST['payment_proof']) ? trim($_POST['payment_proof']) : '';
+    // Start transaction
+    $pdo->beginTransaction();
+    
+    // Get POST data - handle both POST and JSON input
+    $inputData = [];
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!empty($_POST)) {
+            $inputData = $_POST;
+        } else {
+            $jsonInput = file_get_contents('php://input');
+            if (!empty($jsonInput)) {
+                $decoded = json_decode($jsonInput, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $inputData = $decoded;
+                }
+            }
+        }
+    }
+    
+    $roomId = isset($inputData['room_id']) ? intval($inputData['room_id']) : 0;
+    $userId = isset($inputData['user_id']) ? intval($inputData['user_id']) : 0;
+    $startDate = isset($inputData['start_date']) ? trim($inputData['start_date']) : '';
+    $endDate = isset($inputData['end_date']) ? trim($inputData['end_date']) : '';
+    $paymentMethod = isset($inputData['payment_method']) ? trim($inputData['payment_method']) : 'Cash';
+    $paymentProofBase64 = isset($inputData['payment_proof']) ? trim($inputData['payment_proof']) : '';
+    $totalAmount = isset($inputData['total_amount']) ? floatval($inputData['total_amount']) : 0;
+    $numberOfDays = isset($inputData['number_of_days']) ? intval($inputData['number_of_days']) : 0;
+    $paymentBreakdownJson = isset($inputData['payment_breakdown']) ? $inputData['payment_breakdown'] : '';
     
     // Validate required fields
     if ($roomId == 0 || $userId == 0 || empty($startDate) || empty($endDate)) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Missing required fields'
-        ));
+        ob_clean();
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
         exit;
     }
     
-    // Validate date format
-    $startDateObj = DateTime::createFromFormat('Y-m-d', $startDate);
-    $endDateObj = DateTime::createFromFormat('Y-m-d', $endDate);
+    // Check if room unit exists (roomId from Android is room_units.room_id)
+    $checkRoomUnitSql = "SELECT ru.room_id, ru.bhr_id, bhr.room_category, bhr.capacity, ru.status 
+                         FROM room_units ru
+                         JOIN boarding_house_rooms bhr ON ru.bhr_id = bhr.bhr_id
+                         WHERE ru.room_id = :room_id FOR UPDATE";
+    $stmt = $pdo->prepare($checkRoomUnitSql);
+    $stmt->execute([':room_id' => $roomId]);
+    $roomUnit = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$startDateObj || !$endDateObj) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Invalid date format. Expected YYYY-MM-DD'
-        ));
+    if (!$roomUnit) {
+        ob_clean();
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Room unit not found']);
         exit;
     }
     
-    // Validate end date is after start date
-    if ($endDateObj <= $startDateObj) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'End date must be after start date'
-        ));
+    // Check availability for Private Rooms
+    if ($roomUnit['room_category'] === 'Private Room' && $roomUnit['status'] !== 'Available') {
+        ob_clean();
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Room is not available']);
         exit;
     }
-    
-    // Check if room exists and is available
-    $checkRoomSql = "SELECT bhr_id, status FROM boarding_house_rooms WHERE bhr_id = :room_id";
-    $checkRoomStmt = $pdo->prepare($checkRoomSql);
-    $checkRoomStmt->execute([':room_id' => $roomId]);
-    $room = $checkRoomStmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$room) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Room not found'
-        ));
-        exit;
-    }
-    
-    // Check if user exists
-    $checkUserSql = "SELECT id FROM registrations WHERE id = :user_id";
-    $checkUserStmt = $pdo->prepare($checkUserSql);
-    $checkUserStmt->execute([':user_id' => $userId]);
-    $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$user) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'User not found'
-        ));
-        exit;
-    }
-    
+
     // Check for overlapping bookings
     $checkOverlapSql = "
-        SELECT booking_id 
-        FROM bookings 
+        SELECT COUNT(*) FROM bookings 
         WHERE room_id = :room_id 
-        AND booking_status IN ('Pending', 'Approved')
+        AND booking_status IN ('Pending', 'Approved', 'Confirmed')
         AND (
             (start_date <= :start_date AND end_date >= :start_date)
             OR (start_date <= :end_date AND end_date >= :end_date)
             OR (start_date >= :start_date AND end_date <= :end_date)
         )
     ";
-    $checkOverlapStmt = $pdo->prepare($checkOverlapSql);
-    $checkOverlapStmt->execute([
+    $overlapStmt = $pdo->prepare($checkOverlapSql);
+    $overlapStmt->execute([
         ':room_id' => $roomId,
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
     
-    if ($checkOverlapStmt->fetch()) {
-        echo json_encode(array(
-            'success' => false,
-            'message' => 'Room is already booked for the selected dates'
-        ));
+    if ($overlapStmt->fetchColumn() > ($roomUnit['room_category'] === 'Bed Spacer' ? $roomUnit['capacity'] - 1 : 0)) {
+        ob_clean();
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Room is fully booked for these dates']);
         exit;
     }
+
+    // Identify actual user_id from users table (since Android sends registrations.id often)
+    $actualUserId = $userId;
+    $checkUserSql = "SELECT user_id FROM users WHERE reg_id = :reg_id OR user_id = :user_id LIMIT 1";
+    $checkUserStmt = $pdo->prepare($checkUserSql);
+    $checkUserStmt->execute([':reg_id' => $userId, ':user_id' => $userId]);
+    $userData = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
+    if ($userData) {
+        $actualUserId = $userData['user_id'];
+    } else {
+        // Create user entry if it doesn't exist
+        $pdo->prepare("INSERT INTO users (reg_id) VALUES (?)")->execute([$userId]);
+        $actualUserId = $pdo->lastInsertId();
+    }
     
-    // Insert booking (only fields that exist in bookings table)
-    $insertSql = "
-        INSERT INTO bookings (
-            room_id, 
-            user_id, 
-            start_date, 
-            end_date, 
-            booking_status, 
-            booking_date
-        ) VALUES (
-            :room_id,
-            :user_id,
-            :start_date,
-            :end_date,
-            'Pending',
-            NOW()
-        )
-    ";
-    
-    $insertStmt = $pdo->prepare($insertSql);
-    $insertStmt->execute([
+    // Update Private Room status to Occupied immediately (Stage 1 logic)
+    if ($roomUnit['room_category'] === 'Private Room') {
+        $pdo->prepare("UPDATE room_units SET status = 'Occupied' WHERE room_id = ?")->execute([$roomId]);
+    }
+
+    // Insert booking
+    $insertSql = "INSERT INTO bookings (room_id, user_id, start_date, end_date, booking_status, booking_date) 
+                  VALUES (:room_id, :user_id, :start_date, :end_date, 'Pending', NOW())";
+    $pdo->prepare($insertSql)->execute([
         ':room_id' => $roomId,
-        ':user_id' => $userId,
+        ':user_id' => $actualUserId,
         ':start_date' => $startDate,
         ':end_date' => $endDate
     ]);
-    
     $bookingId = $pdo->lastInsertId();
-    
-    // Handle payment proof upload
-    $paymentProofPath = '';
-    if (!empty($paymentProofBase64)) {
-        // Decode base64 image
-        $imageData = base64_decode($paymentProofBase64);
-        
-        // Generate unique filename
-        $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
-        $uploadDir = 'uploads/payment_proofs/';
-        
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-        
-        $filePath = $uploadDir . $filename;
-        
-        // Save image
-        if (file_put_contents($filePath, $imageData)) {
-            $paymentProofPath = $filePath;
-        } else {
-            error_log("Failed to save payment proof image for booking_id: " . $bookingId);
-        }
-    }
-    
-    // Get owner_id from room
-    $getOwnerSql = "SELECT bh.user_id as owner_id FROM boarding_house_rooms bhr 
-                    JOIN boarding_houses bh ON bhr.bh_id = bh.bh_id 
-                    WHERE bhr.bhr_id = :room_id";
-    $getOwnerStmt = $pdo->prepare($getOwnerSql);
-    $getOwnerStmt->execute([':room_id' => $roomId]);
-    $ownerData = $getOwnerStmt->fetch(PDO::FETCH_ASSOC);
-    $ownerId = $ownerData ? intval($ownerData['owner_id']) : 0;
-    
-    // Get room price for payment amount
-    $getRoomPriceSql = "SELECT price FROM boarding_house_rooms WHERE bhr_id = :room_id";
-    $getRoomPriceStmt = $pdo->prepare($getRoomPriceSql);
-    $getRoomPriceStmt->execute([':room_id' => $roomId]);
-    $roomData = $getRoomPriceStmt->fetch(PDO::FETCH_ASSOC);
-    $paymentAmount = $roomData ? floatval($roomData['price']) : 0;
-    
-    // Calculate payment month/year
-    $paymentMonth = date('Y-m', strtotime($startDate));
-    $paymentYear = intval(date('Y', strtotime($startDate)));
-    $paymentMonthNumber = intval(date('m', strtotime($startDate)));
-    
-    // Create payment record
-    if ($ownerId > 0) {
-        $insertPaymentSql = "
-            INSERT INTO payments (
-                booking_id,
-                user_id,
-                owner_id,
-                payment_amount,
-                payment_method,
-                payment_proof,
-                payment_status,
-                payment_date,
-                payment_month,
-                payment_year,
-                payment_month_number,
-                is_monthly_payment
-            ) VALUES (
-                :booking_id,
-                :user_id,
-                :owner_id,
-                :payment_amount,
-                :payment_method,
-                :payment_proof,
-                'Pending',
-                NOW(),
-                :payment_month,
-                :payment_year,
-                :payment_month_number,
-                1
-            )
-        ";
-        
-        $insertPaymentStmt = $pdo->prepare($insertPaymentSql);
-        $insertPaymentStmt->execute([
-            ':booking_id' => $bookingId,
-            ':user_id' => $userId,
-            ':owner_id' => $ownerId,
-            ':payment_amount' => $paymentAmount,
-            ':payment_method' => $paymentMethod,
-            ':payment_proof' => $paymentProofPath,
-            ':payment_month' => $paymentMonth,
-            ':payment_year' => $paymentYear,
-            ':payment_month_number' => $paymentMonthNumber
-        ]);
-    }
-    
-    echo json_encode(array(
-        'success' => true,
-        'message' => 'Booking created successfully',
-        'booking_id' => $bookingId
-    ));
-    
-} catch (PDOException $e) {
-    error_log("Database error: " . $e->getMessage());
-    echo json_encode(array(
-        'success' => false,
-        'message' => 'Database error: ' . $e->getMessage()
-    ));
-} catch (Exception $e) {
-    error_log("Server error: " . $e->getMessage());
-    echo json_encode(array(
-        'success' => false,
-        'message' => 'Server error: ' . $e->getMessage()
-    ));
-}
-?>
 
+    // Note: Payment records are NOT created during application submission.
+    // They will be created later when the boarder submits payment after owner approval.
+
+    $pdo->commit();
+    ob_clean();
+    echo json_encode(['success' => true, 'message' => 'Booking applied successfully', 'booking_id' => $bookingId]);
+    ob_end_flush();
+
+} catch (Exception $e) {
+    if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
+    error_log("Error in root create_booking.php: " . $e->getMessage());
+    ob_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    ob_end_flush();
+}

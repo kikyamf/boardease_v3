@@ -23,6 +23,8 @@ import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import androidx.appcompat.app.AlertDialog;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,9 +33,12 @@ import java.util.Map;
 
 public class BoarderDashboard extends AppCompatActivity {
 
+    private static final String TAG = "BoarderDashboard";
     private BottomNavigationView bottomNavigationView;
     private Fragment currentFragment;
     private int userId;
+    private boolean isReviewPromptShown = false;
+    private static final String GET_BOOKINGS_URL = "https://boardease.calapebohol.com/get_boarder_bookings.php";
     
     // Cache fragment instances to avoid recreating them
     private BoarderHomeFragment homeFragment;
@@ -79,6 +84,9 @@ public class BoarderDashboard extends AppCompatActivity {
         
         // Initialize FCM token
         initializeFCMToken();
+        
+        // Schedule Review Prompt after 5 seconds
+        scheduleReviewPrompt();
         
         // Try to restore fragments from FragmentManager first (they persist across configuration changes)
         homeFragment = (BoarderHomeFragment) getSupportFragmentManager().findFragmentByTag("home");
@@ -455,6 +463,114 @@ public class BoarderDashboard extends AppCompatActivity {
                 })
                 .setNegativeButton("Explore", null)
                 .show();
+        }
+    }
+
+    private void scheduleReviewPrompt() {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isReviewPromptShown) {
+                checkForUnreviewedStays();
+            }
+        }, 10000); // 10 seconds delay
+    }
+
+    private void checkForUnreviewedStays() {
+        if (userId <= 0) return;
+
+        String url = GET_BOOKINGS_URL + "?user_id=" + userId;
+        Log.d(TAG, "Checking for unreviewed stays: " + url);
+
+        StringRequest request = new StringRequest(Request.Method.GET, url,
+            response -> {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    if (jsonResponse.optBoolean("success")) {
+                        JSONObject data = jsonResponse.optJSONObject("data");
+                        if (data != null) {
+                            JSONArray history = data.optJSONArray("history");
+                            if (history != null) {
+                                for (int i = 0; i < history.length(); i++) {
+                                    JSONObject booking = history.getJSONObject(i);
+                                    String status = booking.optString("booking_status");
+                                    boolean isReviewed = booking.optBoolean("is_reviewed", false);
+                                    int bookingId = booking.optInt("booking_id");
+                                    String bhName = booking.optString("bh_name");
+
+                                    if ("Completed".equals(status) && !isReviewed) {
+                                        // Check if user opted out of reviewing this specific boarding house
+                                        android.content.SharedPreferences prefs = getSharedPreferences("BoardEasePrefs", MODE_PRIVATE);
+                                        boolean isOptedOut = prefs.getBoolean("review_opt_out_" + bookingId, false);
+                                        
+                                        if (!isOptedOut) {
+                                            showReviewPrompt(bookingId, bhName);
+                                            break; // Only show one prompt
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error checking unreviewed stays", e);
+                }
+            },
+            error -> Log.e(TAG, "Volley error checking unreviewed stays", error)
+        );
+
+        Volley.newRequestQueue(this).add(request);
+    }
+
+    private void showReviewPrompt(int bookingId, String bhName) {
+        if (isReviewPromptShown || isFinishing()) return;
+
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            android.view.View dialogView = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_review_prompt, null);
+            builder.setView(dialogView);
+            builder.setCancelable(false); // Make outside not clickable
+
+            AlertDialog dialog = builder.create();
+            // Apply animation style
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
+                dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            }
+
+            android.widget.TextView tvMessage = dialogView.findViewById(R.id.tvPromptMessage);
+            android.widget.Button btnWrite = dialogView.findViewById(R.id.btnWriteReview);
+            android.widget.Button btnLater = dialogView.findViewById(R.id.btnLater);
+            android.widget.Button btnNoThanks = dialogView.findViewById(R.id.btnNoThanks);
+
+            String message = "We noticed you recently completed your stay at " + bhName + ". Your review will be appreciated for the betterment of our service!";
+            tvMessage.setText(message);
+
+            btnWrite.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                dialog.dismiss();
+                
+                // Set the detail FIRST so fragment sees it when it starts/resumes
+                BoarderBookingFragment.setTargetBookingHighlight(bookingId);
+                
+                // Navigate to Bookings tab (nav_activity)
+                bottomNavigationView.setSelectedItemId(R.id.nav_activity);
+            });
+
+            btnLater.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                dialog.dismiss();
+            });
+
+            btnNoThanks.setOnClickListener(v -> {
+                isReviewPromptShown = true;
+                // Save opt-out to SharedPreferences
+                android.content.SharedPreferences prefs = getSharedPreferences("BoardEasePrefs", MODE_PRIVATE);
+                prefs.edit().putBoolean("review_opt_out_" + bookingId, true).apply();
+                dialog.dismiss();
+            });
+
+            dialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing review prompt", e);
         }
     }
 }
