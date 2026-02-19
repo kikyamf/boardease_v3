@@ -470,29 +470,21 @@ public class Login extends AppCompatActivity {
                 String email = etEmail.getText().toString().trim();
                 handleRememberMe(email);
 
-                // Show success message in a modal before navigating
-                new AlertDialog.Builder(this)
-                        .setTitle("Login Successful")
-                        .setMessage("Welcome, " + firstName + "!")
-                        .setPositiveButton("Continue", (dialog, which) -> {
-                            // Navigate to appropriate dashboard based on role
-                            String status = userObject.optString("status", "");
-                
-                            if ("email_unverified".equals(status)) {
-                                // Force verification
-                                Intent intent = new Intent(Login.this, EmailVerificationActivity.class);
-                                intent.putExtra("email", userEmail); // Use userEmail from the backend response
-                                startActivity(intent);
-                            } else if ("rejected".equals(status)) {
-                                showAuthenticationErrorDialog("Your account has been rejected. Please contact support.");
-                            } else {
-                                // Allow login for approved, profile_incomplete, and pending_admin_review
-                                // User session is already saved above, just navigate
-                                navigateToDashboard(userObject.optString("role", ""));
-                            }
-                        })
-                        .setCancelable(false)
-                        .show();
+                // Navigate directly to appropriate dashboard based on role
+                String status = userObject.optString("status", "");
+    
+                if ("email_unverified".equals(status)) {
+                    // Force verification
+                    Intent intent = new Intent(Login.this, EmailVerificationActivity.class);
+                    intent.putExtra("email", userEmail); // Use userEmail from the backend response
+                    startActivity(intent);
+                } else if ("rejected".equals(status)) {
+                    showAuthenticationErrorDialog("Your account has been rejected. Please contact support.");
+                } else {
+                    // Allow login for approved, profile_incomplete, and pending_admin_review
+                    // User session is already saved above, just navigate
+                    navigateToDashboard(userObject.optString("role", ""));
+                }
 
             } else {
                 // Check if verification is required
