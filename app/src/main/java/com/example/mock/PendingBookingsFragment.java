@@ -741,8 +741,7 @@ public class PendingBookingsFragment extends Fragment {
                                 // Make image clickable to view full size
                                 final String imageUrl = finalFullUrl;
                                 imgPaymentProof.setOnClickListener(v -> {
-                                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-                                    intent.setDataAndType(android.net.Uri.parse(imageUrl), "image/*");
+                                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(imageUrl));
                                     try {
                                         startActivity(intent);
                                     } catch (Exception e) {

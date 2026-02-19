@@ -663,8 +663,7 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             final String imageUrl = finalFullUrl;
             imgPaymentProof.setOnClickListener(v -> {
                 // Open image in full screen or external viewer
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.parse(imageUrl), "image/*");
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(imageUrl));
                 try {
                     startActivity(intent);
                 } catch (Exception e) {
