@@ -19,7 +19,7 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $bookingId = isset($_POST['booking_id']) ? intval($_POST['booking_id']) : 0;
+    $bookingId = isset($_POST['booking_id']) ? intval($_POST['booking_id']) : (isset($_GET['booking_id']) ? intval($_GET['booking_id']) : 0);
 
     if ($bookingId === 0) {
         echo json_encode(['success' => false, 'message' => 'Booking ID is required.']);

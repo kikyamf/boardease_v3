@@ -71,7 +71,7 @@ try {
         if ($today < $startDate) {
             $newStatus = 'Upcoming';
         } elseif ($today <= $endDate) {
-            $newStatus = 'Active';
+            $newStatus = 'Confirmed';
         } else {
             $newStatus = 'Completed';
         }
@@ -121,15 +121,7 @@ try {
         $updateBreakdownsSql = "UPDATE payment_breakdowns SET is_paid = 1, payment_status = 'Paid' WHERE booking_id = ? AND payment_status = 'Pending'";
         $pdo->prepare($updateBreakdownsSql)->execute([$bookingId]);
         
-        // If Active, update room status
-        if ($newStatus === 'Active') {
-            $sqlRoom = "UPDATE room_units ru 
-                       JOIN bookings b ON ru.room_id = b.room_id 
-                       SET ru.status = 'Occupied' 
-                       WHERE b.booking_id = ?";
-            $pdo->prepare($sqlRoom)->execute([$bookingId]);
-        }
-
+        // Note: Room status update (Occupied) is now handled via manual Check In
         error_log("Payment confirmed for booking $bookingId. Status updated to $newStatus and payments/breakdowns marked as Completed/Paid.");
     }
 
