@@ -105,16 +105,64 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
     
     private boolean isWaitingForLocationSettings = false;
 
+    private final android.content.BroadcastReceiver locationProviderReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (android.location.LocationManager.PROVIDERS_CHANGED_ACTION.equals(intent.getAction())) {
+                if (isLocationEnabled()) {
+                    Log.d(TAG, "Location provider enabled");
+                    Toast.makeText(context, "Location enabled", Toast.LENGTH_SHORT).show();
+                    isWaitingForLocationSettings = false;
+                    
+                    // If we were waiting or just casually detected it, refresh
+                    // But if "Near Me" is active, we definitely want to trigger search
+                    boolean triggerSearch = "Near Me".equalsIgnoreCase(etSearch.getText().toString());
+                    getCurrentLocation(triggerSearch);
+                    
+                } else {
+                    Log.d(TAG, "Location provider disabled");
+                    Toast.makeText(context, "Location disabled", Toast.LENGTH_SHORT).show();
+                    
+                    // Clear location data
+                    userLat = null;
+                    userLon = null;
+                    updateMapMarkers(); // Will remove user marker
+                    
+                    // If currently searching "Near Me", prompt user
+                    if ("Near Me".equalsIgnoreCase(etSearch.getText().toString())) {
+                         showLocationEnableDialog();
+                    }
+                }
+            }
+        }
+    };
+
     @Override
     protected void onResume() {
         super.onResume();
+        
+        // Register receiver
+        android.content.IntentFilter filter = new android.content.IntentFilter(android.location.LocationManager.PROVIDERS_CHANGED_ACTION);
+        registerReceiver(locationProviderReceiver, filter);
+        
+        // Check manually as well (for the return from Settings case where broadcast might have fired while paused? 
+        // Actually PROVIDERS_CHANGED usually fires sticky or system-wide, but explicit check is safer for the "Waiting" flow)
         if (isWaitingForLocationSettings) {
             if (isLocationEnabled()) {
                 isWaitingForLocationSettings = false;
                 Toast.makeText(this, "Location enabled! Updating...", Toast.LENGTH_SHORT).show();
-                // Refresh location and trigger "Near Me"
                 getCurrentLocation(true); 
             }
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(locationProviderReceiver);
+        } catch (IllegalArgumentException e) {
+            // Receiver not registered
         }
     }
 

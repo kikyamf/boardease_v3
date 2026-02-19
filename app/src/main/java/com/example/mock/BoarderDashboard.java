@@ -552,7 +552,6 @@ public class BoarderDashboard extends AppCompatActivity {
                 
                 // Set the detail FIRST so fragment sees it when it starts/resumes
                 BoarderBookingFragment.setTargetBookingToOpen(bookingId);
-                
                 // Navigate to Bookings tab (nav_activity)
                 bottomNavigationView.setSelectedItemId(R.id.nav_activity);
             });
