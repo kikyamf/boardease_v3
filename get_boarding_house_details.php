@@ -79,8 +79,8 @@ try {
     $imagesStmt->execute([$bhId]);
     $images = $imagesStmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // Get base URL for images (use ngrok URL to match app)
-    $baseUrl = 'https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/';
+    // Get base URL for images
+    $baseUrl = 'https://boardease.calapebohol.com/';
 
     // Format image URLs
     $formattedImages = array();

@@ -728,21 +728,7 @@ public class PendingBookingsFragment extends Fragment {
                             layoutPaymentProof.setVisibility(View.VISIBLE);
                             
                             // Build full URL
-                            String baseUrl = "https://boardease.calapebohol.com/";
-                            String urlToProcess = proofUrl.trim();
-                            String finalFullUrl;
-                            
-                            if (urlToProcess.startsWith("http://") || urlToProcess.startsWith("https://")) {
-                                finalFullUrl = urlToProcess;
-                            } else {
-                                if (urlToProcess.startsWith("/")) {
-                                    urlToProcess = urlToProcess.substring(1);
-                                }
-                                if (urlToProcess.startsWith("BoardEase2/")) {
-                                    urlToProcess = urlToProcess.substring(11);
-                                }
-                                finalFullUrl = baseUrl + "get_payment_proof.php?path=" + android.net.Uri.encode(urlToProcess, "UTF-8");
-                            }
+                            String finalFullUrl = proofUrl.trim();
                             
                             // Load image using Glide
                             try {
