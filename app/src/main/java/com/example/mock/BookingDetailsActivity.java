@@ -1031,7 +1031,8 @@ public class BookingDetailsActivity extends AppCompatActivity {
                                 // Make image clickable to view full size
                                 final String imageUrl = finalFullUrl;
                                 imgPaymentProof.setOnClickListener(v -> {
-                                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(imageUrl));
+                                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                                    intent.setDataAndType(Uri.parse(imageUrl), "image/*");
                                     try {
                                         startActivity(intent);
                                     } catch (Exception e) {
