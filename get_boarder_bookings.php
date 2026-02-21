@@ -96,10 +96,9 @@ try {
             COALESCE(SUM(CASE WHEN p.payment_status = 'Completed' THEN p.payment_amount ELSE 0 END), 0) as confirmed_paid,
             bhr.price - COALESCE(SUM(CASE WHEN p.payment_status = 'Completed' THEN p.payment_amount ELSE 0 END), 0) as balance_due,
             CASE 
-                WHEN b.booking_status = 'Upcoming' THEN 'Upcoming'
                 WHEN b.booking_status = 'Active' THEN 'Active'
-                WHEN b.booking_status = 'Confirmed' AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'Active'
-                WHEN b.booking_status = 'Confirmed' AND CURDATE() < b.start_date THEN 'Upcoming'
+                WHEN b.booking_status IN ('Confirmed', 'Upcoming') AND CURDATE() >= b.start_date AND CURDATE() <= b.end_date THEN 'Check In'
+                WHEN b.booking_status IN ('Confirmed', 'Upcoming') AND CURDATE() < b.start_date THEN 'Upcoming'
                 ELSE b.booking_status
             END as display_status,
             CASE 
@@ -137,7 +136,7 @@ try {
     error_log("get_boarder_bookings.php - Found " . count($results) . " bookings for user_id: $userId");
     
     // Get base URL for images
-    $baseUrl = 'http://192.168.1.4/boardease_v3/';
+    $baseUrl = 'https://boardease.calapebohol.com/';
     
     // Separate bookings into sections
     $currentBookings = array();

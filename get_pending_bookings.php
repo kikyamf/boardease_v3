@@ -43,9 +43,8 @@ try {
             r.last_name,
             r.email as boarder_email,
             r.phone as boarder_phone,
-            (SELECT payment_status FROM payments WHERE booking_id = b.booking_id ORDER BY payment_id DESC LIMIT 1) as payment_status,
-            (SELECT payment_method FROM payments WHERE booking_id = b.booking_id AND payment_status = 'Pending' ORDER BY payment_id DESC LIMIT 1) as payment_method,
             (SELECT payment_amount FROM payments WHERE booking_id = b.booking_id AND payment_status = 'Pending' ORDER BY payment_id DESC LIMIT 1) as pending_payment_amount,
+            (SELECT payment_proof FROM payments WHERE booking_id = b.booking_id AND payment_status = 'Pending' ORDER BY payment_id DESC LIMIT 1) as payment_proof,
             (SELECT COUNT(*) FROM payment_breakdowns WHERE booking_id = b.booking_id) as total_periods,
             (SELECT COUNT(*) FROM payment_breakdowns WHERE booking_id = b.booking_id AND is_paid = 1) as paid_periods,
             (SELECT COUNT(*) FROM payment_breakdowns WHERE booking_id = b.booking_id AND is_paid = 0) as unpaid_periods,
@@ -72,6 +71,9 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':owner_id' => $ownerId]);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get base URL for images
+    $baseUrl = 'https://boardease.calapebohol.com/';
 
     $pendingBookings = [];
     foreach ($results as $row) {
@@ -114,7 +116,8 @@ try {
             'is_fully_paid' => ($totalPeriods > 0 && $paidPeriods >= $totalPeriods),
             'payment_progress_percent' => round($progress, 2),
             'payment_method' => $row['payment_method'],
-            'pending_payment_amount' => $row['pending_payment_amount']
+            'pending_payment_amount' => $row['pending_payment_amount'],
+            'payment_proof' => $row['payment_proof'] ? $baseUrl . $row['payment_proof'] : null
         ];
     }
 

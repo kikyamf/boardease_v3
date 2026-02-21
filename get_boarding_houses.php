@@ -76,8 +76,8 @@ try {
         error_log("Total boarding houses: " . $checkResult['total'] . ", Active: " . $checkResult['active_count']);
     }
     
-    // Get base URL for images (use local IP for local development)
-    $baseUrl = 'http://192.168.1.4/boardease_v3/';
+    // Get base URL for images
+    $baseUrl = 'https://boardease.calapebohol.com/';
     
     // Format the response
     $response = array();
