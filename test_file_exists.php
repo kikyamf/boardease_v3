@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: text/plain');
 
-$dir = __DIR__ . '/uploads/payment_proofs/';
+$dir = dirname(__DIR__) . '/uploads/payment_proofs/';
 echo "Checking directory: $dir\n";
 
 if (file_exists($dir)) {
@@ -17,7 +17,7 @@ if (file_exists($dir)) {
     echo "Directory NOT FOUND.\n";
     
     // Check root uploads
-    $rootUploads = __DIR__ . '/uploads/';
+    $rootUploads = dirname(__DIR__) . '/uploads/';
     echo "Checking parent: $rootUploads\n";
     if (file_exists($rootUploads)) {
         echo "Root uploads EXISTS.\n";
@@ -43,7 +43,7 @@ try {
     echo "\nLatest entries in payments table:\n";
     foreach ($rows as $row) {
         echo "Booking ID: " . $row['booking_id'] . " - Path: " . $row['payment_proof'] . "\n";
-        $fullPath = __DIR__ . '/' . $row['payment_proof'];
+        $fullPath = dirname(__DIR__) . '/' . $row['payment_proof'];
         echo "  File exists: " . (file_exists($fullPath) ? "YES" : "NO") . " at $fullPath\n";
     }
 } catch (Exception $e) {

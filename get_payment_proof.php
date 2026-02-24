@@ -46,7 +46,9 @@ if (isset($_GET['path']) && !empty($_GET['path'])) {
     // Security: Prevent directory traversal
     // We expect paths like 'uploads/payment_proofs/file.jpg'
     $filename = basename($requestedPath);
-    $filePath = __DIR__ . '/uploads/payment_proofs/' . $filename;
+    // User specified path is outside public_html: /home/u223444398/domains/boardease.calapebohol.com/uploads/payment_proofs/
+    // If this file is in public_html, we need to go one level up
+    $filePath = dirname(__DIR__) . '/uploads/payment_proofs/' . $filename;
 } 
 // Check for 'booking_id' parameter (fallback use case)
 elseif (isset($_GET['booking_id']) && intval($_GET['booking_id']) > 0) {
@@ -66,7 +68,7 @@ elseif (isset($_GET['booking_id']) && intval($_GET['booking_id']) > 0) {
 
         if ($payment && !empty($payment['payment_proof'])) {
             $filename = basename($payment['payment_proof']);
-            $filePath = __DIR__ . '/uploads/payment_proofs/' . $filename;
+            $filePath = dirname(__DIR__) . '/uploads/payment_proofs/' . $filename;
         }
     } catch (PDOException $e) {
         // Silently fail as we are serving an image
