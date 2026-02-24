@@ -11,6 +11,14 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 
+// Debug logging function
+function debug_log($message) {
+    file_put_contents(__DIR__ . '/payment_proof_debug.log', date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
+}
+
+debug_log("Request received: " . $_SERVER['REQUEST_URI']);
+debug_log("GET params: " . json_encode($_GET));
+
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
@@ -66,29 +74,35 @@ elseif (isset($_GET['booking_id']) && intval($_GET['booking_id']) > 0) {
 }
 
 // Serve the file if found
-if (!empty($filePath) && file_exists($filePath) && is_file($filePath)) {
-    // Detect MIME type
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $filePath);
-    finfo_close($finfo);
+if (!empty($filePath)) {
+    debug_log("Final calculated filePath: " . $filePath);
+    if (file_exists($filePath) && is_file($filePath)) {
+        debug_log("File EXISTS. Serving bytes.");
+        // Detect MIME type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $filePath);
+        finfo_close($finfo);
 
-    // If MIME type detection failed, fallback to JPEG
-    if (!$mimeType) {
-        $mimeType = 'image/jpeg';
+        // If MIME type detection failed, fallback to JPEG
+        if (!$mimeType) {
+            $mimeType = 'image/jpeg';
+        }
+
+        header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filePath));
+        
+        // Clear any output buffer before sending binary data
+        if (ob_get_length()) ob_clean();
+        flush();
+        
+        readfile($filePath);
+        exit;
+    } else {
+        debug_log("File NOT FOUND at: " . $filePath);
     }
-
-    header('Content-Type: ' . $mimeType);
-    header('Content-Length: ' . filesize($filePath));
-    
-    // Clear any output buffer before sending binary data
-    if (ob_get_length()) ob_clean();
-    flush();
-    
-    readfile($filePath);
-    exit;
-} else {
-    // Return 404 if file not found
-    header("HTTP/1.0 404 Not Found");
-    // Optionally serve a placeholder image here
-    exit;
 }
+
+// Return 404 if file not found
+debug_log("Returning 404 Not Found");
+header("HTTP/1.0 404 Not Found");
+exit;
