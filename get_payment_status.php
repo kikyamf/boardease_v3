@@ -162,8 +162,11 @@ try {
     // Add status filter to queries
     // For 'all', show all payments regardless of status
     if ($status === 'pending') {
-        $simpleSql .= " AND COALESCE(p.payment_status, 'Pending') IN ('Pending', 'For Approval')";
-        $simpleSqlViaBh .= " AND COALESCE(p.payment_status, 'Pending') IN ('Pending', 'For Approval')";
+        // Broaden the filter to catch variations like 'pending', 'For Approval', 'Pending Approval', etc.
+        $pendingFilter = " AND (LOWER(COALESCE(p.payment_status, 'Pending')) LIKE '%pending%' 
+                            OR LOWER(COALESCE(p.payment_status, 'Pending')) LIKE '%approval%')";
+        $simpleSql .= $pendingFilter;
+        $simpleSqlViaBh .= $pendingFilter;
     } elseif ($status === 'paid' || $status === 'completed') {
         // Include 'Completed', 'Partially Paid', and 'Paid' in the Completed tab
         $simpleSql .= " AND COALESCE(p.payment_status, 'Pending') IN ('Completed', 'Partially Paid', 'Paid')";
@@ -327,9 +330,10 @@ try {
     
     // Add status filter (use COALESCE to handle NULL values)
     if ($status === 'pending') {
-        // Show both 'Pending' and 'For Approval' statuses. 
+        // Broaden the filter to catch variations like 'pending', 'For Approval', 'Pending Approval', etc.
         // We've removed the strict payment_proof check to ensure all pending items are visible.
-        $sql .= " AND COALESCE(p.payment_status, 'Pending') IN ('Pending', 'For Approval')";
+        $sql .= " AND (LOWER(COALESCE(p.payment_status, 'Pending')) LIKE '%pending%' 
+                   OR LOWER(COALESCE(p.payment_status, 'Pending')) LIKE '%approval%')";
     } elseif ($status === 'paid' || $status === 'completed') {
         // Include 'Completed', 'Partially Paid', and 'Paid' in the Completed tab
         $sql .= " AND COALESCE(p.payment_status, 'Pending') IN ('Completed', 'Partially Paid', 'Paid')";
@@ -970,7 +974,9 @@ try {
             'requested_status' => $status,
             'simple_query_count' => count($simplePayments),
             'main_query_count' => count($payments),
-            'formatted_count' => count($formattedPayments)
+            'formatted_count' => count($formattedPayments),
+            'query_executed' => (isset($sql) ? substr($sql, 0, 500) . "..." : "N/A"),
+            'sample_statuses' => array_map(function($p) { return $p['payment_status'] ?? 'N/A'; }, array_slice($payments, 0, 5))
         )
     );
     

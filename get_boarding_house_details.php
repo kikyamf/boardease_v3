@@ -6,9 +6,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+$dbname = 'u223444398_boardease';
+$username = 'u223444398_userboardease';
+$password = '!Boardease2026';
 
 try {
     // Create PDO connection
