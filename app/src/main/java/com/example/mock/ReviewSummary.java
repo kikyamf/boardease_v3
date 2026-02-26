@@ -19,7 +19,7 @@ public class ReviewSummary {
     private String averageStayDuration;
 
     public ReviewSummary() {
-        // Default constructor
+        // Default constructor.
     }
 
     public ReviewSummary(int totalReviews, double averageRating, int rating5, int rating4, 
