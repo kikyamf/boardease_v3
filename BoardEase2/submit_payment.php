@@ -140,11 +140,9 @@ try {
             $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
             
             // Use boardease_v3 directory structure
-            // Path structure: boardease.calapebohol.com/uploads/payment_proofs/
-            // __DIR__ = .../public_html/BoardEase2
-            // dirname(__DIR__) = .../public_html
-            // dirname(dirname(__DIR__)) = .../ (domain root)
-            $baseDir = dirname(dirname(__DIR__)); 
+            // Path structure: boardease_v3/uploads/payment_proofs/
+            // __DIR__ = boardease_v3/BoardEase2, so dirname(__DIR__) = boardease_v3
+            $baseDir = dirname(__DIR__); // Gets boardease_v3 directory
             $uploadDir = $baseDir . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'payment_proofs' . DIRECTORY_SEPARATOR;
             
             error_log("Base directory: $baseDir");

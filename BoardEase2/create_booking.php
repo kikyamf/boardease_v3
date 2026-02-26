@@ -547,9 +547,7 @@ try {
             } else {
                 // Generate unique filename
                 $filename = 'payment_proof_' . $bookingId . '_' . time() . '.jpg';
-                // Directory is outside public_html: /home/u223444398/domains/boardease.calapebohol.com/uploads/payment_proofs/
-                // __DIR__ is .../public_html/BoardEase2, so dirname(dirname(__DIR__)) is domain root
-                $uploadDir = dirname(dirname(__DIR__)) . '/uploads/payment_proofs/';
+                $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/';
                 
                 // Create directory if it doesn't exist
                 if (!file_exists($uploadDir)) {
