@@ -117,7 +117,7 @@ try {
             'payment_progress_percent' => round($progress, 2),
             'payment_method' => $row['payment_method'],
             'pending_payment_amount' => $row['pending_payment_amount'],
-            'payment_proof' => $row['payment_proof'] ? $baseUrl . 'get_payment_proof.php?path=' . urlencode($row['payment_proof']) : null
+            'payment_proof' => $row['payment_proof'] ? $baseUrl . $row['payment_proof'] : null
         ];
     }
 

@@ -39,7 +39,7 @@ try {
     $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($payment) {
-        $proofUrl = $payment['payment_proof'] ? $baseUrl . "get_payment_proof.php?path=" . urlencode($payment['payment_proof']) : null;
+        $proofUrl = $payment['payment_proof'] ? $baseUrl . $payment['payment_proof'] : null;
         echo json_encode([
             'success' => true,
             'payment_proof_url' => $proofUrl,
@@ -59,7 +59,7 @@ try {
         $paymentFallback = $stmtFallback->fetch(PDO::FETCH_ASSOC);
 
         if ($paymentFallback) {
-             $proofUrlFallback = $paymentFallback['payment_proof'] ? $baseUrl . "get_payment_proof.php?path=" . urlencode($paymentFallback['payment_proof']) : null;
+             $proofUrlFallback = $paymentFallback['payment_proof'] ? $baseUrl . $paymentFallback['payment_proof'] : null;
              echo json_encode([
                 'success' => true,
                 'payment_proof_url' => $proofUrlFallback,

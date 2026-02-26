@@ -19,9 +19,9 @@ header('Access-Control-Allow-Headers: Content-Type, User-Agent, Accept');
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'u223444398_boardease';
-$username = 'u223444398_userboardease';
-$password = '!Boardease2026';
+$dbname = 'boardease2';
+$username = 'boardease';
+$password = 'boardease';
 
 // Log script execution start
 error_log("=== submit_payment.php STARTED ===");
