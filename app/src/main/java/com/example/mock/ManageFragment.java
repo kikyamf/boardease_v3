@@ -159,67 +159,55 @@ public class ManageFragment extends Fragment {
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
-                        System.out.println("ManageFragment response: " + response);
-
-                        if (response == null || response.trim().isEmpty()) {
+                        String trimmedResponse = response != null ? response.trim() : "";
+                        
+                        if (trimmedResponse.isEmpty()) {
                             Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        if (response.trim().startsWith("<")) {
+                        if (trimmedResponse.startsWith("<")) {
                             System.out.println("ERROR: Server returned HTML instead of JSON");
                             Toast.makeText(getContext(), "Server error. Check PHP file.", Toast.LENGTH_LONG).show();
                             return;
                         }
 
                         JSONArray array;
-                        try {
-                            // Try parsing as wrapped JSON object first: {"success": true, "data": [...]}
-                            JSONObject jsonResponse = new JSONObject(response);
+                        if (trimmedResponse.startsWith("{")) {
+                            // Likely a wrapped JSON object: {"success": true, "data": [...]}
+                            JSONObject jsonResponse = new JSONObject(trimmedResponse);
                             if (jsonResponse.has("data")) {
                                 array = jsonResponse.getJSONArray("data");
                             } else {
-                                // If "data" key is missing but it's a valid object, it might be an error or unexpected format
                                 String error = jsonResponse.optString("error", "Unknown server error");
                                 if (jsonResponse.has("error")) {
                                      Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
                                 }
-                                array = new JSONArray(); // Empty list
+                                array = new JSONArray();
                             }
-                        } catch (JSONException e) {
-                            // Fallback to direct array format: [...]
-                            try {
-                                array = new JSONArray(response);
-                            } catch (JSONException e2) {
-                                System.out.println("ERROR: Could not parse response as JSONArray or wrapped JSONObject");
-                                throw e2; // Re-throw to be caught by outer block
-                            }
+                        } else if (trimmedResponse.startsWith("[")) {
+                            // Likely a direct array format: [...]
+                            array = new JSONArray(trimmedResponse);
+                        } else {
+                            System.out.println("ERROR: Unknown response format: " + (trimmedResponse.length() > 50 ? trimmedResponse.substring(0, 50) : trimmedResponse));
+                            Toast.makeText(getContext(), "Parsing error: Unknown format", Toast.LENGTH_SHORT).show();
+                            return;
                         }
 
                         listingList.clear();
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject obj = array.getJSONObject(i);
-                            int bhId = obj.getInt("bh_id");
-                            String name = obj.getString("bh_name");
-                            String imagePath = obj.optString("image_path", "");
-
-                            // Create image paths list
-                            ArrayList<String> imagePaths = new ArrayList<>();
-                            if (!imagePath.isEmpty()) {
-                                imagePaths.add(imagePath);
-                            }
-
-                            // Use the simple constructor since we only have basic data from this API
-                            listingList.add(new Listing(bhId, name, imagePath));
+                            listingList.add(new Listing(
+                                obj.getInt("bh_id"),
+                                obj.getString("bh_name"),
+                                obj.optString("image_path", "")
+                            ));
                         }
+                        
                         adapter.notifyDataSetChanged();
 
                         int count = listingList.size();
-                        if (count == 1) {
-                            textViewListingCount.setText("You have (" + count + ") listing");
-                        } else {
-                            textViewListingCount.setText("You have (" + count + ") listings");
-                        }
+                        textViewListingCount.setText(count == 1 ? "You have (1) listing" : "You have (" + count + ") listings");
                         
                         // Show/hide empty state
                         if (count == 0) {
@@ -230,25 +218,19 @@ public class ManageFragment extends Fragment {
                             layoutEmptyState.setVisibility(View.GONE);
                         }
                         
-                        // Show success message if this was a refresh after edit
                         if (isRefreshingAfterEdit) {
                             Toast.makeText(getContext(), "Listings updated successfully!", Toast.LENGTH_SHORT).show();
-                            isRefreshingAfterEdit = false; // Reset flag
+                            isRefreshingAfterEdit = false;
                         }
                         
-                        // Mark first load as complete
-                        if (isFirstLoad) {
-                            isFirstLoad = false;
-                        }
+                        isFirstLoad = false;
 
                     } catch (Exception e) {
                         e.printStackTrace();
                         System.out.println("ERROR: Exception processing response: " + e.getMessage());
                         Toast.makeText(getContext(), "Parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     } finally {
-                        // Hide loading dialog
                         hideProgressDialog();
-                        // Stop refresh indicator
                         if (swipeRefreshLayout != null) {
                             swipeRefreshLayout.setRefreshing(false);
                         }
