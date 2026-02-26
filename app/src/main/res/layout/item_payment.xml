@@ -1,12 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="@android:color/white">
+    app:cardBackgroundColor="#FFFFFF"
+    app:strokeWidth="2dp"
+    app:strokeColor="#DDDDDD">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -33,46 +35,44 @@
                 android:textColor="#000000" />
 
             <LinearLayout
+                android:id="@+id/layoutStatusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:background="#DDDDDD"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
 
                 <TextView
-                    android:id="@+id/tvStatusBadge"
+                    android:id="@+id/tvStatusIcon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FULLY PAID"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
+                    android:text="●"
+                    android:textSize="12sp"
                     android:textColor="#FFFFFF"
-                    android:background="@drawable/bg_status_approved"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    android:visibility="gone"
-                    android:layout_marginEnd="8dp" />
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvPaymentStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="PAID"
-                    android:textSize="12sp"
+                    android:text="PENDING"
+                    android:textSize="11sp"
                     android:textStyle="bold"
-                    android:textColor="#4CAF50"
-                    android:background="@drawable/bg_status_approved"
-                    android:padding="6dp" />
+                    android:textColor="#FFFFFF"
+                    android:layout_marginStart="4dp" />
             </LinearLayout>
-        </LinearLayout>
+        </LinearLayout> a
 
         <!-- Room and Rent Type -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="12dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -81,10 +81,11 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvRoomLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Room"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
@@ -94,7 +95,7 @@
                     android:text="Room 1 - Single"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#333333" />
             </LinearLayout>
 
             <LinearLayout
@@ -104,10 +105,11 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvRentTypeLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rent Type"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
@@ -117,7 +119,7 @@
                     android:text="Long-term"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#333333" />
             </LinearLayout>
         </LinearLayout>
 
@@ -126,7 +128,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="12dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -139,14 +141,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Amount Paid"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
                     android:id="@+id/tvAmountPaid"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="P3,000.00"
+                    android:text="₱3,000.00"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#4CAF50" />
@@ -159,20 +161,21 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvTotalAmountLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Total Amount"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
                     android:id="@+id/tvTotalAmount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="P3,000.00"
-                    android:textSize="14sp"
+                    android:text="₱3,000.00"
+                    android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#333333" />
             </LinearLayout>
         </LinearLayout>
 
@@ -182,19 +185,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="8dp"
-            android:background="#F5F5F5"
-            android:padding="12dp"
-            android:layout_marginTop="4dp">
+            android:layout_marginBottom="12dp"
+            android:background="#F8F9FA"
+            android:padding="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="6dp">
 
                 <TextView
+                    android:id="@+id/tvProgressLabel"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -232,12 +235,11 @@
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- Status and Date -->
+        <!-- Footer Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -246,10 +248,11 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvRentalStatusLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rental Status"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
@@ -259,7 +262,7 @@
                     android:text="Active"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#333333" />
             </LinearLayout>
 
             <LinearLayout
@@ -269,10 +272,11 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvPaymentDateLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Payment Date"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textColor="#666666" />
 
                 <TextView
@@ -282,13 +286,13 @@
                     android:text="2025-01-15"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#333333" />
             </LinearLayout>
         </LinearLayout>
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
 
 
 

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="6dp"
-    app:cardBackgroundColor="@android:color/white"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#E3F2FD"
     app:strokeWidth="2dp"
     app:strokeColor="#2196F3">
 
@@ -32,21 +33,39 @@
                 android:text="John Doe"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#000000" />
+                android:textColor="#1565C0" />
 
-            <TextView
-                android:id="@+id/tvPaymentStatus"
+            <LinearLayout
+                android:id="@+id/layoutStatusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="REMAINING"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="#FF9800"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="#2196F3"
                 android:paddingStart="10dp"
                 android:paddingEnd="10dp"
                 android:paddingTop="6dp"
-                android:paddingBottom="6dp" />
+                android:paddingBottom="6dp">
+
+                <TextView
+                    android:id="@+id/tvStatusIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="◷"
+                    android:textSize="14sp"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPaymentStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="REMAINING"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Room and Rent Type -->
@@ -63,11 +82,12 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvRoomLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Room"
-                    android:textSize="12sp"
-                    android:textColor="#666666" />
+                    android:textSize="11sp"
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvRoom"
@@ -76,7 +96,7 @@
                     android:text="Room 1 - Single"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#1565C0" />
             </LinearLayout>
 
             <LinearLayout
@@ -86,11 +106,12 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvRentTypeLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rent Type"
-                    android:textSize="12sp"
-                    android:textColor="#666666" />
+                    android:textSize="11sp"
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvRentType"
@@ -99,16 +120,17 @@
                     android:text="Long-term"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#1565C0" />
             </LinearLayout>
         </LinearLayout>
 
         <!-- Payment Progress -->
         <LinearLayout
+            android:id="@+id/layoutPaymentProgress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#E3F2FD"
+            android:background="#FFFFFF"
             android:padding="12dp"
             android:layout_marginBottom="12dp">
 
@@ -120,13 +142,14 @@
                 android:layout_marginBottom="6dp">
 
                 <TextView
+                    android:id="@+id/tvProgressLabel"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Payment Progress"
                     android:textSize="12sp"
                     android:textStyle="bold"
-                    android:textColor="#1565C0" />
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvPaymentProgress"
@@ -153,7 +176,7 @@
                 android:layout_height="wrap_content"
                 android:text="50%"
                 android:textSize="11sp"
-                android:textColor="#1565C0"
+                android:textColor="#1976D2"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
@@ -161,8 +184,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -172,11 +194,12 @@
                 android:layout_marginEnd="4dp">
 
                 <TextView
+                    android:id="@+id/tvTotalAmountLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Total"
                     android:textSize="11sp"
-                    android:textColor="#666666" />
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvTotalAmount"
@@ -185,7 +208,7 @@
                     android:text="₱5,000.00"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#000000" />
+                    android:textColor="#1565C0" />
             </LinearLayout>
 
             <LinearLayout
@@ -197,11 +220,12 @@
                 android:layout_marginEnd="4dp">
 
                 <TextView
+                    android:id="@+id/tvAmountPaidLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Paid"
                     android:textSize="11sp"
-                    android:textColor="#666666" />
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvAmountPaid"
@@ -221,11 +245,12 @@
                 android:layout_marginStart="4dp">
 
                 <TextView
+                    android:id="@+id/tvRemainingAmountLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Remaining"
                     android:textSize="11sp"
-                    android:textColor="#666666" />
+                    android:textColor="#1976D2" />
 
                 <TextView
                     android:id="@+id/tvRemainingAmount"

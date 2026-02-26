@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -214,205 +215,26 @@ public class PaymentDetailsActivity extends AppCompatActivity implements Payment
             tvBoardingHouseAddress.setText(payment.getBoardingHouseAddress() != null ? payment.getBoardingHouseAddress() : "Boarding House Address");
         }
         
-        // Set payment amounts based on view type
-        if (viewType == PaymentAdapter.VIEW_TYPE_FULLY_PAID) {
-            // For fully paid, show both amount paid and total amount
-            tvAmountPaid.setVisibility(View.VISIBLE);
-            
-            // Show amount paid with fallback logic
-            String paidAmount = payment.getPaidAmountForBooking();
-            boolean useBookingPaid = false;
-            if (paidAmount != null && !paidAmount.isEmpty()) {
+        // Always show overall totals for Amount Paid and Total Amount
+        tvAmountPaid.setText(payment.getAmountPaid());
+        tvTotalAmount.setText(payment.getTotalAmount());
+        
+        // If in "Remaining" view, also highlight the remaining balance
+        if (viewType == PaymentAdapter.VIEW_TYPE_REMAINING) {
+            String remaining = payment.getRemainingAmountToPay();
+            if (remaining != null && !remaining.isEmpty()) {
                 try {
-                    double paidValue = Double.parseDouble(paidAmount);
-                    if (paidValue > 0) {
-                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
-                        useBookingPaid = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingPaid) {
-                // Fall back to regular amount_paid field
-                String fallbackPaid = payment.getAmountPaid();
-                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                    tvAmountPaid.setText(fallbackPaid);
-                } else {
-                    tvAmountPaid.setText("₱0.00");
-                }
-            }
-            
-            // Show total amount with fallback logic
-            String totalAmount = payment.getTotalAmountForBooking();
-            boolean useBookingTotal = false;
-            if (totalAmount != null && !totalAmount.isEmpty()) {
-                try {
-                    double totalValue = Double.parseDouble(totalAmount);
-                    if (totalValue > 0) {
-                        tvTotalAmount.setText("₱" + formatAmountForDetails(totalAmount));
-                        useBookingTotal = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingTotal) {
-                // Fall back to regular total_amount field
-                String fallbackTotal = payment.getTotalAmount();
-                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                    tvTotalAmount.setText(fallbackTotal);
-                } else {
-                    tvTotalAmount.setText("₱0.00");
-                }
-            }
-        } else if (viewType == PaymentAdapter.VIEW_TYPE_REMAINING) {
-            // For remaining, show paid and remaining amounts with fallback logic
-            // Show amount paid with fallback logic
-            String paidAmount = payment.getPaidAmountForBooking();
-            boolean useBookingPaid = false;
-            if (paidAmount != null && !paidAmount.isEmpty()) {
-                try {
-                    double paidValue = Double.parseDouble(paidAmount);
-                    if (paidValue > 0) {
-                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
-                        useBookingPaid = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingPaid) {
-                // Fall back to regular amount_paid field
-                String fallbackPaid = payment.getAmountPaid();
-                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                    tvAmountPaid.setText(fallbackPaid);
-                } else {
-                    tvAmountPaid.setText("₱0.00");
-                }
-            }
-            
-            // Show remaining amount with fallback logic
-            String remainingAmount = payment.getRemainingAmountToPay();
-            boolean useBookingRemaining = false;
-            if (remainingAmount != null && !remainingAmount.isEmpty()) {
-                try {
-                    double remainingValue = Double.parseDouble(remainingAmount);
-                    if (remainingValue > 0) {
-                        tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(remainingAmount));
-                        useBookingRemaining = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will calculate
-                }
-            }
-            
-            if (!useBookingRemaining) {
-                // Calculate remaining from total and paid if breakdown amounts are not available
-                String totalAmt = payment.getTotalAmountForBooking();
-                String paidAmt = payment.getPaidAmountForBooking();
-                boolean calculated = false;
-                
-                if (totalAmt != null && !totalAmt.isEmpty() && paidAmt != null && !paidAmt.isEmpty()) {
-                    try {
-                        double total = Double.parseDouble(totalAmt);
-                        double paid = Double.parseDouble(paidAmt);
-                        if (total > 0) {
-                            double remaining = total - paid;
-                            if (remaining > 0) {
-                                tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(String.valueOf(remaining)));
-                                calculated = true;
-                            } else {
-                                tvTotalAmount.setText("Remaining: ₱0.00");
-                                calculated = true;
-                            }
+                    double remValue = Double.parseDouble(remaining);
+                    if (remValue > 0) {
+                        // Show remaining balance in the info text area as well
+                        if (tvButtonInfo != null) {
+                            tvButtonInfo.setText("Remaining Balance: ₱" + formatAmountForDetails(remaining));
+                            tvButtonInfo.setVisibility(View.VISIBLE);
+                            tvButtonInfo.setTextColor(Color.parseColor("#F44336")); // Red for attention
                         }
-                    } catch (NumberFormatException e) {
-                        // Will try fallback
-                    }
-                }
-                
-                if (!calculated) {
-                    // Fall back to calculating from regular amounts
-                    String fallbackTotal = payment.getTotalAmount();
-                    String fallbackPaid = payment.getAmountPaid();
-                    if (fallbackTotal != null && fallbackPaid != null) {
-                        try {
-                            // Remove ₱ and commas, then parse
-                            String totalStr = fallbackTotal.replace("₱", "").replace(",", "").trim();
-                            String paidStr = fallbackPaid.replace("₱", "").replace(",", "").trim();
-                            if (!totalStr.isEmpty() && !paidStr.isEmpty()) {
-                                double total = Double.parseDouble(totalStr);
-                                double paid = Double.parseDouble(paidStr);
-                                double remaining = total - paid;
-                                if (remaining > 0) {
-                                    tvTotalAmount.setText("Remaining: ₱" + formatAmountForDetails(String.valueOf(remaining)));
-                                } else {
-                                    tvTotalAmount.setText("Remaining: ₱0.00");
-                                }
-                            } else {
-                                tvTotalAmount.setText("Remaining: ₱0.00");
-                            }
-                        } catch (NumberFormatException e) {
-                            tvTotalAmount.setText("Remaining: ₱0.00");
-                        }
-                    } else {
-                        tvTotalAmount.setText("Remaining: ₱0.00");
-                    }
-                }
-            }
-        } else {
-            // For all payments, show standard amounts with fallback logic
-            // Use accurate amounts from payment_breakdowns if available and valid (> 0)
-            // Otherwise fall back to regular payment amounts
-            String paidAmount = payment.getPaidAmountForBooking();
-            boolean useBookingPaid = false;
-            if (paidAmount != null && !paidAmount.isEmpty()) {
-                try {
-                    double paidValue = Double.parseDouble(paidAmount);
-                    if (paidValue > 0) {
-                        tvAmountPaid.setText("₱" + formatAmountForDetails(paidAmount));
-                        useBookingPaid = true;
                     }
                 } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingPaid) {
-                // Fall back to regular amount_paid field
-                String fallbackPaid = payment.getAmountPaid();
-                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                    tvAmountPaid.setText(fallbackPaid);
-                } else {
-                    tvAmountPaid.setText("₱0.00");
-                }
-            }
-            
-            String totalAmount = payment.getTotalAmountForBooking();
-            boolean useBookingTotal = false;
-            if (totalAmount != null && !totalAmount.isEmpty()) {
-                try {
-                    double totalValue = Double.parseDouble(totalAmount);
-                    if (totalValue > 0) {
-                        tvTotalAmount.setText("₱" + formatAmountForDetails(totalAmount));
-                        useBookingTotal = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingTotal) {
-                // Fall back to regular total_amount field
-                String fallbackTotal = payment.getTotalAmount();
-                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                    tvTotalAmount.setText(fallbackTotal);
-                } else {
-                    tvTotalAmount.setText("₱0.00");
+                    // Ignore
                 }
             }
         }

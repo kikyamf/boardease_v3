@@ -249,66 +249,35 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.tvPaymentDate.setText("Completed: N/A");
         }
         
+        // Apply Green Palette for Fully Paid - white progress section
+        holder.applyPalette("#F1F8E9", "#4CAF50", "#2E7D32", "#4CAF50", "#757575", "✓", "#FFFFFF");
+
         // Hide elements not used in fully paid view
-        if (holder.tvAmountPaid != null) holder.tvAmountPaid.setVisibility(View.GONE);
-        if (holder.tvRentalStatus != null) holder.tvRentalStatus.setVisibility(View.GONE);
-        if (holder.progressBarPayment != null) holder.progressBarPayment.setVisibility(View.GONE);
-        if (holder.tvPaymentProgress != null) holder.tvPaymentProgress.setVisibility(View.GONE);
-        if (holder.tvProgressPercent != null) holder.tvProgressPercent.setVisibility(View.GONE);
+        if (holder.tvAmountPaid != null && holder.tvAmountPaidLabel != null) {
+            holder.tvAmountPaid.setVisibility(View.GONE);
+            holder.tvAmountPaidLabel.setVisibility(View.GONE);
+        }
+        if (holder.tvRentalStatus != null && holder.tvRentalStatusLabel != null) {
+            holder.tvRentalStatus.setVisibility(View.GONE);
+            holder.tvRentalStatusLabel.setVisibility(View.GONE);
+        }
+        if (holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.GONE);
+        }
     }
     
     private void bindRemainingViewHolder(ViewHolder holder, PaymentData payment) {
-        // Set total amount
+        // Restore declarations for progress bar and calculation logic
+        int totalPeriods = payment.getTotalPeriods();
+        int paidPeriods = payment.getPaidPeriods();
+        boolean isFullyPaid = payment.isFullyPaid();
+        
+        // Set amount paid and total amount using overall totals from backend
+        if (holder.tvAmountPaid != null) {
+            holder.tvAmountPaid.setText(payment.getAmountPaid());
+        }
         if (holder.tvTotalAmount != null) {
-            String totalAmount = payment.getTotalAmountForBooking();
-            boolean useBookingTotal = false;
-            if (totalAmount != null && !totalAmount.isEmpty()) {
-                try {
-                    double totalValue = Double.parseDouble(totalAmount);
-                    if (totalValue > 0) {
-                        holder.tvTotalAmount.setText("₱" + formatAmount(totalAmount));
-                        useBookingTotal = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Invalid number, will fall back
-                }
-            }
-            
-            if (!useBookingTotal) {
-                // Fall back to regular total_amount field
-                String fallbackTotal = payment.getTotalAmount();
-                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                    holder.tvTotalAmount.setText(fallbackTotal);
-                } else {
-                    holder.tvTotalAmount.setText("₱0.00");
-                }
-            }
-        }
-        
-        // Use accurate amounts from payment_breakdowns if available and valid (> 0)
-        // Otherwise fall back to regular payment amounts
-        String paidAmount = payment.getPaidAmountForBooking();
-        boolean useBookingPaid = false;
-        if (paidAmount != null && !paidAmount.isEmpty()) {
-            try {
-                double paidValue = Double.parseDouble(paidAmount);
-                if (paidValue > 0) {
-                    holder.tvAmountPaid.setText("₱" + formatAmount(paidAmount));
-                    useBookingPaid = true;
-                }
-            } catch (NumberFormatException e) {
-                // Invalid number, will fall back
-            }
-        }
-        
-        if (!useBookingPaid) {
-            // Fall back to regular amount_paid field
-            String fallbackPaid = payment.getAmountPaid();
-            if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                holder.tvAmountPaid.setText(fallbackPaid);
-            } else {
-                holder.tvAmountPaid.setText("₱0.00");
-            }
+            holder.tvTotalAmount.setText(payment.getTotalAmount());
         }
         
         if (holder.tvRemainingAmount != null) {
@@ -382,14 +351,23 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             }
         }
         
-        // Change status badge from "REMAINING" to "PARTIALLY PAID" with blue color
+        // Change status badge from "REMAINING" to "PARTIALLY PAID"
         holder.tvPaymentStatus.setText("PARTIALLY PAID");
-        holder.tvPaymentStatus.setBackgroundResource(R.drawable.bg_status_completed);
-        holder.tvPaymentStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.white));
+        
+        // Apply Blue Palette for Remaining / Partially Paid - white progress section
+        holder.applyPalette("#E3F2FD", "#2196F3", "#1565C0", "#2196F3", "#757575", "◷", "#FFFFFF");
+        
+        // Ensure remaining amount is highlighted in red as requested
+        if (holder.tvRemainingAmount != null) {
+            holder.tvRemainingAmount.setTextColor(Color.RED);
+        }
+        if (holder.tvRemainingAmountLabel != null) {
+            holder.tvRemainingAmountLabel.setTextColor(Color.RED);
+        }
         
         // Set payment progress
-        int totalPeriods = payment.getTotalPeriods();
-        int paidPeriods = payment.getPaidPeriods();
+        totalPeriods = payment.getTotalPeriods();
+        paidPeriods = payment.getPaidPeriods();
         int totalMonths = payment.getTotalMonthsForBooking();
         int paidMonths = payment.getPaidMonthsForBooking();
         double progressPercent = payment.getPaymentProgressPercent();
@@ -579,28 +557,13 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             }
         }
         
-        // Hide the rectangle status badge (tvPaymentStatus) - we only show the red OVERDUE badge
+        // Apply Red Palette for Overdue - Softer background, neutral gray labels, white progress section
+        holder.applyPalette("#FFFFFF", "#F44336", "#B71C1C", "#F44336", "#757575", "!", "#FFEBEE");
+        
+        // Ensure status badge says OVERDUE
         if (holder.tvPaymentStatus != null) {
-            holder.tvPaymentStatus.setVisibility(View.GONE);
-        }
-        
-        // Set red border for overdue (similar to pending but red)
-        View cardView = holder.itemView;
-        if (cardView instanceof androidx.cardview.widget.CardView) {
-            android.graphics.drawable.GradientDrawable borderDrawable = new android.graphics.drawable.GradientDrawable();
-            borderDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-            borderDrawable.setColor(Color.parseColor("#FFFFFF"));
-            borderDrawable.setStroke((int)(2 * context.getResources().getDisplayMetrics().density), Color.parseColor("#F44336")); // Red border, 2dp width
-            borderDrawable.setCornerRadius(8 * context.getResources().getDisplayMetrics().density); // 8dp corner radius
-            cardView.setBackground(borderDrawable);
-        }
-        
-        // Show OVERDUE badge only (red) - hide any other badges that might have been set
-        if (holder.tvStatusBadge != null) {
-            holder.tvStatusBadge.setVisibility(View.VISIBLE);
-            holder.tvStatusBadge.setText("OVERDUE");
-            holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_rounded_red);
-            holder.tvStatusBadge.setTextColor(android.graphics.Color.WHITE);
+            holder.tvPaymentStatus.setText("OVERDUE");
+            holder.tvPaymentStatus.setVisibility(View.VISIBLE);
         }
         
         // Set rental status (if view exists)
@@ -608,83 +571,23 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.tvRentalStatus.setText(payment.getRentalStatus());
         }
         
-        // Hide payment progress for overdue (since unpaid, progress is 0%)
-        if (holder.progressBarPayment != null) {
-            holder.progressBarPayment.setVisibility(View.GONE);
-        }
-        
-        // Hide progress text for overdue
-        if (holder.tvProgressPercent != null) {
-            holder.tvProgressPercent.setVisibility(View.GONE);
-        }
-        
-        // Hide payment progress text
-        if (holder.tvPaymentProgress != null) {
-            holder.tvPaymentProgress.setVisibility(View.GONE);
-        }
-        
-        // Hide payment progress container
+        // Hide progress container for overdue
         if (holder.getLayoutPaymentProgress() != null) {
             holder.getLayoutPaymentProgress().setVisibility(View.GONE);
         }
     }
     
     private void bindPendingViewHolder(ViewHolder holder, PaymentData payment) {
-        // Similar to bindAllPaymentsViewHolder but with orange border and PENDING badge only
-        
-        // Use accurate amounts from payment_breakdowns if available and valid (> 0)
-        // Otherwise fall back to regular payment amounts
-        String paidAmount = payment.getPaidAmountForBooking();
-        boolean useBookingPaid = false;
-        if (paidAmount != null && !paidAmount.isEmpty()) {
-            try {
-                double paidValue = Double.parseDouble(paidAmount);
-                if (paidValue > 0) {
-                    holder.tvAmountPaid.setText("₱" + formatAmount(paidAmount));
-                    useBookingPaid = true;
-                }
-            } catch (NumberFormatException e) {
-                // Invalid number, will fall back
-            }
-        }
-        
-        if (!useBookingPaid) {
-            // Fall back to regular amount_paid field
-            String fallbackPaid = payment.getAmountPaid();
-            if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                holder.tvAmountPaid.setText(fallbackPaid);
-            } else {
-                holder.tvAmountPaid.setText("₱0.00");
-            }
-        }
-        
-        // Set total amount
+        // Restore declarations for progress bar logic
         int totalPeriods = payment.getTotalPeriods();
         int paidPeriods = payment.getPaidPeriods();
         boolean isFullyPaid = payment.isFullyPaid();
-        String totalAmount = payment.getTotalAmountForBooking();
-        boolean useBookingTotal = false;
         
-        if (totalAmount != null && !totalAmount.isEmpty()) {
-            try {
-                double totalValue = Double.parseDouble(totalAmount);
-                if (totalValue > 0) {
-                    holder.tvTotalAmount.setText("₱" + formatAmount(totalAmount));
-                    useBookingTotal = true;
-                }
-            } catch (NumberFormatException e) {
-                // Invalid number, will fall back
-            }
-        }
+        // Similar to bindAllPaymentsViewHolder but with orange border and PENDING badge only
         
-        if (!useBookingTotal) {
-            String fallbackTotal = payment.getTotalAmount();
-            if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                holder.tvTotalAmount.setText(fallbackTotal);
-            } else {
-                holder.tvTotalAmount.setText("₱0.00");
-            }
-        }
+        // Use accurate amounts from backend (overall totals)
+        holder.tvAmountPaid.setText(payment.getAmountPaid());
+        holder.tvTotalAmount.setText(payment.getTotalAmount());
         
         // Hide duplicate status text - we'll show badge instead
         if (holder.tvPaymentStatus != null) {
@@ -699,42 +602,20 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             holder.tvPaymentDate.setText("N/A");
         }
         
-        // Set card background color based on rental status
-        String rentalStatus = payment.getRentalStatus();
-        View cardView = holder.itemView;
-        if (rentalStatus != null && rentalStatus.equalsIgnoreCase("Cancelled")) {
-            if (cardView instanceof androidx.cardview.widget.CardView) {
-                ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(Color.parseColor("#FFEBEE"));
-            } else {
-                cardView.setBackgroundColor(Color.parseColor("#FFEBEE"));
-            }
-        } else {
-            if (cardView instanceof androidx.cardview.widget.CardView) {
-                ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(Color.parseColor("#FFFFFF"));
-            } else {
-                cardView.setBackgroundColor(Color.parseColor("#FFFFFF"));
-            }
+        // Apply Orange Palette for Pending - Softer background, orange-tinted progress section
+        holder.applyPalette("#FFFFFF", "#FF9800", "#E65100", "#FF9800", "#757575", "●", "#FFF3E0");
+        
+        if (holder.tvPaymentStatus != null) {
+            holder.tvPaymentStatus.setText("PENDING");
+            holder.tvPaymentStatus.setVisibility(View.VISIBLE);
         }
         
-        // Show orange PENDING badge
-        if (holder.tvStatusBadge != null) {
-            holder.tvStatusBadge.setText("PENDING");
-            holder.tvStatusBadge.setVisibility(View.VISIBLE);
-            holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
-            holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_pending);
+        // Set rental status
+        if (holder.tvRentalStatus != null) {
+            holder.tvRentalStatus.setText(payment.getRentalStatus());
         }
-        
-        // Set orange card border for pending payments
-        if (cardView instanceof androidx.cardview.widget.CardView) {
-            android.graphics.drawable.GradientDrawable borderDrawable = new android.graphics.drawable.GradientDrawable();
-            borderDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-            borderDrawable.setColor(Color.parseColor("#FFFFFF"));
-            borderDrawable.setStroke((int)(2 * context.getResources().getDisplayMetrics().density), Color.parseColor("#FF9800")); // Orange border, 2dp width
-            borderDrawable.setCornerRadius(8 * context.getResources().getDisplayMetrics().density); // 8dp corner radius
-            cardView.setBackground(borderDrawable);
-        }
-        
-        // Set payment progress (similar to bindAllPaymentsViewHolder but with orange color)
+
+        // Set payment progress
         int totalMonths = payment.getTotalMonthsForBooking();
         int paidMonths = payment.getPaidMonthsForBooking();
         double progressPercent = payment.getPaymentProgressPercent();
@@ -743,453 +624,100 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             progressPercent = (paidPeriods * 100.0) / totalPeriods;
         }
         
-        if ((totalPeriods > 0 || isFullyPaid) && holder.progressBarPayment != null) {
+        if ((totalPeriods > 0 || isFullyPaid) && holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            
             if (totalMonths > 0 && totalPeriods == totalMonths) {
-                if (totalMonths == 1) {
-                    holder.tvPaymentProgress.setText(String.format("%d/%d month paid", paidMonths, totalMonths));
-                } else {
-                    holder.tvPaymentProgress.setText(String.format("%d/%d months paid", paidMonths, totalMonths));
-                }
+                holder.tvPaymentProgress.setText(String.format("%d/%d month%s paid", paidMonths, totalMonths, totalMonths == 1 ? "" : "s"));
             } else {
-                if (totalPeriods == 1) {
-                    holder.tvPaymentProgress.setText(String.format("%d/%d period paid", paidPeriods, totalPeriods));
-                } else if (totalPeriods > 1) {
-                    holder.tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
-                } else {
-                    holder.tvPaymentProgress.setText("No period data");
-                }
+                holder.tvPaymentProgress.setText(String.format("%d/%d period%s paid", paidPeriods, totalPeriods, totalPeriods == 1 ? "" : "s"));
             }
             
-            holder.progressBarPayment.setProgress((int) progressPercent);
-            holder.tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
-            
-            // Set progress bar to orange for pending payments
-            holder.progressBarPayment.setProgressTintList(
-                android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800"))
-            );
-            holder.tvPaymentProgress.setTextColor(Color.parseColor("#FF9800"));
-            
-            holder.tvPaymentProgress.setVisibility(View.VISIBLE);
-            holder.progressBarPayment.setVisibility(View.VISIBLE);
-            holder.tvProgressPercent.setVisibility(View.VISIBLE);
-            
-            // Show container
-            if (holder.getLayoutPaymentProgress() != null) {
-                holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            if (holder.progressBarPayment != null) {
+                holder.progressBarPayment.setProgress((int) progressPercent);
             }
-        } else if (holder.progressBarPayment != null) {
-            if (paidPeriods > 0 || totalPeriods > 0) {
-                holder.tvPaymentProgress.setVisibility(View.VISIBLE);
-                holder.progressBarPayment.setVisibility(View.VISIBLE);
-                holder.tvProgressPercent.setVisibility(View.VISIBLE);
-                
-                // Show container
-                if (holder.getLayoutPaymentProgress() != null) {
-                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
-                }
-                
-                
-                if (totalPeriods > 0) {
-                    int defaultProgress = (int) ((paidPeriods * 100.0) / totalPeriods);
-                    holder.progressBarPayment.setProgress(defaultProgress);
-                    holder.tvProgressPercent.setText(defaultProgress + "%");
-                    holder.tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
-                }
-                
-                // Set progress bar to orange
-                holder.progressBarPayment.setProgressTintList(
-                    android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800"))
-                );
-                holder.tvPaymentProgress.setTextColor(Color.parseColor("#FF9800"));
-                
-                // Show container
-                if (holder.getLayoutPaymentProgress() != null) {
-                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
-                }
-            } else {
-                holder.tvPaymentProgress.setVisibility(View.GONE);
-                holder.progressBarPayment.setVisibility(View.GONE);
-                holder.tvProgressPercent.setVisibility(View.GONE);
-                
-                // Hide container
-                if (holder.getLayoutPaymentProgress() != null) {
-                    holder.getLayoutPaymentProgress().setVisibility(View.GONE);
-                }
+            if (holder.tvProgressPercent != null) {
+                holder.tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
             }
+        } else if (holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.GONE);
         }
-        
-        // Don't show status badge logic here - we already set PENDING badge above
-        // Remove any duplicate status badge logic from bindAllPaymentsViewHolder
     }
     
     private void bindAllPaymentsViewHolder(ViewHolder holder, PaymentData payment) {
-        // Use accurate amounts from payment_breakdowns if available and valid (> 0)
-        // Otherwise fall back to regular payment amounts
-        String paidAmount = payment.getPaidAmountForBooking();
-        boolean useBookingPaid = false;
-        if (paidAmount != null && !paidAmount.isEmpty()) {
-            try {
-                double paidValue = Double.parseDouble(paidAmount);
-                if (paidValue > 0) {
-                    holder.tvAmountPaid.setText("₱" + formatAmount(paidAmount));
-                    useBookingPaid = true;
-                }
-            } catch (NumberFormatException e) {
-                // Invalid number, will fall back
-            }
-        }
-        
-        if (!useBookingPaid) {
-            // Fall back to regular amount_paid field
-            String fallbackPaid = payment.getAmountPaid();
-            if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                holder.tvAmountPaid.setText(fallbackPaid);
-            } else {
-                holder.tvAmountPaid.setText("₱0.00");
-            }
-        }
-        
-        // Check if fully paid
-        // First check the isFullyPaid flag from database
-        // Then verify with period data if available
+        // Restore declarations for progress bar logic
         int totalPeriods = payment.getTotalPeriods();
         int paidPeriods = payment.getPaidPeriods();
         boolean isFullyPaid = payment.isFullyPaid();
         
-        // If we have period data, verify fully paid status
-        if (totalPeriods > 0) {
-            isFullyPaid = isFullyPaid && paidPeriods >= totalPeriods;
-        }
+        // Use accurate amounts from backend (overall totals)
+        holder.tvAmountPaid.setText(payment.getAmountPaid());
+        holder.tvTotalAmount.setText(payment.getTotalAmount());
         
-        // Also check payment status string as fallback
-        String paymentStatusStr = payment.getPaymentStatus();
-        if (paymentStatusStr != null && paymentStatusStr.equalsIgnoreCase("Fully Paid")) {
-            isFullyPaid = true;
-        }
+        // Set dynamic palette based on status
+        String paymentStatus = payment.getPaymentStatus();
+        String statusLower = paymentStatus != null ? paymentStatus.toLowerCase() : "";
         
-        // Total Amount logic:
-        // - If fully paid AND only 1 period exists, total = amount paid (166.67)
-        // - If fully paid AND amount paid equals total amount, total = amount paid (166.67)
-        // - If fully paid AND multiple periods, total = sum of all periods (5000)
-        // - If not fully paid, total = sum of all periods
-        // Note: paidAmount is already declared above (line 281)
-        String totalAmount = payment.getTotalAmountForBooking();
-        boolean useBookingTotal = false;
-        
-        // Check if fully paid with only 1 period - then total should equal amount paid
-        if (isFullyPaid && (totalPeriods == 1 || totalPeriods == 0)) {
-            // Only 1 period (or no period data) and fully paid - use amount paid as total
-            String amountToUse = null;
-            if (useBookingPaid && paidAmount != null && !paidAmount.isEmpty()) {
-                amountToUse = paidAmount;
-            } else {
-                // Try regular amount_paid field
-                String fallbackPaid = payment.getAmountPaid();
-                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                    // Remove ₱ and commas, then use it
-                    amountToUse = fallbackPaid.replace("₱", "").replace(",", "");
-                }
-            }
+        // Determine exact status for palette
+        boolean isFullyPaidStatus = isFullyPaid || (totalPeriods > 0 && paidPeriods >= totalPeriods) || "fully paid".equals(statusLower);
+        boolean isOverdueStatus = "overdue".equals(statusLower);
+        boolean isPartiallyPaidStatus = !isFullyPaidStatus && !isOverdueStatus && ((totalPeriods > 0 && paidPeriods > 0) || statusLower.contains("partially"));
+        boolean isPendingStatus = !isFullyPaidStatus && !isOverdueStatus && !isPartiallyPaidStatus;
+
+        if (isFullyPaidStatus) {
+            holder.applyPalette("#F1F8E9", "#4CAF50", "#2E7D32", "#4CAF50", "#757575", "✓", "#FFFFFF");
+            holder.tvPaymentStatus.setText("FULLY PAID");
+        } else if (isOverdueStatus) {
+            holder.applyPalette("#FFFFFF", "#F44336", "#B71C1C", "#F44336", "#757575", "!", "#FFEBEE");
+            holder.tvPaymentStatus.setText("OVERDUE");
+        } else if (isPartiallyPaidStatus) {
+            holder.applyPalette("#E3F2FD", "#2196F3", "#1565C0", "#2196F3", "#757575", "◷", "#FFFFFF");
+            holder.tvPaymentStatus.setText("PARTIALLY PAID");
             
-            if (amountToUse != null) {
-                try {
-                    double paidValue = Double.parseDouble(amountToUse);
-                    if (paidValue > 0) {
-                        holder.tvTotalAmount.setText("₱" + formatAmount(amountToUse));
-                        useBookingTotal = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Will fall through to use total amount
-                }
-            }
-        }
-        
-        // Also check if amount paid equals total amount (fully paid single period scenario)
-        if (!useBookingTotal && isFullyPaid) {
-            String paidToCompare = null;
-            String totalToCompare = null;
-            
-            // Get paid amount to compare
-            if (useBookingPaid && paidAmount != null && !paidAmount.isEmpty()) {
-                paidToCompare = paidAmount;
-            } else {
-                String fallbackPaid = payment.getAmountPaid();
-                if (fallbackPaid != null && !fallbackPaid.isEmpty() && !fallbackPaid.equals("₱0.00")) {
-                    paidToCompare = fallbackPaid.replace("₱", "").replace(",", "");
-                }
-            }
-            
-            // Get total amount to compare
-            if (totalAmount != null && !totalAmount.isEmpty()) {
-                totalToCompare = totalAmount;
-            } else {
-                String fallbackTotal = payment.getTotalAmount();
-                if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                    totalToCompare = fallbackTotal.replace("₱", "").replace(",", "");
-                }
-            }
-            
-            // Compare if both are available
-            if (paidToCompare != null && totalToCompare != null) {
-                try {
-                    double paidValue = Double.parseDouble(paidToCompare);
-                    double totalValue = Double.parseDouble(totalToCompare);
-                    // If they're equal or very close, it's likely a single period payment
-                    if (paidValue > 0 && Math.abs(paidValue - totalValue) < 0.01) {
-                        holder.tvTotalAmount.setText("₱" + formatAmount(paidToCompare));
-                        useBookingTotal = true;
-                    }
-                } catch (NumberFormatException e) {
-                    // Will fall through to use total amount
-                }
-            }
-        }
-        
-        // If not handled above, use total amount from booking breakdown
-        if (!useBookingTotal && totalAmount != null && !totalAmount.isEmpty()) {
-            try {
-                double totalValue = Double.parseDouble(totalAmount);
-                if (totalValue > 0) {
-                    holder.tvTotalAmount.setText("₱" + formatAmount(totalAmount));
-                    useBookingTotal = true;
-                }
-            } catch (NumberFormatException e) {
-                // Invalid number, will fall back
-            }
-        }
-        
-        if (!useBookingTotal) {
-            // Fall back to regular total_amount field
-            String fallbackTotal = payment.getTotalAmount();
-            if (fallbackTotal != null && !fallbackTotal.isEmpty() && !fallbackTotal.equals("₱0.00")) {
-                holder.tvTotalAmount.setText(fallbackTotal);
-            } else {
-                holder.tvTotalAmount.setText("₱0.00");
-            }
-        }
-        
-        // Always hide the rectangle status badge (tvPaymentStatus) - we only show oblong badge (tvStatusBadge)
-        if (holder.tvPaymentStatus != null) {
-            holder.tvPaymentStatus.setVisibility(View.GONE);
-        }
-        
-        holder.tvRentalStatus.setText(payment.getRentalStatus());
-        String paymentDate = payment.getPaymentDate();
-        if (paymentDate != null && !paymentDate.isEmpty()) {
-            holder.tvPaymentDate.setText(formatDateTime(paymentDate));
+            // Highlight remaining in red
+            if (holder.tvRemainingAmount != null) holder.tvRemainingAmount.setTextColor(Color.RED);
+            if (holder.tvRemainingAmountLabel != null) holder.tvRemainingAmountLabel.setTextColor(Color.RED);
         } else {
-            holder.tvPaymentDate.setText("N/A");
+            // Default Pending
+            holder.applyPalette("#FFFFFF", "#FF9800", "#E65100", "#FF9800", "#757575", "●", "#FFF3E0");
+            holder.tvPaymentStatus.setText("PENDING");
         }
         
-        // Set card background color based on rental status
-        String rentalStatus = payment.getRentalStatus();
-        View cardView = holder.itemView;
-        if (rentalStatus != null && rentalStatus.equalsIgnoreCase("Cancelled")) {
-            // Make card background red for cancelled rentals
-            if (cardView instanceof androidx.cardview.widget.CardView) {
-                ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(Color.parseColor("#FFEBEE"));
-            } else {
-                // If not CardView, try to set background color on the root view
-                cardView.setBackgroundColor(Color.parseColor("#FFEBEE"));
-            }
-        } else {
-            // Reset to white for non-cancelled
-            if (cardView instanceof androidx.cardview.widget.CardView) {
-                ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(Color.parseColor("#FFFFFF"));
-            } else {
-                cardView.setBackgroundColor(Color.parseColor("#FFFFFF"));
-            }
-        }
-        
-        // Show status badge at top right based on payment status
-        // Fully Paid = all periods paid OR isFullyPaid flag is true
-        // Partially Paid = some periods paid but not all
-        // Pending = no periods paid or status is "Pending"
-        if (holder.tvStatusBadge != null) {
-            String paymentStatus = payment.getPaymentStatus();
-            String statusLower = paymentStatus != null ? paymentStatus.toLowerCase() : "";
-            
-            // Check if fully paid (from flag or period data or status string)
-            boolean showFullyPaid = isFullyPaid || 
-                                   (totalPeriods > 0 && paidPeriods >= totalPeriods) ||
-                                   "fully paid".equals(statusLower);
-            
-            // Check if partially paid (some periods paid but not all)
-            boolean showCompletedPartially = (totalPeriods > 0 && paidPeriods > 0 && paidPeriods < totalPeriods) ||
-                                           "partially paid".equals(statusLower) ||
-                                           "partially_paid".equals(statusLower) ||
-                                           (statusLower.contains("partially") && statusLower.contains("paid")) ||
-                                           // Legacy support for old "Completed/Partially" status
-                                           "completed".equals(statusLower) || 
-                                           "completed/partially".equals(statusLower) ||
-                                           "completed_partially".equals(statusLower) ||
-                                           (statusLower.contains("completed") && !showFullyPaid);
-            
-            // Check if pending (same logic as Pending tab)
-            boolean showPending = "pending".equals(statusLower) ||
-                                (totalPeriods > 0 && paidPeriods == 0) ||
-                                (totalPeriods == 0 && !showFullyPaid && !showCompletedPartially);
-            
-            // Show badges for Fully Paid, Partially Paid, and Pending in All Payments tab
-            // Same badges as shown in their respective tabs
-            if (showFullyPaid) {
-                // Green badge for Fully Paid
-                holder.tvStatusBadge.setText("FULLY PAID");
-                holder.tvStatusBadge.setVisibility(View.VISIBLE);
-                holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
-                holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_approved);
-            } else if (showCompletedPartially) {
-                // Blue badge for Partially Paid
-                holder.tvStatusBadge.setText("PARTIALLY PAID");
-                holder.tvStatusBadge.setVisibility(View.VISIBLE);
-                holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
-                holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_completed);
-            } else if (showPending) {
-                // Orange badge for Pending (same as Pending tab)
-                holder.tvStatusBadge.setText("PENDING");
-                holder.tvStatusBadge.setVisibility(View.VISIBLE);
-                holder.tvStatusBadge.setTextColor(Color.parseColor("#FFFFFF"));
-                holder.tvStatusBadge.setBackgroundResource(R.drawable.bg_status_pending);
-            } else {
-                holder.tvStatusBadge.setVisibility(View.GONE);
-            }
-        }
-        
-        
-        // Set payment progress for all payments view
-        // Always show progress if we have period data OR if payment is fully paid
+        if (holder.tvPaymentStatus != null) holder.tvPaymentStatus.setVisibility(View.VISIBLE);
+
+        // Set payment progress
         int totalMonths = payment.getTotalMonthsForBooking();
         int paidMonths = payment.getPaidMonthsForBooking();
         double progressPercent = payment.getPaymentProgressPercent();
         
-        // Calculate progress percent if not set but we have period data
         if (progressPercent == 0 && totalPeriods > 0) {
             progressPercent = (paidPeriods * 100.0) / totalPeriods;
         }
         
-        // For fully paid payments without period data, show 100%
-        boolean hasNoPeriodData = totalPeriods == 0;
-        if (isFullyPaid && hasNoPeriodData) {
+        if (isFullyPaid && totalPeriods == 0) {
             progressPercent = 100.0;
-            totalPeriods = 1; // Set to 1 so progress bar shows
-            paidPeriods = 1;
         }
         
-        // Show progress bar if we have period data OR if payment is fully paid
-        if ((totalPeriods > 0 || isFullyPaid) && holder.progressBarPayment != null) {
-            // Show "months" only if all periods are exactly monthly (total_periods == total_months)
-            // Otherwise show "periods" (use singular "period" if only 1)
-            if (totalMonths > 0 && totalPeriods == totalMonths && !hasNoPeriodData) {
-                // All periods are monthly, show as months (use singular "month" if only 1)
-                if (totalMonths == 1) {
-                    holder.tvPaymentProgress.setText(
-                        String.format("%d/%d month paid", paidMonths, totalMonths)
-                    );
-                } else {
-                    holder.tvPaymentProgress.setText(
-                        String.format("%d/%d months paid", paidMonths, totalMonths)
-                    );
-                }
-            } else {
-                // Mixed periods or not all monthly, show as periods (use singular "period" if only 1)
-                if (totalPeriods == 1) {
-                    holder.tvPaymentProgress.setText(
-                        String.format("%d/%d period paid", paidPeriods, totalPeriods)
-                    );
-                } else if (totalPeriods > 1) {
-                    holder.tvPaymentProgress.setText(
-                        String.format("%d/%d periods paid", paidPeriods, totalPeriods)
-                    );
-                } else if (isFullyPaid && hasNoPeriodData) {
-                    // Fully paid but no period data - show as fully paid
-                    holder.tvPaymentProgress.setText("Fully Paid");
-                } else {
-                    holder.tvPaymentProgress.setText("No period data");
-                }
+        if ((totalPeriods > 0 || isFullyPaid) && holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            
+            if (totalMonths > 0 && totalPeriods == totalMonths && totalPeriods > 0) {
+                holder.tvPaymentProgress.setText(String.format("%d/%d month%s paid", paidMonths, totalMonths, totalMonths == 1 ? "" : "s"));
+            } else if (totalPeriods > 0) {
+                holder.tvPaymentProgress.setText(String.format("%d/%d period%s paid", paidPeriods, totalPeriods, totalPeriods == 1 ? "" : "s"));
+            } else if (isFullyPaid) {
+                holder.tvPaymentProgress.setText("Fully Paid");
             }
             
-            // Set progress bar
-            holder.progressBarPayment.setProgress((int) progressPercent);
-            holder.tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
-            
-            // Check if partially paid (same logic as status badge)
-            String paymentStatus = payment.getPaymentStatus();
-            String statusLower = paymentStatus != null ? paymentStatus.toLowerCase() : "";
-            boolean isPartiallyPaid = (totalPeriods > 0 && paidPeriods > 0 && paidPeriods < totalPeriods) ||
-                                     "partially paid".equals(statusLower) ||
-                                     "partially_paid".equals(statusLower) ||
-                                     (statusLower.contains("partially") && statusLower.contains("paid")) ||
-                                     // Legacy support for old "Completed/Partially" status
-                                     "completed/partially".equals(statusLower) ||
-                                     "completed_partially".equals(statusLower) ||
-                                     (statusLower.contains("completed") && !isFullyPaid);
-            
-            // Set progress bar color based on payment status
-            if (isFullyPaid) {
-                // Green for Fully Paid
-                holder.progressBarPayment.setProgressTintList(
-                    android.content.res.ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                );
-                holder.tvPaymentProgress.setTextColor(Color.parseColor("#4CAF50"));
-            } else if (isPartiallyPaid) {
-                // Blue for Partially Paid
-                holder.progressBarPayment.setProgressTintList(
-                    android.content.res.ColorStateList.valueOf(Color.parseColor("#2196F3"))
-                );
-                holder.tvPaymentProgress.setTextColor(Color.parseColor("#2196F3"));
-            } else {
-                // Orange for pending/low progress (changed from red to orange)
-                holder.progressBarPayment.setProgressTintList(
-                    android.content.res.ColorStateList.valueOf(Color.parseColor("#FF9800"))
-                );
-                holder.tvPaymentProgress.setTextColor(Color.parseColor("#FF9800"));
+            if (holder.progressBarPayment != null) {
+                holder.progressBarPayment.setProgress((int) progressPercent);
             }
-            
-            // Show progress section
-            holder.tvPaymentProgress.setVisibility(View.VISIBLE);
-            holder.progressBarPayment.setVisibility(View.VISIBLE);
-            holder.tvProgressPercent.setVisibility(View.VISIBLE);
-            
-            // Show container
-            if (holder.getLayoutPaymentProgress() != null) {
-                holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
+            if (holder.tvProgressPercent != null) {
+                holder.tvProgressPercent.setText(String.format("%.0f%%", progressPercent));
             }
-        } else if (holder.progressBarPayment != null) {
-            // If no period data, try to show progress based on payment status
-            // For payments without breakdown, still try to show something
-            if (paidPeriods > 0 || totalPeriods > 0) {
-                // We have some period data, show it
-                holder.tvPaymentProgress.setVisibility(View.VISIBLE);
-                holder.progressBarPayment.setVisibility(View.VISIBLE);
-                holder.tvProgressPercent.setVisibility(View.VISIBLE);
-                
-                // Show container
-                if (holder.getLayoutPaymentProgress() != null) {
-                    holder.getLayoutPaymentProgress().setVisibility(View.VISIBLE);
-                }
-                
-                // Set default progress
-                if (totalPeriods > 0) {
-                    int defaultProgress = (int) ((paidPeriods * 100.0) / totalPeriods);
-                    holder.progressBarPayment.setProgress(defaultProgress);
-                    holder.tvProgressPercent.setText(defaultProgress + "%");
-                    holder.tvPaymentProgress.setText(String.format("%d/%d periods paid", paidPeriods, totalPeriods));
-                }
-            } else {
-                // Hide progress if no data at all
-                holder.tvPaymentProgress.setVisibility(View.GONE);
-                holder.progressBarPayment.setVisibility(View.GONE);
-                holder.tvProgressPercent.setVisibility(View.GONE);
-                
-                // Hide container
-                if (holder.getLayoutPaymentProgress() != null) {
-                    holder.getLayoutPaymentProgress().setVisibility(View.GONE);
-                }
-            }
+        } else if (holder.getLayoutPaymentProgress() != null) {
+            holder.getLayoutPaymentProgress().setVisibility(View.GONE);
         }
-        
-        // Set status color based on payment status
-        setStatusColor(holder.tvPaymentStatus, payment.getPaymentStatus());
     }
     
     private String formatAmount(String amount) {
@@ -1255,24 +783,31 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
     }
     
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        int viewType;
-        TextView tvBoarderName, tvRoom, tvRentType, tvAmountPaid, tvTotalAmount;
-        TextView tvPaymentStatus, tvRentalStatus, tvPaymentDate;
+        com.google.android.material.card.MaterialCardView cardView;
+        LinearLayout layoutStatusBadge, layoutPaymentProgress;
+        TextView tvStatusIcon;
+        TextView tvBoarderName, tvRoom, tvRentType, tvPaymentStatus;
+        TextView tvAmountPaid, tvTotalAmount, tvRentalStatus, tvPaymentDate;
         TextView tvPaymentProgress, tvProgressPercent, tvRemainingAmount;
-        TextView tvStatusBadge; // Badge for "Fully Paid" status at top right
-        TextView tvAmountPaidLabel; // Label for "Amount Paid" / "Amount to be Paid"
         android.widget.ProgressBar progressBarPayment;
+        TextView tvRoomLabel, tvRentTypeLabel, tvAmountPaidLabel, tvTotalAmountLabel;
+        TextView tvProgressLabel, tvRentalStatusLabel, tvPaymentDateLabel, tvRemainingAmountLabel;
         com.google.android.material.button.MaterialButton btnViewDetails;
+        int viewType;
         
         public ViewHolder(@NonNull View itemView, int viewType) {
             super(itemView);
             this.viewType = viewType;
             
             // Common views
+            cardView = itemView.findViewById(R.id.cardView);
+            layoutStatusBadge = itemView.findViewById(R.id.layoutStatusBadge);
+            tvStatusIcon = itemView.findViewById(R.id.tvStatusIcon);
             tvBoarderName = itemView.findViewById(R.id.tvBoarderName);
             tvRoom = itemView.findViewById(R.id.tvRoom);
             tvRentType = itemView.findViewById(R.id.tvRentType);
             tvPaymentStatus = itemView.findViewById(R.id.tvPaymentStatus);
+            layoutPaymentProgress = itemView.findViewById(R.id.layoutPaymentProgress);
             
             // Views that may not exist in all layouts
             tvAmountPaid = itemView.findViewById(R.id.tvAmountPaid);
@@ -1283,24 +818,74 @@ public class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.ViewHold
             tvProgressPercent = itemView.findViewById(R.id.tvProgressPercent);
             progressBarPayment = itemView.findViewById(R.id.progressBarPayment);
             tvRemainingAmount = itemView.findViewById(R.id.tvRemainingAmount);
-            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge); // Status badge for "Fully Paid"
-            tvAmountPaidLabel = itemView.findViewById(R.id.tvAmountPaidLabel); // Label for amount paid
             btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
+
+            // Labels for dynamic coloring
+            tvRoomLabel = itemView.findViewById(R.id.tvRoomLabel);
+            tvRentTypeLabel = itemView.findViewById(R.id.tvRentTypeLabel);
+            tvAmountPaidLabel = itemView.findViewById(R.id.tvAmountPaidLabel);
+            tvTotalAmountLabel = itemView.findViewById(R.id.tvTotalAmountLabel);
+            tvProgressLabel = itemView.findViewById(R.id.tvProgressLabel);
+            tvRentalStatusLabel = itemView.findViewById(R.id.tvRentalStatusLabel);
+            tvPaymentDateLabel = itemView.findViewById(R.id.tvPaymentDateLabel);
+            tvRemainingAmountLabel = itemView.findViewById(R.id.tvRemainingAmountLabel);
+        }
+        
+        public LinearLayout getLayoutPaymentProgress() {
+            return layoutPaymentProgress;
+        }
+        
+        // Helper to apply color palette
+        // progressBgColor: background of the progress section rectangle
+        public void applyPalette(String bgColor, String strokeColor, String headerTextColor, String badgeBgColor, String subLabelColor, String icon, String progressBgColor) {
+            if (cardView != null) {
+                cardView.setCardBackgroundColor(Color.parseColor(bgColor));
+                cardView.setStrokeColor(Color.parseColor(strokeColor));
+            }
+            if (layoutStatusBadge != null) {
+                layoutStatusBadge.setBackgroundColor(Color.parseColor(badgeBgColor));
+            }
+            if (layoutPaymentProgress != null) {
+                layoutPaymentProgress.setBackgroundColor(Color.parseColor(progressBgColor));
+            }
+            if (tvStatusIcon != null) {
+                tvStatusIcon.setText(icon);
+            }
+            if (tvBoarderName != null) tvBoarderName.setTextColor(Color.parseColor(headerTextColor));
+            if (tvPaymentStatus != null) tvPaymentStatus.setTextColor(Color.WHITE);
             
-            // Layout containers
-            // layoutPaymentProgress might not exist in all layouts (e.g. fully paid layout)
-            try {
-                java.lang.reflect.Field field = R.id.class.getField("layoutPaymentProgress");
-                int id = field.getInt(null);
-                itemView.findViewById(id).setVisibility(View.GONE); // Default hide
-            } catch (Exception e) {
-                // Ignore
+            // Set sub-labels and secondary text
+            int subColor = Color.parseColor(subLabelColor);
+            if (tvRoomLabel != null) tvRoomLabel.setTextColor(subColor);
+            if (tvRentTypeLabel != null) tvRentTypeLabel.setTextColor(subColor);
+            if (tvAmountPaidLabel != null) tvAmountPaidLabel.setTextColor(subColor);
+            if (tvTotalAmountLabel != null) tvTotalAmountLabel.setTextColor(subColor);
+            if (tvProgressLabel != null) tvProgressLabel.setTextColor(subColor);
+            if (tvRentalStatusLabel != null) tvRentalStatusLabel.setTextColor(subColor);
+            if (tvPaymentDateLabel != null) tvPaymentDateLabel.setTextColor(subColor);
+            if (tvRemainingAmountLabel != null) tvRemainingAmountLabel.setTextColor(subColor);
+            
+            // Also update some values to be dark version of the color for better readability
+            int darkColor = Color.parseColor(headerTextColor);
+            if (tvRoom != null) tvRoom.setTextColor(darkColor);
+            if (tvRentType != null) tvRentType.setTextColor(darkColor);
+            if (tvTotalAmount != null) tvTotalAmount.setTextColor(darkColor);
+            if (tvRentalStatus != null) tvRentalStatus.setTextColor(darkColor);
+            if (tvPaymentDate != null) tvPaymentDate.setTextColor(darkColor);
+            if (tvRemainingAmount != null) tvRemainingAmount.setTextColor(darkColor);
+            if (tvProgressPercent != null) tvProgressPercent.setTextColor(subColor);
+            // Payment progress text (e.g. "1/1 period paid") uses the status color
+            if (tvPaymentProgress != null) tvPaymentProgress.setTextColor(Color.parseColor(strokeColor));
+            
+            // Progress bar tint
+            if (progressBarPayment != null) {
+                progressBarPayment.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor(strokeColor)));
             }
         }
         
-        // Helper to find layoutPaymentProgress since it might not be in all layouts
-        public LinearLayout getLayoutPaymentProgress() {
-             return itemView.findViewById(R.id.layoutPaymentProgress);
+        // Overload for backward-compatible calls without progressBgColor
+        public void applyPalette(String bgColor, String strokeColor, String headerTextColor, String badgeBgColor, String subLabelColor, String icon) {
+            applyPalette(bgColor, strokeColor, headerTextColor, badgeBgColor, subLabelColor, icon, "#F8F9FA");
         }
     }
 }
