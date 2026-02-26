@@ -12,6 +12,8 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import java.util.Calendar;
+import java.util.List;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -102,6 +104,11 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private View viewStatusAccent;
     private ImageView ivStatusIcon;
 
+    // Redesign Views
+    private TextView tvGreeting, tvSubGreeting;
+    private com.google.android.material.card.MaterialCardView cardActiveRental;
+    private TextView tvActiveBHName, tvActiveRoomName;
+
     // Adapters
     private BoardingHouseCarouselAdapter recommendedAdapter;
     private BoardingHouseAdapter nearbyAdapter;
@@ -135,10 +142,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private Double searchCenterLon;
     private String currentSearchLocationName;
     
-    // UI for dynamic location
-    private LinearLayout layoutLocation;
-    private TextView tvCurrentSearchLocation;
-    
     private void setupSearch(View view) {
         etSearch = view.findViewById(R.id.etSearch);
         // Make EditText behave like a button
@@ -146,6 +149,11 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         etSearch.setClickable(true);
         etSearch.setLongClickable(false);
         etSearch.setInputType(0); // Disable soft keyboard
+        
+        etSearch.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), SearchActivity.class);
+            startActivity(intent);
+        });
         
         ivClearSearch = view.findViewById(R.id.ivClearSearch);
         btnSeeAll = view.findViewById(R.id.btnSeeAll);
@@ -256,11 +264,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         android.util.Log.d("BoarderHomeFragment", "=== dataLoaded: " + dataLoaded + " ===");
         
         // Check if views are already initialized (fragment was hidden/shown, not recreated)
-        if (layoutLocation == null) {
-            // Initialize search UI
-            layoutLocation = view.findViewById(R.id.layoutLocation);
-            tvCurrentSearchLocation = view.findViewById(R.id.tvCurrentSearchLocation);
-            
+        if (tvGreeting == null) {
             // Load user info from session immediately
             loadUserInfoFromSession();
             
@@ -277,6 +281,15 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         viewStatusAccent = view.findViewById(R.id.viewStatusAccent);
         ivStatusIcon = view.findViewById(R.id.ivStatusIcon);
         
+        // Welcome & Active Rental
+        tvGreeting = view.findViewById(R.id.tvGreeting);
+        tvSubGreeting = view.findViewById(R.id.tvSubGreeting);
+        cardActiveRental = view.findViewById(R.id.cardActiveRental);
+        tvActiveBHName = view.findViewById(R.id.tvActiveBHName);
+        tvActiveRoomName = view.findViewById(R.id.tvActiveRoomName);
+        
+        setupWelcomeHeader();
+        checkActiveRental();
         checkUserStatus();
         }
         
@@ -547,9 +560,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                             }
                             
                             currentSearchLocationName = address;
-                            if (tvCurrentSearchLocation != null) {
-                                tvCurrentSearchLocation.setText(address);
-                            }
                         }
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing reverse geocode response", e);
@@ -648,6 +658,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         // or just let the adapter update handle it
         
         loadBoarderInfo();
+        checkActiveRental(); 
         loadUnreadCount();
         loadNotificationCount();
     }
@@ -655,6 +666,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
     private void refreshDataSilently() {
         // Background fetch without indicators
         loadBoarderInfoSilently();
+        checkActiveRental();
         
         // Also update counts (these are small/fast enough to just run)
         loadUnreadCount();
@@ -796,6 +808,93 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         if (nearbyAdapter != null) nearbyAdapter.notifyDataSetChanged();
     }
 
+    private void setupWelcomeHeader() {
+        if (tvGreeting == null || tvSubGreeting == null) return;
+
+        // Load name from session if not already loaded
+        if (boarderFirstName == null || boarderFirstName.isEmpty() || boarderFirstName.equals("Guest")) {
+            loadUserInfoFromSession();
+        }
+
+        Calendar c = Calendar.getInstance();
+        int timeOfDay = c.get(Calendar.HOUR_OF_DAY);
+        String greeting;
+
+        if (timeOfDay >= 5 && timeOfDay < 12) {
+            greeting = "Good Morning,";
+        } else if (timeOfDay >= 12 && timeOfDay < 18) {
+            greeting = "Good Afternoon,";
+        } else if (timeOfDay >= 18 && timeOfDay < 22) {
+            greeting = "Good Evening,";
+        } else {
+            greeting = "Good Night,";
+        }
+
+        tvGreeting.setText(greeting);
+        tvSubGreeting.setText(boarderFirstName + " 👋");
+        // tvSubtitle is set in XML, but we can update it if needed
+    }
+
+    private void checkActiveRental() {
+        String userId = Login.getCurrentUserId(getContext());
+        if (userId == null || userId.isEmpty()) {
+            if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
+            return;
+        }
+
+        // DEBUG: Show we are checking
+        // Toast.makeText(getContext(), "Checking rental for User: " + userId, Toast.LENGTH_SHORT).show();
+
+        String url = BASE_URL + "get_active_rental.php?user_id=" + userId;
+        Log.d(TAG, "Checking active rental: " + url);
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        Log.d(TAG, "Active rental response: " + response);
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.getBoolean("success") && jsonObject.getBoolean("has_active_rental")) {
+                            if (cardActiveRental != null) {
+                                cardActiveRental.setVisibility(View.VISIBLE);
+                                tvActiveBHName.setText(jsonObject.getString("bh_name"));
+                                tvActiveRoomName.setText(jsonObject.getString("room_name"));
+                                
+                                int bookingId = jsonObject.optInt("booking_id", -1);
+                                
+                                cardActiveRental.setOnClickListener(v -> {
+                                    if (bookingId != -1) {
+                                        // 1. Set target booking to open in BookingFragment
+                                        BoarderBookingFragment.setTargetBookingToOpen(bookingId);
+                                        
+                                        // 2. Switch to Bookings Tab (index 3 based on your menu, or ID R.id.nav_activity)
+                                        if (getActivity() instanceof BoarderDashboard) {
+                                            ((BoarderDashboard) getActivity()).switchToTab(R.id.nav_activity);
+                                        }
+                                    } else {
+                                        Toast.makeText(getContext(), "Booking details not available", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        } else {
+                            if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
+                            // DEBUG: Show why it failed to find one
+                             Log.d(TAG, "No active rental found: " + response);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSON error parsing active rental", e);
+                        if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
+                    }
+                },
+                error -> {
+                    Log.e(TAG, "Volley error checking active rental", error);
+                    if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
+                    // DEBUG: Show network error
+                    Toast.makeText(getContext(), "Network Error checking rental: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                });
+
+        Volley.newRequestQueue(requireContext()).add(stringRequest);
+    }
+
     private void initializeViews(View view) {
         try {
             swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -818,31 +917,9 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             
             
             btnSeeAll = view.findViewById(R.id.btnSeeAll);
-            MaterialButton btnViewMap = view.findViewById(R.id.btnViewMap);
-            
-            if (btnViewMap != null) {
-                btnViewMap.setOnClickListener(v -> {
-                    // Open full screen map with ALL boarding houses, but focus on NEARBY ones
-                    if (allBoardingHouses != null && !allBoardingHouses.isEmpty()) {
-                        // If nearby list is empty (e.g. no results nearby), focus on all instead
-                        List<Listing> focusList = (nearbyBoardingHouses != null && !nearbyBoardingHouses.isEmpty()) 
-                                                  ? nearbyBoardingHouses : allBoardingHouses;
-                        openFullScreenMap(allBoardingHouses, focusList);
-                    } else {
-                        Toast.makeText(getContext(), "No boarding houses to show", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
             ivNotification = view.findViewById(R.id.ivNotification);
             ivMessage = view.findViewById(R.id.ivMessage);
             
-            // Dynamic Location Views
-            layoutLocation = view.findViewById(R.id.layoutLocation);
-            tvCurrentSearchLocation = view.findViewById(R.id.tvCurrentSearchLocation);
-            
-            if (layoutLocation != null) {
-                layoutLocation.setOnClickListener(v -> showLocationSelectionDialog());
-            }
             badgeMsg = view.findViewById(R.id.badgeMsg);
             badgeNotif = view.findViewById(R.id.badgeNotif);
             
@@ -1025,6 +1102,10 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                     // Reload data
                     loadBoarderInfo();
                     
+                    // Refresh redesign elements
+                    setupWelcomeHeader();
+                    checkActiveRental();
+                    
                     // Refresh badge counts
                     loadUnreadCount();
                     loadNotificationCount();
@@ -1194,19 +1275,12 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                                 // Parse address to extract province and municipality
                                 parseBoarderAddress(boarderAddress);
                                 
+                                // Update redesign elements
+                                setupWelcomeHeader();
+                                checkActiveRental();
                                 
                                 // Geocode boarder address to get coordinates for distance calculation
                                 geocodeBoarderAddress(boarderAddress);
-                                
-                                // AUTO-PROMPT: If we don't have a specific location name yet, prompt user
-                                // This happens after boarder info is loaded
-                                if (currentSearchLocationName == null || currentSearchLocationName.isEmpty()) {
-                                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                        if (isAdded() && getContext() != null) {
-                                            showLocationSelectionDialog();
-                                        }
-                                    }, 2000); // Wait 2s for UI to settle
-                                }
                                 
                                 Log.d(TAG, "Boarder loaded: " + boarderFirstName + " " + boarderLastName + 
                                           (boarderSuffix.isEmpty() ? "" : ", " + boarderSuffix));
@@ -2006,10 +2080,8 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                     searchCenterLat = boarderLatitude;
                     searchCenterLon = boarderLongitude;
                     
-                    if (tvCurrentSearchLocation != null) {
-                        tvCurrentSearchLocation.setText(address);
-                    }
-                    currentSearchLocationName = address;
+                    searchCenterLat = boarderLatitude;
+                    searchCenterLon = boarderLongitude;
                 }
                 
                 // Update UI on main thread
@@ -2871,9 +2943,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 searchCenterLon = longitude;
                 currentSearchLocationName = locationString;
                 
-                if (tvCurrentSearchLocation != null) {
-                    tvCurrentSearchLocation.setText(locationString);
-                }
+                currentSearchLocationName = locationString;
                 
                 Log.d(TAG, "Search center updated: [" + searchCenterLat + ", " + searchCenterLon + "]");
                 

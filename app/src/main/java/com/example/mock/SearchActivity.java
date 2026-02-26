@@ -102,6 +102,75 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
     private String currentUserMunicipality = null;
     private String currentUserProvince = null;
     private String currentUserBarangay = null;
+    
+    private boolean isWaitingForLocationSettings = false;
+
+    private final android.content.BroadcastReceiver locationProviderReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (android.location.LocationManager.PROVIDERS_CHANGED_ACTION.equals(intent.getAction())) {
+                if (isLocationEnabled()) {
+                    Log.d(TAG, "Location provider enabled");
+                    Toast.makeText(context, "Location enabled", Toast.LENGTH_SHORT).show();
+                    isWaitingForLocationSettings = false;
+                    
+                    // If we were waiting or just casually detected it, refresh
+                    // But if "Near Me" is active, we definitely want to trigger search
+                    boolean triggerSearch = "Near Me".equalsIgnoreCase(etSearch.getText().toString());
+                    getCurrentLocation(triggerSearch);
+                    
+                } else {
+                    Log.d(TAG, "Location provider disabled");
+                    Toast.makeText(context, "Location disabled", Toast.LENGTH_SHORT).show();
+                    
+                    // Clear location data
+                    userLat = null;
+                    userLon = null;
+                    updateMapMarkers(); // Will remove user marker
+                    
+                    // If currently searching "Near Me", prompt user
+                    if ("Near Me".equalsIgnoreCase(etSearch.getText().toString())) {
+                         showLocationEnableDialog();
+                    }
+                }
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Register receiver
+        android.content.IntentFilter filter = new android.content.IntentFilter(android.location.LocationManager.PROVIDERS_CHANGED_ACTION);
+        registerReceiver(locationProviderReceiver, filter);
+        
+        // Check manually as well (for the return from Settings case where broadcast might have fired while paused? 
+        // Actually PROVIDERS_CHANGED usually fires sticky or system-wide, but explicit check is safer for the "Waiting" flow)
+        if (isWaitingForLocationSettings) {
+            if (isLocationEnabled()) {
+                isWaitingForLocationSettings = false;
+                Toast.makeText(this, "Location enabled! Updating...", Toast.LENGTH_SHORT).show();
+                getCurrentLocation(true); 
+            }
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(locationProviderReceiver);
+        } catch (IllegalArgumentException e) {
+            // Receiver not registered
+        }
+    }
+
+    private boolean isLocationEnabled() {
+        android.location.LocationManager locationManager = (android.location.LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) || 
+               locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +194,7 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
         setupRecyclerViews();
         
         // Initial data load
-        getCurrentLocation();
+        getCurrentLocation(false);
         loadBoardingHouses();
     }
     
@@ -331,7 +400,8 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
                  filterByProximity(userLat, userLon);
                 return;
             } else {
-                Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                showLocationEnableDialog();
                 return;
             }
         }
@@ -710,7 +780,7 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
         Volley.newRequestQueue(this).add(request);
     }
     
-    private void getCurrentLocation() {
+    private void getCurrentLocation(boolean triggerSearch) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
             return;
@@ -723,8 +793,16 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
                     userLon = location.getLongitude();
                     loadMap(userLat, userLon);
                     fetchUserLocationContext(userLat, userLon);
+                    
+                    if (triggerSearch) {
+                        etSearch.setText("Near Me");
+                        performSearch("Near Me");
+                    }
                 } else {
                      loadMap(null, null);
+                     if (triggerSearch) {
+                         Toast.makeText(this, "Could not retrieve location. Please check signal.", Toast.LENGTH_SHORT).show();
+                     }
                 }
             });
     }
@@ -761,6 +839,19 @@ public class SearchActivity extends AppCompatActivity implements BoardingHouseAd
             error -> Log.e(TAG, "Error fetching location context", error)
         );
         Volley.newRequestQueue(this).add(request);
+    }
+
+    private void showLocationEnableDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Location Services Required")
+            .setMessage("To use 'Near Me' search, please enable location services on your device.")
+            .setPositiveButton("Settings", (dialog, which) -> {
+                isWaitingForLocationSettings = true;
+                Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void updateMapMarkers() {

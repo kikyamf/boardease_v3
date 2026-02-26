@@ -800,32 +800,36 @@ public class AddingRoomsFragment extends Fragment {
             saveProgressDialog.dismiss();
         }
         
-        // Show success message
-        Toast.makeText(getActivity(), "Boarding house and rooms saved successfully!", Toast.LENGTH_LONG).show();
-        
-        // Clear saved data since save was successful
-        AddingBhFragment.clearSavedData();
-        clearSavedRoomData();
-        
-        // Navigate based on context
-        if (getActivity() != null) {
-            if (getActivity() instanceof AddRoomsActivity) {
-                // If used in AddRoomsActivity, just finish the activity (goes back to RoomViewActivity)
-                getActivity().finish();
-            } else {
-                // Return to the previous AddingBhFragment state
-                getActivity().getSupportFragmentManager().popBackStack();
-                
-                // Then programmatically switch to the Manage tab in MainActivity
-                if (getActivity() != null) {
-                    com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
-                        getActivity().findViewById(R.id.bottom_navigation);
-                    if (bottomNav != null) {
-                        bottomNav.setSelectedItemId(R.id.nav_manage);
+        // Show success modal
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Success")
+                .setMessage("Boarding house and rooms saved successfully!")
+                .setPositiveButton("OK", (dialog, which) -> {
+                    // Clear saved data since save was successful
+                    AddingBhFragment.clearSavedData();
+                    clearSavedRoomData();
+                    
+                    // Navigate based on context
+                    androidx.fragment.app.FragmentActivity activity = getActivity();
+                    if (activity != null) {
+                        if (activity instanceof AddRoomsActivity) {
+                            // If used in AddRoomsActivity, just finish the activity (goes back to RoomViewActivity)
+                            activity.finish();
+                        } else {
+                            // Return to the previous AddingBhFragment state
+                            activity.getSupportFragmentManager().popBackStackImmediate();
+                            
+                            // Then programmatically switch to the Manage tab in MainActivity
+                            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav = 
+                                activity.findViewById(R.id.bottom_navigation);
+                            if (bottomNav != null) {
+                                bottomNav.setSelectedItemId(R.id.nav_manage);
+                            }
+                        }
                     }
-                }
-            }
-        }
+                })
+                .setCancelable(false)
+                .show();
     }
     
     // Method to clear saved room data (call this after successful save)

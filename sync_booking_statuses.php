@@ -24,13 +24,16 @@ try {
     $stmt1->execute([$today]);
     $upcomingCount = $stmt1->rowCount();
 
-    // 2. Transition Confirmed/Upcoming -> Active (if start date reached and end date not yet passed)
+    // 2. Transition Confirmed/Upcoming -> Active (REMOVED - now handled via manual Check In)
+    /*
     $sql2 = "UPDATE bookings SET booking_status = 'Active' 
              WHERE booking_status IN ('Confirmed', 'Upcoming') 
              AND start_date <= ? AND end_date >= ?";
     $stmt2 = $pdo->prepare($sql2);
     $stmt2->execute([$today, $today]);
     $activeCount = $stmt2->rowCount();
+    */
+    $activeCount = 0;
 
     // 3. Transition Confirmed/Upcoming/Active -> Completed (if end date passed)
     $sql3 = "UPDATE bookings SET booking_status = 'Completed' 

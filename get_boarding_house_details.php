@@ -6,9 +6,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+$dbname = 'u223444398_boardease';
+$username = 'u223444398_userboardease';
+$password = '!Boardease2026';
 
 try {
     // Create PDO connection
@@ -79,8 +79,8 @@ try {
     $imagesStmt->execute([$bhId]);
     $images = $imagesStmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // Get base URL for images (use ngrok URL to match app)
-    $baseUrl = 'https://hookiest-unprotecting-cher.ngrok-free.dev/BoardEase2/';
+    // Get base URL for images
+    $baseUrl = 'https://boardease.calapebohol.com/';
 
     // Format image URLs
     $formattedImages = array();

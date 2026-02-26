@@ -263,6 +263,7 @@
 
                 <!-- Row 1 -->
                 <LinearLayout
+                    android:id="@+id/layoutActionButtonsRow1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -310,6 +311,7 @@
 
                 <!-- Row 2 -->
                 <LinearLayout
+                    android:id="@+id/layoutActionButtonsRow2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
@@ -353,6 +355,20 @@
                         app:iconPadding="4dp" />
 
                 </LinearLayout>
+
+                <!-- Check In Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCheckIn"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="12dp"
+                    android:text="CHECK IN"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/poppins_bold"
+                    android:backgroundTint="#2E7D32"
+                    app:cornerRadius="16dp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

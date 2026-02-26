@@ -124,6 +124,7 @@ public class BoarderBookingFragment extends Fragment {
     private static final String GET_BH_DETAILS_URL = BASE_URL + "get_boarding_house_details1.php";
     private static final String SUBMIT_PAYMENT_URL = BOARD_EASE2_URL + "submit_payment.php";
     private static final String CHECK_PENDING_REQUESTS_URL = BASE_URL + "check_pending_requests.php";
+    private static final String CHECK_IN_BOOKING_URL = BASE_URL + "check_in_booking.php";
     
     // Request queue
     private RequestQueue requestQueue;
@@ -140,7 +141,7 @@ public class BoarderBookingFragment extends Fragment {
     // Target booking to highlight (deep link from dashboard)
     private static int targetBookingId = -1;
 
-    public static void setTargetBookingHighlight(int bookingId) {
+    public static void setTargetBookingToOpen(int bookingId) {
         targetBookingId = bookingId;
     }
 
@@ -597,10 +598,38 @@ public class BoarderBookingFragment extends Fragment {
                 }
             }
             
-            // Check if we need to highlight a specific booking
+            // Check if we need to open a specific booking details (Deep Link)
             if (targetBookingId != -1) {
-                highlightBookingItem(targetBookingId);
-                targetBookingId = -1; // Reset after use
+                // Search in current bookings first
+                for (Booking booking : currentBookings) {
+                    if (booking.getBookingId() == targetBookingId) {
+                        showCurrentBookingDetailsDialog(booking);
+                        targetBookingId = -1; // Reset after usage
+                        return;
+                    }
+                }
+                
+                // Search in pending bookings
+                for (Booking booking : pendingBookings) {
+                    if (booking.getBookingId() == targetBookingId) {
+                         showPendingBookingDialog(booking);
+                        targetBookingId = -1;
+                        return;
+                    }
+                }
+                
+                // Search in history
+                 for (Booking booking : bookingHistory) {
+                    if (booking.getBookingId() == targetBookingId) {
+                         // Maybe show history details if you have a dialog for it
+                        targetBookingId = -1;
+                        return;
+                    }
+                }
+                
+                // If not found yet, maybe data hasn't loaded? Keep it set for next update? 
+                // For now, reset to avoid getting stuck if ID is invalid
+               // targetBookingId = -1; 
             }
         } catch (Exception e) {
             Log.e(TAG, "Error updating UI: " + e.getMessage());
@@ -691,10 +720,36 @@ public class BoarderBookingFragment extends Fragment {
             tvEndDate.setText(booking.getEndDate());
             tvMonthlyDue.setText(booking.getMonthlyDue());
             
-            // Display actual status (e.g. Active or Upcoming)
+            // Display actual status (e.g. Active or Upcoming or Check In)
             String status = booking.getStatus();
             String displayStatus = booking.getDisplayStatus();
             tvStatus.setText(displayStatus);
+
+            // Handle Upcoming status - show info modal and return
+            if ("Upcoming".equalsIgnoreCase(displayStatus)) {
+                new AlertDialog.Builder(getContext())
+                    .setTitle("Upcoming Booking")
+                    .setMessage("This is an upcoming booking. Come back on " + booking.getStartDate() + " to check in.")
+                    .setPositiveButton("OK", null)
+                    .show();
+                return;
+            }
+
+            // Get references to action layouts and check-in button
+            LinearLayout layoutActionRow1 = dialogView.findViewById(R.id.layoutActionButtonsRow1);
+            LinearLayout layoutActionRow2 = dialogView.findViewById(R.id.layoutActionButtonsRow2);
+            com.google.android.material.button.MaterialButton btnCheckIn = dialogView.findViewById(R.id.btnCheckIn);
+
+            // Set buttons visibility based on status
+            if ("Check In".equalsIgnoreCase(displayStatus)) {
+                if (layoutActionRow1 != null) layoutActionRow1.setVisibility(View.GONE);
+                if (layoutActionRow2 != null) layoutActionRow2.setVisibility(View.GONE);
+                if (btnCheckIn != null) btnCheckIn.setVisibility(View.VISIBLE);
+            } else {
+                if (layoutActionRow1 != null) layoutActionRow1.setVisibility(View.VISIBLE);
+                if (layoutActionRow2 != null) layoutActionRow2.setVisibility(View.VISIBLE);
+                if (btnCheckIn != null) btnCheckIn.setVisibility(View.GONE);
+            }
 
             // Set status background
             if ("Confirmed".equals(status)) {
@@ -709,6 +764,21 @@ public class BoarderBookingFragment extends Fragment {
 
             // Close button click listener
             btnClose.setOnClickListener(v -> dialog.dismiss());
+
+            // Check In button click listener
+            if (btnCheckIn != null) {
+                btnCheckIn.setOnClickListener(v -> {
+                    new AlertDialog.Builder(getContext())
+                        .setTitle("Confirm Check In")
+                        .setMessage("Are you sure you want to check in to " + booking.getBoardingHouseName() + " now?")
+                        .setPositiveButton("Yes, Check In", (d, w) -> {
+                            dialog.dismiss();
+                            performCheckIn(booking.getBookingId());
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                });
+            }
 
             // Make Payment button click listener
             btnMakePayment.setOnClickListener(v -> {
@@ -3478,5 +3548,76 @@ public class BoarderBookingFragment extends Fragment {
         };
 
         Volley.newRequestQueue(getContext()).add(stringRequest);
+    }
+
+    private void performCheckIn(int bookingId) {
+        if (getContext() == null) return;
+
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+        progressDialog.setMessage("Processing check-in...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECK_IN_BOOKING_URL,
+                response -> {
+                    if (progressDialog.isShowing()) progressDialog.dismiss();
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Check In Successful")
+                                    .setMessage(jsonResponse.optString("message", "Your booking is now active. Enjoy your stay!"))
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_check_white)
+                                    .show();
+                            
+                            // Refresh data to update status to Active
+                            loadBookingData();
+                        } else {
+                            String message = jsonResponse.optString("message", "Check-in failed");
+                            new AlertDialog.Builder(getContext())
+                                    .setTitle("Check In Failed")
+                                    .setMessage(message)
+                                    .setPositiveButton("OK", null)
+                                    .setIcon(R.drawable.ic_alert_white)
+                                    .show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error parsing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    if (progressDialog.isShowing()) progressDialog.dismiss();
+                    String errorMessage = "Network error";
+                    if (error.networkResponse != null) {
+                        errorMessage += " (Status: " + error.networkResponse.statusCode + ")";
+                    } else if (error.getMessage() != null) {
+                        errorMessage += ": " + error.getMessage();
+                    }
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("booking_id", String.valueOf(bookingId));
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("User-Agent", "BoardEase-Android-App");
+                return headers;
+            }
+        };
+
+        // Set retry policy
+        stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+            15000, 
+            0, // No retries for check-in
+            com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+        requestQueue.add(stringRequest);
     }
 }

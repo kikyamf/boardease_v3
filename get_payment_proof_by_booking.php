@@ -6,9 +6,9 @@ header('Access-Control-Allow-Headers: Content-Type, User-Agent, Accept');
 
 // Database configuration
 $host = 'localhost';
-$dbname = 'boardease2';
-$username = 'boardease';
-$password = 'boardease';
+$dbname = 'u223444398_boardease';
+$username = 'u223444398_userboardease';
+$password = '!Boardease2026';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -20,6 +20,9 @@ try {
         echo json_encode(['success' => false, 'error' => 'Booking ID is required.']);
         exit;
     }
+
+    // Get base URL for images
+    $baseUrl = 'https://boardease.calapebohol.com/';
 
     // Fetch the latest pending payment for this booking
     $sql = "
@@ -36,10 +39,11 @@ try {
     $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($payment) {
+        $proofUrl = $payment['payment_proof'] ? $baseUrl . "get_payment_proof.php?path=" . urlencode($payment['payment_proof']) : null;
         echo json_encode([
             'success' => true,
-            'payment_proof_url' => $payment['payment_proof'],
-            'receipt_url' => $payment['payment_proof'] // Duplicate for compatibility with different frontend versions
+            'payment_proof_url' => $proofUrl,
+            'receipt_url' => $proofUrl
         ]);
     } else {
         // Try to fetch ANY payment if no pending one is found (fallback)
@@ -55,10 +59,11 @@ try {
         $paymentFallback = $stmtFallback->fetch(PDO::FETCH_ASSOC);
 
         if ($paymentFallback) {
+             $proofUrlFallback = $paymentFallback['payment_proof'] ? $baseUrl . "get_payment_proof.php?path=" . urlencode($paymentFallback['payment_proof']) : null;
              echo json_encode([
                 'success' => true,
-                'payment_proof_url' => $paymentFallback['payment_proof'],
-                'receipt_url' => $paymentFallback['payment_proof']
+                'payment_proof_url' => $proofUrlFallback,
+                'receipt_url' => $proofUrlFallback
             ]);
         } else {
             echo json_encode(['success' => false, 'error' => 'No payment proof found for this booking.']);
