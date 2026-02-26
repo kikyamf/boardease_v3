@@ -158,7 +158,43 @@ public class ManageFragment extends Fragment {
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
-                        JSONArray array = new JSONArray(response);
+                        System.out.println("ManageFragment response: " + response);
+
+                        if (response == null || response.trim().isEmpty()) {
+                            Toast.makeText(getContext(), "Empty response from server", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (response.trim().startsWith("<")) {
+                            System.out.println("ERROR: Server returned HTML instead of JSON");
+                            Toast.makeText(getContext(), "Server error. Check PHP file.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        JSONArray array;
+                        try {
+                            // Try parsing as wrapped JSON object first: {"success": true, "data": [...]}
+                            JSONObject jsonResponse = new JSONObject(response);
+                            if (jsonResponse.has("data")) {
+                                array = jsonResponse.getJSONArray("data");
+                            } else {
+                                // If "data" key is missing but it's a valid object, it might be an error or unexpected format
+                                String error = jsonResponse.optString("error", "Unknown server error");
+                                if (jsonResponse.has("error")) {
+                                     Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                                }
+                                array = new JSONArray(); // Empty list
+                            }
+                        } catch (JSONException e) {
+                            // Fallback to direct array format: [...]
+                            try {
+                                array = new JSONArray(response);
+                            } catch (JSONException e2) {
+                                System.out.println("ERROR: Could not parse response as JSONArray or wrapped JSONObject");
+                                throw e2; // Re-throw to be caught by outer block
+                            }
+                        }
+
                         listingList.clear();
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject obj = array.getJSONObject(i);
@@ -206,7 +242,8 @@ public class ManageFragment extends Fragment {
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "Parsing error", Toast.LENGTH_SHORT).show();
+                        System.out.println("ERROR: Exception processing response: " + e.getMessage());
+                        Toast.makeText(getContext(), "Parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     } finally {
                         // Hide loading dialog
                         hideProgressDialog();
