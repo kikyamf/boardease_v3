@@ -371,9 +371,6 @@ public class BoarderBookingFragment extends Fragment {
                                     JSONArray currentArray = data.getJSONArray("current");
                                     parseBookings(currentArray, currentBookings);
                                     
-                                    // Automatically set boarder status to active if they have an active booking
-                                    checkAndUpdateActiveStatus();
-                                    
                                     // Parse pending bookings
                                     JSONArray pendingArray = data.getJSONArray("pending");
                                     parseBookings(pendingArray, pendingBookings);
@@ -510,33 +507,6 @@ public class BoarderBookingFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error parsing booking data: " + e.getMessage());
             throw new JSONException("Error parsing booking data: " + e.getMessage());
-        }
-    }
-
-    private void checkAndUpdateActiveStatus() {
-        if (currentBookings == null || currentBookings.isEmpty()) return;
-
-        boolean hasActiveBooking = false;
-        for (Booking booking : currentBookings) {
-            // Check both internal status and user-facing displayStatus
-            if ("Active".equalsIgnoreCase(booking.getStatus()) || "Active".equalsIgnoreCase(booking.getDisplayStatus())) {
-                hasActiveBooking = true;
-                break;
-            }
-        }
-
-        if (hasActiveBooking) {
-            // Update local status in SharedPreferences
-            if (getContext() != null) {
-                android.content.SharedPreferences prefs = getContext().getSharedPreferences("UserSession", android.content.Context.MODE_PRIVATE);
-                String currentStatus = prefs.getString("user_status", "");
-                
-                // Transition to 'active' if they were 'approved' or other verified states
-                if ("approved".equalsIgnoreCase(currentStatus) || "verified".equalsIgnoreCase(currentStatus)) {
-                    Log.d(TAG, "Active booking detected. Upgrading local user_status from '" + currentStatus + "' to 'active'.");
-                    prefs.edit().putString("user_status", "active").apply();
-                }
-            }
         }
     }
 
@@ -842,7 +812,7 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
 
-    /***
+    /**
      * Checks if the user has any pending termination or change room requests.
      */
     private void checkPendingRequests(int userId, Runnable onAllowed) {

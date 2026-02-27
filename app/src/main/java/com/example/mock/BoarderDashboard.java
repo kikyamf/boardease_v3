@@ -95,7 +95,7 @@ public class BoarderDashboard extends AppCompatActivity {
         bookingFragment = (BoarderBookingFragment) getSupportFragmentManager().findFragmentByTag("booking");
         profileFragment = (BoarderProfileFragment) getSupportFragmentManager().findFragmentByTag("profile");
         
-        // Create new fragment instances only if they don't exist 
+        // Create new fragment instances only if they don't exist
         if (homeFragment == null) {
             boolean isNewLogin = getIntent().getBooleanExtra("IS_NEW_LOGIN", false);
             homeFragment = BoarderHomeFragment.newInstance(isNewLogin);
@@ -403,17 +403,15 @@ public class BoarderDashboard extends AppCompatActivity {
                             android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
                             String localStatus = prefs.getString("user_status", "");
 
-                            // Check for transition
+                            // Check for transition to approved
                             if (!serverStatus.equals(localStatus)) {
-                                // Don't overwrite "active" with "approved" if we manually set it locally
-                                if ("active".equals(localStatus) && "approved".equals(serverStatus)) {
-                                    Log.d(TAG, "Keeping local 'active' status despite server 'approved' status.");
+                                prefs.edit().putString("user_status", serverStatus).apply();
+                                if ("approved".equals(serverStatus) && ("pending_admin_review".equals(localStatus) || "profile_incomplete".equals(localStatus) || "email_unverified".equals(localStatus))) {
+                                    // Status changed to approved!
+                                    showApprovalDialog();
                                 } else {
-                                    prefs.edit().putString("user_status", serverStatus).apply();
-                                    if ("approved".equals(serverStatus) && ("pending_admin_review".equals(localStatus) || "profile_incomplete".equals(localStatus) || "email_unverified".equals(localStatus))) {
-                                        // Status changed to approved!
-                                        showApprovalDialog();
-                                    }
+                                    // Just update storage for other changes, maybe refresh silently if needed
+                                    // If moving from valid to invalid, maybe force logout? But for now focused on approval.
                                 }
                             }
                         }
