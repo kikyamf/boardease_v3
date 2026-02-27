@@ -2414,9 +2414,9 @@ public class BoarderBookingFragment extends Fragment {
             // Submit payment button
             btnSubmitPayment.setOnClickListener(v -> {
                 // Validate payment proof
-                // Validate payment proof
                 if ("Cash".equals(paymentMethod[0])) {
                     // No validation needed for Cash
+                    Log.d(TAG, "Cash payment selected - no proof required");
                 } else if ("GCash".equals(paymentMethod[0]) && gcashProofUri[0] == null) {
                     Toast.makeText(getContext(), "Please upload GCash payment screenshot", Toast.LENGTH_SHORT).show();
                     return;
