@@ -320,7 +320,11 @@ public class Conversation extends AppCompatActivity {
         
         // Register broadcast receiver for real-time message updates
         android.content.IntentFilter filter = new android.content.IntentFilter("com.example.mock.NEW_MESSAGE_RECEIVED");
-        registerReceiver(messageUpdateReceiver, filter);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(messageUpdateReceiver, filter, RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(messageUpdateReceiver, filter);
+        }
 
         // Load real messages from database
         showProgressDialog("Loading conversation...");

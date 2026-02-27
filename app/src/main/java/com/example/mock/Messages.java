@@ -236,7 +236,11 @@ public class Messages extends AppCompatActivity {
         super.onStart();
         // Register broadcast receiver for badge updates
         android.content.IntentFilter filter = new android.content.IntentFilter("com.example.mock.UPDATE_BADGE");
-        registerReceiver(badgeUpdateReceiver, filter);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(badgeUpdateReceiver, filter, RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(badgeUpdateReceiver, filter);
+        }
     }
     
     @Override
