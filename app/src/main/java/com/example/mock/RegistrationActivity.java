@@ -624,24 +624,11 @@ public class RegistrationActivity extends AppCompatActivity {
                     digitsOnly = digitsOnly.substring(0, 10);
                 }
                 
-                // Format: 9XX XXX XXXX
-                StringBuilder formatted = new StringBuilder();
-                if (digitsOnly.length() > 0) {
-                    if (digitsOnly.length() <= 3) {
-                        formatted.append(digitsOnly);
-                    } else if (digitsOnly.length() <= 6) {
-                        formatted.append(digitsOnly.substring(0, 3)).append(" ").append(digitsOnly.substring(3));
-                    } else {
-                        formatted.append(digitsOnly.substring(0, 3)).append(" ")
-                                 .append(digitsOnly.substring(3, 6)).append(" ")
-                                 .append(digitsOnly.substring(6));
-                    }
+                if (!currentText.equals(digitsOnly)) {
+                    etPhone.setText(digitsOnly);
+                    etPhone.setSelection(digitsOnly.length());
                 }
                 
-                etPhone.removeTextChangedListener(this);
-                etPhone.setText(formatted.toString());
-                etPhone.setSelection(formatted.length());
-                etPhone.addTextChangedListener(this);
                 isFormatting = false;
                 
                 // Check section completion
@@ -699,9 +686,8 @@ public class RegistrationActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         
         boolean emailValid = !email.isEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
-        // Phone validation: should have at least +63 and 10 digits after it
-        boolean phoneValid = phone.length() >= 14 && phone.startsWith("+63") && 
-                            phone.substring(4).replaceAll("[^0-9]", "").length() >= 10;
+        // Phone validation: should have exactly 10 digits and start with 9
+        boolean phoneValid = phone.length() == 10 && phone.startsWith("9");
         boolean passwordValid = isPasswordCriteriaMet;
         boolean agreed = cbAgree.isChecked();
         
@@ -881,20 +867,6 @@ public class RegistrationActivity extends AppCompatActivity {
         String suffix = spinnerSuffix.getText().toString();
         String birthDate = etBirthDate.getText().toString().trim();
         String phoneInput = etPhone.getText().toString().trim();
-        // Remove all non-digit characters
-        String digitsOnly = phoneInput.replaceAll("[^0-9]", "");
-        
-        String phoneNumber;
-        if (digitsOnly.startsWith("63")) {
-            // 639123456789 -> 09123456789
-            phoneNumber = "0" + digitsOnly.substring(2);
-        } else if (digitsOnly.startsWith("9")) {
-             // 9123456789 -> 09123456789
-            phoneNumber = "0" + digitsOnly;
-        } else {
-            // 09123456789 or fallback
-            phoneNumber = digitsOnly;
-        }
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
@@ -945,6 +917,10 @@ public class RegistrationActivity extends AppCompatActivity {
                 params.put("lastName", lastName);
                 params.put("suffix", suffix);
                 params.put("birthDate", birthDate);
+                String phoneNumber = etPhone.getText().toString().trim();
+                if (!phoneNumber.startsWith("+63 ") && !phoneNumber.isEmpty()) {
+                    phoneNumber = "+63 " + phoneNumber;
+                }
                 params.put("phone", phoneNumber);
                 params.put("email", email);
                 params.put("password", password);

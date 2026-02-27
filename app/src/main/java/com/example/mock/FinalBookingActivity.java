@@ -84,6 +84,10 @@ public class FinalBookingActivity extends AppCompatActivity {
     private Uri gcashProofUri;
     private String ownerGcashQrPath;
     private String ownerGcashNumber;
+    private String phoneNumberIntent;
+    private String firstNameIntent;
+    private String lastNameIntent;
+    private String emailIntent;
     private RequestQueue requestQueue;
     
     // Payment calculation
@@ -143,6 +147,10 @@ public class FinalBookingActivity extends AppCompatActivity {
         startDate = intent.getStringExtra("start_date");
         endDate = intent.getStringExtra("end_date");
         String roomDataString = intent.getStringExtra("room_data");
+        phoneNumberIntent = intent.getStringExtra("phone_number");
+        firstNameIntent = intent.getStringExtra("first_name");
+        lastNameIntent = intent.getStringExtra("last_name");
+        emailIntent = intent.getStringExtra("email");
         
         // If user_id from intent is 0, try to get it from SharedPreferences
         if (userId == 0) {
@@ -318,14 +326,25 @@ public class FinalBookingActivity extends AppCompatActivity {
                         if (jsonResponse.getBoolean("success")) {
                             JSONObject user = jsonResponse.getJSONObject("data").getJSONObject("user");
                             
-                            String firstName = user.optString("first_name", "");
+                            String firstName = firstNameIntent != null ? firstNameIntent : user.optString("first_name", "");
                             String middleName = user.optString("middle_name", "");
-                            String lastName = user.optString("last_name", "");
+                            String lastName = lastNameIntent != null ? lastNameIntent : user.optString("last_name", "");
                             String fullName = firstName + (middleName.isEmpty() ? "" : " " + middleName) + " " + lastName;
                             
                             tvBoarderName.setText(fullName.trim());
-                            tvBoarderPhone.setText(user.optString("phone", "-"));
-                            tvBoarderEmail.setText(user.optString("email", "-"));
+                            
+                            // Use phone from intent if available, otherwise fetch and format
+                            String phone = phoneNumberIntent;
+                            if (phone == null || phone.isEmpty()) {
+                                phone = user.optString("phone", "-");
+                                if (!phone.equals("-") && !phone.startsWith("+63")) {
+                                    if (phone.startsWith("0")) phone = phone.substring(1);
+                                    phone = "+63 " + phone;
+                                }
+                            }
+                            tvBoarderPhone.setText(phone);
+                            
+                            tvBoarderEmail.setText(emailIntent != null ? emailIntent : user.optString("email", "-"));
                         }
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing boarder details: " + e.getMessage());

@@ -510,7 +510,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
         
         // Show location selection dialog ONLY if this is a fresh login (and only once)
         if (isNewLogin) {
-            showLocationSelectionDialog();
+            // showLocationSelectionDialog(); // Removed modal on login as per user request
             isNewLogin = false; // Disable for future updates
         }
     }

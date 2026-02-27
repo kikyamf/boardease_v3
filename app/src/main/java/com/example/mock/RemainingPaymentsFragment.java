@@ -209,7 +209,26 @@ public class RemainingPaymentsFragment extends Fragment {
 
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
-        loadRemainingPayments(true);
+        if (isAdded()) {
+            loadRemainingPayments(true);
+        } else {
+            isInitialLoad = true;
+        }
+    }
+    
+    private void removePaymentLocally(int paymentId) {
+        if (remainingPayments == null) return;
+        
+        for (int i = 0; i < remainingPayments.size(); i++) {
+            if (remainingPayments.get(i).getPaymentId() == paymentId) {
+                remainingPayments.remove(i);
+                if (adapter != null) {
+                    adapter.notifyItemRemoved(i);
+                }
+                updateUI(); // Update count
+                break;
+            }
+        }
     }
     
     @Override
@@ -218,8 +237,15 @@ public class RemainingPaymentsFragment extends Fragment {
         if (requestCode == 1001 && resultCode == android.app.Activity.RESULT_OK && data != null) {
             boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
             if (paymentUpdated) {
+                // Optimistic UI: remove locally if needed
+                int paymentId = data.getIntExtra("payment_id", -1);
+                if (paymentId != -1) {
+                    removePaymentLocally(paymentId);
+                }
+                
                 // Refresh the payments list
                 refreshData();
+                
                 // Notify parent activity for tab navigation
                 if (getActivity() instanceof ActivityDetailsActivity) {
                     String newPaymentStatus = data.getStringExtra("new_payment_status");

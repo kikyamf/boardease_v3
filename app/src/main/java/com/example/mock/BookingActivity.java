@@ -119,6 +119,9 @@ public class BookingActivity extends AppCompatActivity {
         
         // Autofill user information
         autofillUserInfo();
+        
+        // Fetch latest user details from server
+        fetchUserDetailsFromServer();
     }
     
     private void getIntentData() {
@@ -613,7 +616,87 @@ public class BookingActivity extends AppCompatActivity {
         etFirstName.setText(firstName != null ? firstName : "");
         etLastName.setText(lastName != null ? lastName : "");
         etEmail.setText(email != null ? email : "");
-        etPhone.setText(phone != null ? phone : "");
+        
+        // Clean phone number for prefix
+        if (phone != null && !phone.isEmpty()) {
+            // Remove prefix if exists
+            if (phone.startsWith("+63")) {
+                phone = phone.substring(3).trim();
+            } else if (phone.startsWith("63")) {
+                phone = phone.substring(2).trim();
+            }
+            
+            // Remove leading zero
+            if (phone.startsWith("0")) {
+                phone = phone.substring(1);
+            }
+            
+            // Remove any non-digit characters
+            phone = phone.replaceAll("[^0-9]", "");
+            
+            // Limit to 10 digits
+            if (phone.length() > 10) {
+                phone = phone.substring(0, 10);
+            }
+            
+            etPhone.setText(phone);
+        } else {
+            getUserId(); // Ensure we have the latest user ID
+        }
+    }
+    
+    private void fetchUserDetailsFromServer() {
+        if (userId == 0) return;
+        
+        String url = BASE_URL + "get_user_details.php?user_id=" + userId;
+        
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.optBoolean("success")) {
+                            JSONObject userData = jsonResponse.getJSONObject("data").getJSONObject("user");
+                            
+                            // Log the data for debugging
+                            Log.d(TAG, "Fetched user details: " + userData.toString());
+                            
+                            // Update fields if they are currently empty
+                            if (etFirstName.getText().toString().isEmpty()) {
+                                etFirstName.setText(userData.optString("first_name", ""));
+                            }
+                            if (etLastName.getText().toString().isEmpty()) {
+                                etLastName.setText(userData.optString("last_name", ""));
+                            }
+                            if (etEmail.getText().toString().isEmpty()) {
+                                etEmail.setText(userData.optString("email", ""));
+                            }
+                            
+                            String phone = userData.optString("phone", "");
+                            if (!phone.isEmpty() && etPhone.getText().toString().isEmpty()) {
+                                // Clean phone number for prefix
+                                if (phone.startsWith("+63")) {
+                                    phone = phone.substring(3).trim();
+                                } else if (phone.startsWith("63")) {
+                                    phone = phone.substring(2).trim();
+                                }
+                                if (phone.startsWith("0")) {
+                                    phone = phone.substring(1);
+                                }
+                                phone = phone.replaceAll("[^0-9]", "");
+                                if (phone.length() > 10) {
+                                    phone = phone.substring(0, 10);
+                                }
+                                etPhone.setText(phone);
+                            }
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing server user data: " + e.getMessage());
+                    }
+                },
+                error -> Log.e(TAG, "Error fetching user details from server: " + error.getMessage())
+        );
+        
+        requestQueue.add(stringRequest);
     }
     
     private void showStartDatePicker() {
@@ -729,21 +812,9 @@ public class BookingActivity extends AppCompatActivity {
         if (phone.isEmpty()) {
             etPhone.setError("Phone number is required");
             isValid = false;
-        } else {
-            if (phone.startsWith("9")) {
-                if (phone.length() != 10) {
-                    etPhone.setError("Phone number starting with 9 must be 10 digits");
-                    isValid = false;
-                }
-            } else if (phone.startsWith("0")) {
-                if (phone.length() != 11) {
-                    etPhone.setError("Phone number starting with 0 must be 11 digits");
-                    isValid = false;
-                }
-            } else {
-                etPhone.setError("Phone number must start with 0 or 9");
-                isValid = false;
-            }
+        } else if (phone.length() != 10 || !phone.startsWith("9")) {
+            etPhone.setError("Enter a valid 10-digit number starting with 9");
+            isValid = false;
         }
         
         return isValid;
@@ -757,6 +828,17 @@ public class BookingActivity extends AppCompatActivity {
             intent.putExtra("user_id", userId);
             intent.putExtra("start_date", etStartDate.getText().toString());
             intent.putExtra("end_date", etEndDate.getText().toString());
+            
+            intent.putExtra("first_name", etFirstName.getText().toString().trim());
+            intent.putExtra("last_name", etLastName.getText().toString().trim());
+            intent.putExtra("email", etEmail.getText().toString().trim());
+            
+            // Format phone number with prefix
+            String phoneNumber = etPhone.getText().toString().trim();
+            if (!phoneNumber.startsWith("+63")) {
+                phoneNumber = "+63 " + phoneNumber;
+            }
+            intent.putExtra("phone_number", phoneNumber);
             
             // Add selected room number to roomData JSON
             if (selectedRoomNumber != null) {

@@ -704,8 +704,13 @@ public class UpdateProfileActivity extends AppCompatActivity {
             Toast.makeText(this, "Please upload GCash QR", Toast.LENGTH_SHORT).show();
             return false;
         }
-        if (etGcashNum.getText().toString().trim().isEmpty()) {
+        String gcash = etGcashNum.getText().toString().trim();
+        if (gcash.isEmpty()) {
             Toast.makeText(this, "Please enter GCash number", Toast.LENGTH_SHORT).show();
+            return false;
+        } else if (gcash.length() != 10 || !gcash.startsWith("9")) {
+            etGcashNum.setError("Enter a valid 10-digit number starting with 9");
+            etGcashNum.requestFocus();
             return false;
         }
         if (permitUploadItems.isEmpty() || permitUploadItems.get(0).bitmap == null) {
@@ -979,7 +984,11 @@ public class UpdateProfileActivity extends AppCompatActivity {
                 params.put("detailed_address", etDetailedAddress.getText().toString().trim());
                 
                 if (!isBoarder) {
-                    params.put("gcash_num", etGcashNum.getText().toString().trim());
+                    String gcashNum = etGcashNum.getText().toString().trim();
+                    if (!gcashNum.startsWith("+63 ") && !gcashNum.isEmpty()) {
+                        gcashNum = "+63 " + gcashNum;
+                    }
+                    params.put("gcash_num", gcashNum);
                 }
                 return params;
             }

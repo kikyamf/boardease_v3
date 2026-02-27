@@ -275,19 +275,38 @@
                     android:fontFamily="@font/poppins_medium"
                     android:layout_marginBottom="4dp" />
 
-                <EditText
-                    android:id="@+id/etPhoneNumber"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:background="@drawable/modern_edittext_focused"
-                    android:padding="16dp"
-                    android:hint="Enter phone number"
-                    android:textColor="#212529"
-                    android:textColorHint="#6C757D"
-                    android:inputType="phone"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+63 "
+                        android:textColor="#495057"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textSize="16sp" />
+
+                    <EditText
+                        android:id="@+id/etPhoneNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="9XXXXXXXXX"
+                        android:textColor="#212529"
+                        android:textColorHint="#6C757D"
+                        android:inputType="phone"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="16sp"
+                        android:maxLength="10" />
+                </LinearLayout>
 
                 <!-- Address -->
                 <TextView

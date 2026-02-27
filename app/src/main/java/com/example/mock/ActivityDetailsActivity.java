@@ -314,7 +314,7 @@ public class ActivityDetailsActivity extends AppCompatActivity {
             String tag = "f" + i;
             Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
             
-            if (fragment != null && fragment.isAdded()) {
+            if (fragment != null) {
                 if (i == 0 && fragment instanceof AllPaymentsFragment) {
                     ((AllPaymentsFragment) fragment).refreshData();
                 } else if (i == 1 && fragment instanceof PendingPaymentsFragment) {

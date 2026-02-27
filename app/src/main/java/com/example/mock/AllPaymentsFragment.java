@@ -217,7 +217,11 @@ public class AllPaymentsFragment extends Fragment {
 
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
-        loadAllPayments(true);
+        if (isAdded()) {
+            loadAllPayments(true);
+        } else {
+            isInitialLoad = true;
+        }
     }
     
     @Override

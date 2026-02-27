@@ -207,7 +207,26 @@ public class OverduePaymentsFragment extends Fragment {
 
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
-        loadOverduePayments(true);
+        if (isAdded()) {
+            loadOverduePayments(true);
+        } else {
+            isInitialLoad = true;
+        }
+    }
+    
+    private void removePaymentLocally(int paymentId) {
+        if (overduePayments == null) return;
+        
+        for (int i = 0; i < overduePayments.size(); i++) {
+            if (overduePayments.get(i).getPaymentId() == paymentId) {
+                overduePayments.remove(i);
+                if (adapter != null) {
+                    adapter.notifyItemRemoved(i);
+                }
+                updateUI(); // Update count
+                break;
+            }
+        }
     }
     
     @Override
@@ -216,8 +235,15 @@ public class OverduePaymentsFragment extends Fragment {
         if (requestCode == 1001 && resultCode == android.app.Activity.RESULT_OK && data != null) {
             boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
             if (paymentUpdated) {
+                // Optimistic UI: remove locally if needed
+                int paymentId = data.getIntExtra("payment_id", -1);
+                if (paymentId != -1) {
+                    removePaymentLocally(paymentId);
+                }
+                
                 // Refresh the payments list - if payment is paid, it will disappear from overdue tab
                 refreshData();
+                
                 // Notify parent activity for tab navigation
                 if (getActivity() instanceof ActivityDetailsActivity) {
                     String newPaymentStatus = data.getStringExtra("new_payment_status");

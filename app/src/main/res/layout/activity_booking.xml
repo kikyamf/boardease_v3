@@ -401,7 +401,6 @@
                         android:paddingStart="12dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Phone -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -411,6 +410,9 @@
                     app:hintTextColor="@color/brown"
                     app:boxStrokeColor="@color/brown"
                     app:boxStrokeWidth="2dp"
+                    app:prefixText="+63 "
+                    app:prefixTextColor="#495057"
+                    app:prefixTextAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -418,13 +420,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="phone"
-                        android:digits="0123456789"
-                        android:maxLength="11"
                         android:textColor="@android:color/black"
                         android:drawableStart="@drawable/ic_phone"
                         android:drawableTint="@color/green"
                         android:drawablePadding="8dp"
-                        android:paddingStart="12dp" />
+                        android:paddingStart="12dp"
+                        android:maxLength="10"
+                        android:hint="9XXXXXXXXX" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

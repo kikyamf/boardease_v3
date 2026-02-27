@@ -241,7 +241,27 @@ public class PendingPaymentsFragment extends Fragment {
 
     // Method to refresh data (can be called from parent activity)
     public void refreshData() {
-        loadPendingPayments(true);
+        if (isAdded()) {
+            loadPendingPayments(true);
+        } else {
+            // If not added, mark as needing initial load so it refreshes when shown
+            isInitialLoad = true;
+        }
+    }
+    
+    private void removePaymentLocally(int paymentId) {
+        if (pendingPayments == null) return;
+        
+        for (int i = 0; i < pendingPayments.size(); i++) {
+            if (pendingPayments.get(i).getPaymentId() == paymentId) {
+                pendingPayments.remove(i);
+                if (adapter != null) {
+                    adapter.notifyItemRemoved(i);
+                }
+                updateUI(); // Update count
+                break;
+            }
+        }
     }
     
     @Override
@@ -250,8 +270,15 @@ public class PendingPaymentsFragment extends Fragment {
         if (requestCode == 1001 && resultCode == android.app.Activity.RESULT_OK && data != null) {
             boolean paymentUpdated = data.getBooleanExtra("payment_updated", false);
             if (paymentUpdated) {
-                // Refresh the payments list
+                // Optimistic UI: remove the payment locally if we have the ID
+                int paymentId = data.getIntExtra("payment_id", -1);
+                if (paymentId != -1) {
+                    removePaymentLocally(paymentId);
+                }
+                
+                // Refresh the payments list to stay in sync with server
                 refreshData();
+                
                 // Notify parent activity for tab navigation
                 if (getActivity() instanceof ActivityDetailsActivity) {
                     String newPaymentStatus = data.getStringExtra("new_payment_status");

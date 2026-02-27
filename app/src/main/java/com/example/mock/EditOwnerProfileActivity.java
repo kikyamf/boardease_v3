@@ -1132,7 +1132,32 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
                 }
             }
             
-            etPhoneNumber.setText(profileData.optString("phone_number", ""));
+            String phone = profileData.optString("phone_number", "");
+            if (phone != null && !phone.isEmpty()) {
+                // Remove prefix if exists
+                if (phone.startsWith("+63")) {
+                    phone = phone.substring(3).trim();
+                } else if (phone.startsWith("63")) {
+                    phone = phone.substring(2).trim();
+                }
+                
+                // Remove leading zero
+                if (phone.startsWith("0")) {
+                    phone = phone.substring(1);
+                }
+                
+                // Remove any non-digit characters
+                phone = phone.replaceAll("[^0-9]", "");
+                
+                // Limit to 10 digits
+                if (phone.length() > 10) {
+                    phone = phone.substring(0, 10);
+                }
+                
+                etPhoneNumber.setText(phone);
+            } else {
+                etPhoneNumber.setText("");
+            }
             
             String address = profileData.optString("p_address", "");
             if (!address.isEmpty()) {
@@ -1315,7 +1340,11 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
                 params.put("l_name", etLastName.getText().toString().trim());
                 params.put("suffix", spinnerSuffix.getSelectedItem().toString());
                 params.put("birthdate", btnBirthdate.getText().toString());
-                params.put("phone_number", etPhoneNumber.getText().toString().trim());
+                String phoneNumber = etPhoneNumber.getText().toString().trim();
+                if (!phoneNumber.startsWith("+63 ") && !phoneNumber.isEmpty()) {
+                    phoneNumber = "+63 " + phoneNumber;
+                }
+                params.put("phone_number", phoneNumber);
                 params.put("p_address", etAddress.getText().toString().trim());
                 params.put("profile_picture", profilePicPath);
                 return params;
@@ -1344,8 +1373,13 @@ public class EditOwnerProfileActivity extends AppCompatActivity {
             return false;
         }
         
-        if (etPhoneNumber.getText().toString().trim().isEmpty()) {
+        String phone = etPhoneNumber.getText().toString().trim();
+        if (phone.isEmpty()) {
             etPhoneNumber.setError("Phone number is required");
+            etPhoneNumber.requestFocus();
+            return false;
+        } else if (phone.length() != 10 || !phone.startsWith("9")) {
+            etPhoneNumber.setError("Enter a valid 10-digit number starting with 9");
             etPhoneNumber.requestFocus();
             return false;
         }
