@@ -842,7 +842,7 @@ public class BoarderBookingFragment extends Fragment {
         }
     }
 
-    /**
+    /***
      * Checks if the user has any pending termination or change room requests.
      */
     private void checkPendingRequests(int userId, Runnable onAllowed) {

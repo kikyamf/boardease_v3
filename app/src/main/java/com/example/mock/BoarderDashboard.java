@@ -95,7 +95,7 @@ public class BoarderDashboard extends AppCompatActivity {
         bookingFragment = (BoarderBookingFragment) getSupportFragmentManager().findFragmentByTag("booking");
         profileFragment = (BoarderProfileFragment) getSupportFragmentManager().findFragmentByTag("profile");
         
-        // Create new fragment instances only if they don't exist
+        // Create new fragment instances only if they don't exist 
         if (homeFragment == null) {
             boolean isNewLogin = getIntent().getBooleanExtra("IS_NEW_LOGIN", false);
             homeFragment = BoarderHomeFragment.newInstance(isNewLogin);
