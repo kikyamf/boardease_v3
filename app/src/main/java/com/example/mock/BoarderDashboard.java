@@ -403,15 +403,17 @@ public class BoarderDashboard extends AppCompatActivity {
                             android.content.SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
                             String localStatus = prefs.getString("user_status", "");
 
-                            // Check for transition to approved
+                            // Check for transition
                             if (!serverStatus.equals(localStatus)) {
-                                prefs.edit().putString("user_status", serverStatus).apply();
-                                if ("approved".equals(serverStatus) && ("pending_admin_review".equals(localStatus) || "profile_incomplete".equals(localStatus) || "email_unverified".equals(localStatus))) {
-                                    // Status changed to approved!
-                                    showApprovalDialog();
+                                // Don't overwrite "active" with "approved" if we manually set it locally
+                                if ("active".equals(localStatus) && "approved".equals(serverStatus)) {
+                                    Log.d(TAG, "Keeping local 'active' status despite server 'approved' status.");
                                 } else {
-                                    // Just update storage for other changes, maybe refresh silently if needed
-                                    // If moving from valid to invalid, maybe force logout? But for now focused on approval.
+                                    prefs.edit().putString("user_status", serverStatus).apply();
+                                    if ("approved".equals(serverStatus) && ("pending_admin_review".equals(localStatus) || "profile_incomplete".equals(localStatus) || "email_unverified".equals(localStatus))) {
+                                        // Status changed to approved!
+                                        showApprovalDialog();
+                                    }
                                 }
                             }
                         }
