@@ -283,10 +283,15 @@ public class ProfanityFilter {
      * Filters patterns that might have been missed by word-based filtering
      */
     private static String filterPatterns(String message) {
-        return PROFANE_PATTERN.matcher(message).replaceAll(matchResult -> {
-            String matched = matchResult.group();
-            return replaceWithAsterisks(matched);
-        });
+        java.util.regex.Matcher matcher = PROFANE_PATTERN.matcher(message);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            String matched = matcher.group();
+            String replacement = replaceWithAsterisks(matched);
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
     
     /**
