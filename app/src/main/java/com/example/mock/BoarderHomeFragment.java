@@ -842,9 +842,6 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
             return;
         }
 
-        // DEBUG: Show we are checking
-        // Toast.makeText(getContext(), "Checking rental for User: " + userId, Toast.LENGTH_SHORT).show();
-
         String url = BASE_URL + "get_active_rental.php?user_id=" + userId;
         Log.d(TAG, "Checking active rental: " + url);
         
@@ -859,14 +856,22 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                                 tvActiveBHName.setText(jsonObject.getString("bh_name"));
                                 tvActiveRoomName.setText(jsonObject.getString("room_name"));
                                 
+                                // Store data for modal
                                 int bookingId = jsonObject.optInt("booking_id", -1);
+                                String bhName = jsonObject.optString("bh_name", "");
+                                String bhAddress = jsonObject.optString("bh_address", "");
+                                String roomName = jsonObject.optString("room_name", "");
+                                String roomCategory = jsonObject.optString("room_category", "");
+                                String startDate = jsonObject.optString("start_date", "N/A");
+                                String endDate = jsonObject.optString("end_date", "N/A");
+                                String monthlyDue = jsonObject.optString("monthly_due", "N/A");
                                 
                                 cardActiveRental.setOnClickListener(v -> {
                                     if (bookingId != -1) {
-                                        // 1. Set target booking to open in BookingFragment
+                                        // Set target booking to open in BookingFragment (auto-opens details dialog)
                                         BoarderBookingFragment.setTargetBookingToOpen(bookingId);
                                         
-                                        // 2. Switch to Bookings Tab (index 3 based on your menu, or ID R.id.nav_activity)
+                                        // Switch to Bookings Tab
                                         if (getActivity() instanceof BoarderDashboard) {
                                             ((BoarderDashboard) getActivity()).switchToTab(R.id.nav_activity);
                                         }
@@ -877,8 +882,7 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                             }
                         } else {
                             if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
-                            // DEBUG: Show why it failed to find one
-                             Log.d(TAG, "No active rental found: " + response);
+                            Log.d(TAG, "No active rental found: " + response);
                         }
                     } catch (JSONException e) {
                         Log.e(TAG, "JSON error parsing active rental", e);
@@ -888,12 +892,53 @@ public class BoarderHomeFragment extends Fragment implements BoardingHouseAdapte
                 error -> {
                     Log.e(TAG, "Volley error checking active rental", error);
                     if (cardActiveRental != null) cardActiveRental.setVisibility(View.GONE);
-                    // DEBUG: Show network error
-                    Toast.makeText(getContext(), "Network Error checking rental: " + error.getMessage(), Toast.LENGTH_LONG).show();
                 });
 
         Volley.newRequestQueue(requireContext()).add(stringRequest);
     }
+
+    private void showActiveRentalDetailsDialog(int bookingId, String bhName, String bhAddress,
+                                               String roomName, String roomCategory,
+                                               String startDate, String endDate, String monthlyDue) {
+        if (getContext() == null || !isAdded()) return;
+
+        try {
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
+            View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_cancelled_booking_details, null);
+            builder.setView(dialogView);
+
+            android.widget.ImageButton btnClose = dialogView.findViewById(R.id.btnClose);
+            android.widget.TextView tvBoardingHouseName = dialogView.findViewById(R.id.tvBoardingHouseName);
+            android.widget.TextView tvLocation = dialogView.findViewById(R.id.tvLocation);
+            android.widget.TextView tvRoomDetails = dialogView.findViewById(R.id.tvRoomDetails);
+            android.widget.TextView tvStartDate = dialogView.findViewById(R.id.tvStartDate);
+            android.widget.TextView tvEndDate = dialogView.findViewById(R.id.tvEndDate);
+            android.widget.TextView tvMonthlyDue = dialogView.findViewById(R.id.tvMonthlyDue);
+            android.widget.TextView tvStatus = dialogView.findViewById(R.id.tvStatus);
+
+            tvBoardingHouseName.setText(bhName);
+            tvLocation.setText(bhAddress.isEmpty() ? "N/A" : bhAddress);
+            tvRoomDetails.setText(roomCategory.isEmpty() ? roomName : roomCategory + " | " + roomName);
+            tvStartDate.setText(startDate);
+            tvEndDate.setText(endDate);
+            tvMonthlyDue.setText(monthlyDue);
+            tvStatus.setText("Active");
+            tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
+
+            android.app.AlertDialog dialog = builder.create();
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+            dialog.show();
+
+            if (btnClose != null) {
+                btnClose.setOnClickListener(v -> dialog.dismiss());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing active rental dialog: " + e.getMessage());
+        }
+    }
+
 
     private void initializeViews(View view) {
         try {
