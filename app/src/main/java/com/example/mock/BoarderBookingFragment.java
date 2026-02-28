@@ -2414,9 +2414,9 @@ public class BoarderBookingFragment extends Fragment {
             // Submit payment button
             btnSubmitPayment.setOnClickListener(v -> {
                 // Validate payment proof
+                // Validate payment proof
                 if ("Cash".equals(paymentMethod[0])) {
                     // No validation needed for Cash
-                    Log.d(TAG, "Cash payment selected - no proof required");
                 } else if ("GCash".equals(paymentMethod[0]) && gcashProofUri[0] == null) {
                     Toast.makeText(getContext(), "Please upload GCash payment screenshot", Toast.LENGTH_SHORT).show();
                     return;
@@ -2558,7 +2558,6 @@ public class BoarderBookingFragment extends Fragment {
                     public void onResponse(String response) {
                         progressDialog.dismiss();
                         try {
-                            Log.d(TAG, "Payment response: " + response);
                             JSONObject jsonResponse = new JSONObject(response);
                             if (jsonResponse.getBoolean("success")) {
                                 currentPaymentDialogView = null;
@@ -2584,12 +2583,10 @@ public class BoarderBookingFragment extends Fragment {
                                 }
                             } else {
                                 String error = jsonResponse.optString("error", "Failed to submit payment");
-                                Log.e(TAG, "Server error: " + error);
                                 Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
                             }
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing payment response: " + e.getMessage());
-                            Log.e(TAG, "Raw response that failed to parse: " + response);
                             Toast.makeText(getContext(), "Error processing response", Toast.LENGTH_SHORT).show();
                         }
                     }

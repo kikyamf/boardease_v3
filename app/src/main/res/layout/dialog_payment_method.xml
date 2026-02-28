@@ -186,7 +186,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Upload Payment Screenshot (Required for GCash)"
+                        android:text="Upload Payment Screenshot (Required)"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium"
                         android:textColor="@color/dark_gray"

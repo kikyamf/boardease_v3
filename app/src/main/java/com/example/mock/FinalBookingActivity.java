@@ -870,14 +870,6 @@ public class FinalBookingActivity extends AppCompatActivity {
     
     private boolean validateForm() {
         // No payment proof validation for Stage 1 (Initial Application)
-        // If it's Cash, it's always valid here
-        if ("Cash".equals(paymentMethod)) {
-            Log.d(TAG, "validateForm: Cash payment - skipping proof validation");
-            return true;
-        }
-        
-        // If it's GCash, validation might be needed for Stage 2, but for Stage 1 we allow it
-        Log.d(TAG, "validateForm: " + paymentMethod + " payment - returning true for application");
         return true;
     }
     
