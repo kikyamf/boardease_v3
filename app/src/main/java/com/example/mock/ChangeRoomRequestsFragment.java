@@ -42,6 +42,26 @@ public class ChangeRoomRequestsFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ProgressDialog progressDialog;
+    private boolean isInitialLoad = true;
+
+    // Real-time polling
+    private final android.os.Handler pollingHandler = new android.os.Handler();
+    private final Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadRequests(false); // silent poll
+            pollingHandler.postDelayed(this, 5000);
+        }
+    };
+
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
 
     public static ChangeRoomRequestsFragment newInstance(int ownerId) {
         ChangeRoomRequestsFragment fragment = new ChangeRoomRequestsFragment();
@@ -70,21 +90,47 @@ public class ChangeRoomRequestsFragment extends Fragment {
         requestQueue = Volley.newRequestQueue(getContext());
         requests = new ArrayList<>();
 
-        swipeRefreshLayout.setOnRefreshListener(this::loadRequests);
+        swipeRefreshLayout.setOnRefreshListener(() -> loadRequests(true));
 
-        loadRequests();
+        loadRequests(true); // initial load shows spinner
 
         return view;
     }
 
-    private void loadRequests() {
-        swipeRefreshLayout.setRefreshing(true);
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPolling();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+        if (progressDialog != null && progressDialog.isShowing()) progressDialog.dismiss();
+    }
+
+    private void loadRequests(boolean isRefresh) {
+        if (isRefresh) {
+            if (isInitialLoad) {
+                isInitialLoad = false;
+                progressDialog = new ProgressDialog(getContext());
+                progressDialog.setMessage("Loading requests...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
+            } else {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        }
+        // If polling (isRefresh=false): completely silent
+
         String url = "https://boardease.calapebohol.com/get_change_room_requests.php?owner_id=" + ownerId;
         
         android.util.Log.d(TAG, "Loading requests from URL: " + url);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
+                    if (progressDialog != null && progressDialog.isShowing()) progressDialog.dismiss();
                     swipeRefreshLayout.setRefreshing(false);
                     android.util.Log.d(TAG, "Response received: " + response.toString());
                     try {
@@ -126,8 +172,9 @@ public class ChangeRoomRequestsFragment extends Fragment {
                     }
                 },
                 error -> {
+                    if (progressDialog != null && progressDialog.isShowing()) progressDialog.dismiss();
                     swipeRefreshLayout.setRefreshing(false);
-                    
+
                     // Log detailed error information
                     android.util.Log.e(TAG, "Error loading change room requests");
                     if (error.networkResponse != null) {
@@ -178,20 +225,18 @@ public class ChangeRoomRequestsFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 2001 && resultCode == android.app.Activity.RESULT_OK) {
-            loadRequests();
+            loadRequests(false);
         }
     }
 
 
     // Public methods for consistency with other booking fragments
     public void loadIfNeeded() {
-        // Called when tab is selected - delegate to loadRequests
-        loadRequests();
+        loadRequests(false);
     }
 
     public void refreshBookings() {
-        // Called when returning from detail views - delegate to loadRequests
-        loadRequests();
+        loadRequests(false);
     }
 
     // Data class
