@@ -219,7 +219,7 @@ public class TerminationRequestsFragment extends Fragment {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
                             Toast.makeText(getContext(), "Termination approved", Toast.LENGTH_SHORT).show();
-                            loadRequests();
+                            loadRequests(false);
                         } else {
                             Toast.makeText(getContext(), jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
                         }
@@ -267,7 +267,7 @@ public class TerminationRequestsFragment extends Fragment {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
                             Toast.makeText(getContext(), "Termination declined", Toast.LENGTH_SHORT).show();
-                            loadRequests();
+                            loadRequests(false);
                         } else {
                             Toast.makeText(getContext(), jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
                         }
