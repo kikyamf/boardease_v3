@@ -401,8 +401,8 @@ public class PrivateRoomsFragment extends Fragment {
                                 // For Bed Spacer, add capacity information (though this is PrivateRoomsFragment)
                                 if ("Bed Spacer".equals(roomCategory)) {
                                     unit.capacityDisplay = unitObj.optString("capacity_display", "");
-                                    unit.totalCapacity = unitObj.optInt("total_capacity", 0);
-                                    unit.occupiedCapacity = unitObj.optInt("occupied_capacity", 0);
+                                    unit.totalCapacity = jsonResponse.optInt("capacity", 0);
+                                    unit.occupiedCapacity = unitObj.optInt("occupied_count", 0);
                                 } else {
                                     unit.capacityDisplay = "";
                                     unit.totalCapacity = 0;

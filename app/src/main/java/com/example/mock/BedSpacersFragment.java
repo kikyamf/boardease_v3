@@ -368,14 +368,10 @@ public class BedSpacersFragment extends Fragment {
                                 unit.status = unitObj.getString("status");
                                 
                                 // For Bed Spacer, add capacity information
-                                if ("Bed Spacer".equals(roomCategory)) {
+                                if (roomCategory.equals("Bed Spacer")) {
+                                    unit.totalCapacity = jsonResponse.optInt("capacity", 0);
+                                    unit.occupiedCapacity = unitObj.optInt("occupied_count", 0);
                                     unit.capacityDisplay = unitObj.optString("capacity_display", "");
-                                    unit.totalCapacity = unitObj.optInt("total_capacity", 0);
-                                    unit.occupiedCapacity = unitObj.optInt("occupied_capacity", 0);
-                                } else {
-                                    unit.capacityDisplay = "";
-                                    unit.totalCapacity = 0;
-                                    unit.occupiedCapacity = 0;
                                 }
                                 
                                 unitList.add(unit);
