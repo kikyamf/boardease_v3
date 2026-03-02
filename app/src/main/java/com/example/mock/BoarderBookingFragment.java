@@ -1349,16 +1349,29 @@ public class BoarderBookingFragment extends Fragment {
         progressDialog.show();
 
         String url = BASE_URL + "submit_change_room_request.php";
-        android.util.Log.d("ChangeRoom", "Submitting request to URL: " + url);
-        android.util.Log.d("ChangeRoom", "Params: booking_id=" + booking.getBookingId() + ", user_id=" + userId + ", new_room_id=" + newBhrId + ", new_unit_id=" + newUnitId + ", reason=" + reason);
+
+        Log.d("ChangeRoom", "=== SUBMITTING CHANGE ROOM REQUEST ===");
+        Log.d("ChangeRoom", "URL: " + url);
+        Log.d("ChangeRoom", "booking_id: " + booking.getBookingId());
+        Log.d("ChangeRoom", "user_id: " + userId);
+        Log.d("ChangeRoom", "new_room_id (bhr_id): " + newBhrId);
+        Log.d("ChangeRoom", "new_unit_id (room_units.room_id): " + newUnitId);
+        Log.d("ChangeRoom", "reason: " + reason);
+        Log.d("ChangeRoom", "details: " + details);
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
             response -> {
                 progressDialog.dismiss();
-                android.util.Log.d("ChangeRoom", "Submit Response: " + response);
+                Log.d("ChangeRoom", "=== SERVER RESPONSE ===");
+                Log.d("ChangeRoom", "Raw response: " + response);
                 try {
                     JSONObject jsonResponse = new JSONObject(response);
-                    if (jsonResponse.getBoolean("success")) {
+                    boolean success = jsonResponse.getBoolean("success");
+                    String message = jsonResponse.optString("message", "");
+                    Log.d("ChangeRoom", "success: " + success + ", message: " + message);
+                    if (success) {
+                        int newBookingId = jsonResponse.optInt("new_booking_id", 0);
+                        Log.d("ChangeRoom", "new_booking_id: " + newBookingId);
                         new AlertDialog.Builder(getContext())
                             .setTitle("Success")
                             .setMessage("Your room change request has been submitted. You will be notified once the owner reviews it.")
@@ -1367,25 +1380,41 @@ public class BoarderBookingFragment extends Fragment {
                             .show();
                         loadBookingData();
                     } else {
-                        String message = jsonResponse.optString("message", "Unknown error from server");
-                        android.util.Log.e("ChangeRoom", "Submit failed: " + message);
-                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                        Log.e("ChangeRoom", "Submit failed: " + message);
+                        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
                     }
                 } catch (JSONException e) {
-                    android.util.Log.e("ChangeRoom", "Submit JSON error: " + e.getMessage());
+                    Log.e("ChangeRoom", "JSON parse error: " + e.getMessage());
+                    Log.e("ChangeRoom", "Raw response was: " + response);
                     e.printStackTrace();
+                    Toast.makeText(getContext(), "Unexpected server response", Toast.LENGTH_SHORT).show();
                 }
             },
             error -> {
                 progressDialog.dismiss();
-                String errorMessage = "Unknown error";
+                Log.e("ChangeRoom", "=== VOLLEY ERROR ===");
+                Log.e("ChangeRoom", "Error class: " + error.getClass().getSimpleName());
                 if (error.networkResponse != null) {
-                    errorMessage = "Status Code: " + error.networkResponse.statusCode + " Data: " + new String(error.networkResponse.data);
+                    int statusCode = error.networkResponse.statusCode;
+                    String body = "";
+                    try {
+                        body = new String(error.networkResponse.data, "UTF-8");
+                    } catch (Exception ex) {
+                        body = "(unreadable)";
+                    }
+                    Log.e("ChangeRoom", "HTTP Status: " + statusCode);
+                    Log.e("ChangeRoom", "Server error body: " + body);
+                    Toast.makeText(getContext(), "Server error " + statusCode + ": " + body, Toast.LENGTH_LONG).show();
                 } else if (error.getMessage() != null) {
-                    errorMessage = error.getMessage();
+                    Log.e("ChangeRoom", "No network response. Message: " + error.getMessage());
+                    if (error.getCause() != null) {
+                        Log.e("ChangeRoom", "Cause: " + error.getCause().getMessage());
+                    }
+                    Toast.makeText(getContext(), "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                } else {
+                    Log.e("ChangeRoom", "Unknown error (no response, no message)");
+                    Toast.makeText(getContext(), "Unknown error occurred", Toast.LENGTH_SHORT).show();
                 }
-                android.util.Log.e("ChangeRoom", "Submit Volley Error: " + errorMessage);
-                Toast.makeText(getContext(), "Error submitting request: " + errorMessage, Toast.LENGTH_SHORT).show();
             }) {
             @Override
             protected Map<String, String> getParams() {
@@ -1396,12 +1425,14 @@ public class BoarderBookingFragment extends Fragment {
                 params.put("new_unit_id", String.valueOf(newUnitId));
                 params.put("reason", reason);
                 params.put("details", details);
+                Log.d("ChangeRoom", "getParams() called — params built");
                 return params;
             }
         };
 
         requestQueue.add(stringRequest);
     }
+
 
     private void showTerminationReasonModal(Booking booking) {
         if (getContext() == null) return;

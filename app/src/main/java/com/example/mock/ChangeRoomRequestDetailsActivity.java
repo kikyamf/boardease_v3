@@ -1,5 +1,7 @@
 package com.example.mock;
 
+import android.util.Log;
+
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -137,12 +139,26 @@ public class ChangeRoomRequestDetailsActivity extends AppCompatActivity {
                 },
                 error -> {
                     hideProgressDialog();
-                    Toast.makeText(this, "Error processing request", Toast.LENGTH_SHORT).show();
+                    String errorMsg = "Error processing request";
+                    if (error.networkResponse != null) {
+                        errorMsg = "Server error: " + error.networkResponse.statusCode;
+                        try {
+                            String body = new String(error.networkResponse.data, "UTF-8");
+                            Log.e("ChangeRoomRequest", "Server response body: " + body);
+                            errorMsg += " - " + body;
+                        } catch (Exception ex) {
+                            Log.e("ChangeRoomRequest", "Could not read error body");
+                        }
+                    } else if (error.getMessage() != null) {
+                        errorMsg = error.getMessage();
+                    }
+                    Log.e("ChangeRoomRequest", "Volley error: " + errorMsg);
+                    Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
                 }) {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("change_request_id", String.valueOf(requestId));
+                params.put("request_id", String.valueOf(requestId));
                 params.put("action", action);
                 return params;
             }

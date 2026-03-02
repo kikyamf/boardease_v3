@@ -41,6 +41,26 @@ public class TerminationRequestsFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ProgressDialog progressDialog;
+    private boolean isInitialLoad = true;
+
+    // Real-time polling
+    private final android.os.Handler pollingHandler = new android.os.Handler();
+    private final Runnable pollingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadRequests(false); // silent poll
+            pollingHandler.postDelayed(this, 5000);
+        }
+    };
+
+    private void startPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+        pollingHandler.postDelayed(pollingRunnable, 5000);
+    }
+
+    private void stopPolling() {
+        pollingHandler.removeCallbacks(pollingRunnable);
+    }
 
     public static TerminationRequestsFragment newInstance(int ownerId) {
         TerminationRequestsFragment fragment = new TerminationRequestsFragment();
@@ -69,29 +89,51 @@ public class TerminationRequestsFragment extends Fragment {
         requestQueue = Volley.newRequestQueue(getContext());
         terminationRequests = new ArrayList<>();
 
-        swipeRefreshLayout.setOnRefreshListener(this::loadRequests);
+        swipeRefreshLayout.setOnRefreshListener(() -> loadRequests(true));
 
-        loadRequests();
+        loadRequests(true); // initial load shows spinner
 
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        startPolling();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+        hideProgressDialog();
+    }
+
     public void loadIfNeeded() {
         if (terminationRequests.isEmpty()) {
-            loadRequests();
+            loadRequests(false);
         }
     }
 
     public void refreshBookings() {
-        loadRequests();
+        loadRequests(false);
     }
 
-    private void loadRequests() {
-        swipeRefreshLayout.setRefreshing(true);
+    private void loadRequests(boolean isRefresh) {
+        if (isRefresh) {
+            if (isInitialLoad) {
+                isInitialLoad = false;
+                showProgressDialog("Loading requests...");
+            } else {
+                swipeRefreshLayout.setRefreshing(true);
+            }
+        }
+        // If polling (isRefresh=false): completely silent, no UI indicator
         String url = "https://boardease.calapebohol.com/get_termination_requests.php?owner_id=" + ownerId;
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
+                    hideProgressDialog();
                     swipeRefreshLayout.setRefreshing(false);
                     try {
                         if (response.getBoolean("success")) {
@@ -123,6 +165,7 @@ public class TerminationRequestsFragment extends Fragment {
                     }
                 },
                 error -> {
+                    hideProgressDialog();
                     swipeRefreshLayout.setRefreshing(false);
                     String errorMessage = "Error loading requests";
                     if (error.networkResponse != null) {
@@ -176,7 +219,7 @@ public class TerminationRequestsFragment extends Fragment {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
                             Toast.makeText(getContext(), "Termination approved", Toast.LENGTH_SHORT).show();
-                            loadRequests();
+                            loadRequests(false);
                         } else {
                             Toast.makeText(getContext(), jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
                         }
@@ -224,7 +267,7 @@ public class TerminationRequestsFragment extends Fragment {
                         JSONObject jsonResponse = new JSONObject(response);
                         if (jsonResponse.getBoolean("success")) {
                             Toast.makeText(getContext(), "Termination declined", Toast.LENGTH_SHORT).show();
-                            loadRequests();
+                            loadRequests(false);
                         } else {
                             Toast.makeText(getContext(), jsonResponse.getString("error"), Toast.LENGTH_SHORT).show();
                         }
