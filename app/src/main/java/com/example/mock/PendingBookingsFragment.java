@@ -475,12 +475,30 @@ public class PendingBookingsFragment extends Fragment {
             if ("Approved".equals(booking.getStatus())) {
                 // Booking is Approved, checking for payment
                 
-                // Check if payment is actually submitted
                 // If the PHP returns "Pending" for an Approved booking, it means there is a record in payments table with Pending status
                 // If it returns "Awaiting Payment", it means no record found
                 String specificPaymentStatus = booking.getPaymentStatus();
                 
-                if ("Pending".equals(specificPaymentStatus) || (paidAmount != null && !paidAmount.isEmpty() && Double.parseDouble(paidAmount) > 0)) {
+                boolean isPaymentSubmitted = false;
+                if ("Pending".equalsIgnoreCase(specificPaymentStatus)) {
+                    String pendingPaymentAmount = booking.getPendingPaymentAmount();
+                    if (pendingPaymentAmount != null && !pendingPaymentAmount.trim().isEmpty() && !pendingPaymentAmount.equalsIgnoreCase("null")) {
+                        try {
+                            String cleanPending = pendingPaymentAmount.replace("P", "").replace("₱", "").replace(",", "").trim();
+                            if (Double.parseDouble(cleanPending) > 0) isPaymentSubmitted = true;
+                        } catch (NumberFormatException e) { }
+                    }
+                    if (method != null && !method.trim().isEmpty() && !method.equalsIgnoreCase("null")) {
+                        isPaymentSubmitted = true;
+                    }
+                } else if (paidAmount != null && !paidAmount.trim().isEmpty() && !paidAmount.equalsIgnoreCase("null")) {
+                    try {
+                        String cleanPaid = paidAmount.replace("P", "").replace("₱", "").replace(",", "").trim();
+                        if (Double.parseDouble(cleanPaid) > 0) isPaymentSubmitted = true;
+                    } catch (NumberFormatException e) { }
+                }
+
+                if (isPaymentSubmitted) {
                     // Payment Submitted logic
                     paymentStatusText = "Payment Submitted (For Verification)";
                     statusBg = R.drawable.bg_status_completed; // Blue or similar for verification
@@ -550,6 +568,15 @@ public class PendingBookingsFragment extends Fragment {
              btnConfirm.setAlpha(1.0f);
         }
         
+        // Append payment method if available and not already included
+        if (method != null && !method.trim().isEmpty() && !method.equalsIgnoreCase("null") && !paymentStatusText.contains("(" + method + ")")) {
+             if ("Cash".equalsIgnoreCase(method)) {
+                 paymentStatusText = paymentStatusText + " (Cash)";
+             } else {
+                 paymentStatusText = paymentStatusText + " (" + method + ")";
+             }
+        }
+
         tvPaymentStatus.setText(paymentStatusText);
         tvPaymentStatus.setTextColor(statusColor);
         tvPaymentStatus.setBackgroundResource(statusBg);

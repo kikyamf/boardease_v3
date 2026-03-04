@@ -750,12 +750,30 @@ public class BookingDetailsActivity extends AppCompatActivity {
             if ("Approved".equals(bookingData.getStatus())) {
                 // Booking is Approved, checking for payment
                 
-                // Check if payment is actually submitted
                 // If the PHP returns "Pending" for an Approved booking, it means there is a record in payments table with Pending status
                 // If it returns "Awaiting Payment", it means no record found
                 String specificPaymentStatus = bookingData.getPaymentStatus();
                 
-                if ("Pending".equals(specificPaymentStatus) || (paidAmount != null && !paidAmount.isEmpty() && Double.parseDouble(paidAmount) > 0)) {
+                boolean isPaymentSubmitted = false;
+                if ("Pending".equalsIgnoreCase(specificPaymentStatus)) {
+                    String pendingPaymentAmount = bookingData.getPendingPaymentAmount();
+                    if (pendingPaymentAmount != null && !pendingPaymentAmount.trim().isEmpty() && !pendingPaymentAmount.equalsIgnoreCase("null")) {
+                        try {
+                            String cleanPending = pendingPaymentAmount.replace("P", "").replace("₱", "").replace(",", "").trim();
+                            if (Double.parseDouble(cleanPending) > 0) isPaymentSubmitted = true;
+                        } catch (NumberFormatException e) { }
+                    }
+                    if (method != null && !method.trim().isEmpty() && !method.equalsIgnoreCase("null")) {
+                        isPaymentSubmitted = true;
+                    }
+                } else if (paidAmount != null && !paidAmount.trim().isEmpty() && !paidAmount.equalsIgnoreCase("null")) {
+                    try {
+                        String cleanPaid = paidAmount.replace("P", "").replace("₱", "").replace(",", "").trim();
+                        if (Double.parseDouble(cleanPaid) > 0) isPaymentSubmitted = true;
+                    } catch (NumberFormatException e) { }
+                }
+
+                if (isPaymentSubmitted) {
                     // Payment Submitted logic
                     paymentStatusText = "Payment Submitted (For Verification)";
                     statusBg = R.drawable.bg_status_completed; // Blue or similar for verification
@@ -826,12 +844,23 @@ public class BookingDetailsActivity extends AppCompatActivity {
         }
         
         // Append payment method if available and not already included
-        if (method != null && !method.isEmpty() && !paymentStatusText.contains("(" + method + ")")) {
+        if (method != null && !method.trim().isEmpty() && !method.equalsIgnoreCase("null") && !paymentStatusText.contains("(" + method + ")")) {
              if ("Cash".equalsIgnoreCase(method)) {
                  paymentStatusText = paymentStatusText + " (Cash)";
              } else {
                  paymentStatusText = paymentStatusText + " (" + method + ")";
              }
+        }
+
+        // Disable proof loading for Cash payments
+        if ("Cash".equalsIgnoreCase(method)) {
+            shouldLoadProof = false;
+        }
+
+        // Final enforcement of Cash UI state
+        if ("Cash".equalsIgnoreCase(method)) {
+            if (tvPaymentProofLabel != null) tvPaymentProofLabel.setVisibility(View.GONE);
+            if (layoutPaymentProof != null) layoutPaymentProof.setVisibility(View.GONE);
         }
 
         tvPaymentStatus.setText(paymentStatusText);
@@ -969,9 +998,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
         
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         
-        // Final enforcement of Cash UI state
-        // Load proof image (if applicable)
-        // loadPaymentProofForDialog(imgPaymentProof, layoutPaymentProof);
+        // Logic handled during layout population
 
         dialog.show();
     }

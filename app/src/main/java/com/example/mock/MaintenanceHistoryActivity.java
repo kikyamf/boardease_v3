@@ -26,6 +26,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.os.Handler;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,10 +54,15 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
     private RequestQueue requestQueue;
     private ProgressDialog progressDialog;
     private int userId;
-    
+
+    // Poll refresher — auto-refresh every 30 seconds
+    private Handler pollHandler;
+    private Runnable pollRunnable;
+    private static final long POLL_INTERVAL_MS = 10_000;
+
     private String currentFilter = "all";
     private boolean isFromPullRefresh = false;
-    
+
     private static final String BASE_URL = "https://boardease.calapebohol.com/";
     private static final String TAG = "MaintenanceHistoryActivity";
     
@@ -100,6 +107,19 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
         
         // Load maintenance history
         loadMaintenanceHistory();
+
+        // Setup poll refresher
+        pollHandler = new Handler();
+        pollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Silent refresh: behaves like a swipe-refresh (no loading dialog)
+                isFromPullRefresh = true;
+                loadMaintenanceHistory();
+                // NOTE: next poll is scheduled inside loadMaintenanceHistory callbacks
+                // to avoid overlapping requests
+            }
+        };
     }
     
     private void initializeViews() {
@@ -110,9 +130,27 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
         spinnerFilter = findViewById(R.id.spinnerFilter);
     }
     
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Start polling when screen is visible
+        if (pollHandler != null && pollRunnable != null) {
+            pollHandler.postDelayed(pollRunnable, POLL_INTERVAL_MS);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop polling when screen is backgrounded
+        if (pollHandler != null && pollRunnable != null) {
+            pollHandler.removeCallbacks(pollRunnable);
+        }
+    }
+
     private void setupClickListeners() {
         ivBack.setOnClickListener(v -> finish());
-        
+
         swipeRefreshLayout.setOnRefreshListener(() -> {
             isFromPullRefresh = true;
             loadMaintenanceHistory();
@@ -193,6 +231,7 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
                 response -> {
                     hideProgressDialog();
                     swipeRefreshLayout.setRefreshing(false);
+                    boolean wasPollRefresh = isFromPullRefresh;
                     isFromPullRefresh = false;
                     try {
                         if (response.getBoolean("success")) {
@@ -201,21 +240,36 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
                             parseMaintenanceHistory(maintenanceArray);
                         } else {
                             String error = response.optString("error", "Unknown error");
-                            Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
+                            if (!wasPollRefresh) {
+                                Toast.makeText(this, "Error: " + error, Toast.LENGTH_SHORT).show();
+                            }
                             showEmptyState();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                        if (!wasPollRefresh) {
+                            Toast.makeText(this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                        }
                         showEmptyState();
+                    }
+                    // Reschedule next poll AFTER response arrives (no overlapping requests)
+                    if (pollHandler != null && pollRunnable != null) {
+                        pollHandler.postDelayed(pollRunnable, POLL_INTERVAL_MS);
                     }
                 },
                 error -> {
                     hideProgressDialog();
                     swipeRefreshLayout.setRefreshing(false);
+                    boolean wasPollRefresh = isFromPullRefresh;
                     isFromPullRefresh = false;
-                    Toast.makeText(this, "Error loading maintenance history: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!wasPollRefresh) {
+                        Toast.makeText(this, "Error loading maintenance history: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     showEmptyState();
+                    // Reschedule next poll even on error
+                    if (pollHandler != null && pollRunnable != null) {
+                        pollHandler.postDelayed(pollRunnable, POLL_INTERVAL_MS);
+                    }
                 }) {
             @Override
             public Map<String, String> getHeaders() {
@@ -225,6 +279,8 @@ public class MaintenanceHistoryActivity extends AppCompatActivity {
             }
         };
         
+        // Disable caching so every poll fetches fresh data from the server
+        request.setShouldCache(false);
         requestQueue.add(request);
     }
     
