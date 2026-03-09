@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,7 +41,9 @@ import java.util.Map;
 
 public class EditBoardingHouseActivity extends AppCompatActivity {
 
-    private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etArea, etBuildYear;
+    private TextView tvBathroomsCount;
+    private ImageButton btnIncrementBathrooms, btnDecrementBathrooms;
     private EditText etDetailedAddress;
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private ViewPager2 viewPagerImages;
@@ -79,9 +82,13 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         etBhAddress = findViewById(R.id.etAddress);
         etBhDescription = findViewById(R.id.etDescription);
         etBhRules = findViewById(R.id.etRules);
-        etBathrooms = findViewById(R.id.etBathrooms);
+        tvBathroomsCount = findViewById(R.id.tvBathroomsCount);
+        btnIncrementBathrooms = findViewById(R.id.btnIncrementBathrooms);
+        btnDecrementBathrooms = findViewById(R.id.btnDecrementBathrooms);
         etArea = findViewById(R.id.etArea);
         etBuildYear = findViewById(R.id.etBuildYear);
+        
+        setupBathroomsStepper();
         
         // Address views
         spinnerProvince = findViewById(R.id.spinnerProvince);
@@ -174,7 +181,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         String currentAddress = etBhAddress.getText().toString().trim();
         String currentDescription = etBhDescription.getText().toString().trim();
         String currentRules = etBhRules.getText().toString().trim();
-        String currentBathrooms = etBathrooms.getText().toString().trim();
+        String currentBathrooms = tvBathroomsCount.getText().toString().trim();
         String currentArea = etArea.getText().toString().trim();
         String currentBuildYear = etBuildYear.getText().toString().trim();
         
@@ -316,7 +323,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                 params.put("bh_address", etBhAddress.getText().toString().trim());
                 params.put("bh_description", etBhDescription.getText().toString().trim());
                 params.put("bh_rules", etBhRules.getText().toString().trim());
-                params.put("number_of_bathroom", etBathrooms.getText().toString().trim());
+                params.put("number_of_bathroom", tvBathroomsCount.getText().toString().trim());
                 params.put("area", etArea.getText().toString().trim());
                 params.put("build_year", etBuildYear.getText().toString().trim());
                 return params;
@@ -394,9 +401,18 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                         etBhAddress.setText(fullAddress);
                         etBhDescription.setText(obj.optString("bh_description", ""));
                         etBhRules.setText(obj.optString("bh_rules", ""));
-                        etBathrooms.setText(obj.optString("number_of_bathroom", ""));
-                        etArea.setText(obj.optString("area", ""));
-                        etBuildYear.setText(obj.optString("build_year", ""));
+                        // Robust parsing for numeric fields
+                        String bathroomCount = obj.optString("number_of_bathroom", "1");
+                        tvBathroomsCount.setText(bathroomCount);
+                        
+                        // Use obj.get().toString() to avoid issues with numeric types in JSON
+                        String areaVal = obj.has("area") ? obj.get("area").toString() : "";
+                        String yearVal = obj.has("build_year") ? obj.get("build_year").toString() : "";
+                        
+                        etArea.setText(areaVal);
+                        etBuildYear.setText(yearVal);
+                        
+                        Log.d(TAG, "Fetched Details - Area: " + areaVal + ", Year: " + yearVal + ", Bathrooms: " + bathroomCount);
                         
                         // Parse address to populate spinners
                         if (!fullAddress.isEmpty()) {
@@ -1557,6 +1573,30 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private void setupBathroomsStepper() {
+        btnIncrementBathrooms.setOnClickListener(v -> {
+            try {
+                int current = Integer.parseInt(tvBathroomsCount.getText().toString());
+                if (current < 99) {
+                    tvBathroomsCount.setText(String.valueOf(current + 1));
+                }
+            } catch (NumberFormatException e) {
+                tvBathroomsCount.setText("1");
+            }
+        });
+        
+        btnDecrementBathrooms.setOnClickListener(v -> {
+            try {
+                int current = Integer.parseInt(tvBathroomsCount.getText().toString());
+                if (current > 1) {
+                    tvBathroomsCount.setText(String.valueOf(current - 1));
+                }
+            } catch (NumberFormatException e) {
+                tvBathroomsCount.setText("1");
+            }
+        });
     }
 
     /**
