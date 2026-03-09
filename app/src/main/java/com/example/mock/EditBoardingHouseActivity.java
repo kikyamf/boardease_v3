@@ -85,6 +85,8 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         tvBathroomsCount = findViewById(R.id.tvBathroomsCount);
         btnIncrementBathrooms = findViewById(R.id.btnIncrementBathrooms);
         btnDecrementBathrooms = findViewById(R.id.btnDecrementBathrooms);
+        etArea = findViewById(R.id.etArea);
+        etBuildYear = findViewById(R.id.etBuildYear);
         
         setupBathroomsStepper();
         
