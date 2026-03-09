@@ -363,6 +363,8 @@
                         android:layout_marginTop="8dp">
 
                         <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
                             android:text="Bathrooms:"
                             android:textSize="14sp"
                             android:textColor="#495057"
@@ -371,14 +373,17 @@
                             android:layout_columnWeight="1"/>
                         <Spinner
                             android:id="@+id/spinnerBathrooms"
-                            android:layout_width="match_parent"
+                            android:layout_width="0dp"
                             android:layout_height="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
                             android:layout_marginBottom="16dp"
-                            android:layout_columnWeight="2"/>
+                            android:layout_columnWeight="2"
+                            android:layout_gravity="fill_horizontal"/>
 
                         <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
                             android:text="Area (sqft):"
                             android:textSize="14sp"
                             android:textColor="#495057"
@@ -387,6 +392,8 @@
                             android:layout_columnWeight="1"/>
                         <EditText
                             android:id="@+id/etArea"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
                             android:hint="Enter area size"
                             android:textSize="16sp"
                             android:textColor="#212529"
@@ -396,9 +403,12 @@
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
                             android:layout_marginBottom="16dp"
-                            android:layout_columnWeight="2"/>
+                            android:layout_columnWeight="2"
+                            android:layout_gravity="fill_horizontal"/>
 
                         <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
                             android:text="Build Year:"
                             android:textSize="14sp"
                             android:textColor="#495057"
@@ -407,6 +417,8 @@
                             android:layout_columnWeight="1"/>
                         <EditText
                             android:id="@+id/etBuildYear"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
                             android:hint="Enter year"
                             android:textSize="16sp"
                             android:textColor="#212529"
@@ -416,7 +428,8 @@
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
                             android:layout_marginBottom="16dp"
-                            android:layout_columnWeight="2"/>
+                            android:layout_columnWeight="2"
+                            android:layout_gravity="fill_horizontal"/>
                     </GridLayout>
 
                 </LinearLayout>
