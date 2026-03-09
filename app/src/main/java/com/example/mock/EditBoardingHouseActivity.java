@@ -41,7 +41,8 @@ import java.util.Map;
 public class EditBoardingHouseActivity extends AppCompatActivity {
 
     private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etArea, etBuildYear;
-    private Spinner spinnerBathrooms;
+    private TextView tvBathroomsCount;
+    private ImageButton btnIncrementBathrooms, btnDecrementBathrooms;
     private EditText etDetailedAddress;
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private ViewPager2 viewPagerImages;
@@ -80,12 +81,11 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         etBhAddress = findViewById(R.id.etAddress);
         etBhDescription = findViewById(R.id.etDescription);
         etBhRules = findViewById(R.id.etRules);
-        spinnerBathrooms = findViewById(R.id.spinnerBathrooms);
-        etArea = findViewById(R.id.etArea);
-        etBuildYear = findViewById(R.id.etBuildYear);
+        tvBathroomsCount = findViewById(R.id.tvBathroomsCount);
+        btnIncrementBathrooms = findViewById(R.id.btnIncrementBathrooms);
+        btnDecrementBathrooms = findViewById(R.id.btnDecrementBathrooms);
         
-        // Initialize bathrooms spinner
-        setupBathroomsSpinner();
+        setupBathroomsStepper();
         
         // Address views
         spinnerProvince = findViewById(R.id.spinnerProvince);
@@ -178,7 +178,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         String currentAddress = etBhAddress.getText().toString().trim();
         String currentDescription = etBhDescription.getText().toString().trim();
         String currentRules = etBhRules.getText().toString().trim();
-        String currentBathrooms = spinnerBathrooms.getSelectedItem().toString();
+        String currentBathrooms = tvBathroomsCount.getText().toString().trim();
         String currentArea = etArea.getText().toString().trim();
         String currentBuildYear = etBuildYear.getText().toString().trim();
         
@@ -320,7 +320,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                 params.put("bh_address", etBhAddress.getText().toString().trim());
                 params.put("bh_description", etBhDescription.getText().toString().trim());
                 params.put("bh_rules", etBhRules.getText().toString().trim());
-                params.put("number_of_bathroom", spinnerBathrooms.getSelectedItem().toString());
+                params.put("number_of_bathroom", tvBathroomsCount.getText().toString().trim());
                 params.put("area", etArea.getText().toString().trim());
                 params.put("build_year", etBuildYear.getText().toString().trim());
                 return params;
@@ -400,7 +400,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                         etBhRules.setText(obj.optString("bh_rules", ""));
                         // Robust parsing for numeric fields
                         String bathroomCount = obj.optString("number_of_bathroom", "1");
-                        setBathroomsSelection(bathroomCount);
+                        tvBathroomsCount.setText(bathroomCount);
                         
                         // Use obj.get().toString() to avoid issues with numeric types in JSON
                         String areaVal = obj.has("area") ? obj.get("area").toString() : "";
@@ -1572,48 +1572,28 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         }
     }
 
-    private void setupBathroomsSpinner() {
-        String[] bathroomOptions = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, bathroomOptions) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView textView = (TextView) view;
-                textView.setTextColor(0xFF000000);
-                textView.setTextSize(16);
-                return view;
-            }
-
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent) {
-                View view = super.getDropDownView(position, convertView, parent);
-                if (view instanceof TextView) {
-                    TextView textView = (TextView) view;
-                    textView.setTextColor(0xFFFFFFFF);
-                    textView.setTextSize(16);
-                    textView.setPadding(16, 16, 16, 16);
-                    textView.setBackgroundColor(0xFF2C2C2C);
+    private void setupBathroomsStepper() {
+        btnIncrementBathrooms.setOnClickListener(v -> {
+            try {
+                int current = Integer.parseInt(tvBathroomsCount.getText().toString());
+                if (current < 99) {
+                    tvBathroomsCount.setText(String.valueOf(current + 1));
                 }
-                return view;
+            } catch (NumberFormatException e) {
+                tvBathroomsCount.setText("1");
             }
-        };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerBathrooms.setAdapter(adapter);
-    }
-
-    private void setBathroomsSelection(String value) {
-        if (value == null || value.isEmpty()) return;
-        ArrayAdapter adapter = (ArrayAdapter) spinnerBathrooms.getAdapter();
-        for (int i = 0; i < adapter.getCount(); i++) {
-            if (adapter.getItem(i).toString().equals(value)) {
-                spinnerBathrooms.setSelection(i);
-                return;
+        });
+        
+        btnDecrementBathrooms.setOnClickListener(v -> {
+            try {
+                int current = Integer.parseInt(tvBathroomsCount.getText().toString());
+                if (current > 1) {
+                    tvBathroomsCount.setText(String.valueOf(current - 1));
+                }
+            } catch (NumberFormatException e) {
+                tvBathroomsCount.setText("1");
             }
-        }
-        // If "10+" or other
-        if (value.contains("+") || (value.length() > 1 && !value.equals("10"))) {
-            spinnerBathrooms.setSelection(9); // 10+
-        }
+        });
     }
 
     /**

@@ -371,15 +371,45 @@
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp"
                             android:layout_columnWeight="1"/>
-                        <Spinner
-                            android:id="@+id/spinnerBathrooms"
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="56dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
                             android:background="@drawable/modern_edittext_focused"
-                            android:padding="16dp"
-                            android:layout_marginBottom="16dp"
                             android:layout_columnWeight="2"
-                            android:layout_gravity="fill_horizontal"/>
+                            android:layout_gravity="fill_horizontal"
+                            android:layout_marginBottom="16dp">
+
+                            <ImageButton
+                                android:id="@+id/btnDecrementBathrooms"
+                                android:layout_width="48dp"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/ic_arrow_down"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Decrease"
+                                android:tint="#495057"/>
+
+                            <TextView
+                                android:id="@+id/tvBathroomsCount"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="1"
+                                android:textSize="16sp"
+                                android:textColor="#212529"
+                                android:fontFamily="@font/poppins_semibold"
+                                android:gravity="center"/>
+
+                            <ImageButton
+                                android:id="@+id/btnIncrementBathrooms"
+                                android:layout_width="48dp"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/ic_arrow_up"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Increase"
+                                android:tint="#495057"/>
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="0dp"
