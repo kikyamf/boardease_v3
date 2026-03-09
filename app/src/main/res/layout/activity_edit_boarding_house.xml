@@ -369,14 +369,10 @@
                             android:fontFamily="@font/poppins_medium"
                             android:layout_marginBottom="8dp"
                             android:layout_columnWeight="1"/>
-                        <EditText
-                            android:id="@+id/etBathrooms"
-                            android:hint="Enter no. of bathrooms"
-                            android:textSize="16sp"
-                            android:textColor="#212529"
-                            android:textColorHint="#6C757D"
-                            android:fontFamily="@font/poppins_regular"
-                            android:inputType="number"
+                        <Spinner
+                            android:id="@+id/spinnerBathrooms"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
                             android:background="@drawable/modern_edittext_focused"
                             android:padding="16dp"
                             android:layout_marginBottom="16dp"

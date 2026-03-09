@@ -40,7 +40,8 @@ import java.util.Map;
 
 public class EditBoardingHouseActivity extends AppCompatActivity {
 
-    private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etBathrooms, etArea, etBuildYear;
+    private EditText etBhName, etBhAddress, etBhDescription, etBhRules, etArea, etBuildYear;
+    private Spinner spinnerBathrooms;
     private EditText etDetailedAddress;
     private Spinner spinnerProvince, spinnerMunicipality, spinnerBarangay;
     private ViewPager2 viewPagerImages;
@@ -79,9 +80,12 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         etBhAddress = findViewById(R.id.etAddress);
         etBhDescription = findViewById(R.id.etDescription);
         etBhRules = findViewById(R.id.etRules);
-        etBathrooms = findViewById(R.id.etBathrooms);
+        spinnerBathrooms = findViewById(R.id.spinnerBathrooms);
         etArea = findViewById(R.id.etArea);
         etBuildYear = findViewById(R.id.etBuildYear);
+        
+        // Initialize bathrooms spinner
+        setupBathroomsSpinner();
         
         // Address views
         spinnerProvince = findViewById(R.id.spinnerProvince);
@@ -174,7 +178,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
         String currentAddress = etBhAddress.getText().toString().trim();
         String currentDescription = etBhDescription.getText().toString().trim();
         String currentRules = etBhRules.getText().toString().trim();
-        String currentBathrooms = etBathrooms.getText().toString().trim();
+        String currentBathrooms = spinnerBathrooms.getSelectedItem().toString();
         String currentArea = etArea.getText().toString().trim();
         String currentBuildYear = etBuildYear.getText().toString().trim();
         
@@ -316,7 +320,7 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                 params.put("bh_address", etBhAddress.getText().toString().trim());
                 params.put("bh_description", etBhDescription.getText().toString().trim());
                 params.put("bh_rules", etBhRules.getText().toString().trim());
-                params.put("number_of_bathroom", etBathrooms.getText().toString().trim());
+                params.put("number_of_bathroom", spinnerBathrooms.getSelectedItem().toString());
                 params.put("area", etArea.getText().toString().trim());
                 params.put("build_year", etBuildYear.getText().toString().trim());
                 return params;
@@ -394,9 +398,18 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                         etBhAddress.setText(fullAddress);
                         etBhDescription.setText(obj.optString("bh_description", ""));
                         etBhRules.setText(obj.optString("bh_rules", ""));
-                        etBathrooms.setText(obj.optString("number_of_bathroom", ""));
-                        etArea.setText(obj.optString("area", ""));
-                        etBuildYear.setText(obj.optString("build_year", ""));
+                        // Robust parsing for numeric fields
+                        String bathroomCount = obj.optString("number_of_bathroom", "1");
+                        setBathroomsSelection(bathroomCount);
+                        
+                        // Use obj.get().toString() to avoid issues with numeric types in JSON
+                        String areaVal = obj.has("area") ? obj.get("area").toString() : "";
+                        String yearVal = obj.has("build_year") ? obj.get("build_year").toString() : "";
+                        
+                        etArea.setText(areaVal);
+                        etBuildYear.setText(yearVal);
+                        
+                        Log.d(TAG, "Fetched Details - Area: " + areaVal + ", Year: " + yearVal + ", Bathrooms: " + bathroomCount);
                         
                         // Parse address to populate spinners
                         if (!fullAddress.isEmpty()) {
@@ -1556,6 +1569,50 @@ public class EditBoardingHouseActivity extends AppCompatActivity {
                     break;
                 }
             }
+        }
+    }
+
+    private void setupBathroomsSpinner() {
+        String[] bathroomOptions = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, bathroomOptions) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view;
+                textView.setTextColor(0xFF000000);
+                textView.setTextSize(16);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView textView = (TextView) view;
+                    textView.setTextColor(0xFFFFFFFF);
+                    textView.setTextSize(16);
+                    textView.setPadding(16, 16, 16, 16);
+                    textView.setBackgroundColor(0xFF2C2C2C);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerBathrooms.setAdapter(adapter);
+    }
+
+    private void setBathroomsSelection(String value) {
+        if (value == null || value.isEmpty()) return;
+        ArrayAdapter adapter = (ArrayAdapter) spinnerBathrooms.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            if (adapter.getItem(i).toString().equals(value)) {
+                spinnerBathrooms.setSelection(i);
+                return;
+            }
+        }
+        // If "10+" or other
+        if (value.contains("+") || (value.length() > 1 && !value.equals("10"))) {
+            spinnerBathrooms.setSelection(9); // 10+
         }
     }
 
